@@ -16,3 +16,6 @@ TARGET_RECOVERY_FSTAB := device/samsung/codina/rootdir/fstab.samsungcodina
 TARGET_BOOTANIMATION_PRELOAD := true
 TARGET_BOOTANIMATION_TEXTURE_CACHE := true
 TARGET_BOOTANIMATION_USE_RGB565 := true
+
+# Wifi
+BOARD_NO_WIFI_HAL := true
