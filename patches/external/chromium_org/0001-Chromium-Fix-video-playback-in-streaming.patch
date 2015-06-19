@@ -1,0 +1,37 @@
+From 97ae9733330911f3ce88d87440b71d574c7c4a55 Mon Sep 17 00:00:00 2001
+From: Esteban Guzzo <estebanguzzo@gmail.com>
+Date: Sat, 7 Feb 2015 19:10:24 -0300
+Subject: [PATCH] Chromium: Fix video playback in streaming
+
+Caused problems with video playback in browser
+---
+ android_webview/lib/main/aw_main_delegate.cc | 6 +-----
+ 1 file changed, 1 insertion(+), 5 deletions(-)
+
+diff --git a/android_webview/lib/main/aw_main_delegate.cc b/android_webview/lib/main/aw_main_delegate.cc
+index 6720166..3a72eb0 100644
+--- a/android_webview/lib/main/aw_main_delegate.cc
++++ b/android_webview/lib/main/aw_main_delegate.cc
+@@ -25,7 +25,6 @@
+ #include "content/public/browser/browser_thread.h"
+ #include "content/public/common/content_switches.h"
+ #include "gpu/command_buffer/client/gl_in_process_context.h"
+-#include "gpu/command_buffer/service/gpu_switches.h"
+ #include "gpu/command_buffer/service/in_process_command_buffer.h"
+ #include "media/base/media_switches.h"
+ #include "webkit/common/gpu/webgraphicscontext3d_in_process_command_buffer_impl.h"
+@@ -59,10 +58,7 @@ bool AwMainDelegate::BasicStartupComplete(int* exit_code) {
+   CommandLine* cl = CommandLine::ForCurrentProcess();
+   cl->AppendSwitch(switches::kEnableBeginFrameScheduling);
+   cl->AppendSwitch(cc::switches::kEnableMapImage);
+-
+-  // Disable GLSL translator. Webview is single-process so has no benefit.
+-  cl->AppendSwitch(switches::kDisableGLSLTranslator);
+-
++  
+   // WebView uses the Android system's scrollbars and overscroll glow.
+   cl->AppendSwitch(switches::kHideScrollbars);
+   cl->AppendSwitch(switches::kDisableOverscrollEdgeEffect);
+-- 
+1.9.1
+
