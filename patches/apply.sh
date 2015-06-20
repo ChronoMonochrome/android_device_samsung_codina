@@ -1,6 +1,6 @@
 LOCAL_PATH=../../../..
 
-PATCHES="art  build  external/chromium_org frameworks/av \
+PATCHES="art  build  external/chromium_org frameworks/av libcore \
                  packages/services/Telephony/  system/vold"
 
 export CL_RED="\033[31m"
