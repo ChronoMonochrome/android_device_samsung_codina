@@ -1,0 +1,21 @@
+From 819c9b526826883549e90b15aa7d3ee4549f7783 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?=C5=81ukasz=20Domeradzki?= <JustArchi@JustArchi.net>
+Date: Mon, 8 Sep 2014 00:30:47 +0200
+Subject: [PATCH] GCC: Fix broken exFAT
+
+---
+ lib/Android.mk | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/lib/Android.mk b/lib/Android.mk
+index ba06023..79c5fba 100755
+--- a/lib/Android.mk
++++ b/lib/Android.mk
+@@ -41,6 +41,7 @@ LOCAL_SHARED_LIBRARIES := \
+ 	libutils
+ 
+ LOCAL_CFLAGS := \
++	-Os \
+ 	-D_FILE_OFFSET_BITS=64 \
+ 	-DFUSE_USE_VERSION=26 \
+     -fno-strict-aliasing
