@@ -1,7 +1,7 @@
 LOCAL_PATH=../../../..
 
-PATCHES="art  build external/webp external/chromium_org libcore \
-                 packages/services/Telephony/  system/vold"
+PATCHES="art build external/webp external/chromium_org frameworks/base libcore \
+            packages/services/Telephony/ packages/apps/Settings packages/apps/Mms  system/vold"
 
 export CL_RED="\033[31m"
 export CL_GRN="\033[32m"

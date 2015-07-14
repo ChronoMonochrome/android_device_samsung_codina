@@ -1,0 +1,71 @@
+From d9e3b11f6c9d8f010df1af15907e0302dbbf46a8 Mon Sep 17 00:00:00 2001
+From: Marcin Kaluza <marcin.kaluza@trioptimum.com>
+Date: Tue, 27 Jan 2015 20:40:22 +0100
+Subject: [PATCH] expose sms to mms conversion text limitt
+
+Change-Id: I23a8f43870971d7404ccb26727001e48d4ae4e4a
+---
+ res/values/cm_arrays.xml  | 18 ++++++++++++++++++
+ res/values/cm_strings.xml |  2 ++
+ res/xml/preferences.xml   |  6 ++++++
+ 3 files changed, 26 insertions(+)
+
+diff --git a/res/values/cm_arrays.xml b/res/values/cm_arrays.xml
+index 3dd4802..8513978 100644
+--- a/res/values/cm_arrays.xml
++++ b/res/values/cm_arrays.xml
+@@ -85,6 +85,24 @@
+         <item>@string/send_delay_30seconds</item>
+     </string-array>
+ 
++    <string-array name="sms_to_mms_text_limit_values" translatable="false">
++	    <item>-1</item>
++	    <item>3</item>
++	    <item>4</item>
++	    <item>5</item>
++	    <item>6</item>
++	    <item>7</item>
++    </string-array>
++
++    <string-array name="sms_to_mms_text_limit_entries" translatable="false">
++	    <item>No limit</item>
++	    <item>3</item>
++	    <item>4</item>
++	    <item>5</item>
++	    <item>6</item>
++	    <item>7</item>
++    </string-array>
++
+     <string-array name="pref_mms_notification_vibrate_pattern_entries" translatable="false">
+         <item>@string/pref_mms_notification_vibrate_normal</item>
+         <item>@string/pref_mms_notification_vibrate_med_vib</item>
+diff --git a/res/values/cm_strings.xml b/res/values/cm_strings.xml
+index 5c000af..e4db814 100644
+--- a/res/values/cm_strings.xml
++++ b/res/values/cm_strings.xml
+@@ -123,6 +123,8 @@
+     <!-- Settings item description for boolean SMS Split 160 characters setting -->
+     <string name="pref_summary_sms_split_counter">Adds counter to message ex. (1/2)</string>
+ 
++    <string name="pref_title_sms_to_mms_text_limit">Sms to mms conversion limit</string>
++
+     <!-- Blacklist preferences -->
+     <string name="blacklist_title">Blacklist</string>
+     <string name="blacklist_summary_disabled">Disabled</string>
+diff --git a/res/xml/preferences.xml b/res/xml/preferences.xml
+index f1b6381..b2325cf 100644
+--- a/res/xml/preferences.xml
++++ b/res/xml/preferences.xml
+@@ -100,6 +100,12 @@
+             android:key="pref_key_manage_sim_messages"
+             android:summary="@string/pref_summary_manage_sim_messages"
+             android:title="@string/pref_title_manage_sim_messages" />
++
++        <ListPreference
++            android:entries="@array/sms_to_mms_text_limit_entries"
++            android:entryValues="@array/sms_to_mms_text_limit_values"
++            android:key="pref_key_sms_to_mms_text_limit"
++            android:title="@string/pref_title_sms_to_mms_text_limit" />
+     </PreferenceCategory>
+ 
+     <!-- MMS Settings -->

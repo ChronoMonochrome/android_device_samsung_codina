@@ -1,0 +1,165 @@
+From b7f0dd93da4014c6b1b79466d084200ba4ce4fd1 Mon Sep 17 00:00:00 2001
+From: Marcin Kaluza <marcin.kaluza@trioptimum.com>
+Date: Tue, 19 May 2015 17:40:24 +0200
+Subject: [PATCH] add SmartPulldown from OmniROM
+
+Change-Id: Ie78e073097a167c9c47183e38ca5e65130912d3a
+---
+ res/values/cm_arrays.xml                           | 12 ++++++++
+ res/values/cm_strings.xml                          |  7 +++++
+ res/xml/quick_settings_panel.xml                   |  8 +++++
+ .../settings/quicksettings/QuickSettings.java      | 36 ++++++++++++++++++++--
+ 4 files changed, 60 insertions(+), 3 deletions(-)
+
+diff --git a/res/values/cm_arrays.xml b/res/values/cm_arrays.xml
+index 085619f..be9b9c0 100755
+--- a/res/values/cm_arrays.xml
++++ b/res/values/cm_arrays.xml
+@@ -359,6 +359,18 @@
+         <item>2</item>
+     </string-array>
+ 
++    <!-- Smart pulldown -->
++    <string-array name="smart_pulldown_entries" translatable="false">
++        <item>@string/smart_pulldown_off</item>
++        <item>@string/smart_pulldown_dismissable</item>
++        <item>@string/smart_pulldown_persistent</item>
++    </string-array>
++
++    <string-array name="smart_pulldown_values" translatable="false">
++        <item>0</item>
++        <item>1</item>
++        <item>2</item>
++    </string-array>
+ 
+     <!-- Auto-brightness sensitivity -->
+     <string-array name="auto_brightness_sensitivity_entries" translatable="false">
+diff --git a/res/values/cm_strings.xml b/res/values/cm_strings.xml
+index e6a54c6..d441bd3 100644
+--- a/res/values/cm_strings.xml
++++ b/res/values/cm_strings.xml
+@@ -385,6 +385,13 @@
+     <string name="quick_pulldown_off">Off</string>
+     <string name="quick_pulldown_left">Left</string>
+     <string name="quick_pulldown_right">Right</string>
++    <!-- QuickSettings: Smart Pulldown -->
++    <string name="smart_pulldown_title">Smart pulldown</string>
++    <string name="smart_pulldown_summary">Open quick settings when there are no notifications present</string>
++    <string name="smart_pulldown_off">Disabled</string>
++    <string name="smart_pulldown_dismissable">If no clearable notifications</string>
++    <string name="smart_pulldown_persistent">If no notifications</string>
++
+     <string name="title_collapse_panel">Auto close panel</string>
+     <string name="summary_collapse_panel">Close the Quick Settings panel after toggling a tile</string>
+ 
+diff --git a/res/xml/quick_settings_panel.xml b/res/xml/quick_settings_panel.xml
+index 6c5ef54..f7a7736 100644
+--- a/res/xml/quick_settings_panel.xml
++++ b/res/xml/quick_settings_panel.xml
+@@ -29,6 +29,14 @@
+             android:entryValues="@array/quick_pulldown_values"
+             android:persistent="false" />
+ 
++        <ListPreference
++            android:key="smart_pulldown"
++            android:title="@string/smart_pulldown_title"
++            android:summary="@string/smart_pulldown_summary"
++            android:entries="@array/smart_pulldown_entries"
++            android:entryValues="@array/smart_pulldown_values"
++            android:persistent="false" />
++
+         <com.android.settings.cyanogenmod.SystemSettingCheckBoxPreference
+             android:key="qs_collapse_panel"
+             android:title="@string/title_collapse_panel"
+diff --git a/src/com/android/settings/quicksettings/QuickSettings.java b/src/com/android/settings/quicksettings/QuickSettings.java
+index 8e4dedd..f04eaa6 100644
+--- a/src/com/android/settings/quicksettings/QuickSettings.java
++++ b/src/com/android/settings/quicksettings/QuickSettings.java
+@@ -52,6 +52,7 @@
+     private static final String EXP_NETWORK_MODE = "pref_network_mode";
+     private static final String EXP_SCREENTIMEOUT_MODE = "pref_screentimeout_mode";
+     private static final String QUICK_PULLDOWN = "quick_pulldown";
++    private static final String SMART_PULLDOWN = "smart_pulldown";
+     private static final String GENERAL_SETTINGS = "pref_general_settings";
+     private static final String STATIC_TILES = "static_tiles";
+     private static final String DYNAMIC_TILES = "pref_dynamic_tiles";
+@@ -60,6 +61,7 @@
+     private ListPreference mNetworkMode;
+     private ListPreference mScreenTimeoutMode;
+     private ListPreference mQuickPulldown;
++    private ListPreference mSmartPulldown;
+     private PreferenceCategory mGeneralSettings;
+     private PreferenceCategory mStaticTiles;
+     private PreferenceCategory mDynamicTiles;
+@@ -80,17 +82,27 @@ public void onActivityCreated(Bundle savedInstanceState) {
+         mStaticTiles = (PreferenceCategory) prefSet.findPreference(STATIC_TILES);
+         mDynamicTiles = (PreferenceCategory) prefSet.findPreference(DYNAMIC_TILES);
+         mQuickPulldown = (ListPreference) prefSet.findPreference(QUICK_PULLDOWN);
++        mSmartPulldown = (ListPreference) prefSet.findPreference(SMART_PULLDOWN);
+ 
+         if (!Utils.isPhone(getActivity())) {
+             if (mQuickPulldown != null) {
+                 mGeneralSettings.removePreference(mQuickPulldown);
+             }
++            if (mSmartPulldown != null) {
++                mGeneralSettings.removePreference(mSmartPulldown);
++            }
+         } else {
+             mQuickPulldown.setOnPreferenceChangeListener(this);
+             int quickPulldownValue = Settings.System.getInt(resolver,
+                     Settings.System.QS_QUICK_PULLDOWN, 0);
+             mQuickPulldown.setValue(String.valueOf(quickPulldownValue));
+-            updatePulldownSummary(quickPulldownValue);
++            updateQuickPulldownSummary(quickPulldownValue);
++
++            mSmartPulldown.setOnPreferenceChangeListener(this);
++            int smartPulldownValue = Settings.System.getInt(resolver,
++                    Settings.System.QS_SMART_PULLDOWN, 0);
++            mSmartPulldown.setValue(String.valueOf(smartPulldownValue));
++            updateSmartPulldownSummary(smartPulldownValue);
+         }
+ 
+         // Add the sound mode (on dual panels preference the preference could be
+@@ -191,7 +203,13 @@ public boolean onPreferenceChange(Preference preference, Object newValue) {
+             int quickPulldownValue = Integer.valueOf((String) newValue);
+             Settings.System.putInt(resolver, Settings.System.QS_QUICK_PULLDOWN,
+                     quickPulldownValue);
+-            updatePulldownSummary(quickPulldownValue);
++            updateQuickPulldownSummary(quickPulldownValue);
++            return true;
++        } else if (preference == mSmartPulldown) {
++            int smartPulldownValue = Integer.valueOf((String) newValue);
++            Settings.System.putInt(resolver, Settings.System.QS_SMART_PULLDOWN,
++                    smartPulldownValue);
++            updateSmartPulldownSummary(smartPulldownValue);
+             return true;
+         } else if (preference == mScreenTimeoutMode) {
+             int value = Integer.valueOf((String) newValue);
+@@ -223,7 +241,7 @@ private void updateSummary(String val, MultiSelectListPreference pref, int defSu
+         }
+     }
+ 
+-    private void updatePulldownSummary(int value) {
++    private void updateQuickPulldownSummary(int value) {
+         Resources res = getResources();
+ 
+         if (value == 0) {
+@@ -237,6 +255,18 @@ private void updatePulldownSummary(int value) {
+         }
+     }
+ 
++    private void updateSmartPulldownSummary(int value) {
++        Resources res = getResources();
++        if (value == 0) {
++            // smart pulldown deactivated
++            mSmartPulldown.setSummary(res.getString(R.string.smart_pulldown_off));
++        } else if (value == 1) {
++            mSmartPulldown.setSummary(res.getString(R.string.smart_pulldown_dismissable));
++        } else if (value == 2) {
++            mSmartPulldown.setSummary(res.getString(R.string.smart_pulldown_persistent));
++        }
++    }
++
+     public static String[] parseStoredValue(CharSequence val) {
+         if (TextUtils.isEmpty(val)) {
+             return null;
