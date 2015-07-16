@@ -1,0 +1,32 @@
+From a8b46460912dd7868b6854a11e0b6dbe2af31567 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Thu, 16 Jul 2015 09:14:23 +0300
+Subject: [PATCH] Comment out countCookies()
+
+Change-Id: I0106c2c0ce3292cd8487b4d8b09e9fb518048db3
+---
+ chromium/java/com/android/webview/chromium/CookieManagerAdapter.java | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/chromium/java/com/android/webview/chromium/CookieManagerAdapter.java b/chromium/java/com/android/webview/chromium/CookieManagerAdapter.java
+index 834698d..b6bacac 100644
+--- a/chromium/java/com/android/webview/chromium/CookieManagerAdapter.java
++++ b/chromium/java/com/android/webview/chromium/CookieManagerAdapter.java
+@@ -76,12 +76,12 @@ public class CookieManagerAdapter extends CookieManager {
+     public void removeSessionCookie() {
+         mChromeCookieManager.removeSessionCookie();
+     }
+-
++/*
+     @Override
+     public int countCookies() {
+         return mChromeCookieManager.countCookies();
+     }
+-
++*/
+     @Override
+     public void removeAllCookie() {
+         mChromeCookieManager.removeAllCookie();
+-- 
+1.9.1
+
