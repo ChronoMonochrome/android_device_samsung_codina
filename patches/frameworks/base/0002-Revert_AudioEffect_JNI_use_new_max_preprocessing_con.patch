@@ -1,9 +1,10 @@
-From 9d9da0466419a72880ae5f522db17ed6db8df0f8 Mon Sep 17 00:00:00 2001
+From 248bb491791fd52516a238dce555774c221cb5a7 Mon Sep 17 00:00:00 2001
 From: Shilin Victor <chrono.monochrome@gmail.com>
-Date: Mon, 4 May 2015 21:48:32 +0300
-Subject: [PATCH] Revert "AudioEffect JNI: use new max preprocessing constant"
+Date: Fri, 17 Jul 2015 23:43:52 +0300
+Subject: [PATCH 2/6] 
+ Revert_AudioEffect_JNI_use_new_max_preprocessing_constant.patch
 
-This reverts commit c3656a6e4151e076c20ee2e38dbcb986275b4560.
+Change-Id: Iee8c3bd68f303d0cef9c13feae0463f2746d7542
 ---
  media/jni/audioeffect/android_media_AudioEffect.cpp | 20 ++++++++++++++++++--
  1 file changed, 18 insertions(+), 2 deletions(-)
@@ -12,7 +13,7 @@ diff --git a/media/jni/audioeffect/android_media_AudioEffect.cpp b/media/jni/aud
 index bb022d4..0119b93 100644
 --- a/media/jni/audioeffect/android_media_AudioEffect.cpp
 +++ b/media/jni/audioeffect/android_media_AudioEffect.cpp
-@@ -790,12 +790,28 @@ android_media_AudioEffect_native_queryEffects(JNIEnv *env, jclass clazz)
+@@ -790,12 +790,28 @@ queryEffects_failure:
  static jobjectArray
  android_media_AudioEffect_native_queryPreProcessings(JNIEnv *env, jclass clazz, jint audioSession)
  {
@@ -43,3 +44,6 @@ index bb022d4..0119b93 100644
      if (status != NO_ERROR || numEffects == 0) {
          delete[] descriptors;
          return NULL;
+-- 
+1.9.1
+
