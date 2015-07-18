@@ -1,0 +1,533 @@
+From cbe62a105c7adbf4eba4ba7dbd216dd6cb77fe4b Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Sat, 18 Jul 2015 11:54:13 +0300
+Subject: [PATCH 3/4] Reset optimization flags to CM11
+
+Change-Id: I87f6aeb06d5547caaf377052b151b9b83ddc2633
+---
+ core/combo/HOST_darwin-x86.mk       |   4 +-
+ core/combo/HOST_linux-x86.mk        |   3 +-
+ core/combo/TARGET_linux-arm.mk      | 136 ++++++------------------------------
+ core/combo/TARGET_linux-mips.mk     |  13 +---
+ core/combo/TARGET_linux-x86.mk      |  12 +---
+ core/combo/arch/arm/armv7-a-neon.mk |  79 +++------------------
+ core/combo/select.mk                |  44 ++----------
+ 7 files changed, 42 insertions(+), 249 deletions(-)
+ mode change 100755 => 100644 core/combo/TARGET_linux-arm.mk
+ mode change 100755 => 100644 core/combo/TARGET_linux-x86.mk
+
+diff --git a/core/combo/HOST_darwin-x86.mk b/core/combo/HOST_darwin-x86.mk
+index 9d11ce4..25d9b46 100644
+--- a/core/combo/HOST_darwin-x86.mk
++++ b/core/combo/HOST_darwin-x86.mk
+@@ -87,11 +87,13 @@ HOST_CXX := $(HOST_TOOLCHAIN_PREFIX)-g++
+ ifeq ($(mac_sdk_version),10.9)
+ HOST_GLOBAL_CFLAGS += -I$(mac_sdk_root)/usr/include/c++/4.2.1 -arch i386 -Wno-nested-anon-types -Wno-unused-parameter
+ HOST_GLOBAL_LDFLAGS += -Wl,-arch,i386,-lstdc++
+-elif ($(mac_sdk_version),10.8)
++else
++ifeq ($(mac_sdk_version),10.8)
+ # Mac SDK 10.8 no longer has stdarg.h, etc
+ host_toolchain_header := $(HOST_TOOLCHAIN_ROOT)/lib/gcc/i686-apple-darwin$(gcc_darwin_version)/4.2.1/include
+ HOST_GLOBAL_CFLAGS += -isystem $(host_toolchain_header)
+ endif
++endif
+ else
+ HOST_CC := gcc
+ HOST_CXX := g++
+diff --git a/core/combo/HOST_linux-x86.mk b/core/combo/HOST_linux-x86.mk
+index 701cc36..c6a155a 100644
+--- a/core/combo/HOST_linux-x86.mk
++++ b/core/combo/HOST_linux-x86.mk
+@@ -53,8 +53,7 @@ HOST_GLOBAL_LDFLAGS += -static
+ endif # BUILD_HOST_static
+ 
+ HOST_GLOBAL_CFLAGS += -fPIC \
+-  -no-canonical-prefixes \
+-  -include $(call select-android-config-h,linux-x86)
++    -include $(call select-android-config-h,linux-x86)
+ 
+ # Disable new longjmp in glibc 2.11 and later. See bug 2967937.
+ HOST_GLOBAL_CFLAGS += -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0
+diff --git a/core/combo/TARGET_linux-arm.mk b/core/combo/TARGET_linux-arm.mk
+old mode 100755
+new mode 100644
+index 49c8041..3497662
+--- a/core/combo/TARGET_linux-arm.mk
++++ b/core/combo/TARGET_linux-arm.mk
+@@ -34,13 +34,10 @@ ifeq ($(strip $(TARGET_ARCH_VARIANT)),)
+ TARGET_ARCH_VARIANT := armv5te
+ endif
+ 
+-# default target GCC version
+-ifneq ($(strip $(BONE_STOCK)),)
++ifeq ($(strip $(TARGET_GCC_VERSION_EXP)),)
+ TARGET_GCC_VERSION := 4.7
+ else
+-ifeq ($(strip $(TARGET_GCC_VERSION)),)
+-TARGET_GCC_VERSION := 4.8-linaro
+-endif
++TARGET_GCC_VERSION := $(TARGET_GCC_VERSION_EXP)
+ endif
+ 
+ TARGET_ARCH_SPECIFIC_MAKEFILE := $(BUILD_COMBOS)/arch/$(TARGET_ARCH)/$(TARGET_ARCH_VARIANT).mk
+@@ -48,30 +45,6 @@ ifeq ($(strip $(wildcard $(TARGET_ARCH_SPECIFIC_MAKEFILE))),)
+ $(error Unknown ARM architecture version: $(TARGET_ARCH_VARIANT))
+ endif
+ 
+-STRICT_ALIASING_WARNINGS := \
+-                        -Wno-strict-aliasing
+-
+-ifeq ($(strip $(BONE_STOCK)),)
+-TARGET_ARM_O := 3
+-TARGET_THUMB_O := s
+-TARGET_THUMB_STRICT := \
+-    -fstrict-aliasing
+-# aosp gcc 4.7 barfs with ftree-vectorize
+-ifneq ($(filter 4.7 4.7.%, $(shell $(TARGET_CC) --version)),)
+-TARGET_EXTRA_BULLSHIT_1 += \
+-                       -ftree-vectorize
+-endif
+-TARGET_EXTRA_BULLSHIT_2 += \
+-                       -funsafe-loop-optimizations
+-TARGET_THUMB_BULLSHIT += \
+-                       -funsafe-math-optimizations
+-else
+-TARGET_ARM_O := 2
+-TARGET_THUMB_O := s
+-TARGET_THUMB_STRICT := \
+-    -fno-strict-aliasing
+-endif
+-
+ include $(TARGET_ARCH_SPECIFIC_MAKEFILE)
+ 
+ # You can set TARGET_TOOLS_PREFIX to get gcc from somewhere else
+@@ -95,49 +68,21 @@ endif
+ 
+ TARGET_NO_UNDEFINED_LDFLAGS := -Wl,--no-undefined
+ 
+-# ARM specific
+-TARGET_arm_CFLAGS :=    -O$(TARGET_ARM_O) \
++TARGET_arm_CFLAGS :=    -O2 \
+                         -fomit-frame-pointer \
+-                        -fstrict-aliasing $(TARGET_EXTRA_BULLSHIT_1) \
+-                        -funswitch-loops $(TARGET_EXTRA_BULLSHIT_2)
+-
+-TARGET_arm_CFLAGS += \
+-                        $(STRICT_ALIASING_WARNINGS) $(DEBUG_SYMBOL_FLAGS)
++                        -fstrict-aliasing    \
++                        -funswitch-loops
+ 
+-# THUMB2 specific
++# Modules can choose to compile some source as thumb.
+ TARGET_thumb_CFLAGS :=  -mthumb \
+-                        -O$(TARGET_THUMB_O) \
+-                        -fomit-frame-pointer $(TARGET_THUMB_BULLSHIT) \
+-                        $(TARGET_THUMB_STRICT) $(STRICT_ALIASING_WARNINGS) $(DEBUG_SYMBOL_FLAGS)
+-
+-#SHUT THE F$#@ UP!
+-TARGET_arm_CFLAGS +=    -Wno-unused-parameter \
+-                        -Wno-unused-value \
+-                        -Wno-unused-function
+-
+-TARGET_thumb_CFLAGS +=  -Wno-unused-parameter \
+-                        -Wno-unused-value \
+-                        -Wno-unused-function
+-
+-# Global defines for skia neon optimization
+-ifeq ($(ARCH_ARM_HAVE_NEON),true)
+-  TARGET_GLOBAL_CFLAGS += -DSKPAINTOPTIONS_OPT
+-  TARGET_GLOBAL_CPPFLAGS += -DSKPAINTOPTIONS_OPT
+-endif
+-
+-# Turn off strict-aliasing if we're building an AOSP variant without the
+-# patchset...
+-ifeq ($(strip $(BONE_STOCK)),)
+-ifeq ($(DEBUG_NO_STRICT_ALIASING),yes)
+-TARGET_arm_CFLAGS += -fno-strict-aliasing -Wno-error=strict-aliasing
+-TARGET_thumb_CFLAGS += -fno-strict-aliasing -Wno-error=strict-aliasing
+-endif   
+-endif
++                        -Os \
++                        -fomit-frame-pointer \
++                        -fno-strict-aliasing
+ 
+ # Set FORCE_ARM_DEBUGGING to "true" in your buildspec.mk
+ # or in your environment to force a full arm build, even for
+ # files that are normally built as thumb; this can make
+-# gdb debugging easier. Don't forget to do a clean build.
++# gdb debugging easier.  Don't forget to do a clean build.
+ #
+ # NOTE: if you try to build a -O0 build with thumb, several
+ # of the libraries (libpv, libwebcore, libkjs) need to be built
+@@ -155,13 +100,8 @@ else
+    PIE_GLOBAL_CFLAGS := -fPIE
+    PIE_EXECUTABLE_TRANSFORM := -fPIE -pie
+ endif
+-android_config_h := $(call select-android-config-h,linux-arm)
+ 
+-NO_CANONICAL_SYSTEM_HEADERS :=
+-ifeq ($(filter 4.6 4.6.% 4.7 4.7.%, $(shell $(TARGET_CC) --version)),)
+-NO_CANONICAL_SYSTEM_HEADERS := \
+-			-fno-canonical-system-headers
+-endif
++android_config_h := $(call select-android-config-h,linux-arm)
+ 
+ TARGET_GLOBAL_CFLAGS += \
+ 			-msoft-float -fpic $(PIE_GLOBAL_CFLAGS) \
+@@ -171,37 +111,19 @@ TARGET_GLOBAL_CFLAGS += \
+ 			-fstack-protector \
+ 			-Wa,--noexecstack \
+ 			-Werror=format-security \
+-			-D_FORTIFY_SOURCE=0 \
+-			-fstrict-aliasing \
++			-D_FORTIFY_SOURCE=2 \
+ 			-fno-short-enums \
+-			-pipe \
+-			-no-canonical-prefixes $(NO_CANONICAL_SYSTEM_HEADERS)\
+ 			$(arch_variant_cflags) \
+ 			-include $(android_config_h) \
+-			-I $(dir $(android_config_h)) \
+-			$(STRICT_ALIASING_WARNINGS) $(DEBUG_SYMBOL_FLAGS) $(DEBUG_FRAME_POINTER_FLAGS)
+-
+-TARGET_GLOBAL_CPPFLAGS += \
+-			$(arch_variant_cflags)
+-
+-android_config_h := $(call select-android-config-h,linux-arm)
+-TARGET_ANDROID_CONFIG_CFLAGS := -include $(android_config_h) -I $(dir $(android_config_h))
+-TARGET_GLOBAL_CFLAGS += $(TARGET_ANDROID_CONFIG_CFLAGS)
++			-I $(dir $(android_config_h))
+ 
+ # This warning causes dalvik not to build with gcc 4.6+ and -Werror.
+ # We cannot turn it off blindly since the option is not available
+ # in gcc-4.4.x.  We also want to disable sincos optimization globally
+ # by turning off the builtin sin function.
+-ifneq ($(filter 4.6 4.6.% 4.7 4.7.% 4.8 4.8.% 4.9 4.9.%, $(shell $(TARGET_CC) --version)),)
++ifneq ($(filter 4.6 4.6.% 4.7 4.7.%, $(TARGET_GCC_VERSION)),)
+ TARGET_GLOBAL_CFLAGS += -Wno-unused-but-set-variable -fno-builtin-sin \
+ 			-fno-strict-volatile-bitfields
+-ifneq ($(filter 4.8 4.8.% 4.9 4.9.%, $(shell $(TARGET_CC) --version)),)
+-gcc_variant_ldflags := \
+-			-Wl,--enable-new-dtags
+-else
+-gcc_variant_ldflags := \
+-			-Wl,--icf=safe
+-endif
+ endif
+ 
+ # This is to avoid the dreaded warning compiler message:
+@@ -220,25 +142,22 @@ TARGET_GLOBAL_LDFLAGS += \
+ 			-Wl,-z,now \
+ 			-Wl,--warn-shared-textrel \
+ 			-Wl,--fatal-warnings \
+-			$(arch_variant_ldflags) $(gcc_variant_ldflags)
+-
+-ifeq ($(TARGET_CLANG_VERSION),msm-%)
+-	TARGET_GLOBAL_LDFLAGS += \
+-	    -no-canonical-prefixes
+-endif
++			-Wl,--icf=safe \
++			$(arch_variant_ldflags)
+ 
+-# more always true garglemesh:
+ TARGET_GLOBAL_CFLAGS += -mthumb-interwork
++
+ TARGET_GLOBAL_CPPFLAGS += -fvisibility-inlines-hidden
+ 
+ # More flags/options can be added here
+-TARGET_RELEASE_CFLAGS += \
++TARGET_RELEASE_CFLAGS := \
+ 			-DNDEBUG \
+-                        -g \
++			-g \
++			-Wstrict-aliasing=2 \
+ 			-fgcse-after-reload \
+ 			-frerun-cse-after-loop \
+-			-frename-registers \
+-			-pipe $(DEBUG_SYMBOL_FLAGS) $(DEBUG_FRAME_POINTER_FLAGS)
++			-frename-registers
++
+ libc_root := bionic/libc
+ libm_root := bionic/libm
+ libstdc++_root := bionic/libstdc++
+@@ -255,17 +174,6 @@ target_libgcov := $(shell $(TARGET_CC) $(TARGET_GLOBAL_CFLAGS) \
+         -print-file-name=libgcov.a)
+ endif
+ 
+-# Define LTO (Link Time Optimization options)
+-
+-ifeq ($(strip $(TARGET_ENABLE_LTO)),true)
+-# Enable global LTO if TARGET_ENABLE_LTO is set.
+-TARGET_LTO_CFLAGS := -flto \
+-                    -fno-toplevel-reorder \
+-                    -fno-section-anchors \
+-                    -flto-compression-level=5 \
+-                    -fuse-linker-plugin
+-endif
+-
+ # Define FDO (Feedback Directed Optimization) options.
+ 
+ TARGET_FDO_CFLAGS:=
+diff --git a/core/combo/TARGET_linux-mips.mk b/core/combo/TARGET_linux-mips.mk
+index 2e8c5ca..a20465b 100644
+--- a/core/combo/TARGET_linux-mips.mk
++++ b/core/combo/TARGET_linux-mips.mk
+@@ -70,10 +70,8 @@ TARGET_NO_UNDEFINED_LDFLAGS := -Wl,--no-undefined
+ 
+ TARGET_mips_CFLAGS :=	-O2 \
+ 			-fomit-frame-pointer \
+-			-fstrict-aliasing    \
+-			-funswitch-loops \
+-			-fvect-cost-model \
+-			-ftree-vectorize 
++			-fno-strict-aliasing    \
++			-funswitch-loops
+ 
+ # Set FORCE_MIPS_DEBUGGING to "true" in your buildspec.mk
+ # or in your environment to gdb debugging easier.
+@@ -94,8 +92,6 @@ TARGET_GLOBAL_CFLAGS += \
+ 			-Wa,--noexecstack \
+ 			-Werror=format-security \
+ 			-D_FORTIFY_SOURCE=2 \
+-			-no-canonical-prefixes \
+-			-fno-canonical-system-headers \
+ 			$(arch_variant_cflags) \
+ 			-include $(android_config_h) \
+ 			-I $(dir $(android_config_h))
+@@ -129,11 +125,6 @@ TARGET_GLOBAL_LDFLAGS += \
+ 			-Wl,--warn-shared-textrel \
+ 			$(arch_variant_ldflags)
+ 
+-ifeq ($(TARGET_CLANG_VERSION),msm-%)
+-	TARGET_GLOBAL_LDFLAGS += \
+-	    -no-canonical-prefixes
+-endif
+-
+ TARGET_GLOBAL_CPPFLAGS += -fvisibility-inlines-hidden
+ 
+ # More flags/options can be added here
+diff --git a/core/combo/TARGET_linux-x86.mk b/core/combo/TARGET_linux-x86.mk
+old mode 100755
+new mode 100644
+index 81ec288..d5772b1
+--- a/core/combo/TARGET_linux-x86.mk
++++ b/core/combo/TARGET_linux-x86.mk
+@@ -88,7 +88,7 @@ KERNEL_HEADERS := $(KERNEL_HEADERS_COMMON) $(KERNEL_HEADERS_ARCH)
+ android_config_h := $(call select-android-config-h,target_linux-x86)
+ 
+ TARGET_GLOBAL_CFLAGS += \
+-			-O3 \
++			-O2 \
+ 			-Ulinux \
+ 			-Wa,--noexecstack \
+ 			-Werror=format-security \
+@@ -102,13 +102,8 @@ TARGET_GLOBAL_CFLAGS += \
+ 			-fno-short-enums \
+ 			-fstrict-aliasing \
+ 			-funswitch-loops \
+-			-ftree-vectorize \
+-			-fvect-cost-model \
+ 			-funwind-tables \
+ 			-fstack-protector \
+-			-pipe \
+-			-no-canonical-prefixes \
+-			-fno-canonical-system-headers \
+ 			-include $(android_config_h) \
+ 			-I $(dir $(android_config_h))
+ 
+@@ -159,11 +154,6 @@ TARGET_GLOBAL_LDFLAGS += -Wl,-z,relro -Wl,-z,now
+ TARGET_GLOBAL_LDFLAGS += -Wl,--warn-shared-textrel
+ TARGET_GLOBAL_LDFLAGS += -Wl,--gc-sections
+ 
+-ifeq ($(TARGET_CLANG_VERSION),msm-%)
+-	TARGET_GLOBAL_LDFLAGS += \
+-	    -no-canonical-prefixes
+-endif
+-
+ TARGET_C_INCLUDES := \
+ 	$(libc_root)/arch-x86/include \
+ 	$(libc_root)/include \
+diff --git a/core/combo/arch/arm/armv7-a-neon.mk b/core/combo/arch/arm/armv7-a-neon.mk
+index 26c3758..f63f2c6 100644
+--- a/core/combo/arch/arm/armv7-a-neon.mk
++++ b/core/combo/arch/arm/armv7-a-neon.mk
+@@ -6,95 +6,34 @@ ARCH_ARM_HAVE_VFP               := true
+ ARCH_ARM_HAVE_VFP_D32           := true
+ ARCH_ARM_HAVE_NEON              := true
+ 
+-# is arch variant CPU defined?
+-ifneq ($(strip $(TARGET_ARCH_VARIANT_CPU)),)
+-	cpu_for_optimizations := $(strip $(TARGET_ARCH_VARIANT_CPU))
+-else
+ ifeq ($(TARGET_CPU_VARIANT),$(filter $(TARGET_CPU_VARIANT),cortex-a15 krait))
+-	cpu_for_optimizations := cortex-a15
++	arch_variant_cflags := -mcpu=cortex-a15 -mfpu=neon-vfpv4
+ else
+ ifeq ($(strip $(TARGET_CPU_VARIANT)),cortex-a9)
+-	cpu_for_optimizations := cortex-a9
++	arch_variant_cflags := -mcpu=cortex-a9 -mfpu=neon
+ else
+ ifeq ($(strip $(TARGET_CPU_VARIANT)),cortex-a8)
+-	cpu_for_optimizations := cortex-a8
++	arch_variant_cflags := -mcpu=cortex-a8 -mfpu=neon
+ else
+ ifeq ($(strip $(TARGET_CPU_VARIANT)),cortex-a7)
+- 	cpu_for_optimizations := cortex-a7
++	arch_variant_cflags := -mcpu=cortex-a7 -mfpu=neon-vfpv4
+ else
+ ifeq ($(strip $(TARGET_CPU_VARIANT)),cortex-a5)
+- 	cpu_for_optimizations := cortex-a5
++	arch_variant_cflags := -mcpu=cortex-a5 -mfpu=neon-vfpv4
+ else
+ ifeq ($(strip $(TARGET_CPU_VARIANT)),scorpion)
+-	cpu_for_optimizations := cortex-a8
++	arch_variant_cflags := -mcpu=cortex-a8 -mfpu=neon
+ else
+-	cpu_for_optimizations := armv7-a
++	arch_variant_cflags := -march=armv7-a -mfpu=neon
+ endif
+ endif
+ endif
+ endif
+ endif
+ endif
+-endif #end of cpu stuff
+ 
+-ifeq ($(cpu_for_optimizations),$(filter $(cpu_for_optimizations),cortex-a15 krait cortex-a7 cortex-a5))
+-rec_fpu := neon-vfpv4
+-else
+-rec_fpu := neon
+-endif
+- 
+-ifneq ($(cpu_for_optimizations),armv7-a)
+-TARGET_ARCH_VARIANT_CPU := $(cpu_for_optimizations)
+-arch_variant_cflags += \
+-	-mcpu=$(cpu_for_optimizations) \
+-	-mtune=$(cpu_for_optimizations)
+-else
+ arch_variant_cflags += \
+-	-march=armv7-a
+-endif
+-
+-#is an FPU explicitly defined?
+-ifeq ($(strip $(TARGET_ARCH_VARIANT_FPU)),)
+-	#no, so figure out if one is set on the GLOBAL_CFLAGS
+-	TARGET_ARCH_VARIANT_FPU := $(rec_fpu)
+-endif # ifeq ($(strip $(TARGET_ARCH_VARIANT_FPU),)
+-
+-#get rid of existing instances of -mfpu in TARGET_GLOBAL_CP*FLAGS
+-TARGET_GLOBAL_CFLAGS := $(filter-out -mfpu=%,$(TARGET_GLOBAL_CFLAGS))
+-TARGET_GLOBAL_CPPFLAGS := $(filter-out -mfpu=%,$(TARGET_GLOBAL_CPPFLAGS))
+-arch_variant_cflags += -mfpu=$(TARGET_ARCH_VARIANT_FPU)
++    -mfloat-abi=softfp
+ 
+-#is a float-abi explicitly defined?
+-ifeq ($(strip $(TARGET_ARCH_VARIANT_FLOAT_ABI)),)
+-	#no, so figure out if one is set on the GLOBAL_CFLAGS
+-	currentfloatabi := $(strip $(filter -mfloat-abi=%,$(TARGET_GLOBAL_CFLAGS)))
+-
+-	#if one is, then use that as ARCH_VARIANT_FLOAT_ABI
+-	ifneq ($(currentfloatabi),)
+-		TARGET_ARCH_VARIANT_FLOAT_ABI := $(strip $(subst -mfloat-abi=,,$(currentfloatabi)))
+-	else
+-		TARGET_ARCH_VARIANT_FLOAT_ABI := softfp
+-	endif # ifneq ($(currentfloatabi),)
+-endif # ifeq ($(strip $(TARGET_ARCH_VARIANT_FLOAT_ABI)),)
+-
+-#get rid of existing instances of -mfloat-abi in TARGET_GLOBAL_CP*FLAGS
+-TARGET_GLOBAL_CFLAGS := $(filter-out -mfloat-abi=%,$(TARGET_GLOBAL_CFLAGS))
+-TARGET_GLOBAL_CPPFLAGS := $(filter-out -mfloat-abi=%,$(TARGET_GLOBAL_CPPFLAGS))
+-arch_variant_cflags += -mfloat-abi=$(TARGET_ARCH_VARIANT_FLOAT_ABI)
+-
+-arch_variant_ldflags += \
++arch_variant_ldflags := \
+ 	-Wl,--fix-cortex-a8
+-
+-######################################
+-## SNAPDRAGON CLANG/LLVM 3.4
+-######################################
+-ifneq ($(TARGET_CLANG_VERSION),)
+-ifeq ($(filter-out msm-%,$(TARGET_CLANG_VERSION)),)
+-# krait specific clang optimizations
+-ifeq ($(TARGET_CPU_VARIANT),krait)
+-CLANG_MSM_EXTRA_CFLAGS += \
+-  -mtune=krait2 \
+-  -mcpu=krait2
+-endif
+-endif
+-endif
+diff --git a/core/combo/select.mk b/core/combo/select.mk
+index 06f511f..d5f7379 100644
+--- a/core/combo/select.mk
++++ b/core/combo/select.mk
+@@ -23,21 +23,8 @@
+ # Build a target string like "linux-arm" or "darwin-x86".
+ combo_os_arch := $($(combo_target)OS)-$($(combo_target)ARCH)
+ 
+-
+-ifeq ($(TARGET_BUILD_VARIANT),eng)
+-TARGET_NEEDS_EXTRA_DEBUGGING := true
+-endif
+-
+-# Include TARGET_NEEDS_EXTRA_DEBUGGING in your BoardConfig.mk to include GDB
+-# and assertion macro debugging, and to summon the tooth fairy (not your mom... the real one)
+-ifneq ($(TARGET_NEEDS_EXTRA_DEBUGGING),true)
+-DEBUG_SYMBOL_FLAGS := -g0 -DNDEBUG
+-DEBUG_FRAME_POINTER_FLAGS := -fomit-frame-pointer
+-else
+-DEBUG_SYMBOL_FLAGS := -g
+-endif
+-
+ # Set reasonable defaults for the various variables
++
+ $(combo_target)CC := $(CC)
+ $(combo_target)CXX := $(CXX)
+ $(combo_target)AR := $(AR)
+@@ -60,31 +47,8 @@ $(combo_target)HAVE_STRLCAT := 0
+ $(combo_target)HAVE_KERNEL_MODULES := 0
+ 
+ $(combo_target)GLOBAL_CFLAGS := -fno-exceptions -Wno-multichar
+-ifeq ($(strip $(BONE_STOCK)),)
+-ifeq ($(DONT_WARN_STRICT_ALIASING),)
+-$(combo_target)RELEASE_CFLAGS := -O3 $(DEBUG_SYMBOL_FLAGS)
+-ifneq ($(strip $(combo_target)),HOST_)
+-$(combo_target)RELEASE_CFLAGS += -Wstrict-aliasing=2 -Werror=strict-aliasing
+-else
+-$(combo_target)RELEASE_CFLAGS += -Wno-error=strict-aliasing -Wno-strict-aliasing
+-endif
+-else
+-$(combo_target)RELEASE_CFLAGS := -O3 $(DEBUG_SYMBOL_FLAGS)
+-ifneq ($(strip $(combo_target)),HOST_)
+-$(combo_target)RELEASE_CFLAGS += -Wno-strict-aliasing
+-endif
+-endif
+-# Turn off strict-aliasing if we're building an AOSP variant without the
+-# patchset...
+-ifeq ($(DEBUG_NO_STRICT_ALIASING),yes)
+-$(combo_target)RELEASE_CFLAGS += -fno-strict-aliasing -Wno-error=strict-aliasing
+-endif
+-$(combo_target)GLOBAL_LDFLAGS := -Wl,-O2 -Wl,--sort-common -s
+-else
+-$(warning USING BONE STOCK CFLAGS)
+ $(combo_target)RELEASE_CFLAGS := -O2 -g -fno-strict-aliasing
+ $(combo_target)GLOBAL_LDFLAGS :=
+-endif
+ $(combo_target)GLOBAL_ARFLAGS := crsP
+ 
+ $(combo_target)EXECUTABLE_SUFFIX :=
+@@ -111,9 +75,9 @@ ifneq ($(USE_CCACHE),)
+   # We don't really use system headers much so the rootdir is
+   # fine; ensures these paths are relative for all Android trees
+   # on a workstation.
+-ifeq ($(CCACHE_BASEDIR),)
+-  export CCACHE_BASEDIR := /
+-endif
++  ifeq ($(CCACHE_BASEDIR),)
++    export CCACHE_BASEDIR := $(ANDROID_BUILD_TOP)
++  endif
+ 
+   CCACHE_HOST_TAG := $(HOST_PREBUILT_TAG)
+   # If we are cross-compiling Windows binaries on Linux
+-- 
+1.9.1
+
