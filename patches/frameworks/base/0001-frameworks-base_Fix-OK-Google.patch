@@ -1,9 +1,9 @@
-From 2d9fe66327ef79b9c9e0570f8cb511311a83b950 Mon Sep 17 00:00:00 2001
+From c30c56998987927698963f8822b0ec51c193d7c1 Mon Sep 17 00:00:00 2001
 From: Shilin Victor <chrono.monochrome@gmail.com>
-Date: Sat, 16 May 2015 15:50:07 +0300
-Subject: [PATCH 1/4] 0001-frameworks-base_Fix-OK-Google.patch.patch
+Date: Fri, 24 Jul 2015 17:51:47 +0300
+Subject: [PATCH 1/8] frameworks-base_Fix-OK-Google
 
-Change-Id: I08c1434b634d0352d773e87a793a089ec951753b
+Change-Id: I2fa5afe043915e35324b60383507bdd285a546d6
 ---
  core/jni/android_media_AudioRecord.cpp | 5 +++++
  1 file changed, 5 insertions(+)

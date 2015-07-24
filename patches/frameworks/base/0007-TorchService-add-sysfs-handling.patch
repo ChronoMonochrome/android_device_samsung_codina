@@ -1,18 +1,13 @@
-From 0752e76c20417f6f6a615ede777514fd907846bc Mon Sep 17 00:00:00 2001
-From: MarcKe <herderkewitz@googlemail.com>
-Date: Tue, 17 Feb 2015 21:36:51 +0100
-Subject: [PATCH] TorchService: add sysfs handling
+From 3828a597d5f2d8571992f4a4bba6e75aa7572f01 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Fri, 24 Jul 2015 17:55:22 +0300
+Subject: [PATCH 7/8] TorchService-add-sysfs-handling
+
+Change-Id: I9cefc5efb1ef8d5843cf42fc0e05ba4da4d45e58
 
 Conflicts:
 	core/res/res/values/config.xml
 	core/res/res/values/symbols.xml
-
-Conflicts:
-	core/res/res/values/config.xml
-	core/res/res/values/symbols.xml
-	services/core/java/com/android/server/TorchService.java
-
-Change-Id: I02dde50669298f92232096abff705c86325f5526
 ---
  core/res/res/values/config.xml                     |  8 ++
  core/res/res/values/symbols.xml                    |  4 +
@@ -20,12 +15,12 @@ Change-Id: I02dde50669298f92232096abff705c86325f5526
  3 files changed, 82 insertions(+), 24 deletions(-)
 
 diff --git a/core/res/res/values/config.xml b/core/res/res/values/config.xml
-index f223b85..9689bfe 100755
+index 124ed2d..f0f9f3f 100755
 --- a/core/res/res/values/config.xml
 +++ b/core/res/res/values/config.xml
-@@ -2257,4 +2257,12 @@
-         config to 7. -->
-     <integer name="config_deviceHardwareKeys">0</integer>
+@@ -2287,4 +2287,12 @@
+     <integer name="config_nightColorTemperature">4500</integer>
+     <integer name="config_outdoorAmbientLux">9000</integer>
  
 +    <!-- If there is no sysfs-based control mechanism, enable this -->
 +    <bool name="useCameraInterface">true</bool>
@@ -37,20 +32,20 @@ index f223b85..9689bfe 100755
 +    <integer name="valueOn">1</integer>
  </resources>
 diff --git a/core/res/res/values/symbols.xml b/core/res/res/values/symbols.xml
-index 4ecf97e..76ce63c 100755
+index 34b835d..1c30195 100644
 --- a/core/res/res/values/symbols.xml
 +++ b/core/res/res/values/symbols.xml
-@@ -2283,4 +2283,8 @@
-   <java-symbol type="string" name="adb_both_active_notification_title" />
-   <java-symbol type="string" name="adb_active_generic_notification_message" />
+@@ -2294,4 +2294,8 @@
  
+   <!-- Array of default activities with custom power management -->
+   <java-symbol type="array" name="config_auto_perf_activities" />
 +  <java-symbol type="bool" name="useCameraInterface" />
 +  <java-symbol type="string" name="flashDevice" />
 +  <java-symbol type="integer" name="valueOff" />
 +  <java-symbol type="integer" name="valueOn" />
  </resources>
 diff --git a/services/core/java/com/android/server/TorchService.java b/services/core/java/com/android/server/TorchService.java
-index b7d1bf9..eab3aec 100644
+index 90fd8a9..6817d01 100644
 --- a/services/core/java/com/android/server/TorchService.java
 +++ b/services/core/java/com/android/server/TorchService.java
 @@ -48,6 +48,11 @@ import android.view.Surface;

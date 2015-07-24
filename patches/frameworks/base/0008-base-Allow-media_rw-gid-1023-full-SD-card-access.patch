@@ -1,0 +1,25 @@
+From 5fe212642d7de95892fc933a7124413122d418d8 Mon Sep 17 00:00:00 2001
+From: Stefan Berger <s.berger81@gmail.com>
+Date: Sat, 28 Feb 2015 22:07:50 +0100
+Subject: [PATCH 8/8] base: Allow media_rw (gid 1023) full SD card access
+
+Change-Id: If6c974f692a5c4b82d96e490bcfe353e0a3cbb61
+---
+ data/etc/platform.xml | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/data/etc/platform.xml b/data/etc/platform.xml
+index 0ca6b83..d183445 100644
+--- a/data/etc/platform.xml
++++ b/data/etc/platform.xml
+@@ -73,6 +73,7 @@
+         <group gid="sdcard_r" />
+         <group gid="sdcard_rw" />
+         <group gid="sdcard_all" />
++        <group gid="media_rw" />
+     </permission>
+ 
+     <permission name="android.permission.WRITE_MEDIA_STORAGE" >
+-- 
+1.9.1
+

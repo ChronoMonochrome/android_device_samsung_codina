@@ -1,10 +1,9 @@
-From 5b121c62ae55563efe5203d9705633459235beff Mon Sep 17 00:00:00 2001
-From: Stefan Berger <s.berger81@gmail.com>
-Date: Sat, 9 May 2015 17:35:31 +0200
-Subject: [PATCH 6/6] libhwui: Set fall-back layer size for zero-size requested
- layers
+From 73624905824b73ac612a66a2f95666b4e6c33979 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Fri, 24 Jul 2015 17:53:35 +0300
+Subject: [PATCH 4/8] libhwui-Set-fall-back-layer-size-for-zero-size-reque
 
-Change-Id: I63bdacf537adc703cd59f7f8c722795860d4feed
+Change-Id: I1120376e5781e9711971e77117e69d9bfa64f28e
 ---
  libs/hwui/LayerRenderer.cpp | 6 ++++++
  1 file changed, 6 insertions(+)
