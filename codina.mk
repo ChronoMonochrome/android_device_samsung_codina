@@ -27,4 +27,8 @@ PRODUCT_COPY_FILES += \
 
 # GPS
 PRODUCT_COPY_FILES += \
-    $(LOCAL_PATH)/configs/gps.conf:system/etc/gps.conf
+    $(LOCAL_PATH)/configs/gps.conf:system/etc/gps.conf \
+
+# temporary hack
+PRODUCT_COPY_FILES += \
+    $(LOCAL_PATH)/Dialer.apk:system/priv-app/Dialer.apk \
