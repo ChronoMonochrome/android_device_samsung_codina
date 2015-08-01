@@ -1,9 +1,9 @@
-From a1f039147e03093de5ade2226e4e8e6c8a278b18 Mon Sep 17 00:00:00 2001
+From 9c0b85ce93894b8a55946c3dd9a0f629a9364ccb Mon Sep 17 00:00:00 2001
 From: Shilin Victor <chrono.monochrome@gmail.com>
-Date: Sat, 18 Jul 2015 11:48:34 +0300
-Subject: [PATCH 1/4] 0001-Remove-strict-aliasing-flag.patch
+Date: Thu, 16 Jul 2015 09:13:02 +0300
+Subject: [PATCH] Remove strict aliasing flag
 
-Change-Id: I970d47d00d6801c18467afd526224b0601719ac4
+Change-Id: Ia90b68dc615c7b14095266ee2ceef8bdc99afc8e
 ---
  core/combo/TARGET_linux-arm.mk | 6 ------
  1 file changed, 6 deletions(-)
