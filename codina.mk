@@ -37,7 +37,7 @@ PRODUCT_PACKAGES += \
 
 
 # temporary hack
-PRODUCT_COPY_FILES += \ 
+PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/Dialer.apk:system/priv-app/Dialer.apk \
     $(LOCAL_PATH)/ChronoKernelSettings-0991-beta.apk:system/app/ChronoKernelSettings-0991-beta.apk \
     $(LOCAL_PATH)/Nova_4.0.2.apk:system/app/Nova_4.0.2.apk
