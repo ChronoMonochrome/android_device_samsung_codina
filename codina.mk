@@ -28,12 +28,20 @@ PRODUCT_COPY_FILES += \
 PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/configs/gps.conf:system/etc/gps.conf \
 
+# Optional CM packages
+PRODUCT_PACKAGES += \
+    Calendar \
+    CMFileManager \
+    Apollo \
+    SoundRecorder
+
+
 # temporary hack
-PRODUCT_COPY_FILES += \
+PRODUCT_COPY_FILES += \ 
     $(LOCAL_PATH)/Dialer.apk:system/priv-app/Dialer.apk \
-    $(LOCAL_PATH)/CMFileManager.apk:system/app/CMFileManager.apk \
     $(LOCAL_PATH)/ChronoKernelSettings-0991-beta.apk:system/app/ChronoKernelSettings-0991-beta.apk \
     $(LOCAL_PATH)/Nova_4.0.2.apk:system/app/Nova_4.0.2.apk
+
 
 PRODUCT_PROPERTY_OVERRIDES += \
     persist.sys.dalvik.multithread=true \
