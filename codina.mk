@@ -3,7 +3,6 @@ $(call inherit-product, device/samsung/u8500-common/common.mk)
 
 # For better compatibility with ROMs (like Slim, PAC)
 $(call inherit-product, vendor/samsung/u8500-common/codina/codina-vendor-blobs.mk)
-
 LOCAL_PATH := device/samsung/codina
 
 # Overlay
@@ -35,3 +34,12 @@ PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/CMFileManager.apk:system/app/CMFileManager.apk \
     $(LOCAL_PATH)/ChronoKernelSettings-0991-beta.apk:system/app/ChronoKernelSettings-0991-beta.apk \
     $(LOCAL_PATH)/Nova_4.0.2.apk:system/app/Nova_4.0.2.apk
+
+PRODUCT_PROPERTY_OVERRIDES += \
+    persist.sys.dalvik.multithread=true \
+    ro.kernel.checkjni=0 \
+    ro.kernel.android.checkjni=0 \
+    debug.overlayui.enable=1 \
+    dev.pm.dyn_samplingrate=1 \
+    ro.config.hw_quickpoweron=true 
+
