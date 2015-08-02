@@ -19,3 +19,7 @@ TARGET_BOOTANIMATION_USE_RGB565 := true
 
 # Wifi
 BOARD_NO_WIFI_HAL := true
+
+
+# Dex pre-optimization
+WITH_DEXPREOPT := true
