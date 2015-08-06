@@ -1,6 +1,6 @@
 LOCAL_PATH=../../../..
 
-PATCHES="art build external/fuse frameworks/base frameworks/native frameworks/webview \
+PATCHES="art build external/fuse frameworks/base frameworks/native external/chromium_org \
                     libcore packages/services/Telephony/  system/vold system/core"
 
 export CL_RED="\033[31m"
