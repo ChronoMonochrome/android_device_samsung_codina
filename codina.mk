@@ -1,6 +1,10 @@
 # Include common makefile
 $(call inherit-product, device/samsung/u8500-common/common.mk)
 
+# Chromium prebuilt
+PRODUCT_PREBUILT_WEBVIEWCHROMIUM := yes
+include device/samsung/codina/configs/chromium_prebuilt.mk
+
 # For better compatibility with ROMs (like Slim, PAC)
 $(call inherit-product, vendor/samsung/u8500-common/codina/codina-vendor-blobs.mk)
 LOCAL_PATH := device/samsung/codina
