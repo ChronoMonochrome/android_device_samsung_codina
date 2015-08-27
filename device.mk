@@ -25,8 +25,3 @@ PRODUCT_COPY_FILES += \
     device/samsung/codina/ramdisk/init.recovery.samsungcodina.rc:root/init.recovery.samsungcodina.rc \
     device/samsung/codina/ramdisk/ueventd.rc:recovery/root/ueventd.rc \
     device/samsung/codina/ramdisk/ueventd.samsungcodina.rc:recovery/root/ueventd.samsungcodina.rc \
-    device/samsung/codina/ramdisk/lpm.rc:recovery/root/lpm.rc
-
-# recovery
-PRODUCT_COPY_FILES += \
-    device/samsung/codina/recovery/recovery.fstab:recovery/root/etc/recovery.fstab
