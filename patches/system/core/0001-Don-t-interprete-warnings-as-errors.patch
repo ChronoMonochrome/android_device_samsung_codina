@@ -1,0 +1,26 @@
+From 5e829bcebebfcaaafd18fe803920c93430af0dd6 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Thu, 27 Aug 2015 15:31:00 +0400
+Subject: [PATCH] Don't interprete warnings as errors
+
+Change-Id: I5a6908c8f8b7eb3a99d265d77cc57289fbfb17ad
+---
+ libcorkscrew/Android.mk | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/libcorkscrew/Android.mk b/libcorkscrew/Android.mk
+index d62c2d5..c82acc1 100644
+--- a/libcorkscrew/Android.mk
++++ b/libcorkscrew/Android.mk
+@@ -51,7 +51,7 @@ endif
+ 
+ LOCAL_SHARED_LIBRARIES += libdl libcutils liblog libgccdemangle
+ 
+-LOCAL_CFLAGS += -std=gnu99 -Werror
++LOCAL_CFLAGS += -std=gnu99
+ LOCAL_MODULE := libcorkscrew
+ LOCAL_MODULE_TAGS := optional
+ 
+-- 
+1.9.1
+

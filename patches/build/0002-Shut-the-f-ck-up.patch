@@ -1,0 +1,37 @@
+From c32384ac4761c6d34047b01241551077db3c00c6 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Thu, 27 Aug 2015 15:51:45 +0400
+Subject: [PATCH 2/2] Shut the f*ck up
+
+Change-Id: I05365ad4cbbeadb2bd830407d14c5febe8583ee4
+---
+ core/tasks/kernel.mk | 13 +------------
+ 1 file changed, 1 insertion(+), 12 deletions(-)
+
+diff --git a/core/tasks/kernel.mk b/core/tasks/kernel.mk
+index d27b6ba..53dc44a 100644
+--- a/core/tasks/kernel.mk
++++ b/core/tasks/kernel.mk
+@@ -61,18 +61,7 @@ ifeq "$(wildcard $(KERNEL_SRC) )" ""
+                 $(eval HAS_PREBUILT_KERNEL := true)))
+     endif
+ 
+-    ifneq ($(HAS_PREBUILT_KERNEL),)
+-        $(warning ***************************************************************)
+-        $(warning * Using prebuilt kernel binary instead of source              *)
+-        $(warning * THIS IS DEPRECATED, AND WILL BE DISCONTINUED                *)
+-        $(warning * Please configure your device to download the kernel         *)
+-        $(warning * source repository to $(KERNEL_SRC))
+-        $(warning * See $(URL_INTEGRATED_KERNEL_BUILD))
+-        $(warning * for more information                                        *)
+-        $(warning ***************************************************************)
+-        FULL_KERNEL_BUILD := false
+-        KERNEL_BIN := $(TARGET_PREBUILT_KERNEL)
+-    else
++    ifeq ($(HAS_PREBUILT_KERNEL),)
+         $(warning ***************************************************************)
+         $(warning *                                                             *)
+         $(warning * No kernel source found, and no fallback prebuilt defined.   *)
+-- 
+1.9.1
+

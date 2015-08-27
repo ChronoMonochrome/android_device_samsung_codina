@@ -1,0 +1,26 @@
+From 5e967a2b650ee12bb6500b633bc39421d7d1e4bf Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Wed, 19 Aug 2015 14:21:08 +0400
+Subject: [PATCH 1/2] 0002-Create-0-compression-ratio-jar-files.patch
+
+Change-Id: I8ad0f6b41fca7025e5f88b573201fa77b844392c
+---
+ core/definitions.mk | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/core/definitions.mk b/core/definitions.mk
+index 5c7da48..1beee06 100644
+--- a/core/definitions.mk
++++ b/core/definitions.mk
+@@ -1676,7 +1676,7 @@ endef
+ #TODO: update the manifest to point to the dex file
+ define add-dex-to-package
+ $(if $(filter classes.dex,$(notdir $(PRIVATE_DEX_FILE))),\
+-$(hide) zip -qj $@ $(PRIVATE_DEX_FILE),\
++$(hide) zip -0qj $@ $(PRIVATE_DEX_FILE),\
+ $(hide) _adtp_classes_dex=$(dir $(PRIVATE_DEX_FILE))classes.dex; \
+ cp $(PRIVATE_DEX_FILE) $$_adtp_classes_dex && \
+ zip -qj $@ $$_adtp_classes_dex && rm -f $$_adtp_classes_dex)
+-- 
+1.9.1
+
