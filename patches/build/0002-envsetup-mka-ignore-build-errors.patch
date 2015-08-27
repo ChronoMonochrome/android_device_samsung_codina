@@ -1,0 +1,48 @@
+From de72f1bfd9d7ab9dc65d8a2e1d64566baa2c9d7a Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Thu, 20 Aug 2015 13:43:55 +0400
+Subject: [PATCH 2/3] envsetup: mka: ignore build errors
+
+Change-Id: Ibbb42d16db594bb7c6d183d321d4f982925d653c
+---
+ envsetup.sh | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/envsetup.sh b/envsetup.sh
+index 3629b2e..7e68b10 100755
+--- a/envsetup.sh
++++ b/envsetup.sh
+@@ -1453,7 +1453,7 @@ retval=0
+             if [ $(echo $VANIR_PARALLEL_JOBS | wc -w) -gt 0 ]; then
+                 local threads=`sysctl hw.ncpu|cut -d" " -f2`
+                 local load=`expr $threads \* 2`
+-                VANIR_PARALLEL_JOBS="-j$load"
++                VANIR_PARALLEL_JOBS="-j1"
+             fi
+             time make $VANIR_PARALLEL_JOBS "$@"
+             retval=$?
+@@ -1461,17 +1461,17 @@ retval=0
+         *)
+             if [ ! $(echo $VANIR_PARALLEL_JOBS | wc -w) -gt 0 ]; then
+                 local cores=`nproc --all`
+-                VANIR_PARALLEL_JOBS="-j$cores"
++                VANIR_PARALLEL_JOBS="-j1"
+             fi
+-            time schedtool -B -n 1 -e ionice -n 1 make $VANIR_PARALLEL_JOBS "$@"
++            time schedtool -B -n 1 -e ionice -n 1 make -k $VANIR_PARALLEL_JOBS "$@"
+             retval=$?
+             ;;
+     esac
+ if [ ! $VANIR_DISABLE_BUILD_COMPLETION_NOTIFICATIONS ]; then
+     if [ $retval -eq 0 ]; then
+         notify-send "VANIR" "$TARGET_PRODUCT build completed." -i $T/build/buildwin.png -t 10000
+-    else
+-        notify-send "VANIR" "$TARGET_PRODUCT build FAILED." -i $T/build/buildfailed.png -t 10000
++#    else
++#        notify-send "VANIR" "$TARGET_PRODUCT build FAILED." -i $T/build/buildfailed.png -t 10000
+     fi
+ fi
+ cd "$CWD"
+-- 
+1.9.1
+

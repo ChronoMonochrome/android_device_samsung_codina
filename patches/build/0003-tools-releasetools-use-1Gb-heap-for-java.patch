@@ -1,0 +1,26 @@
+From 008303d4ed5b65d480dc26bb22e6e9f2a410653a Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Thu, 20 Aug 2015 13:45:16 +0400
+Subject: [PATCH 3/3] tools/releasetools: use 1Gb heap for java
+
+Change-Id: I3b9ab3536247e8ad472866dd47159ee84ab25927
+---
+ tools/releasetools/common.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/tools/releasetools/common.py b/tools/releasetools/common.py
+index e45bb96..2df5391 100644
+--- a/tools/releasetools/common.py
++++ b/tools/releasetools/common.py
+@@ -467,7 +467,7 @@ def SignFile(input_name, output_name, key, password, align=None,
+   else:
+     sign_name = output_name
+ 
+-  cmd = [OPTIONS.java_path, "-Xmx2048m", "-jar",
++  cmd = [OPTIONS.java_path, "-Xmx1024m", "-jar",
+          os.path.join(OPTIONS.search_path, OPTIONS.signapk_path)]
+   cmd.extend(OPTIONS.extra_signapk_args)
+   if whole_file:
+-- 
+1.9.1
+
