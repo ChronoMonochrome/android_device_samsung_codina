@@ -1,0 +1,26 @@
+From cc35f75f913ae5c3f21b849e7b19092c7baded95 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Thu, 27 Aug 2015 16:03:14 +0400
+Subject: [PATCH] Add -Wno-error=unused-parameter
+
+Change-Id: I84edc46dc57947704ffd33cbdf52413d6626ac30
+---
+ Android.mk | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Android.mk b/Android.mk
+index 24fa369..f9e912b 100644
+--- a/Android.mk
++++ b/Android.mk
+@@ -16,7 +16,7 @@ ifneq ($(TARGET_USE_CUSTOM_LUN_FILE_PATH),)
+ common_cflags += -DCUSTOM_LUN_FILE=\"$(TARGET_USE_CUSTOM_LUN_FILE_PATH)\"
+ endif
+ 
+-common_cflags += -Werror
++common_cflags += -Werror -Wno-error=unused-parameter
+ 
+ common_src_files := \
+ 	VolumeManager.cpp \
+-- 
+1.9.1
+
