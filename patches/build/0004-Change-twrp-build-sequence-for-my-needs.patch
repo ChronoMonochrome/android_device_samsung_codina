@@ -1,0 +1,92 @@
+From d888641ce652417f31a5e390d5340b2504a06122 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Thu, 27 Aug 2015 17:36:47 +0400
+Subject: [PATCH 4/4] Change twrp build sequence for my needs
+
+Change-Id: Ic3b29164df9279f78f8cd0a408dca6249248163e
+---
+ core/Makefile | 39 +++++++++++----------------------------
+ 1 file changed, 11 insertions(+), 28 deletions(-)
+
+diff --git a/core/Makefile b/core/Makefile
+index d27733b..02ec274 100644
+--- a/core/Makefile
++++ b/core/Makefile
+@@ -667,7 +667,7 @@ endef
+ # If neither TARGET_NO_KERNEL nor TARGET_NO_RECOVERY are true
+ ifeq (,$(filter true, $(TARGET_NO_KERNEL) $(TARGET_NO_RECOVERY)))
+ 
+-INSTALLED_RECOVERYIMAGE_TARGET := $(PRODUCT_OUT)/recovery.img
++INSTALLED_RECOVERYIMAGE_TARGET := $(PRODUCT_OUT)/twrp.cpio.gz
+ 
+ ifneq ($(TARGET_RECOVERY_INITRC),)
+   recovery_initrc := $(TARGET_RECOVERY_INITRC) # Use target specific init.rc
+@@ -679,8 +679,7 @@ ifneq ($(TARGET_PREBUILT_RECOVERY_KERNEL),)
+ else
+   recovery_kernel := $(INSTALLED_KERNEL_TARGET) # same as a non-recovery system
+ endif
+-recovery_uncompressed_ramdisk := $(PRODUCT_OUT)/ramdisk-recovery.cpio
+-recovery_ramdisk := $(PRODUCT_OUT)/ramdisk-recovery.img
++recovery_uncompressed_ramdisk := $(PRODUCT_OUT)/twrp.cpio
+ recovery_build_prop := $(INSTALLED_BUILD_PROP_TARGET)
+ recovery_binary := $(call intermediates-dir-for,EXECUTABLES,recovery)/recovery
+ recovery_resources_common := $(call include-path-for, recovery)/res
+@@ -768,7 +767,7 @@ $(TARGET_RECOVERY_ROOT_TIMESTAMP): $(INTERNAL_RECOVERY_FILES) \
+ 	$(hide) mkdir -p $(TARGET_RECOVERY_OUT)
+ 	$(hide) mkdir -p $(TARGET_RECOVERY_ROOT_OUT)/etc $(TARGET_RECOVERY_ROOT_OUT)/tmp
+ 	@echo -e ${PRT_IMG}"Copying baseline ramdisk..."${CL_RST}
+-	$(hide) cp -R $(TARGET_ROOT_OUT) $(TARGET_RECOVERY_OUT)
++	$(hide) -cp -R $(TARGET_ROOT_OUT) $(TARGET_RECOVERY_OUT)
+ 	@echo -e ${PRT_IMG}"Modifying ramdisk contents..."${CL_RST}
+ 	$(hide) rm -f $(TARGET_RECOVERY_ROOT_OUT)/init*.rc
+ 	$(hide) cp -f $(recovery_initrc) $(TARGET_RECOVERY_ROOT_OUT)/
+@@ -780,13 +779,13 @@ $(TARGET_RECOVERY_ROOT_TIMESTAMP): $(INTERNAL_RECOVERY_FILES) \
+ 	$(hide) cp -f $(recovery_font) $(TARGET_RECOVERY_ROOT_OUT)/res/images/font.png
+ 	$(hide) $(foreach item,$(recovery_resources_private), \
+ 	  cp -rf $(item) $(TARGET_RECOVERY_ROOT_OUT)/)
+-	$(hide) $(foreach item,$(recovery_fstab), \
+-	  cp -f $(item) $(TARGET_RECOVERY_ROOT_OUT)/etc/recovery.fstab)
++	$(hide) rm -f $(TARGET_RECOVERY_ROOT_OUT)/etc/*.fstab 
++	$(hide) -ln -s /ramdisk/twrp.fstab  $(TARGET_RECOVERY_ROOT_OUT)/etc/recovery.fstab
++	$(hide) -ln -s /ramdisk/twrp.fstab  $(TARGET_RECOVERY_ROOT_OUT)/etc/twrp.fstab
++	$(hide) -ln -s /ramdisk/fstab $(TARGET_RECOVERY_ROOT_OUT)/fstab.samsungcodina
+ 	$(hide) cp $(RECOVERY_INSTALL_OTA_KEYS) $(TARGET_RECOVERY_ROOT_OUT)/res/keys
+-	$(hide) cat $(INSTALLED_DEFAULT_PROP_TARGET) $(recovery_build_prop) \
+-	        > $(TARGET_RECOVERY_ROOT_OUT)/default.prop
+-	$(SED_INPLACE) 's/ro.build.date.utc=.*/ro.build.date.utc=0/g' $(TARGET_RECOVERY_ROOT_OUT)/default.prop
+-	$(SED_INPLACE) 's/ro.adb.secure=1/ro.adb.secure=0/g' $(TARGET_RECOVERY_ROOT_OUT)/default.prop
++	$(hide) rm -f $(TARGET_RECOVERY_ROOT_OUT)/default.prop
++	$(hide) -ln -s /ramdisk/recovery_default.prop $(TARGET_RECOVERY_ROOT_OUT)/default.prop
+ 	@echo -e ${PRT_IMG}"----- Made recovery filesystem -------- $(TARGET_RECOVERY_ROOT_OUT)"${CL_RST}
+ 	@touch $(TARGET_RECOVERY_ROOT_TIMESTAMP)
+ 
+@@ -795,24 +794,8 @@ $(recovery_uncompressed_ramdisk): $(MINIGZIP) \
+ 	@echo -e ${PRT_IMG}"----- Making uncompressed recovery ramdisk ------"${CL_RST}
+ 	$(MKBOOTFS) $(TARGET_RECOVERY_ROOT_OUT) > $@
+ 
+-$(recovery_ramdisk): $(MKBOOTFS) \
+-	$(recovery_uncompressed_ramdisk)
+-	@echo -e ${PRT_IMG}"----- Making recovery ramdisk ------"${CL_RST}
+-	$(MINIGZIP) < $(recovery_uncompressed_ramdisk) > $@
+-
+-ifndef BOARD_CUSTOM_BOOTIMG_MK
+-$(INSTALLED_RECOVERYIMAGE_TARGET): $(MKBOOTIMG) \
+-		$(recovery_ramdisk) \
+-		$(recovery_kernel)
+-	@echo -e ${PRT_IMG}"----- Making recovery image ------"${CL_RST}
+-	$(hide) $(MKBOOTIMG) $(INTERNAL_RECOVERYIMAGE_ARGS) $(BOARD_MKBOOTIMG_ARGS) --output $@
+-	$(hide) $(call assert-max-image-size,$@,$(BOARD_RECOVERYIMAGE_PARTITION_SIZE),raw)
+-	@echo -e ${PRT_IMG}"----- Made recovery image: $@ --------"${CL_RST}
+-endif
+-
+-$(RECOVERY_RESOURCE_ZIP): $(INSTALLED_RECOVERYIMAGE_TARGET)
+-	$(hide) mkdir -p $(dir $@)
+-	$(hide) find $(TARGET_RECOVERY_ROOT_OUT)/res -type f | sort | zip -0qrj $@ -@
++$(INSTALLED_RECOVERYIMAGE_TARGET): $(recovery_uncompressed_ramdisk)
++	$(MINIGZIP) -9 < $< > $@
+ 
+ else
+ INSTALLED_RECOVERYIMAGE_TARGET :=
+-- 
+1.9.1
+

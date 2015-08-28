@@ -1,9 +1,9 @@
-From 6f858ef0edc3dfe122083cb8d0fd565724213b7c Mon Sep 17 00:00:00 2001
+From 516dbd4e952582ea4dd1d32ee41359fccb8d84b5 Mon Sep 17 00:00:00 2001
 From: Shilin Victor <chrono.monochrome@gmail.com>
-Date: Thu, 20 Aug 2015 13:45:16 +0400
-Subject: [PATCH 1/2] tools/releasetools: use 1Gb heap for java
+Date: Thu, 27 Aug 2015 16:03:14 +0400
+Subject: [PATCH 2/4] 0001-tools-releasetools-use-1Gb-heap-for-java.patch
 
-Change-Id: I3b9ab3536247e8ad472866dd47159ee84ab25927
+Change-Id: I000673e6208489486bae7dc0708fad5be6c77ea9
 ---
  tools/releasetools/common.py | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)

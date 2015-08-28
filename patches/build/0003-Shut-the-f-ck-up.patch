@@ -1,9 +1,9 @@
-From c32384ac4761c6d34047b01241551077db3c00c6 Mon Sep 17 00:00:00 2001
+From 68b512dac00e2f159ab8d9a90816937740caf894 Mon Sep 17 00:00:00 2001
 From: Shilin Victor <chrono.monochrome@gmail.com>
-Date: Thu, 27 Aug 2015 15:51:45 +0400
-Subject: [PATCH 2/2] Shut the f*ck up
+Date: Thu, 27 Aug 2015 16:03:14 +0400
+Subject: [PATCH 3/4] 0002-Shut-the-f-ck-up.patch
 
-Change-Id: I05365ad4cbbeadb2bd830407d14c5febe8583ee4
+Change-Id: Ie2872894d1d5e1099c4d2d8f7218000b6b15acfd
 ---
  core/tasks/kernel.mk | 13 +------------
  1 file changed, 1 insertion(+), 12 deletions(-)
