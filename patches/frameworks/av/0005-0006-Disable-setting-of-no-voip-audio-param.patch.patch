@@ -1,10 +1,9 @@
-From 32f41d45b04ec0abaecac3cc151bd952a250aad7 Mon Sep 17 00:00:00 2001
+From 148001f2914c88ed3def364b217639fc41317ab7 Mon Sep 17 00:00:00 2001
 From: Shilin Victor <chrono.monochrome@gmail.com>
-Date: Sun, 24 May 2015 22:20:02 +0300
-Subject: [PATCH 7/9] 
- 0008-0009-Disable-setting-of-no-voip-audio-param.patch.patch
+Date: Wed, 2 Sep 2015 16:03:05 +0300
+Subject: [PATCH 5/6] 0006-Disable-setting-of-no-voip-audio-param.patch
 
-Change-Id: Ied704ecd699f910acf9ee871edebf669a695315b
+Change-Id: Id837ac4ac5a0b626d38f59891ca323ede843daf0
 ---
  services/audiopolicy/AudioPolicyService.cpp | 1 +
  1 file changed, 1 insertion(+)

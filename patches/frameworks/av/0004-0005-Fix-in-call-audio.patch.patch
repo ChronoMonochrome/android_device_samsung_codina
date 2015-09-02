@@ -1,18 +1,18 @@
-From 0f7c277c22fc4677197381204dda6fc3ddbb7af6 Mon Sep 17 00:00:00 2001
+From 04c486d8459428a61d6744da906c0e809a4629a1 Mon Sep 17 00:00:00 2001
 From: Shilin Victor <chrono.monochrome@gmail.com>
-Date: Sun, 24 May 2015 22:19:22 +0300
-Subject: [PATCH 5/9] 0006-0007-Fix-in-call-audio.patch.patch
+Date: Wed, 2 Sep 2015 16:03:05 +0300
+Subject: [PATCH 4/6] 0005-Fix-in-call-audio.patch
 
-Change-Id: I98d2ac63749517abee172973c798fe629780d069
+Change-Id: I3c77baedaf2857a35fa9b9de40a61830272f7075
 ---
  services/audioflinger/AudioFlinger.cpp | 4 ++++
  1 file changed, 4 insertions(+)
 
 diff --git a/services/audioflinger/AudioFlinger.cpp b/services/audioflinger/AudioFlinger.cpp
-index 4be56e3..8563cf5 100644
+index ccc05a1..0b1aced 100644
 --- a/services/audioflinger/AudioFlinger.cpp
 +++ b/services/audioflinger/AudioFlinger.cpp
-@@ -1805,7 +1805,11 @@ status_t AudioFlinger::openOutput(audio_module_handle_t module,
+@@ -1799,7 +1799,11 @@ status_t AudioFlinger::openOutput(audio_module_handle_t module,
          thread->audioConfigChanged(AudioSystem::OUTPUT_OPENED);
  
          // the first primary output opened designates the primary hw device
