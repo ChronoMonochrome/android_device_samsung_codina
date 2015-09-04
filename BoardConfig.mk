@@ -135,6 +135,7 @@ BOARD_HAS_NO_MISC_PARTITION := true
 BOARD_HAS_NO_SELECT_BUTTON := true
 BOARD_SUPPRESS_EMMC_WIPE := true
 BOARD_RECOVERY_SWIPE := true
+BOARD_CANT_BUILD_RECOVERY_FROM_BOOT_PATCH := true
 
 # TWRP flags
 TARGET_RECOVERY_FSTAB := ../../../device/samsung/codina/recovery/twrp.fstab

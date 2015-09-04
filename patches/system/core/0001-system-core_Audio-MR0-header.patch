@@ -1,18 +1,18 @@
-From 531e1087470198dd4ef0b6b160780c635b27af12 Mon Sep 17 00:00:00 2001
+From da17a8093a70f727cf26765f7ecdf70d1eae2774 Mon Sep 17 00:00:00 2001
 From: Shilin Victor <chrono.monochrome@gmail.com>
-Date: Sun, 10 May 2015 19:07:40 +0300
-Subject: [PATCH 1/6] system-core_Audio-MR0-header.patch
+Date: Fri, 4 Sep 2015 18:52:12 +0300
+Subject: [PATCH] system-core_Audio-MR0-header
 
-Change-Id: I75a79be1feec2fbfc5f7ffef972400fc2430b7e1
+Change-Id: I08832791adbf5ebec703a32f89768082c8652916
 ---
- include/system/audio.h | 31 +++++++++++++++++++++++++++++++
- 1 file changed, 31 insertions(+)
+ include/system/audio.h | 28 +++++++++++++++++++++++++++-
+ 1 file changed, 27 insertions(+), 1 deletion(-)
 
 diff --git a/include/system/audio.h b/include/system/audio.h
-index 223d14f..6c8886b 100644
+index 181a171..efb303a 100644
 --- a/include/system/audio.h
 +++ b/include/system/audio.h
-@@ -648,7 +648,11 @@ typedef enum {
+@@ -557,7 +557,11 @@ typedef enum {
  enum {
      AUDIO_DEVICE_NONE                          = 0x0,
      /* reserved bits */
@@ -24,7 +24,7 @@ index 223d14f..6c8886b 100644
      AUDIO_DEVICE_BIT_DEFAULT                   = 0x40000000,
      /* output devices */
      AUDIO_DEVICE_OUT_EARPIECE                  = 0x1,
-@@ -732,6 +736,27 @@ enum {
+@@ -629,6 +633,27 @@ enum {
                                   AUDIO_DEVICE_OUT_USB_DEVICE),
  
      /* input devices */
@@ -52,7 +52,7 @@ index 223d14f..6c8886b 100644
      AUDIO_DEVICE_IN_COMMUNICATION         = AUDIO_DEVICE_BIT_IN | 0x1,
      AUDIO_DEVICE_IN_AMBIENT               = AUDIO_DEVICE_BIT_IN | 0x2,
      AUDIO_DEVICE_IN_BUILTIN_MIC           = AUDIO_DEVICE_BIT_IN | 0x4,
-@@ -752,6 +777,7 @@ enum {
+@@ -649,13 +674,14 @@ enum {
      AUDIO_DEVICE_IN_FM_TUNER              = AUDIO_DEVICE_BIT_IN | 0x2000,
      /* TV tuner input */
      AUDIO_DEVICE_IN_TV_TUNER              = AUDIO_DEVICE_BIT_IN | 0x4000,
@@ -60,16 +60,11 @@ index 223d14f..6c8886b 100644
      /* Analog jack with line impedance detected */
      AUDIO_DEVICE_IN_LINE                  = AUDIO_DEVICE_BIT_IN | 0x8000,
      /* S/PDIF in */
-@@ -764,7 +790,12 @@ enum {
-     AUDIO_DEVICE_IN_FM_RX_A2DP            = AUDIO_DEVICE_BIT_IN | 0x400000,
-     AUDIO_DEVICE_IN_ANC_HEADSET           = AUDIO_DEVICE_BIT_IN | 0x800000,
- #endif
-+
-+#if defined(ICS_AUDIO_BLOB) || defined(MR0_AUDIO_BLOB)
-+    AUDIO_DEVICE_IN_DEFAULT               = AUDIO_DEVICE_IN_BUILTIN_MIC,
-+#else
-     AUDIO_DEVICE_IN_DEFAULT               = AUDIO_DEVICE_BIT_IN | AUDIO_DEVICE_BIT_DEFAULT,
-+#endif
+     AUDIO_DEVICE_IN_SPDIF                 = AUDIO_DEVICE_BIT_IN | 0x10000,
+     AUDIO_DEVICE_IN_BLUETOOTH_A2DP        = AUDIO_DEVICE_BIT_IN | 0x20000,
+     AUDIO_DEVICE_IN_LOOPBACK              = AUDIO_DEVICE_BIT_IN | 0x40000,
+-    AUDIO_DEVICE_IN_DEFAULT               = AUDIO_DEVICE_BIT_IN | AUDIO_DEVICE_BIT_DEFAULT,
++    AUDIO_DEVICE_IN_DEFAULT               = AUDIO_DEVICE_IN_BUILTIN_MIC
  
      AUDIO_DEVICE_IN_ALL     = (AUDIO_DEVICE_IN_COMMUNICATION |
                                 AUDIO_DEVICE_IN_AMBIENT |

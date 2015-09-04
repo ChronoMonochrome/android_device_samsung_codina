@@ -1,8 +1,8 @@
 LOCAL_PATH=../../../..
 
 
-PATCHES="art bionic build frameworks/av frameworks/base/ frameworks/native/ frameworks/opt/net/wifi/ \
-	frameworks/opt/telephony/ libcore packages/apps/Bluetooth/ packages/apps/OmniGears packages/apps/Settings/ \
+PATCHES="art bionic frameworks/av frameworks/base/ frameworks/native/ frameworks/opt/net/wifi/ \
+	frameworks/opt/telephony/ libcore  \
         packages/services/Telecomm  packages/services/Telephony  system/core"
 
 export CL_RED="\033[31m"
@@ -23,7 +23,7 @@ pre_clean() {
 
     cd $tmp
 
-    out=$( repo sync -fl $1 )
+    # out=$( repo sync -fl $1 )
 }
 
 apply() {
@@ -38,7 +38,8 @@ apply() {
              #echo -e $CL_RED$out$CL_RST | tr '.' '\n'
          fi
     else 
-         echo -e $CL_RED"patch $1 has been applied with errors"$CL_RST
+         echo -e $CL_RED"patch $1 applies with errors -> reject"$CL_RST
+	 git reset --hard
          #echo -e $CL_RED$l$CL_RST | tr '.' '\n'
     fi;
 }
@@ -70,6 +71,8 @@ for i in $PATCHES
 do
 pre_clean $i
 done
+
+out=$( repo sync -fl $1 )
 
 if [ "$1" != "clean" ]; then
 
