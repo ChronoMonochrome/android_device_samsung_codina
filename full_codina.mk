@@ -22,6 +22,7 @@ $(call inherit-product, $(SRC_TARGET_DIR)/product/telephony.mk)
 # Inherit from those products. Most specific first.
 
 $(call inherit-product, device/samsung/codina/codina.mk)
+$(call inherit-product, device/samsung/codina/BoardConfig.mk)
 
 # Discard inherited values and use our own instead.
 

@@ -204,10 +204,10 @@ include vendor/samsung/u8500-common/vendor-common.mk
 # For better compatibility with ROMs (like Slim, PAC)
 $(call inherit-product, vendor/samsung/u8500-common/codina/codina-vendor-blobs.mk)
 
-ifneq ($(TARGET_SCREEN_HEIGHT),800)
-# Call omni_codina.mk because somehow it's not being called!
-$(call inherit-product, device/samsung/codina/omni_codina.mk)
-endif
+#ifneq ($(TARGET_BOOTLOADER_BOARD_NAME),montblanc)
+# Call BoardConfig.mk because somehow it's not being called!
+#$(call inherit-product, device/samsung/codina/BoardConfig.mk)
+#endif
 
 # Init files
 PRODUCT_COPY_FILES += \
