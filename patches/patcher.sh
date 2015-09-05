@@ -2,7 +2,7 @@ LOCAL_PATH=../../../..
 
 
 PATCHES="art build bionic frameworks/av frameworks/base/ frameworks/native/ frameworks/opt/net/wifi/ \
-	frameworks/opt/telephony/ hardware/libhardware hardware/ril libcore  \
+	frameworks/opt/telephony/ hardware/libhardware hardware/ril libcore  packages/apps/Settings \
         packages/services/Telecomm  packages/services/Telephony  system/core"
 
 export CL_RED="\033[31m"
