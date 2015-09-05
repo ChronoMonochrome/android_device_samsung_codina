@@ -1,37 +1,22 @@
-From be4dad06bdb5edc3f99cb63c2fc3d0dfb90ce50f Mon Sep 17 00:00:00 2001
-From: Pawit Pornkitprasan <p.pawit@gmail.com>
-Date: Sat, 17 Dec 2011 17:26:54 -0500
-Subject: [PATCH 5/6] init: add detection of charging mode
+From af2e769e7d44304b85a9f2c55ba4ada912d95589 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Fri, 4 Sep 2015 18:53:31 +0300
+Subject: [PATCH 5/8] 0005-init-add-detection-of-charging-mode.patch
 
-Based on Prashant Somashekar's patch which is in turn based on techomancer's
-patch http://goo.gl/I19GG.
-
-When BOARD_CHARGING_MODE_BOOTING_LPM is set, init will read that
-value (usually from /sys) and enable charging mode when set to 1.
-
-This differs from the original patch in that Samsung-specific lpm.rc
-is not loaded, but instead, init.rc is loaded using the "charger" class,
-which is how AOSP devices handle charging.
-
-The change is because the either the SELinux or the init.rc changes is
-causing lpm.rc to not work, and porting lpm.rc to the Android system
-is easier than trying to fix it.
-
-Change-Id: Ice7a074da7e982f9a64aaa97de28bfcbccdc8b91
-
-Conflicts:
-
-	init/init.c
+Change-Id: Ic37bc6eb8492f7fc97ed9068d85980da14cbf9f9
 ---
  init/Android.mk |  8 ++++++++
  init/init.c     | 21 ++++++++++++++++++++-
  2 files changed, 28 insertions(+), 1 deletion(-)
+ mode change 100644 => 100755 init/Android.mk
 
 diff --git a/init/Android.mk b/init/Android.mk
-index 0b906e9..f9cf1c0 100755
+old mode 100644
+new mode 100755
+index 228e645..4f55c01
 --- a/init/Android.mk
 +++ b/init/Android.mk
-@@ -32,6 +32,14 @@ endif
+@@ -31,6 +31,14 @@ endif
  # Enable ueventd logging
  #LOCAL_CFLAGS += -DLOG_UEVENTS=1
  
@@ -47,10 +32,10 @@ index 0b906e9..f9cf1c0 100755
  
  LOCAL_FORCE_STATIC_EXECUTABLE := true
 diff --git a/init/init.c b/init/init.c
-index 1c7ba6b..46281bc 100644
+index f901153..cd1acb2 100644
 --- a/init/init.c
 +++ b/init/init.c
-@@ -999,6 +999,25 @@ static void selinux_initialize(void)
+@@ -1001,6 +1001,25 @@ static void selinux_initialize(void)
      security_setenforce(is_enforcing);
  }
  
@@ -76,7 +61,7 @@ index 1c7ba6b..46281bc 100644
  int main(int argc, char **argv)
  {
      int fd_count = 0;
-@@ -1069,7 +1088,7 @@ int main(int argc, char **argv)
+@@ -1071,7 +1090,7 @@ int main(int argc, char **argv)
      restorecon("/dev/__properties__");
      restorecon_recursive("/sys");
  

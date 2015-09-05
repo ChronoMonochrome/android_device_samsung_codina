@@ -1,15 +1,15 @@
-From da17a8093a70f727cf26765f7ecdf70d1eae2774 Mon Sep 17 00:00:00 2001
+From 4bfe3c133acc953768bada8ea607635876c1eaa7 Mon Sep 17 00:00:00 2001
 From: Shilin Victor <chrono.monochrome@gmail.com>
-Date: Fri, 4 Sep 2015 18:52:12 +0300
-Subject: [PATCH] system-core_Audio-MR0-header
+Date: Fri, 4 Sep 2015 18:53:31 +0300
+Subject: [PATCH 1/8] 0001-system-core_Audio-MR0-header.patch
 
-Change-Id: I08832791adbf5ebec703a32f89768082c8652916
+Change-Id: I2f3bd0a2e6f34336fa607b9a89a929a011d13866
 ---
  include/system/audio.h | 28 +++++++++++++++++++++++++++-
  1 file changed, 27 insertions(+), 1 deletion(-)
 
 diff --git a/include/system/audio.h b/include/system/audio.h
-index 181a171..efb303a 100644
+index 181a171..941c9f3 100644
 --- a/include/system/audio.h
 +++ b/include/system/audio.h
 @@ -557,7 +557,11 @@ typedef enum {
@@ -64,7 +64,7 @@ index 181a171..efb303a 100644
      AUDIO_DEVICE_IN_BLUETOOTH_A2DP        = AUDIO_DEVICE_BIT_IN | 0x20000,
      AUDIO_DEVICE_IN_LOOPBACK              = AUDIO_DEVICE_BIT_IN | 0x40000,
 -    AUDIO_DEVICE_IN_DEFAULT               = AUDIO_DEVICE_BIT_IN | AUDIO_DEVICE_BIT_DEFAULT,
-+    AUDIO_DEVICE_IN_DEFAULT               = AUDIO_DEVICE_IN_BUILTIN_MIC
++    AUDIO_DEVICE_IN_DEFAULT               = AUDIO_DEVICE_IN_BUILTIN_MIC,
  
      AUDIO_DEVICE_IN_ALL     = (AUDIO_DEVICE_IN_COMMUNICATION |
                                 AUDIO_DEVICE_IN_AMBIENT |

@@ -1,7 +1,7 @@
-From fec0968062247c5a787468cc78a7f034ccd24417 Mon Sep 17 00:00:00 2001
+From 2b03cce772295062439d07e0fa128a5ab7e1c48b Mon Sep 17 00:00:00 2001
 From: Sridhar Gujje <sgujje@codeaurora.org>
 Date: Thu, 12 Sep 2013 18:04:08 +0530
-Subject: [PATCH 2/2] core: squashed commit of:
+Subject: [PATCH 8/8] core: squashed commit of:
 
 Initial bringup system-core
 
