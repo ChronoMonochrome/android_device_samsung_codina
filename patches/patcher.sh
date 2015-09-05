@@ -23,7 +23,7 @@ pre_clean() {
 
     cd $tmp
 
-    # out=$( repo sync -fl $1 )
+    out=$( repo sync -fl $1 )
 }
 
 apply() {
@@ -72,7 +72,6 @@ do
 pre_clean $i
 done
 
-out=$( repo sync -fl $1 )
 
 if [ "$1" != "clean" ]; then
 
