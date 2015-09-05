@@ -1,10 +1,12 @@
-From 16a143edcf12dc6a4600bdff26a0be4a412479c4 Mon Sep 17 00:00:00 2001
+From fc4bb3b62bec7baafba5a27010032e222e26dacc Mon Sep 17 00:00:00 2001
 From: Shilin Victor <chrono.monochrome@gmail.com>
-Date: Mon, 25 May 2015 00:06:56 +0300
-Subject: [PATCH 9/9] STE Multimedia fix
+Date: Sat, 5 Sep 2015 03:52:42 +0300
+Subject: [PATCH] Av fix
 
-Change-Id: I46b91448454a4bbb38187206ca829665f0f98db2
+Change-Id: I0c5becb227475ea28e82830480dc779557d85c28
 ---
+ camera/CameraParameters.cpp                        |  21 +++
+ include/camera/CameraParameters.h                  |  21 +++
  include/media/stagefright/ColorConverter.h         |   5 +
  include/media/stagefright/MediaDefs.h              |   6 +
  include/media/stagefright/OMXCodec.h               |   7 +
@@ -13,8 +15,98 @@ Change-Id: I46b91448454a4bbb38187206ca829665f0f98db2
  media/libstagefright/MediaDefs.cpp                 |   6 +
  media/libstagefright/OMXCodec.cpp                  |  46 ++++++-
  .../colorconversion/ColorConverter.cpp             | 145 +++++++++++++++++++++
- 8 files changed, 233 insertions(+), 1 deletion(-)
+ 10 files changed, 275 insertions(+), 1 deletion(-)
 
+diff --git a/camera/CameraParameters.cpp b/camera/CameraParameters.cpp
+index e5e4e90..4bb4beb 100644
+--- a/camera/CameraParameters.cpp
++++ b/camera/CameraParameters.cpp
+@@ -147,11 +147,26 @@ const char CameraParameters::SCENE_MODE_FIREWORKS[] = "fireworks";
+ const char CameraParameters::SCENE_MODE_SPORTS[] = "sports";
+ const char CameraParameters::SCENE_MODE_PARTY[] = "party";
+ const char CameraParameters::SCENE_MODE_CANDLELIGHT[] = "candlelight";
++#ifdef STE_SAMSUNG_HARDWARE
++const char CameraParameters::SCENE_MODE_AQUA[] = "aqua";
++const char CameraParameters::SCENE_MODE_BACKLIGHT[] = "backlight";
++const char CameraParameters::SCENE_MODE_DUSKDAWN[] = "duskdawn";
++const char CameraParameters::SCENE_MODE_FALLCOLOR[] = "fallcolor";
++const char CameraParameters::SCENE_MODE_TEXT[] = "text";
++#endif
+ const char CameraParameters::SCENE_MODE_BARCODE[] = "barcode";
+ const char CameraParameters::SCENE_MODE_HDR[] = "hdr";
+ 
+ const char CameraParameters::PIXEL_FORMAT_YUV422SP[] = "yuv422sp";
+ const char CameraParameters::PIXEL_FORMAT_YUV420SP[] = "yuv420sp";
++#ifdef STE_HARDWARE
++const char CameraParameters::PIXEL_FORMAT_YUV420SPNV12[] = "yuv420spnv12";
++const char CameraParameters::PIXEL_FORMAT_YUV420MB[] = "yuv420mb";
++const char CameraParameters::PIXEL_FORMAT_YVU422SP[] = "yvu422sp";
++const char CameraParameters::PIXEL_FORMAT_YVU422P[] = "yvu422p";
++const char CameraParameters::PIXEL_FORMAT_YVU420SP[] = "yvu420sp";
++const char CameraParameters::PIXEL_FORMAT_YVU420P[]  = "yvu420p";
++#endif
+ const char CameraParameters::PIXEL_FORMAT_YUV422I[] = "yuv422i-yuyv";
+ const char CameraParameters::PIXEL_FORMAT_YUV420P[]  = "yuv420p";
+ const char CameraParameters::PIXEL_FORMAT_RGB565[] = "rgb565";
+@@ -173,6 +188,12 @@ const char CameraParameters::FOCUS_MODE_CONTINUOUS_PICTURE[] = "continuous-pictu
+ const char CameraParameters::LIGHTFX_LOWLIGHT[] = "low-light";
+ const char CameraParameters::LIGHTFX_HDR[] = "high-dynamic-range";
+ 
++#ifdef STE_HARDWARE
++// keys for record stride and sliceheight
++const char CameraParameters::KEY_RECORD_STRIDE[] = "record-stride";
++const char CameraParameters::KEY_RECORD_SLICE_HEIGHT[] = "record-slice-height";
++#endif
++
+ CameraParameters::CameraParameters()
+                 : mMap()
+ {
+diff --git a/include/camera/CameraParameters.h b/include/camera/CameraParameters.h
+index c6074fc..635ae52 100644
+--- a/include/camera/CameraParameters.h
++++ b/include/camera/CameraParameters.h
+@@ -600,6 +600,13 @@ public:
+     static const char SCENE_MODE_SPORTS[];
+     static const char SCENE_MODE_PARTY[];
+     static const char SCENE_MODE_CANDLELIGHT[];
++#ifdef STE_SAMSUNG_HARDWARE
++    static const char SCENE_MODE_AQUA[];
++    static const char SCENE_MODE_BACKLIGHT[];
++    static const char SCENE_MODE_DUSKDAWN[];
++    static const char SCENE_MODE_FALLCOLOR[];
++    static const char SCENE_MODE_TEXT[];
++#endif
+     // Applications are looking for a barcode. Camera driver will be optimized
+     // for barcode reading.
+     static const char SCENE_MODE_BARCODE[];
+@@ -612,6 +619,14 @@ public:
+     // and KEY_VIDEO_FRAME_FORMAT
+     static const char PIXEL_FORMAT_YUV422SP[];
+     static const char PIXEL_FORMAT_YUV420SP[]; // NV21
++#ifdef STE_HARDWARE
++    static const char PIXEL_FORMAT_YUV420SPNV12[]; // NV12
++    static const char PIXEL_FORMAT_YVU422SP[];
++    static const char PIXEL_FORMAT_YVU422P[];
++    static const char PIXEL_FORMAT_YVU420SP[];
++    static const char PIXEL_FORMAT_YVU420P[];
++    static const char PIXEL_FORMAT_YUV420MB[];
++#endif
+     static const char PIXEL_FORMAT_YUV422I[]; // YUY2
+     static const char PIXEL_FORMAT_YUV420P[]; // YV12
+     static const char PIXEL_FORMAT_RGB565[];
+@@ -687,6 +702,12 @@ public:
+      */
+     static int previewFormatToEnum(const char* format);
+ 
++#ifdef STE_HARDWARE
++    // keys for record stride and slice height
++    static const char KEY_RECORD_STRIDE[];
++    static const char KEY_RECORD_SLICE_HEIGHT[];
++#endif
++
+ private:
+     DefaultKeyedVector<String8,String8>    mMap;
+ };
 diff --git a/include/media/stagefright/ColorConverter.h b/include/media/stagefright/ColorConverter.h
 index 85ba920..014fc7a 100644
 --- a/include/media/stagefright/ColorConverter.h
@@ -76,10 +168,10 @@ index e341160..67b6b84 100644
  
      struct CodecNameAndQuirks {
 diff --git a/media/libstagefright/ACodec.cpp b/media/libstagefright/ACodec.cpp
-index 05a5000..5650aac 100644
+index e015f1a..12cb7c3 100644
 --- a/media/libstagefright/ACodec.cpp
 +++ b/media/libstagefright/ACodec.cpp
-@@ -636,7 +636,11 @@ status_t ACodec::configureOutputBuffersFromNativeWindow(
+@@ -632,7 +632,11 @@ status_t ACodec::configureOutputBuffersFromNativeWindow(
              mNativeWindow.get(),
              def.format.video.nFrameWidth,
              def.format.video.nFrameHeight,
@@ -151,7 +243,7 @@ index c5a6939..9a26c2d 100644
  const char *MEDIA_MIMETYPE_AUDIO_AMR_NB = "audio/3gpp";
  const char *MEDIA_MIMETYPE_AUDIO_AMR_WB = "audio/amr-wb";
 diff --git a/media/libstagefright/OMXCodec.cpp b/media/libstagefright/OMXCodec.cpp
-index 58372ed..a1052b9 100644
+index 6da00e6..8708ae1 100644
 --- a/media/libstagefright/OMXCodec.cpp
 +++ b/media/libstagefright/OMXCodec.cpp
 @@ -191,6 +191,20 @@ static int CompareSoftwareCodecsFirst(

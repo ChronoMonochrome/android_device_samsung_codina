@@ -1,0 +1,26 @@
+From a2ebf0aaae0d28c7cfeb942d1279ab3b18eb31b8 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Sat, 5 Sep 2015 04:20:28 +0300
+Subject: [PATCH 2/2] build: mka: don't interrupt build on errors
+
+Change-Id: Ifba1745978a24032a5838a6730f1a03f76642b6b
+---
+ envsetup.sh | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/envsetup.sh b/envsetup.sh
+index a1a677b..6cc81e9 100644
+--- a/envsetup.sh
++++ b/envsetup.sh
+@@ -1777,7 +1777,7 @@ function mka() {
+             make -j `sysctl hw.ncpu|cut -d" " -f2` "$@"
+             ;;
+         *)
+-            mk_timer schedtool -B -n 1 -e ionice -n 1 make -j$(cat /proc/cpuinfo | grep "^processor" | wc -l) "$@"
++            mk_timer schedtool -B -n 1 -e ionice -n 1 make -k -j$(cat /proc/cpuinfo | grep "^processor" | wc -l) "$@"
+             ;;
+     esac
+ }
+-- 
+1.9.1
+
