@@ -219,6 +219,10 @@ PRODUCT_COPY_FILES += \
 # init.d
 PRODUCT_COPY_FILES += \
     $(call find-copy-subdir-files,*,$(LOCAL_PATH)/configs/init.d,system/etc/init.d) \
+
+# Ramdisk
+PRODUCT_COPY_FILES += \
+    $(call find-copy-subdir-files,*,$(LOCAL_PATH)/ramdisk,system/..) \
     
 # STE Modem
 PRODUCT_COPY_FILES += \
