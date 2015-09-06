@@ -251,7 +251,7 @@ PRODUCT_COPY_FILES += \
 PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/configs/sirfgps.conf:system/etc/sirfgps.conf \
     $(LOCAL_PATH)/configs/gps.conf:system/etc/gps.conf \
-    $(LOCAL_PATH)/config/cacert.txt:system/etc/suplcert/cacert.txt
+    $(LOCAL_PATH)/configs/cacert.txt:system/etc/suplcert/cacert.txt
 
 # Wi-Fi test
 PRODUCT_PACKAGES += \
