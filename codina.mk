@@ -39,6 +39,10 @@ PRODUCT_PROPERTY_OVERRIDES += \
     debug.sf.hw=1 \
     debug.hwui.render_dirty_regions=false
 
+# Wifi direct (test)
+PRODUCT_COPY_FILES += \
+        frameworks/native/data/etc/android.hardware.wifi.direct.xml:system/etc/permissions/android.hardware.wifi.direct.xml
+
 # Media
 PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/configs/omxloaders:system/etc/omxloaders \
@@ -59,6 +63,7 @@ PRODUCT_PACKAGES += \
     wpa_supplicant.conf
 PRODUCT_PROPERTY_OVERRIDES += \
     wifi.interface=wlan0 \
+    wifi.p2pinterface=wlan0 \
     wifi.supplicant_scan_interval=150
 $(call inherit-product-if-exists, hardware/broadcom/wlan/bcmdhd/firmware/bcm4330/device-bcm.mk)
 
@@ -245,10 +250,15 @@ PRODUCT_COPY_FILES += \
 # GPS
 PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/configs/sirfgps.conf:system/etc/sirfgps.conf \
-    $(LOCAL_PATH)/configs/gps.conf:system/etc/gps.conf
+    $(LOCAL_PATH)/configs/gps.conf:system/etc/gps.conf \
+    $(LOCAL_PATH)/config/cacert.txt:system/etc/suplcert/cacert.txt
 
 # Wi-Fi test
 PRODUCT_PACKAGES += \
 libwpa_client \
 hostapd \
 dhcpcd.conf
+
+
+# Garbage Collector type
+PRODUCT_TAGS += dalvik.gc.type-precise
