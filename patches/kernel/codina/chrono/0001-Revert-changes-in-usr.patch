@@ -1,0 +1,112 @@
+From a6b6937116ca0db80ae6a1fc9fc2a634c03edfae Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Tue, 5 May 2015 05:56:54 +0300
+Subject: [PATCH] Revert changes in /usr
+
+to build kernel as part of ROM
+
+Signed-off-by: Shilin Victor <chrono.monochrome@gmail.com>
+---
+ usr/u8500_initramfs.list       | 20 ++-----------------
+ usr/u8500_initramfs_files/init | 45 +++---------------------------------------
+ 2 files changed, 5 insertions(+), 60 deletions(-)
+
+diff --git a/usr/u8500_initramfs.list b/usr/u8500_initramfs.list
+index 8f6e540..35e8d68 100644
+--- a/usr/u8500_initramfs.list
++++ b/usr/u8500_initramfs.list
+@@ -22,23 +22,6 @@ nod /dev/block/mmcblk0p17 600 0 0 b 179 17
+ nod /dev/block/mmcblk1 600 0 0 b 179 18
+ nod /dev/block/mmcblk1p1 600 0 0 b 179 19
+ slink /init /stage1/init 777 0 0
+-slink /stage1/sh /stage1/busybox 777 0 0
+-slink /stage1/test /stage1/busybox 777 0 0
+-slink /stage1/mount /stage1/busybox 777 0 0
+-slink /stage1/umount /stage1/busybox 777 0 0
+-slink /stage1/[ /stage1/busybox 777 0 0
+-slink /stage1/date /stage1/busybox 777 0 0
+-slink /stage1/rm /stage1/busybox 777 0 0
+-slink /stage1/cd /stage1/busybox 777 0 0
+-slink /stage1/grep /stage1/busybox 777 0 0
+-slink /stage1/zcat /stage1/busybox 777 0 0
+-slink /stage1/cpio /stage1/busybox 777 0 0
+-slink /stage1/chown /stage1/busybox 777 0 0
+-slink /stage1/chmod /stage1/busybox 777 0 0
+-slink /stage1/cp /stage1/busybox 777 0 0
+-slink /stage1/mv /stage1/busybox 777 0 0
+-slink /stage1/cat /stage1/busybox 777 0 0
+-slink /stage1/insmod /stage1/busybox 777 0 0
+ dir /proc 755 0 0
+ dir /stage1 755 0 0
+ file /stage1/busybox source/usr/u8500_initramfs_files/busybox 755 0 0
+@@ -46,4 +29,5 @@ file /stage1/init source/usr/u8500_initramfs_files/init 755 0 0
+ dir /sys 755 0 0
+ dir /mnt 755 0 0
+ dir /mnt/.lfs 755 0 0
+-dir /ramdisk 755 0 0
++file /stage1/boot.cpio ../../ramdisk.cpio 644 0 0
++file /stage1/recovery.cpio ../../ramdisk-recovery.cpio 644 0 0
+diff --git a/usr/u8500_initramfs_files/init b/usr/u8500_initramfs_files/init
+index ffa500d..32eacfb 100644
+--- a/usr/u8500_initramfs_files/init
++++ b/usr/u8500_initramfs_files/init
+@@ -9,53 +9,14 @@ busybox rm init
+ busybox mount -t proc proc /proc
+ busybox mount -t sysfs sysfs /sys
+ 
+-busybox mount -t ext4 /dev/block/mmcblk0p17 /ramdisk
+-
+-if ! busybox grep -q bootmode=2 /proc/cmdline ; then
+-
+-	for i in /ramdisk/modules/autoload/*.ko
+-	do
+-		busybox insmod $i
+-	done
+-	
+-	if busybox test -f /ramdisk/00userinit ; then
+-		busybox sh /ramdisk/00userinit
+-	fi
+-fi
+-
+-busybox chmod 644 /ramdisk/boot.cpio
+-
+-load_image=/ramdisk/boot.cpio
+-lvm=/ramdisk/lvm.cpio
++load_image=/stage1/boot.cpio
+ 
+ if busybox grep -q bootmode=2 /proc/cmdline ; then
+ 	# recovery boot
+-	busybox chmod 644 /ramdisk/recovery.cpio
+-	load_image=/ramdisk/recovery.cpio
+-	# since it's pain, load j4fs and param from separate partition
+-	busybox insmod /ramdisk/modules/j4fs.ko
+-	busybox insmod /ramdisk/modules/param.ko
+-	busybox insmod /ramdisk/modules/exfat.ko
+-
+-	busybox mount -t j4fs /dev/block/mmcblk0p1 /mnt/.lfs
+-	busybox sh /ramdisk/00recovery
++	load_image=/stage1/recovery.cpio
+ fi
+ 
+-if busybox test -f ${load_image} ; then
+-	busybox cpio -i < ${load_image}
+-fi
+-
+-if busybox test -f ${load_image}.gz ; then
+-	busybox zcat ${load_image}.gz | busybox cpio -i -u
+-fi
+-
+-if busybox test -f ${lvm} ; then
+-	busybox cpio -i < ${lwm}
+-fi
+-
+-if busybox test -f ${lvm}.gz ; then
+-	busybox zcat ${lvm}.gz | busybox cpio -i -u
+-fi
++busybox cpio -i < ${load_image}
+ 
+ busybox umount /sys
+ busybox umount /proc
+-- 
+1.9.1
+

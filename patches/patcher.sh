@@ -2,8 +2,8 @@ LOCAL_PATH=../../../..
 
 
 PATCHES="art build bionic frameworks/av frameworks/base/ frameworks/native/ frameworks/opt/net/wifi/ \
-	frameworks/opt/telephony/ hardware/libhardware hardware/ril libcore  packages/apps/Settings \
-        packages/services/Telecomm  packages/services/Telephony  system/core"
+	frameworks/opt/telephony/ hardware/libhardware hardware/ril kernel/codina/chrono libcore  packages/apps/Settings \
+        packages/services/Telecomm  packages/services/Telephony  system/core vendor/eos"
 
 export CL_RED="\033[31m"
 export CL_GRN="\033[32m"

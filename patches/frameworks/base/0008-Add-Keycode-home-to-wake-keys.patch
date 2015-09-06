@@ -1,0 +1,25 @@
+From 562d5d0f38960ef7fcf814b218286c9969681999 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Sat, 5 Sep 2015 18:28:04 +0300
+Subject: [PATCH 8/8] Add Keycode home to wake keys
+
+Change-Id: Ibac02d91c06cd6d02da3583e6b9b7e6ebdcb0047
+---
+ core/java/android/view/KeyEvent.java | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/core/java/android/view/KeyEvent.java b/core/java/android/view/KeyEvent.java
+index cd3b555..25ea02e 100644
+--- a/core/java/android/view/KeyEvent.java
++++ b/core/java/android/view/KeyEvent.java
+@@ -1812,6 +1812,7 @@ public class KeyEvent extends InputEvent implements Parcelable {
+             case KeyEvent.KEYCODE_VOLUME_UP:
+             case KeyEvent.KEYCODE_VOLUME_DOWN:
+             case KeyEvent.KEYCODE_VOLUME_MUTE:
++	    case KeyEvent.KEYCODE_HOME:
+                 return true;
+         }
+         return false;
+-- 
+1.9.1
+

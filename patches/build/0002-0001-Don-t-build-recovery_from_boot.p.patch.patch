@@ -1,9 +1,9 @@
-From 9f5cda526ac2a08a5ea6c70a08a8c358f5957176 Mon Sep 17 00:00:00 2001
+From 3384ae9b5cbdc80aab183f4ae0f60ba021727ebd Mon Sep 17 00:00:00 2001
 From: Shilin Victor <chrono.monochrome@gmail.com>
-Date: Sat, 5 Sep 2015 04:19:24 +0300
-Subject: [PATCH 1/2] Don't build recovery_from_boot.p
+Date: Sat, 5 Sep 2015 05:55:58 +0300
+Subject: [PATCH 2/4] 0001-Don-t-build-recovery_from_boot.p.patch
 
-Change-Id: I4d4d53d647f91775e12c62d65dbb71ebcc119864
+Change-Id: I2b716e2ec0f0551c02c7ff22ef253cb68bb7b64b
 ---
  core/Makefile                          | 17 -----------------
  tools/releasetools/common.py           |  2 ++
