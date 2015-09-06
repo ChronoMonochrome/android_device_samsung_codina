@@ -152,5 +152,7 @@
     <item>SUPL_MODE=1</item>
     </string-array>
 
+    <!-- Is the device LTE capable -->
+    <bool name="config_lte_capable">false</bool>
 </resources>
 
