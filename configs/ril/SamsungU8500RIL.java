@@ -75,7 +75,7 @@ import java.util.Collections;
 import java.util.Iterator;
 
 public class SamsungU8500RIL extends RIL implements CommandsInterface {
-
+    static final String LOG_TAG = "SamsungU8500RIL";
 
     //SAMSUNG STATES
     static final int RIL_REQUEST_GET_CELL_BROADCAST_CONFIG = 10002;
@@ -197,6 +197,62 @@ public class SamsungU8500RIL extends RIL implements CommandsInterface {
         return ni_active != null && ni_active.getTypeName().equalsIgnoreCase( "mobile" ) &&
                 ni_active.isConnected() && tm.getDataEnabled();
     }
+
+    @Override
+    public void getImsRegistrationState(Message result) {
+         if(mRilVersion >= 8)
+             super.getImsRegistrationState(result);
+         else {
+             Rlog.i(LOG_TAG, "getImsRegistrationState: not supported");
+             if (result != null) {
+                 CommandException ex = new CommandException(
+                     CommandException.Error.REQUEST_NOT_SUPPORTED);
+                 AsyncResult.forMessage(result, null, ex);
+                 result.sendToTarget();
+             }
+         }
+    }
+
+    @Override
+    public void
+    getHardwareConfig (Message result) {
+        Rlog.i(LOG_TAG, "getHardwareConfig: not supported");
+        if (result != null) {
+            CommandException ex = new CommandException(
+                CommandException.Error.REQUEST_NOT_SUPPORTED);
+            AsyncResult.forMessage(result, null, ex);
+            result.sendToTarget();
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void getCellInfoList(Message result) {
+        Rlog.i(LOG_TAG, "getCellInfoList: not supported");
+         if (result != null) {
+             CommandException ex = new CommandException(
+                 CommandException.Error.REQUEST_NOT_SUPPORTED);
+             AsyncResult.forMessage(result, null, ex);
+             result.sendToTarget();
+         }
+     }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setCellInfoListRate(int rateInMillis, Message response) {
+        Rlog.i(LOG_TAG, "setCellInfoListRate: not supported");
+        if (response != null) {
+            CommandException ex = new CommandException(
+                CommandException.Error.REQUEST_NOT_SUPPORTED);
+            AsyncResult.forMessage(response, null, ex);
+            response.sendToTarget();
+        }
+    }
+ }
 
     @Override
     public void setPreferredNetworkType(int networkType , Message response) {
@@ -879,6 +935,20 @@ public class SamsungU8500RIL extends RIL implements CommandsInterface {
         if (newState == RadioState.RADIO_ON && mPendingGetSimStatus != null) {
             super.getIccCardStatus(mPendingGetSimStatus);
             mPendingGetSimStatus = null;
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setCellInfoListRate(int rateInMillis, Message response) {
+        Rlog.i(LOG_TAG, "setCellInfoListRate: not supported");
+        if (response != null) {
+            CommandException ex = new CommandException(
+                CommandException.Error.REQUEST_NOT_SUPPORTED);
+            AsyncResult.forMessage(response, null, ex);
+            response.sendToTarget();
         }
     }
 }
