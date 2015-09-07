@@ -1,0 +1,69 @@
+From fea810652ae0185b7209960d248a498213b62501 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Sun, 6 Sep 2015 21:41:10 +0300
+Subject: [PATCH 12/16] Revert "[1/4] Base: wifi: Allow configuration of
+ country code for wifi"
+
+This reverts commit d3fd6d089e2b9186b9acbf3d786ae8b628955d6a.
+---
+ core/java/android/provider/Settings.java     |  6 ------
+ wifi/java/android/net/wifi/IWifiManager.aidl |  2 --
+ wifi/java/android/net/wifi/WifiManager.java  | 12 ------------
+ 3 files changed, 20 deletions(-)
+
+diff --git a/core/java/android/provider/Settings.java b/core/java/android/provider/Settings.java
+index 8b94cea..1bc0b96 100644
+--- a/core/java/android/provider/Settings.java
++++ b/core/java/android/provider/Settings.java
+@@ -7312,12 +7312,6 @@ public final class Settings {
+        public static final String WIFI_COUNTRY_CODE = "wifi_country_code";
+ 
+        /**
+-        * 802.11 country code in ISO 3166 format set from the sim card
+-        * @hide
+-        */
+-       public static final String WIFI_COUNTRY_CODE_SIM0 = "wifi_country_code_sim0";
+-
+-       /**
+         * The interval in milliseconds to issue wake up scans when wifi needs
+         * to connect. This is necessary to connect to an access point when
+         * device is on the move and the screen is off.
+diff --git a/wifi/java/android/net/wifi/IWifiManager.aidl b/wifi/java/android/net/wifi/IWifiManager.aidl
+index 5342494..ca95ec1 100644
+--- a/wifi/java/android/net/wifi/IWifiManager.aidl
++++ b/wifi/java/android/net/wifi/IWifiManager.aidl
+@@ -79,8 +79,6 @@ interface IWifiManager
+ 
+     void setCountryCode(String country, boolean persist);
+ 
+-    String getCountryCode();
+-
+     void setFrequencyBand(int band, boolean persist);
+ 
+     int getFrequencyBand();
+diff --git a/wifi/java/android/net/wifi/WifiManager.java b/wifi/java/android/net/wifi/WifiManager.java
+index 90fe4cd..f2755bb 100644
+--- a/wifi/java/android/net/wifi/WifiManager.java
++++ b/wifi/java/android/net/wifi/WifiManager.java
+@@ -1244,18 +1244,6 @@ public class WifiManager {
+     }
+ 
+     /**
+-     * Get the operational country code.
+-     * @hide
+-     */
+-    public String getCountryCode() {
+-        try {
+-            return mService.getCountryCode();
+-        } catch (RemoteException e) {
+-            return null;
+-        }
+-    }
+-
+-    /**
+      * Set the operational frequency band.
+      * @param band  One of
+      *     {@link #WIFI_FREQUENCY_BAND_AUTO},
+-- 
+1.9.1
+

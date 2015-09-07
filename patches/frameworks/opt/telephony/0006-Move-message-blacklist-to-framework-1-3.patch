@@ -1,0 +1,196 @@
+From dc46c0ac09b8c863b62c5339c5c7fed02e8ffa0c Mon Sep 17 00:00:00 2001
+From: Danny Baumann <dannybaumann@web.de>
+Date: Fri, 14 Nov 2014 09:11:58 -0800
+Subject: [PATCH 6/6] Move message blacklist to framework (1/3).
+
+Change-Id: I321e3a3c40dd49772978258e8a27208868a22332
+---
+ src/java/android/provider/Telephony.java           | 21 +++++++
+ .../internal/telephony/InboundSmsHandler.java      | 65 ++++++++++++++++++++--
+ .../internal/telephony/util/BlacklistUtils.java    |  3 +
+ 3 files changed, 84 insertions(+), 5 deletions(-)
+
+diff --git a/src/java/android/provider/Telephony.java b/src/java/android/provider/Telephony.java
+index 0f75c9e..087ce87 100644
+--- a/src/java/android/provider/Telephony.java
++++ b/src/java/android/provider/Telephony.java
+@@ -796,6 +796,27 @@ public final class Telephony {
+             public static final int RESULT_SMS_DUPLICATED = 5;
+ 
+             /**
++             * Used internally: The sender of the SMS was blacklisted
++             * for not being listed in the contact list
++             * @hide
++             */
++            public static final int RESULT_SMS_BLACKLISTED_UNKNOWN = 6;
++
++            /**
++             * Used internally: The sender of the SMS was blacklisted
++             * for being listed in the blacklist
++             * @hide
++             */
++            public static final int RESULT_SMS_BLACKLISTED_LIST = 7;
++
++            /**
++             * Used internally: The sender of the SMS was blacklisted
++             * for matching a blacklist regex entry
++             * @hide
++             */
++            public static final int RESULT_SMS_BLACKLISTED_REGEX = 8;
++
++            /**
+              * Activity action: Ask the user to change the default
+              * SMS application. This will show a dialog that asks the
+              * user whether they want to replace the current default
+diff --git a/src/java/com/android/internal/telephony/InboundSmsHandler.java b/src/java/com/android/internal/telephony/InboundSmsHandler.java
+index 0387555..28d2bfa 100644
+--- a/src/java/com/android/internal/telephony/InboundSmsHandler.java
++++ b/src/java/com/android/internal/telephony/InboundSmsHandler.java
+@@ -65,6 +65,8 @@ import android.text.TextUtils;
+ 
+ import com.android.internal.telephony.uicc.UiccCard;
+ import com.android.internal.telephony.uicc.UiccController;
++import com.android.internal.telephony.util.BlacklistUtils;
++import com.android.internal.telephony.PhoneBase;
+ import com.android.internal.util.HexDump;
+ import com.android.internal.util.State;
+ import com.android.internal.util.StateMachine;
+@@ -475,20 +477,40 @@ public abstract class InboundSmsHandler extends StateMachine {
+             return;
+         }
+ 
+-        int result;
++        int result, blacklistMatchType = -1;
++        SmsMessage sms = null;
++
+         try {
+-            SmsMessage sms = (SmsMessage) ar.result;
++            sms = (SmsMessage) ar.result;
+             result = dispatchMessage(sms.mWrappedSmsMessage);
+         } catch (RuntimeException ex) {
+             loge("Exception dispatching message", ex);
+             result = Intents.RESULT_SMS_GENERIC_ERROR;
+         }
+ 
++        // Translate (internal) blacklist check results to
++        // RESULT_SMS_HANDLED + match type
++        switch (result) {
++            case Intents.RESULT_SMS_BLACKLISTED_UNKNOWN:
++                blacklistMatchType = BlacklistUtils.MATCH_UNKNOWN;
++                result = Intents.RESULT_SMS_HANDLED;
++                break;
++            case Intents.RESULT_SMS_BLACKLISTED_LIST:
++                blacklistMatchType = BlacklistUtils.MATCH_LIST;
++                result = Intents.RESULT_SMS_HANDLED;
++                break;
++            case Intents.RESULT_SMS_BLACKLISTED_REGEX:
++                blacklistMatchType = BlacklistUtils.MATCH_REGEX;
++                result = Intents.RESULT_SMS_HANDLED;
++                break;
++        }
++
++
+         // RESULT_OK means that the SMS will be acknowledged by special handling,
+         // e.g. for SMS-PP data download. Any other result, we should ack here.
+         if (result != Activity.RESULT_OK) {
+             boolean handled = (result == Intents.RESULT_SMS_HANDLED);
+-            notifyAndAcknowledgeLastIncomingSms(handled, result, null);
++            notifyAndAcknowledgeLastIncomingSms(handled, result, blacklistMatchType, sms, null);
+         }
+     }
+ 
+@@ -582,14 +604,26 @@ public abstract class InboundSmsHandler extends StateMachine {
+      * and send an acknowledge message to the network.
+      * @param success indicates that last message was successfully received.
+      * @param result result code indicating any error
++     * @param blacklistMatchType blacklist type if the message was blacklisted,
++     *                           -1 if it wasn't blacklisted
++     * @param sms incoming SMS
+      * @param response callback message sent when operation completes.
+      */
+     void notifyAndAcknowledgeLastIncomingSms(boolean success,
+-            int result, Message response) {
+-        if (!success) {
++            int result, int blacklistMatchType, SmsMessage sms, Message response) {
++        if (!success || blacklistMatchType >= 0) {
+             // broadcast SMS_REJECTED_ACTION intent
+             Intent intent = new Intent(Intents.SMS_REJECTED_ACTION);
+             intent.putExtra("result", result);
++            intent.putExtra("blacklisted", blacklistMatchType >= 0);
++            if (blacklistMatchType >= 0) {
++                intent.putExtra("blacklistMatchType", blacklistMatchType);
++            }
++            if (sms != null) {
++                intent.putExtra("sender", sms.getOriginatingAddress());
++                intent.putExtra("timestamp", sms.getTimestampMillis());
++            }
++            if (DBG) log("notifyAndAcknowledgeLastIncomingSms(): reject intent= " + intent);
+             mContext.sendBroadcast(intent, android.Manifest.permission.RECEIVE_SMS);
+         }
+         acknowledgeLastIncomingSms(success, result, response);
+@@ -611,6 +645,11 @@ public abstract class InboundSmsHandler extends StateMachine {
+      * @return {@link Intents#RESULT_SMS_HANDLED} if the message was accepted, or an error status
+      */
+     protected int dispatchNormalMessage(SmsMessageBase sms) {
++        int blacklistResult = checkIfBlacklisted(sms);
++        if (blacklistResult != Intents.RESULT_SMS_HANDLED) {
++            return blacklistResult;
++        }
++
+         SmsHeader smsHeader = sms.getUserDataHeader();
+         InboundSmsTracker tracker;
+ 
+@@ -640,6 +679,22 @@ public abstract class InboundSmsHandler extends StateMachine {
+         return addTrackerToRawTableAndSendMessage(tracker);
+     }
+ 
++    private int checkIfBlacklisted(SmsMessageBase sms) {
++        int result = BlacklistUtils.isListed(mContext,
++                sms.getOriginatingAddress(), BlacklistUtils.BLOCK_MESSAGES);
++
++        switch (result) {
++            case BlacklistUtils.MATCH_UNKNOWN:
++                return Intents.RESULT_SMS_BLACKLISTED_UNKNOWN;
++            case BlacklistUtils.MATCH_LIST:
++                return Intents.RESULT_SMS_BLACKLISTED_LIST;
++            case BlacklistUtils.MATCH_REGEX:
++                return Intents.RESULT_SMS_BLACKLISTED_REGEX;
++        }
++
++        return Intents.RESULT_SMS_HANDLED;
++    }
++
+     /**
+      * Helper to add the tracker to the raw table and then send a message to broadcast it, if
+      * successful. Returns the SMS intent status to return to the SMSC.
+diff --git a/src/java/com/android/internal/telephony/util/BlacklistUtils.java b/src/java/com/android/internal/telephony/util/BlacklistUtils.java
+index ecb9717..2d11f1b 100644
+--- a/src/java/com/android/internal/telephony/util/BlacklistUtils.java
++++ b/src/java/com/android/internal/telephony/util/BlacklistUtils.java
+@@ -97,6 +97,7 @@ public class BlacklistUtils {
+         // Private and unknown number matching
+         if (TextUtils.isEmpty(number)) {
+             if (isBlacklistPrivateNumberEnabled(context, mode)) {
++                if (DEBUG) Log.d(TAG, "Blacklist matched due to private number");
+                 return MATCH_PRIVATE;
+             }
+             return MATCH_NONE;
+@@ -105,6 +106,7 @@ public class BlacklistUtils {
+         if (isBlacklistUnknownNumberEnabled(context, mode)) {
+             CallerInfo ci = CallerInfo.getCallerInfo(context, number);
+             if (!ci.contactExists) {
++                if (DEBUG) Log.d(TAG, "Blacklist matched due to unknown number");
+                 return MATCH_UNKNOWN;
+             }
+         }
+@@ -146,6 +148,7 @@ public class BlacklistUtils {
+             c.close();
+         }
+ 
++        if (DEBUG) Log.d(TAG, "Blacklist check result for number " + number + " is " + result);
+         return result;
+     }
+ 
+-- 
+1.9.1
+

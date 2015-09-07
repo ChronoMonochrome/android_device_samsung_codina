@@ -1,0 +1,42 @@
+From 5849083092b299a3f70051f13f1bf25c0923411a Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Sun, 6 Sep 2015 21:41:36 +0300
+Subject: [PATCH 1/6] Revert "[4/4] opt: telephony: Allow configuration of
+ country code for wifi"
+
+This reverts commit 1a6775051dd7ff6ae3ef7a618b434c27826a58bd.
+---
+ src/java/com/android/internal/telephony/MccTable.java | 17 ++++-------------
+ 1 file changed, 4 insertions(+), 13 deletions(-)
+
+diff --git a/src/java/com/android/internal/telephony/MccTable.java b/src/java/com/android/internal/telephony/MccTable.java
+index 6f3d885..e599c60 100644
+--- a/src/java/com/android/internal/telephony/MccTable.java
++++ b/src/java/com/android/internal/telephony/MccTable.java
+@@ -407,19 +407,10 @@ public final class MccTable {
+      */
+     private static void setWifiCountryCodeFromMcc(Context context, int mcc) {
+         String country = MccTable.countryCodeForMcc(mcc);
+-        // safe if we need it later
+-        Settings.Global.putString(context.getContentResolver(),
+-                Settings.Global.WIFI_COUNTRY_CODE_SIM0, country.toUpperCase(Locale.ROOT));
+-
+-        // dont override by default only if reset == value is null
+-        String countryCode = Settings.Global.getString(context.getContentResolver(),
+-                Settings.Global.WIFI_COUNTRY_CODE);
+-        if(countryCode == null || countryCode.isEmpty()){
+-            Slog.i(LOG_TAG, "WIFI_COUNTRY_CODE set to " + country);
+-            WifiManager wM = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
+-            //persist
+-            wM.setCountryCode(country, true);
+-        }
++        Slog.d(LOG_TAG, "WIFI_COUNTRY_CODE set to " + country);
++        WifiManager wM = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
++        //persist
++        wM.setCountryCode(country, true);
+     }
+ 
+     static {
+-- 
+1.9.1
+

@@ -1,0 +1,62 @@
+From 6318c0026d19a4fde9182192768c6cdab04edaef Mon Sep 17 00:00:00 2001
+From: Mike Kasick <mike@kasick.org>
+Date: Mon, 3 Dec 2012 22:49:13 -0500
+Subject: [PATCH 15/16] PowerWidget: Re-enable LTE button.
+
+- Implement toggleLTE,
+  from CM 10.0: I3f7521f5ec4e9f9106c58afd4d5b10c7086b55fd.
+- Support all LTE network modes defined in RILConstants and
+  com.android.internal.telephony.Phone.
+- Cleanup: Remove unused LTE_MODE, restrict state change to updateState.
+- Also use Settings.Global.getInt() for PREFERRED_NETWORK_MODE.
+
+Change-Id: I43bb2491d650d641d243d3cb67ee80bc7c8f5cdf
+---
+ telephony/java/android/telephony/TelephonyManager.java        | 11 +++++++++++
+ telephony/java/com/android/internal/telephony/ITelephony.aidl |  7 ++++++-
+ 2 files changed, 17 insertions(+), 1 deletion(-)
+
+diff --git a/telephony/java/android/telephony/TelephonyManager.java b/telephony/java/android/telephony/TelephonyManager.java
+index 3f48be9..da71b87 100644
+--- a/telephony/java/android/telephony/TelephonyManager.java
++++ b/telephony/java/android/telephony/TelephonyManager.java
+@@ -1367,6 +1367,17 @@ public class TelephonyManager {
+         }
+     }
+ 
++    /**
++     * {@hide}
++     */
++    public void toggleLTE(boolean on) {
++        try {
++            getITelephony().toggleLTE(on);
++        } catch (RemoteException e) {
++            //Silently fail
++        }
++    }
++
+     /** Unknown network class. {@hide} */
+     public static final int NETWORK_CLASS_UNKNOWN = 0;
+     /** Class of broadly defined "2G" networks. {@hide} */
+diff --git a/telephony/java/com/android/internal/telephony/ITelephony.aidl b/telephony/java/com/android/internal/telephony/ITelephony.aidl
+index 79b3ca6..aa25978 100644
+--- a/telephony/java/com/android/internal/telephony/ITelephony.aidl
++++ b/telephony/java/com/android/internal/telephony/ITelephony.aidl
+@@ -49,8 +49,13 @@ interface ITelephony {
+     void call(String callingPackage, String number);
+ 
+     /**
++     * Toggle between 3G and LTE (NT_MODE_CDMA, NT_MODE_GLOBAL)
++     * @param boolean to turn on and off LTE
++     */
++    void toggleLTE(boolean on);
++
++    /**
+      * End call if there is a call in progress, otherwise does nothing.
+-     *
+      * @return whether it hung up
+      */
+     boolean endCall();
+-- 
+1.9.1
+

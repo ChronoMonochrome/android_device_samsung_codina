@@ -1,0 +1,268 @@
+From f4fa6405281b93f6fc9388f5739560a19ce17b9a Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Sun, 6 Sep 2015 21:32:06 +0300
+Subject: [PATCH 10/16] Telephony: reset to omni
+
+Change-Id: Id7fb9e4bd4f8158e74040776fbaaa51c373440aa
+---
+ .../java/com/android/internal/util/cm/QSUtils.java |  3 +-
+ .../java/android/telephony/DisconnectCause.java    |  8 -----
+ .../java/android/telephony/SignalStrength.java     | 22 +++++++++---
+ .../android/telephony/SubscriptionManager.java     |  1 +
+ .../java/android/telephony/TelephonyManager.java   | 40 +++-------------------
+ .../com/android/internal/telephony/ITelephony.aidl | 13 +------
+ .../internal/telephony/TelephonyProperties.java    |  5 ---
+ 7 files changed, 25 insertions(+), 67 deletions(-)
+
+diff --git a/core/java/com/android/internal/util/cm/QSUtils.java b/core/java/com/android/internal/util/cm/QSUtils.java
+index d79388b..07ddb8f 100644
+--- a/core/java/com/android/internal/util/cm/QSUtils.java
++++ b/core/java/com/android/internal/util/cm/QSUtils.java
+@@ -229,8 +229,7 @@ public class QSUtils {
+     public static boolean deviceSupportsLte(Context ctx) {
+         final TelephonyManager tm = (TelephonyManager)
+                 ctx.getSystemService(Context.TELEPHONY_SERVICE);
+-        return (tm.getLteOnCdmaMode() == PhoneConstants.LTE_ON_CDMA_TRUE)
+-                || tm.getLteOnGsmMode() != 0;
++        return false;
+     }
+ 
+     public static boolean deviceSupportsMobileData(Context ctx) {
+diff --git a/telephony/java/android/telephony/DisconnectCause.java b/telephony/java/android/telephony/DisconnectCause.java
+index ce1b52f..674777e 100644
+--- a/telephony/java/android/telephony/DisconnectCause.java
++++ b/telephony/java/android/telephony/DisconnectCause.java
+@@ -161,12 +161,6 @@ public class DisconnectCause {
+     public static final int OUTGOING_CANCELED = 44;
+ 
+     /**
+-     * Call was rejected due to number being blacklisted by user.
+-     * {@@hide}
+-     */
+-    public static final int CALL_BLACKLISTED = 400;
+-
+-    /**
+      * The call, which was an IMS call, disconnected because it merged with another call.
+      */
+     public static final int IMS_MERGED_SUCCESSFULLY = 45;
+@@ -306,8 +300,6 @@ public class DisconnectCause {
+             return "OUTGOING_FAILURE";
+         case OUTGOING_CANCELED:
+             return "OUTGOING_CANCELED";
+-        case CALL_BLACKLISTED:
+-            return "CALL_BLACKLISTED";
+         case IMS_MERGED_SUCCESSFULLY:
+             return "IMS_MERGED_SUCCESSFULLY";
+         default:
+diff --git a/telephony/java/android/telephony/SignalStrength.java b/telephony/java/android/telephony/SignalStrength.java
+index 17db3fb..af13056 100644
+--- a/telephony/java/android/telephony/SignalStrength.java
++++ b/telephony/java/android/telephony/SignalStrength.java
+@@ -19,6 +19,7 @@ package android.telephony;
+ import android.os.Bundle;
+ import android.os.Parcel;
+ import android.os.Parcelable;
++import android.os.SystemProperties;
+ import android.telephony.Rlog;
+ import android.content.res.Resources;
+ 
+@@ -375,7 +376,7 @@ public class SignalStrength implements Parcelable {
+         mLteSignalStrength = (mLteSignalStrength >= 0) ? mLteSignalStrength : 99;
+         mLteRsrp = ((mLteRsrp >= 44) && (mLteRsrp <= 140)) ? -mLteRsrp : SignalStrength.INVALID;
+         mLteRsrq = ((mLteRsrq >= 3) && (mLteRsrq <= 20)) ? -mLteRsrq : SignalStrength.INVALID;
+-        mLteRssnr = ((mLteRssnr >= -200) && (mLteRssnr <= 300)) ? mLteRssnr
++        mLteRssnr = ((mLteRssnr >= -200) && (mLteRssnr <= 300) && !(mLteRsrq == SignalStrength.INVALID && mLteRssnr == -1)) ? mLteRssnr
+                 : SignalStrength.INVALID;
+         // Cqi no change
+         if (DBG) log("Signal after validate=" + this);
+@@ -468,6 +469,16 @@ public class SignalStrength implements Parcelable {
+         return mLteCqi;
+     }
+ 
++    /** @hide */
++    public boolean needsOldRilFeature(String feature) {
++        String[] features = SystemProperties.get("ro.telephony.ril.config", "").split(",");
++        for (String found: features) {
++            if (found.equals(feature))
++                return true;
++        }
++        return false;
++    }
++
+     /**
+      * Get signal level as an int from 0..4
+      *
+@@ -477,8 +488,9 @@ public class SignalStrength implements Parcelable {
+         int level;
+ 
+         if (isGsm) {
++            boolean oldRil = needsOldRilFeature("signalstrength");
+             level = getLteLevel();
+-            if (level == SIGNAL_STRENGTH_NONE_OR_UNKNOWN) {
++            if (level == SIGNAL_STRENGTH_NONE_OR_UNKNOWN || oldRil) {
+                 level = getGsmLevel();
+             }
+         } else {
+@@ -507,7 +519,8 @@ public class SignalStrength implements Parcelable {
+     public int getAsuLevel() {
+         int asuLevel;
+         if (isGsm) {
+-            if (getLteLevel() == SIGNAL_STRENGTH_NONE_OR_UNKNOWN) {
++            boolean oldRil = needsOldRilFeature("signalstrength");
++            if (getLteLevel() == SIGNAL_STRENGTH_NONE_OR_UNKNOWN || oldRil) {
+                 asuLevel = getGsmAsuLevel();
+             } else {
+                 asuLevel = getLteAsuLevel();
+@@ -539,8 +552,9 @@ public class SignalStrength implements Parcelable {
+         int dBm;
+ 
+         if(isGsm()) {
++            boolean oldRil = needsOldRilFeature("signalstrength");
+             dBm = getLteDbm();
+-            if (dBm == INVALID) {
++            if (dBm == INVALID || oldRil) {
+                 dBm = getGsmDbm();
+             }
+         } else {
+diff --git a/telephony/java/android/telephony/SubscriptionManager.java b/telephony/java/android/telephony/SubscriptionManager.java
+index 0d7e6db..aca94e9 100644
+--- a/telephony/java/android/telephony/SubscriptionManager.java
++++ b/telephony/java/android/telephony/SubscriptionManager.java
+@@ -1130,6 +1130,7 @@ public class SubscriptionManager {
+         } catch (RemoteException ex) {
+             simState = TelephonyManager.SIM_STATE_UNKNOWN;
+         }
++        logd("getSimStateForSubscriber: simState=" + simState + " subId=" + subId);
+         return simState;
+     }
+ }
+diff --git a/telephony/java/android/telephony/TelephonyManager.java b/telephony/java/android/telephony/TelephonyManager.java
+index 1929c86..3ec897a 100644
+--- a/telephony/java/android/telephony/TelephonyManager.java
++++ b/telephony/java/android/telephony/TelephonyManager.java
+@@ -1041,15 +1041,6 @@ public class TelephonyManager {
+         return retVal;
+     }
+ 
+-    /**
+-     * Return if the current radio is LTE on GSM
+-     * @hide
+-     */
+-    public static int getLteOnGsmModeStatic() {
+-        return SystemProperties.getInt(TelephonyProperties.PROPERTY_LTE_ON_GSM_DEVICE,
+-                    0);
+-    }
+-
+     //
+     //
+     // Current Network
+@@ -1367,17 +1358,6 @@ public class TelephonyManager {
+         }
+     }
+ 
+-    /**
+-     * {@hide}
+-     */
+-    public void toggleLTE(boolean on) {
+-        try {
+-            getITelephony().toggleLTE(on);
+-        } catch (RemoteException e) {
+-            //Silently fail
+-        }
+-    }
+-
+     /** Unknown network class. {@hide} */
+     public static final int NETWORK_CLASS_UNKNOWN = 0;
+     /** Class of broadly defined "2G" networks. {@hide} */
+@@ -1587,7 +1567,9 @@ public class TelephonyManager {
+             Rlog.d(TAG, "getSimState:- empty subId return SIM_STATE_ABSENT");
+             return SIM_STATE_UNKNOWN;
+         }
+-        return SubscriptionManager.getSimStateForSubscriber(subId[0]);
++        int simState = SubscriptionManager.getSimStateForSubscriber(subId[0]);
++        Rlog.d(TAG, "getSimState: simState=" + simState + " slotIdx=" + slotIdx);
++        return simState;
+     }
+ 
+     /**
+@@ -1637,6 +1619,7 @@ public class TelephonyManager {
+                 }
+             }
+         }
++        Rlog.d(TAG, "getSimOperatorNumeric(): default subId=" + subId);
+         return getSimOperatorNumericForSubscription(subId);
+     }
+ 
+@@ -1813,21 +1796,6 @@ public class TelephonyManager {
+         }
+     }
+ 
+-    /**
+-     * Return if the current radio is LTE on GSM
+-     * @hide
+-     */
+-    public int getLteOnGsmMode() {
+-        try {
+-            return getITelephony().getLteOnGsmMode();
+-        } catch (RemoteException ex) {
+-            return 0;
+-        } catch (NullPointerException ex) {
+-            // This could happen before phone restarts due to crashing
+-            return 0;
+-        }
+-    }
+-
+     //
+     //
+     // Subscriber Info
+diff --git a/telephony/java/com/android/internal/telephony/ITelephony.aidl b/telephony/java/com/android/internal/telephony/ITelephony.aidl
+index aa25978..bb0bd04 100644
+--- a/telephony/java/com/android/internal/telephony/ITelephony.aidl
++++ b/telephony/java/com/android/internal/telephony/ITelephony.aidl
+@@ -49,13 +49,8 @@ interface ITelephony {
+     void call(String callingPackage, String number);
+ 
+     /**
+-     * Toggle between 3G and LTE (NT_MODE_CDMA, NT_MODE_GLOBAL)
+-     * @param boolean to turn on and off LTE
+-     */
+-    void toggleLTE(boolean on);
+-
+-    /**
+      * End call if there is a call in progress, otherwise does nothing.
++     *
+      * @return whether it hung up
+      */
+     boolean endCall();
+@@ -516,12 +511,6 @@ interface ITelephony {
+      */
+     void setCellInfoListRate(int rateInMillis);
+ 
+-
+-    /**
+-     * Return if the current radio is LTE on GSM
+-     */
+-    int getLteOnGsmMode();
+-
+     /**
+      * get default sim
+      * @return sim id
+diff --git a/telephony/java/com/android/internal/telephony/TelephonyProperties.java b/telephony/java/com/android/internal/telephony/TelephonyProperties.java
+index 24cc738..c89208d 100644
+--- a/telephony/java/com/android/internal/telephony/TelephonyProperties.java
++++ b/telephony/java/com/android/internal/telephony/TelephonyProperties.java
+@@ -88,11 +88,6 @@ public interface TelephonyProperties
+      */
+     static final String PROPERTY_LTE_ON_CDMA_DEVICE = "telephony.lteOnCdmaDevice";
+ 
+-    /**
+-     * {@see BaseCommands#getLteOnGsmMode()}
+-     */
+-    static final String PROPERTY_LTE_ON_GSM_DEVICE = "telephony.lteOnGsmDevice";
+-
+     static final String CURRENT_ACTIVE_PHONE = "gsm.current.phone-type";
+ 
+     //****** SIM Card
+-- 
+1.9.1
+

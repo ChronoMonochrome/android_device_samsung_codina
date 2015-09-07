@@ -1,0 +1,46 @@
+From 77ea9f80db904cc06f0956e429a8f7217a3d487d Mon Sep 17 00:00:00 2001
+From: Roman Birg <roman@cyngn.com>
+Date: Thu, 11 Dec 2014 16:45:54 -0800
+Subject: [PATCH 14/16] framework: add blacklist disconnect cause
+
+Constant to be used when marking a Call as blacklisted.
+
+Change-Id: If8e0ba7a2fb9b3ebbcfde04df48cd0ab14bba864
+Signed-off-by: Roman Birg <roman@cyngn.com>
+
+Conflicts:
+	telephony/java/android/telephony/DisconnectCause.java
+
+Conflicts:
+	telephony/java/android/telephony/DisconnectCause.java
+---
+ telephony/java/android/telephony/DisconnectCause.java | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/telephony/java/android/telephony/DisconnectCause.java b/telephony/java/android/telephony/DisconnectCause.java
+index 674777e..787a3e2 100644
+--- a/telephony/java/android/telephony/DisconnectCause.java
++++ b/telephony/java/android/telephony/DisconnectCause.java
+@@ -191,6 +191,10 @@ public class DisconnectCause {
+     //
+     // NextId: 49
+     //*********************************************************************************************
++     * Call was rejected due to number being blacklisted by user.
++     * {@@hide}
++     */
++    public static final int CALL_BLACKLISTED = 400;
+ 
+     /** Smallest valid value for call disconnect codes. */
+     public static final int MINIMUM_VALID_VALUE = NOT_DISCONNECTED;
+@@ -302,6 +306,8 @@ public class DisconnectCause {
+             return "OUTGOING_CANCELED";
+         case IMS_MERGED_SUCCESSFULLY:
+             return "IMS_MERGED_SUCCESSFULLY";
++        case CALL_BLACKLISTED:
++            return "CALL_BLACKLISTED";
+         default:
+             return "INVALID: " + cause;
+         }
+-- 
+1.9.1
+

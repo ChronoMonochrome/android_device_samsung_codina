@@ -1,0 +1,35 @@
+From e49743c9aa2f32cc69145d99494fbb3d5a3c0962 Mon Sep 17 00:00:00 2001
+From: Andrew Dodd <atd7@cornell.edu>
+Date: Sat, 14 Feb 2015 02:02:39 +0700
+Subject: [PATCH 11/16] [1/4] Base: wifi: Allow configuration of country code
+ for wifi
+
+This makes getCountryCode behave like getFrequencyBand
+This allows Settings to get/set country code like
+it can for frequency band.
+
+Change-Id: I043dae3d94718def3e6fbfb05e731c21b0822eda
+---
+ core/java/android/provider/Settings.java | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/core/java/android/provider/Settings.java b/core/java/android/provider/Settings.java
+index 1bc0b96..8b94cea 100644
+--- a/core/java/android/provider/Settings.java
++++ b/core/java/android/provider/Settings.java
+@@ -7312,6 +7312,12 @@ public final class Settings {
+        public static final String WIFI_COUNTRY_CODE = "wifi_country_code";
+ 
+        /**
++        * 802.11 country code in ISO 3166 format set from the sim card
++        * @hide
++        */
++       public static final String WIFI_COUNTRY_CODE_SIM0 = "wifi_country_code_sim0";
++
++       /**
+         * The interval in milliseconds to issue wake up scans when wifi needs
+         * to connect. This is necessary to connect to an access point when
+         * device is on the move and the screen is off.
+-- 
+1.9.1
+
