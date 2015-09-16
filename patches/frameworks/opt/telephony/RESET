@@ -1,1 +1,0 @@
-git fetch http://github.com/omnirom/android_frameworks_opt_telephony android-5.1 && git checkout FETCH_HEAD
