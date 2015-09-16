@@ -1,1 +1,2 @@
-add_lunch_combo eos_codina-userdebug
+add_lunch_combo omni_codina-eng
+add_lunch_combo omni_codina-userdebug
