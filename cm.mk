@@ -5,14 +5,14 @@ PRODUCT_RELEASE_NAME := GT-I8160
 TARGET_SCREEN_HEIGHT := 800
 TARGET_SCREEN_WIDTH := 480
 
-# Inherit Omni Product configuration
-$(call inherit-product, vendor/omni/config/common.mk)
+# Inherit some common CM stuff.
+$(call inherit-product, vendor/cm/config/common_full_phone.mk)
 
 # Inherit device configuration
 $(call inherit-product, device/samsung/codina/full_codina.mk)
 
 # Device identifier. This must come after all inclusions
-PRODUCT_NAME := omni_codina
+PRODUCT_NAME := cm_codina
 PRODUCT_DEVICE := codina
 PRODUCT_BRAND := samsung
 PRODUCT_MODEL := GT-I8160
