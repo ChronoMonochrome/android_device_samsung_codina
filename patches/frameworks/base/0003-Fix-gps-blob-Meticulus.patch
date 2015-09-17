@@ -1,7 +1,7 @@
-From a20341d3a3302f021afb6f60be075129b73b5608 Mon Sep 17 00:00:00 2001
+From 11d55cf3976817423543911e9588fe6e0b50d75b Mon Sep 17 00:00:00 2001
 From: Shilin Victor <chrono.monochrome@gmail.com>
 Date: Fri, 17 Jul 2015 23:46:34 +0300
-Subject: [PATCH 5/6] Fix gps blob [Meticulus]
+Subject: [PATCH 3/4] Fix gps blob [Meticulus]
 
 Change-Id: Ia408c5c1dcbf2e581de9b76bfe7dbb9fd70c35d3
 ---

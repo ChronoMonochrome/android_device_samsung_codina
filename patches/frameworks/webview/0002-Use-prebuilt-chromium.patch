@@ -1,0 +1,29 @@
+From 403ffb148bc3076a81ee793de5048584c5bb49a2 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Wed, 16 Sep 2015 18:30:13 +0300
+Subject: [PATCH 2/2] Use prebuilt chromium
+
+Change-Id: I92be23ba095211ffdef8bc35cffc0f54bcbfdb5b
+---
+ chromium/Android.mk | 2 --
+ 1 file changed, 2 deletions(-)
+
+diff --git a/chromium/Android.mk b/chromium/Android.mk
+index bdcfaa3..0361cd9 100644
+--- a/chromium/Android.mk
++++ b/chromium/Android.mk
+@@ -116,11 +116,9 @@ endif
+ 
+ # Use prebuilt android_webview_java to satisfy webviewchromium's dependency
+ # if we are working with prebuilt Chromium
+-ifeq ($(PRODUCT_PREBUILT_WEBVIEWCHROMIUM),yes)
+ include $(CLEAR_VARS)
+ LOCAL_PREBUILT_STATIC_JAVA_LIBRARIES := android_webview_java:../../../prebuilts/chromium/$(TARGET_DEVICE)/android_webview_java.jar
+ include $(BUILD_MULTI_PREBUILT)
+-endif
+ 
+ # Native support library (libwebviewchromium_plat_support.so) - does NOT link
+ # any native chromium code.
+-- 
+1.9.1
+

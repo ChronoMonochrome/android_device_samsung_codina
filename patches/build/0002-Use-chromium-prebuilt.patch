@@ -1,0 +1,74 @@
+From 06c281071a83eef23931f5b74cfc07177b683ccc Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Fri, 11 Sep 2015 06:00:30 +0300
+Subject: [PATCH 2/2] Use chromium prebuilt
+
+Change-Id: I38aa3ef549721d17f6450be21ee5dd34c95e16c2
+---
+ core/Makefile         |  2 +-
+ core/kernel_config.mk |  2 +-
+ envsetup.sh           | 11 +++--------
+ 3 files changed, 5 insertions(+), 10 deletions(-)
+
+diff --git a/core/Makefile b/core/Makefile
+index 575d2da..61a5108 100755
+--- a/core/Makefile
++++ b/core/Makefile
+@@ -1495,7 +1495,7 @@ else
+ endif
+ ifneq ($(PRODUCT_PREBUILT_WEBVIEWCHROMIUM),yes)
+ 	@echo "Running Chromium prebuilt setup script..."
+-	$(hide) . $(TOPDIR)vendor/omni/utils/chromium_prebuilt.sh $(TOP)
++	$(hide) . $(TOPDIR)vendor/vanir/utils/chromium_prebuilt.sh $(TOP)
+ endif
+ 
+ .PHONY: printvars
+diff --git a/core/kernel_config.mk b/core/kernel_config.mk
+index 73a9d6e..2e1b1c4 100755
+--- a/core/kernel_config.mk
++++ b/core/kernel_config.mk
+@@ -15,7 +15,7 @@ endif
+ 
+ # default
+ ifeq ($(TARGET_KERNEL_CUSTOM_TOOLCHAIN),)
+-    TARGET_KERNEL_CUSTOM_TOOLCHAIN := linaro-4.7
++    TARGET_KERNEL_CUSTOM_TOOLCHAIN := 4.9
+ endif
+ 
+ # allow setting the cpu variant for unsupported cpu's like cortex-a7
+diff --git a/envsetup.sh b/envsetup.sh
+index 8976a4a..6aeaee1 100755
+--- a/envsetup.sh
++++ b/envsetup.sh
+@@ -565,12 +565,7 @@ function lunch()
+ 
+     echo
+ 
+-    if [[ $USE_PREBUILT_CHROMIUM -eq 1 ]]; then
+-        chromium_prebuilt
+-    else
+-        # Unset flag in case user opts out later on
+-        export PRODUCT_PREBUILT_WEBVIEWCHROMIUM=""
+-    fi
++    chromium_prebuilt
+ 
+     fixup_common_out_dir
+ 
+@@ -1709,12 +1704,12 @@ function chromium_prebuilt() {
+     export TARGET_DEVICE=$(get_build_var TARGET_DEVICE)
+     hash=$T/prebuilts/chromium/$TARGET_DEVICE/hash.txt
+ 
+-    if [ -r $hash ] && [ $(git --git-dir=$T/external/chromium/.git --work-tree=$T/external/chromium rev-parse --verify HEAD) == $(cat $hash) ]; then
++    if [ -r $hash ]; then
+         export PRODUCT_PREBUILT_WEBVIEWCHROMIUM=yes
+         echo "** Prebuilt Chromium is up-to-date; Will be used for build **"
+     else
+         export PRODUCT_PREBUILT_WEBVIEWCHROMIUM=no
+-        echo "** Prebuilt Chromium out-of-date/not found; Will build from source **"
++        echo "** Prebuilt Chromium not found; Will build from source **"
+     fi
+ }
+ 
+-- 
+1.9.1
+

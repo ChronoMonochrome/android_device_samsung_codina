@@ -1,7 +1,7 @@
-From 08946be8c10cd9e7bc72adebc3c904274d27e0b3 Mon Sep 17 00:00:00 2001
+From 3d79bf6e4e457cd409dd99328739c71726ef49eb Mon Sep 17 00:00:00 2001
 From: Robert Rozic <rooobertinhooo@gmail.com>
 Date: Sat, 1 Feb 2014 18:10:19 +0100
-Subject: [PATCH 4/6] Fix STE OMX
+Subject: [PATCH 2/4] Fix STE OMX
 
 ---
  core/jni/android_view_HardwareRenderer.cpp | 2 ++

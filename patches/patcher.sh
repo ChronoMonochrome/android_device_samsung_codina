@@ -1,7 +1,7 @@
 LOCAL_PATH=../../../..
 
 PATCHES="art build external/fuse frameworks/base frameworks/native external/chromium_org \
-                    libcore packages/services/Telephony/  system/vold system/core"
+              hardware/libhardware libcore packages/services/Telephony/  system/vold system/core"
 
 export CL_RED="\033[31m"
 export CL_GRN="\033[32m"
@@ -36,7 +36,8 @@ apply() {
              #echo -e $CL_RED$out$CL_RST | tr '.' '\n'
          fi
     else 
-         echo -e $CL_RED"patch $1 has been applied with errors"$CL_RST
+         echo -e $CL_RED"patch $1 applies with errors -> reject"$CL_RST
+	 git reset --hard
          #echo -e $CL_RED$l$CL_RST | tr '.' '\n'
     fi;
 }
@@ -69,6 +70,7 @@ do
 pre_clean $i
 done
 
+
 if [ "$1" != "clean" ]; then
 
 	cd $patches
@@ -81,6 +83,9 @@ if [ "$1" != "clean" ]; then
 
 	for i in  $PATCHES
 	do
+	if test -f RESET; then
+		/bin/bash RESET
+	fi
 	apply_all $i
 	done
 fi
