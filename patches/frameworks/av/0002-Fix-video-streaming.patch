@@ -1,0 +1,32 @@
+From 91517978c4c949edc6ec440f16c759c3b2497825 Mon Sep 17 00:00:00 2001
+From: Epirex <estebanguzzo@gmail.com>
+Date: Wed, 22 Jul 2015 20:34:48 -0300
+Subject: [PATCH 2/6] Fix video streaming
+
+---
+ media/libstagefright/ACodec.cpp | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/media/libstagefright/ACodec.cpp b/media/libstagefright/ACodec.cpp
+index 3bdcfe2..a6fc7ef 100755
+--- a/media/libstagefright/ACodec.cpp
++++ b/media/libstagefright/ACodec.cpp
+@@ -490,11 +490,15 @@ status_t ACodec::allocateBuffersOnPort(OMX_U32 portIndex) {
+ 
+     status_t err;
+     if (mNativeWindow != NULL && portIndex == kPortIndexOutput) {
++#ifdef STE_HARDWARE
++	err = allocateOutputBuffersFromNativeWindow();
++#else
+         if (mStoreMetaDataInOutputBuffers) {
+             err = allocateOutputMetaDataBuffers();
+         } else {
+             err = allocateOutputBuffersFromNativeWindow();
+         }
++#endif
+     } else {
+         OMX_PARAM_PORTDEFINITIONTYPE def;
+         InitOMXParams(&def);
+-- 
+1.9.1
+

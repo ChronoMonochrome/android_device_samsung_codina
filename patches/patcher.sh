@@ -1,7 +1,9 @@
 LOCAL_PATH=../../../..
 
-PATCHES="art build external/fuse frameworks/base frameworks/native external/chromium_org \
-              hardware/libhardware libcore packages/services/Telephony/  system/vold system/core"
+PATCHES="frameworks/base frameworks/native external/chromium_org \
+              hardware/libhardware libcore packages/apps/Settings \
+		packages/apps/OmniGears packages/apps/Camera2 \
+		 packages/services/Telephony/  system/vold system/core"
 
 export CL_RED="\033[31m"
 export CL_GRN="\033[32m"

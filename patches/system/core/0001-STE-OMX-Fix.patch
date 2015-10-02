@@ -1,21 +1,29 @@
-From 8aa242d1827875506ce3339d2df3e0fed6f89e42 Mon Sep 17 00:00:00 2001
+From 1a941d3275ff211ebb608e0ce3c2ad20e5a5a5ed Mon Sep 17 00:00:00 2001
 From: Robert Rozic <rooobertinhooo@gmail.com>
 Date: Sun, 2 Feb 2014 13:00:08 +0100
-Subject: [PATCH] STE Multimedia Fix [3/4]
+Subject: [PATCH] STE OMX Fix
 
-Thanks @NovaFusion for help
+Fix Camera, Camcorder and Torch on STE Devices
+
+Thanks @MaclawStudio for help
+
+You need to define
+BOARD_USES_STE_HARDWARE := true
+inside you BoardConfig.mk
+
+Change-Id: Ia94a98e6b1e5860cadb830df062fc2a12cd90966
 ---
- include/utils/Flattenable.h | 22 ++++++++++++++++++++++
- libutils/Android.mk         |  1 +
- libutils/Flattenable.cpp    | 24 ++++++++++++++++++++++++
- 3 files changed, 47 insertions(+)
+ include/utils/Flattenable.h |   22 ++++++++++++++++++++++
+ libutils/Android.mk         |    5 +++++
+ libutils/Flattenable.cpp    |   24 ++++++++++++++++++++++++
+ 3 files changed, 51 insertions(+)
  create mode 100644 libutils/Flattenable.cpp
 
 diff --git a/include/utils/Flattenable.h b/include/utils/Flattenable.h
 index 882a8b2..495b90d 100644
 --- a/include/utils/Flattenable.h
 +++ b/include/utils/Flattenable.h
-@@ -79,21 +79,35 @@ class FlattenableUtils {
+@@ -79,21 +79,35 @@ public:
   * Flattenable objects must implement this protocol.
   */
  
@@ -51,7 +59,7 @@ index 882a8b2..495b90d 100644
  
      // unflattens the object from buffer.
      // size should be equal to the value of getFlattenedSize() when the
-@@ -102,6 +116,13 @@ class Flattenable {
+@@ -102,6 +116,13 @@ public:
      // don't need to be dupped(). ie: the caller of unflatten doesn't
      // keep ownership. If a fd is not retained by unflatten() it must be
      // explicitly closed.
@@ -74,17 +82,21 @@ index 882a8b2..495b90d 100644
  /*
   * LightFlattenable is a protocol allowing object to serialize themselves out
 diff --git a/libutils/Android.mk b/libutils/Android.mk
-index 720443e..d48991d 100644
+index 720443e..9c8082c 100644
 --- a/libutils/Android.mk
 +++ b/libutils/Android.mk
-@@ -22,6 +22,7 @@ commonSources:= \
- 	BlobCache.cpp \
- 	CallStack.cpp \
- 	FileMap.cpp \
-+	Flattenable.cpp \
- 	JenkinsHash.cpp \
- 	LinearAllocator.cpp \
- 	LinearTransform.cpp \
+@@ -43,6 +43,11 @@ commonSources:= \
+ 	VectorImpl.cpp \
+ 	misc.cpp
+ 
++ifeq ($(BOARD_USES_STE_HARDWARE),true)
++commonSources+= \
++	Flattenable.cpp
++endif
++
+ host_commonCflags := -DLIBUTILS_NATIVE=1 $(TOOL_CFLAGS)
+ 
+ ifeq ($(HOST_OS),windows)
 diff --git a/libutils/Flattenable.cpp b/libutils/Flattenable.cpp
 new file mode 100644
 index 0000000..1f2ffaa
@@ -115,3 +127,6 @@ index 0000000..1f2ffaa
 +}
 +
 +}; // namespace android
+-- 
+1.7.9.5
+
