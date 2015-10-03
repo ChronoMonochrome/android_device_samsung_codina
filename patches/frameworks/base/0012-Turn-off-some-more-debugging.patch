@@ -1,0 +1,387 @@
+From 7e79bb5f9f68773767926d2590225152a41eedce Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Sat, 3 Oct 2015 16:03:29 +0300
+Subject: [PATCH 12/12] Turn off some more debugging
+
+Conflicts:
+	services/core/java/com/android/server/connectivity/PermissionMonitor.java
+	services/core/java/com/android/server/net/IpConfigStore.java
+	tests/VoiceEnrollment/src/com/android/test/voiceenrollment/TestEnrollmentActivity.java
+
+Change-Id: Iff125cd65c61685b07e0b3c770641a41abb6ffd6
+---
+ core/java/android/bluetooth/BluetoothA2dp.java                        | 2 +-
+ core/java/android/bluetooth/BluetoothAdapter.java                     | 2 +-
+ core/java/android/bluetooth/BluetoothGatt.java                        | 4 ++--
+ core/java/android/bluetooth/BluetoothGattServer.java                  | 2 +-
+ core/java/android/bluetooth/BluetoothHeadset.java                     | 2 +-
+ core/java/android/bluetooth/BluetoothHealth.java                      | 2 +-
+ core/java/android/bluetooth/BluetoothInputDevice.java                 | 2 +-
+ core/java/android/bluetooth/BluetoothManager.java                     | 4 ++--
+ core/java/android/bluetooth/BluetoothMap.java                         | 2 +-
+ core/java/android/bluetooth/BluetoothPan.java                         | 2 +-
+ core/java/android/bluetooth/BluetoothPbap.java                        | 2 +-
+ core/java/android/bluetooth/BluetoothSocket.java                      | 2 +-
+ core/java/android/bluetooth/BluetoothTetheringDataTracker.java        | 4 ++--
+ core/java/android/net/CaptivePortalTracker.java                       | 2 +-
+ core/java/android/net/DummyDataStateTracker.java                      | 2 +-
+ core/java/android/net/LinkSocket.java                                 | 2 +-
+ core/java/android/net/MobileDataStateTracker.java                     | 2 +-
+ core/java/com/android/internal/util/AsyncService.java                 | 2 +-
+ .../coretests/src/com/android/internal/util/AsyncChannelTest.java     | 2 +-
+ .../coretests/src/com/android/internal/util/StateMachineTest.java     | 2 +-
+ services/java/com/android/server/BluetoothManagerService.java         | 2 +-
+ services/java/com/android/server/ConnectivityService.java             | 2 +-
+ services/java/com/android/server/NsdService.java                      | 2 +-
+ services/java/com/android/server/connectivity/Tethering.java          | 2 +-
+ telephony/java/android/telephony/ServiceState.java                    | 2 +-
+ wifi/java/android/net/wifi/WifiConfigStore.java                       | 2 +-
+ 26 files changed, 29 insertions(+), 29 deletions(-)
+
+diff --git a/core/java/android/bluetooth/BluetoothA2dp.java b/core/java/android/bluetooth/BluetoothA2dp.java
+index 6f929f2..690909da 100644
+--- a/core/java/android/bluetooth/BluetoothA2dp.java
++++ b/core/java/android/bluetooth/BluetoothA2dp.java
+@@ -44,7 +44,7 @@ import java.util.List;
+  */
+ public final class BluetoothA2dp implements BluetoothProfile {
+     private static final String TAG = "BluetoothA2dp";
+-    private static final boolean DBG = true;
++    private static final boolean DBG = false;
+     private static final boolean VDBG = false;
+ 
+     /**
+diff --git a/core/java/android/bluetooth/BluetoothAdapter.java b/core/java/android/bluetooth/BluetoothAdapter.java
+index 75b007c..0e22fa1 100644
+--- a/core/java/android/bluetooth/BluetoothAdapter.java
++++ b/core/java/android/bluetooth/BluetoothAdapter.java
+@@ -82,7 +82,7 @@ import java.util.UUID;
+  */
+ public final class BluetoothAdapter {
+     private static final String TAG = "BluetoothAdapter";
+-    private static final boolean DBG = true;
++    private static final boolean DBG = false;
+     private static final boolean VDBG = false;
+ 
+     /**
+diff --git a/core/java/android/bluetooth/BluetoothGatt.java b/core/java/android/bluetooth/BluetoothGatt.java
+index ae6ad3b..7677b95 100644
+--- a/core/java/android/bluetooth/BluetoothGatt.java
++++ b/core/java/android/bluetooth/BluetoothGatt.java
+@@ -49,8 +49,8 @@ import java.util.UUID;
+  */
+ public final class BluetoothGatt implements BluetoothProfile {
+     private static final String TAG = "BluetoothGatt";
+-    private static final boolean DBG = true;
+-    private static final boolean VDBG = true;
++    private static final boolean DBG = false;
++    private static final boolean VDBG = false;
+ 
+     private final Context mContext;
+     private IBluetoothGatt mService;
+diff --git a/core/java/android/bluetooth/BluetoothGattServer.java b/core/java/android/bluetooth/BluetoothGattServer.java
+index 153215c..71325af 100644
+--- a/core/java/android/bluetooth/BluetoothGattServer.java
++++ b/core/java/android/bluetooth/BluetoothGattServer.java
+@@ -50,7 +50,7 @@ import java.util.UUID;
+  */
+ public final class BluetoothGattServer implements BluetoothProfile {
+     private static final String TAG = "BluetoothGattServer";
+-    private static final boolean DBG = true;
++    private static final boolean DBG = false;
+ 
+     private final Context mContext;
+     private BluetoothAdapter mAdapter;
+diff --git a/core/java/android/bluetooth/BluetoothHeadset.java b/core/java/android/bluetooth/BluetoothHeadset.java
+index 8ee955d..369e381 100644
+--- a/core/java/android/bluetooth/BluetoothHeadset.java
++++ b/core/java/android/bluetooth/BluetoothHeadset.java
+@@ -45,7 +45,7 @@ import java.util.List;
+  */
+ public final class BluetoothHeadset implements BluetoothProfile {
+     private static final String TAG = "BluetoothHeadset";
+-    private static final boolean DBG = true;
++    private static final boolean DBG = false;
+     private static final boolean VDBG = false;
+ 
+     /**
+diff --git a/core/java/android/bluetooth/BluetoothHealth.java b/core/java/android/bluetooth/BluetoothHealth.java
+index 2e950fa..910fa29 100644
+--- a/core/java/android/bluetooth/BluetoothHealth.java
++++ b/core/java/android/bluetooth/BluetoothHealth.java
+@@ -57,7 +57,7 @@ import java.util.List;
+  */
+ public final class BluetoothHealth implements BluetoothProfile {
+     private static final String TAG = "BluetoothHealth";
+-    private static final boolean DBG = true;
++    private static final boolean DBG = false;
+     private static final boolean VDBG = false;
+ 
+     /**
+diff --git a/core/java/android/bluetooth/BluetoothInputDevice.java b/core/java/android/bluetooth/BluetoothInputDevice.java
+index 844f432..0af860a 100644
+--- a/core/java/android/bluetooth/BluetoothInputDevice.java
++++ b/core/java/android/bluetooth/BluetoothInputDevice.java
+@@ -44,7 +44,7 @@ import java.util.List;
+  */
+ public final class BluetoothInputDevice implements BluetoothProfile {
+     private static final String TAG = "BluetoothInputDevice";
+-    private static final boolean DBG = true;
++    private static final boolean DBG = false;
+     private static final boolean VDBG = false;
+ 
+     /**
+diff --git a/core/java/android/bluetooth/BluetoothManager.java b/core/java/android/bluetooth/BluetoothManager.java
+index 172f3bc..7eaac80 100644
+--- a/core/java/android/bluetooth/BluetoothManager.java
++++ b/core/java/android/bluetooth/BluetoothManager.java
+@@ -45,8 +45,8 @@ import java.util.List;
+  */
+ public final class BluetoothManager {
+     private static final String TAG = "BluetoothManager";
+-    private static final boolean DBG = true;
+-    private static final boolean VDBG = true;
++    private static final boolean DBG = false;
++    private static final boolean VDBG = false;
+ 
+     private final BluetoothAdapter mAdapter;
+ 
+diff --git a/core/java/android/bluetooth/BluetoothMap.java b/core/java/android/bluetooth/BluetoothMap.java
+index 92a2f1e..566383c 100644
+--- a/core/java/android/bluetooth/BluetoothMap.java
++++ b/core/java/android/bluetooth/BluetoothMap.java
+@@ -35,7 +35,7 @@ import android.util.Log;
+ public final class BluetoothMap implements BluetoothProfile {
+ 
+     private static final String TAG = "BluetoothMap";
+-    private static final boolean DBG = true;
++    private static final boolean DBG = false;
+     private static final boolean VDBG = false;
+ 
+     public static final String ACTION_CONNECTION_STATE_CHANGED =
+diff --git a/core/java/android/bluetooth/BluetoothPan.java b/core/java/android/bluetooth/BluetoothPan.java
+index b7a37f4..00084e1 100644
+--- a/core/java/android/bluetooth/BluetoothPan.java
++++ b/core/java/android/bluetooth/BluetoothPan.java
+@@ -43,7 +43,7 @@ import java.util.List;
+  */
+ public final class BluetoothPan implements BluetoothProfile {
+     private static final String TAG = "BluetoothPan";
+-    private static final boolean DBG = true;
++    private static final boolean DBG = false;
+     private static final boolean VDBG = false;
+ 
+     /**
+diff --git a/core/java/android/bluetooth/BluetoothPbap.java b/core/java/android/bluetooth/BluetoothPbap.java
+index 7f45652..a2bb680 100644
+--- a/core/java/android/bluetooth/BluetoothPbap.java
++++ b/core/java/android/bluetooth/BluetoothPbap.java
+@@ -51,7 +51,7 @@ import android.util.Log;
+ public class BluetoothPbap {
+ 
+     private static final String TAG = "BluetoothPbap";
+-    private static final boolean DBG = true;
++    private static final boolean DBG = false;
+     private static final boolean VDBG = false;
+ 
+     /** int extra for PBAP_STATE_CHANGED_ACTION */
+diff --git a/core/java/android/bluetooth/BluetoothSocket.java b/core/java/android/bluetooth/BluetoothSocket.java
+index d10eaea..f7531cc 100644
+--- a/core/java/android/bluetooth/BluetoothSocket.java
++++ b/core/java/android/bluetooth/BluetoothSocket.java
+@@ -86,7 +86,7 @@ import java.nio.ByteBuffer;
+  */
+ public final class BluetoothSocket implements Closeable {
+     private static final String TAG = "BluetoothSocket";
+-    private static final boolean DBG = true;
++    private static final boolean DBG = false;
+     private static final boolean VDBG = false;
+ 
+     /** @hide */
+diff --git a/core/java/android/bluetooth/BluetoothTetheringDataTracker.java b/core/java/android/bluetooth/BluetoothTetheringDataTracker.java
+index a9b7176..5b95e30 100644
+--- a/core/java/android/bluetooth/BluetoothTetheringDataTracker.java
++++ b/core/java/android/bluetooth/BluetoothTetheringDataTracker.java
+@@ -58,8 +58,8 @@ import java.util.concurrent.atomic.AtomicReference;
+ public class BluetoothTetheringDataTracker extends BaseNetworkStateTracker {
+     private static final String NETWORKTYPE = "BLUETOOTH_TETHER";
+     private static final String TAG = "BluetoothTethering";
+-    private static final boolean DBG = true;
+-    private static final boolean VDBG = true;
++    private static final boolean DBG = false;
++    private static final boolean VDBG = false;
+ 
+     private AtomicBoolean mTeardownRequested = new AtomicBoolean(false);
+     private AtomicBoolean mPrivateDnsRouteSet = new AtomicBoolean(false);
+diff --git a/core/java/android/net/CaptivePortalTracker.java b/core/java/android/net/CaptivePortalTracker.java
+index d678f1e..10d0fa5 100644
+--- a/core/java/android/net/CaptivePortalTracker.java
++++ b/core/java/android/net/CaptivePortalTracker.java
+@@ -58,7 +58,7 @@ import java.util.List;
+  * @hide
+  */
+ public class CaptivePortalTracker extends StateMachine {
+-    private static final boolean DBG = true;
++    private static final boolean DBG = false;
+     private static final String TAG = "CaptivePortalTracker";
+ 
+     private static final String DEFAULT_SERVER = "clients3.google.com";
+diff --git a/core/java/android/net/DummyDataStateTracker.java b/core/java/android/net/DummyDataStateTracker.java
+index 51a1191..0ddc0e5 100644
+--- a/core/java/android/net/DummyDataStateTracker.java
++++ b/core/java/android/net/DummyDataStateTracker.java
+@@ -32,7 +32,7 @@ import android.util.Slog;
+ public class DummyDataStateTracker extends BaseNetworkStateTracker {
+ 
+     private static final String TAG = "DummyDataStateTracker";
+-    private static final boolean DBG = true;
++    private static final boolean DBG = false;
+     private static final boolean VDBG = false;
+ 
+     private boolean mTeardownRequested = false;
+diff --git a/core/java/android/net/LinkSocket.java b/core/java/android/net/LinkSocket.java
+index 5aa6451..44de04b 100644
+--- a/core/java/android/net/LinkSocket.java
++++ b/core/java/android/net/LinkSocket.java
+@@ -33,7 +33,7 @@ import java.util.Set;
+ /** @hide */
+ public class LinkSocket extends Socket {
+     private final static String TAG = "LinkSocket";
+-    private final static boolean DBG = true;
++    private final static boolean DBG = false;
+ 
+     /**
+      * Default constructor
+diff --git a/core/java/android/net/MobileDataStateTracker.java b/core/java/android/net/MobileDataStateTracker.java
+index a716f22..50ee10e 100644
+--- a/core/java/android/net/MobileDataStateTracker.java
++++ b/core/java/android/net/MobileDataStateTracker.java
+@@ -54,7 +54,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
+ public class MobileDataStateTracker extends BaseNetworkStateTracker {
+ 
+     private static final String TAG = "MobileDataStateTracker";
+-    private static final boolean DBG = true;
++    private static final boolean DBG = false;
+     private static final boolean VDBG = false;
+ 
+     private PhoneConstants.DataState mMobileDataState;
+diff --git a/core/java/com/android/internal/util/AsyncService.java b/core/java/com/android/internal/util/AsyncService.java
+index e39a2bf..cb4706a 100644
+--- a/core/java/com/android/internal/util/AsyncService.java
++++ b/core/java/com/android/internal/util/AsyncService.java
+@@ -35,7 +35,7 @@ import android.util.Slog;
+ abstract public class AsyncService extends Service {
+     private static final String TAG = "AsyncService";
+ 
+-    protected static final boolean DBG = true;
++    protected static final boolean DBG = false;
+ 
+     /** The command sent when a onStartCommand is invoked */
+     public static final int CMD_ASYNC_SERVICE_ON_START_INTENT = IBinder.LAST_CALL_TRANSACTION;
+diff --git a/core/tests/coretests/src/com/android/internal/util/AsyncChannelTest.java b/core/tests/coretests/src/com/android/internal/util/AsyncChannelTest.java
+index 7088650..2ededf7 100644
+--- a/core/tests/coretests/src/com/android/internal/util/AsyncChannelTest.java
++++ b/core/tests/coretests/src/com/android/internal/util/AsyncChannelTest.java
+@@ -26,7 +26,7 @@ import junit.framework.TestCase;
+  * Test for AsyncChannel.
+  */
+ public class AsyncChannelTest extends TestCase {
+-    private static final boolean DBG = true;
++    private static final boolean DBG = false;
+     private static final boolean WAIT_FOR_DEBUGGER = false;
+     private static final String TAG = "AsyncChannelTest";
+ 
+diff --git a/core/tests/coretests/src/com/android/internal/util/StateMachineTest.java b/core/tests/coretests/src/com/android/internal/util/StateMachineTest.java
+index 2a2c24e..d62f8d7 100644
+--- a/core/tests/coretests/src/com/android/internal/util/StateMachineTest.java
++++ b/core/tests/coretests/src/com/android/internal/util/StateMachineTest.java
+@@ -50,7 +50,7 @@ public class StateMachineTest extends TestCase {
+     private static final int TEST_CMD_5 = 5;
+     private static final int TEST_CMD_6 = 6;
+ 
+-    private static final boolean DBG = true;
++    private static final boolean DBG = false;
+     private static final boolean WAIT_FOR_DEBUGGER = false;
+     private static final String TAG = "StateMachineTest";
+ 
+diff --git a/services/java/com/android/server/BluetoothManagerService.java b/services/java/com/android/server/BluetoothManagerService.java
+index 546324a..0f5dab9 100644
+--- a/services/java/com/android/server/BluetoothManagerService.java
++++ b/services/java/com/android/server/BluetoothManagerService.java
+@@ -46,7 +46,7 @@ import android.provider.Settings;
+ import android.util.Log;
+ class BluetoothManagerService extends IBluetoothManager.Stub {
+     private static final String TAG = "BluetoothManagerService";
+-    private static final boolean DBG = true;
++    private static final boolean DBG = false;
+ 
+     private static final String BLUETOOTH_ADMIN_PERM = android.Manifest.permission.BLUETOOTH_ADMIN;
+     private static final String BLUETOOTH_PERM = android.Manifest.permission.BLUETOOTH;
+diff --git a/services/java/com/android/server/ConnectivityService.java b/services/java/com/android/server/ConnectivityService.java
+index f728081..01eaf40 100644
+--- a/services/java/com/android/server/ConnectivityService.java
++++ b/services/java/com/android/server/ConnectivityService.java
+@@ -169,7 +169,7 @@ import javax.net.ssl.SSLSession;
+ public class ConnectivityService extends IConnectivityManager.Stub {
+     private static final String TAG = "ConnectivityService";
+ 
+-    private static final boolean DBG = true;
++    private static final boolean DBG = false;
+     private static final boolean VDBG = false;
+ 
+     private static final boolean LOGD_RULES = false;
+diff --git a/services/java/com/android/server/NsdService.java b/services/java/com/android/server/NsdService.java
+index 16d2468..de27ba3 100644
+--- a/services/java/com/android/server/NsdService.java
++++ b/services/java/com/android/server/NsdService.java
+@@ -64,7 +64,7 @@ public class NsdService extends INsdManager.Stub {
+     private static final String TAG = "NsdService";
+     private static final String MDNS_TAG = "mDnsConnector";
+ 
+-    private static final boolean DBG = true;
++    private static final boolean DBG = false;
+ 
+     private Context mContext;
+     private ContentResolver mContentResolver;
+diff --git a/services/java/com/android/server/connectivity/Tethering.java b/services/java/com/android/server/connectivity/Tethering.java
+index 231a40a..7717a34 100644
+--- a/services/java/com/android/server/connectivity/Tethering.java
++++ b/services/java/com/android/server/connectivity/Tethering.java
+@@ -74,7 +74,7 @@ public class Tethering extends INetworkManagementEventObserver.Stub {
+ 
+     private Context mContext;
+     private final static String TAG = "Tethering";
+-    private final static boolean DBG = true;
++    private final static boolean DBG = false;
+     private final static boolean VDBG = false;
+ 
+     // TODO - remove both of these - should be part of interface inspection/selection stuff
+diff --git a/telephony/java/android/telephony/ServiceState.java b/telephony/java/android/telephony/ServiceState.java
+index 5de8185..e5682b5 100644
+--- a/telephony/java/android/telephony/ServiceState.java
++++ b/telephony/java/android/telephony/ServiceState.java
+@@ -36,7 +36,7 @@ import android.telephony.Rlog;
+ public class ServiceState implements Parcelable {
+ 
+     static final String LOG_TAG = "PHONE";
+-    static final boolean DBG = true;
++    static final boolean DBG = false;
+ 
+     /**
+      * Normal operation condition, the phone is registered
+diff --git a/wifi/java/android/net/wifi/WifiConfigStore.java b/wifi/java/android/net/wifi/WifiConfigStore.java
+index a6ae215..7957564 100644
+--- a/wifi/java/android/net/wifi/WifiConfigStore.java
++++ b/wifi/java/android/net/wifi/WifiConfigStore.java
+@@ -115,7 +115,7 @@ class WifiConfigStore {
+ 
+     private Context mContext;
+     private static final String TAG = "WifiConfigStore";
+-    private static final boolean DBG = true;
++    private static final boolean DBG = false;
+     private static final boolean VDBG = false;
+ 
+     private static final String SUPPLICANT_CONFIG_FILE = "/data/misc/wifi/wpa_supplicant.conf";
+-- 
+1.9.1
+

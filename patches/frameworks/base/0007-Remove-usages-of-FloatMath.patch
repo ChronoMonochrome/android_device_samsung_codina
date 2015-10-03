@@ -1,0 +1,38 @@
+From ab7eff9ab40fd1249fe7063680b497f5c087e8d5 Mon Sep 17 00:00:00 2001
+From: Neil Fuller <nfuller@google.com>
+Date: Wed, 11 Feb 2015 15:49:47 +0000
+Subject: [PATCH 07/12] Remove usages of FloatMath
+
+Bug: https://code.google.com/p/android/issues/detail?id=36199
+Change-Id: Iec8fb663ed54eb967050f6ff25a36ba534204c4d
+Signed-off-by: Chet Kener <Cl3Kener@gmail.com>
+
+Conflicts:
+	core/java/android/transition/ArcMotion.java
+	core/java/android/transition/CircularPropagation.java
+	core/java/android/transition/Explode.java
+	core/java/android/transition/PatternPathMotion.java
+	core/java/android/transition/SidePropagation.java
+	core/java/android/util/Spline.java
+	core/java/android/widget/EdgeEffect.java
+	services/core/java/com/android/server/display/ColorFade.java
+---
+ core/java/android/util/Spline.java | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/core/java/android/util/Spline.java b/core/java/android/util/Spline.java
+index ed027eb..4003e21 100644
+--- a/core/java/android/util/Spline.java
++++ b/core/java/android/util/Spline.java
+@@ -88,7 +88,7 @@ public final class Spline {
+                     throw new IllegalArgumentException("The control points must have "
+                             + "monotonic Y values.");
+                 }
+-                float h = FloatMath.hypot(a, b);
++		float h = (float) Math.hypot(a, b);
+                 if (h > 9f) {
+                     float t = 3f / h;
+                     m[i] = t * a * d[i];
+-- 
+1.9.1
+

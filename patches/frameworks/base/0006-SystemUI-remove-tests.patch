@@ -1,0 +1,322 @@
+From a9e3014ebca97a27037d0034e8b8d6ae5cceb188 Mon Sep 17 00:00:00 2001
+From: TheBr0ken <jtoro2716@gmail.com>
+Date: Fri, 27 Mar 2015 18:18:02 -0400
+Subject: [PATCH 06/12] SystemUI: remove tests
+
+Change-Id: I26483521a2d0be7a72c1aeced48bf0ff23651900
+Signed-off-by: Chet Kener <Cl3Kener@gmail.com>
+
+Conflicts:
+	packages/SystemUI/tests/Android.mk
+	packages/SystemUI/tests/AndroidManifest.xml
+	packages/SystemUI/tests/src/com/android/systemui/screenshot/ScreenshotStubActivity.java
+	packages/SystemUI/tests/src/com/android/systemui/screenshot/ScreenshotTest.java
+---
+ packages/SystemUI/tests/Android.mk                 |  30 -----
+ packages/SystemUI/tests/AndroidManifest.xml        |  31 -----
+ packages/SystemUI/tests/res/layout/main.xml        |  32 -----
+ .../screenshot/ScreenshotStubActivity.java         |  33 -----
+ .../systemui/screenshot/ScreenshotTest.java        | 137 ---------------------
+ 5 files changed, 263 deletions(-)
+ delete mode 100644 packages/SystemUI/tests/Android.mk
+ delete mode 100644 packages/SystemUI/tests/AndroidManifest.xml
+ delete mode 100644 packages/SystemUI/tests/res/layout/main.xml
+ delete mode 100644 packages/SystemUI/tests/src/com/android/systemui/screenshot/ScreenshotStubActivity.java
+ delete mode 100644 packages/SystemUI/tests/src/com/android/systemui/screenshot/ScreenshotTest.java
+
+diff --git a/packages/SystemUI/tests/Android.mk b/packages/SystemUI/tests/Android.mk
+deleted file mode 100644
+index 28e4b86..0000000
+--- a/packages/SystemUI/tests/Android.mk
++++ /dev/null
+@@ -1,30 +0,0 @@
+-# Copyright (C) 2011 The Android Open Source Project
+-#
+-# Licensed under the Apache License, Version 2.0 (the "License");
+-# you may not use this file except in compliance with the License.
+-# You may obtain a copy of the License at
+-#
+-#      http://www.apache.org/licenses/LICENSE-2.0
+-#
+-# Unless required by applicable law or agreed to in writing, software
+-# distributed under the License is distributed on an "AS IS" BASIS,
+-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-# See the License for the specific language governing permissions and
+-# limitations under the License.
+-
+-LOCAL_PATH := $(call my-dir)
+-include $(CLEAR_VARS)
+-
+-LOCAL_MODULE_TAGS := tests
+-
+-LOCAL_SRC_FILES := $(call all-java-files-under, src)
+-
+-LOCAL_JAVA_LIBRARIES := android.test.runner
+-
+-LOCAL_PACKAGE_NAME := SystemUITests
+-
+-# sign this with platform cert, so this test is allowed to inject key events into
+-# UI it doesn't own. This is necessary to allow screenshots to be taken
+-LOCAL_CERTIFICATE := platform
+-
+-include $(BUILD_PACKAGE)
+diff --git a/packages/SystemUI/tests/AndroidManifest.xml b/packages/SystemUI/tests/AndroidManifest.xml
+deleted file mode 100644
+index e52806d..0000000
+--- a/packages/SystemUI/tests/AndroidManifest.xml
++++ /dev/null
+@@ -1,31 +0,0 @@
+-<?xml version="1.0" encoding="utf-8"?>
+-<!-- Copyright (C) 2011 The Android Open Source Project
+-
+-    Licensed under the Apache License, Version 2.0 (the "License");
+-    you may not use this file except in compliance with the License.
+-    You may obtain a copy of the License at
+-
+-         http://www.apache.org/licenses/LICENSE-2.0
+-
+-    Unless required by applicable law or agreed to in writing, software
+-    distributed under the License is distributed on an "AS IS" BASIS,
+-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-    See the License for the specific language governing permissions and
+-    limitations under the License.
+--->
+-
+-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+-    package="com.android.systemui.tests">
+-
+-    <uses-permission android:name="android.permission.INJECT_EVENTS" />
+-
+-    <application>
+-        <uses-library android:name="android.test.runner" />
+-        <activity android:name="com.android.systemui.screenshot.ScreenshotStubActivity" />
+-    </application>
+-
+-    <instrumentation android:name="android.test.InstrumentationTestRunner"
+-        android:targetPackage="com.android.systemui.tests"
+-        android:label="Tests for SystemUI">
+-    </instrumentation>
+-</manifest>
+diff --git a/packages/SystemUI/tests/res/layout/main.xml b/packages/SystemUI/tests/res/layout/main.xml
+deleted file mode 100644
+index 56dffe6..0000000
+--- a/packages/SystemUI/tests/res/layout/main.xml
++++ /dev/null
+@@ -1,32 +0,0 @@
+-<?xml version="1.0" encoding="utf-8"?>
+-<!-- Copyright (C) 2011 The Android Open Source Project
+-
+-    Licensed under the Apache License, Version 2.0 (the "License");
+-    you may not use this file except in compliance with the License.
+-    You may obtain a copy of the License at
+-
+-         http://www.apache.org/licenses/LICENSE-2.0
+-
+-    Unless required by applicable law or agreed to in writing, software
+-    distributed under the License is distributed on an "AS IS" BASIS,
+-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-    See the License for the specific language governing permissions and
+-    limitations under the License.
+--->
+-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+-    android:orientation="vertical"
+-    android:layout_width="fill_parent"
+-    android:layout_height="fill_parent"
+-    >
+-    <TextView
+-        android:layout_width="fill_parent"
+-        android:layout_height="wrap_content"
+-        android:text="this is a test activity"
+-    />
+-    <EditText
+-        android:layout_height="wrap_content"
+-        android:id="@+id/editText1"
+-        android:layout_width="match_parent">
+-        <requestFocus></requestFocus>
+-    </EditText>
+-</LinearLayout>
+diff --git a/packages/SystemUI/tests/src/com/android/systemui/screenshot/ScreenshotStubActivity.java b/packages/SystemUI/tests/src/com/android/systemui/screenshot/ScreenshotStubActivity.java
+deleted file mode 100644
+index 2935373..0000000
+--- a/packages/SystemUI/tests/src/com/android/systemui/screenshot/ScreenshotStubActivity.java
++++ /dev/null
+@@ -1,33 +0,0 @@
+-/*
+- * Copyright (C) 2011 The Android Open Source Project
+- *
+- * Licensed under the Apache License, Version 2.0 (the "License");
+- * you may not use this file except in compliance with the License.
+- * You may obtain a copy of the License at
+- *
+- *      http://www.apache.org/licenses/LICENSE-2.0
+- *
+- * Unless required by applicable law or agreed to in writing, software
+- * distributed under the License is distributed on an "AS IS" BASIS,
+- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- * See the License for the specific language governing permissions and
+- * limitations under the License.
+- */
+-package com.android.systemui.screenshot;
+-
+-import com.android.systemui.tests.R;
+-
+-import android.app.Activity;
+-import android.os.Bundle;
+-
+-/**
+- * A stub activity used in {@link ScreenshotTest}.
+- */
+-public class ScreenshotStubActivity extends Activity {
+-
+-    @Override
+-    public void onCreate(Bundle savedInstanceState) {
+-        super.onCreate(savedInstanceState);
+-        setContentView(R.layout.main);
+-    }
+-}
+diff --git a/packages/SystemUI/tests/src/com/android/systemui/screenshot/ScreenshotTest.java b/packages/SystemUI/tests/src/com/android/systemui/screenshot/ScreenshotTest.java
+deleted file mode 100644
+index a0bc4d7..0000000
+--- a/packages/SystemUI/tests/src/com/android/systemui/screenshot/ScreenshotTest.java
++++ /dev/null
+@@ -1,137 +0,0 @@
+-/*
+- * Copyright (C) 2011 The Android Open Source Project
+- *
+- * Licensed under the Apache License, Version 2.0 (the "License");
+- * you may not use this file except in compliance with the License.
+- * You may obtain a copy of the License at
+- *
+- *      http://www.apache.org/licenses/LICENSE-2.0
+- *
+- * Unless required by applicable law or agreed to in writing, software
+- * distributed under the License is distributed on an "AS IS" BASIS,
+- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- * See the License for the specific language governing permissions and
+- * limitations under the License.
+- */
+-package com.android.systemui.screenshot;
+-
+-import android.graphics.Bitmap;
+-import android.graphics.BitmapFactory;
+-import android.os.Environment;
+-import android.os.FileObserver;
+-import android.test.ActivityInstrumentationTestCase2;
+-import android.test.suitebuilder.annotation.LargeTest;
+-import android.util.Log;
+-import android.view.KeyEvent;
+-
+-import java.io.File;
+-
+-/**
+- * Functional tests for the global screenshot feature.
+- */
+-@LargeTest
+-public class ScreenshotTest extends ActivityInstrumentationTestCase2<ScreenshotStubActivity> {
+-
+-    private static final String LOG_TAG = "ScreenshotTest";
+-    private static final int SCREEN_WAIT_TIME_SEC = 5;
+-
+-    public ScreenshotTest() {
+-        super(ScreenshotStubActivity.class);
+-    }
+-
+-    /**
+-     * A simple test for screenshots that launches an Activity, injects the key event combo
+-     * to trigger the screenshot, and verifies the screenshot was taken successfully.
+-     */
+-    public void testScreenshot() throws Exception {
+-        Log.d(LOG_TAG, "starting testScreenshot");
+-        // launch the activity.
+-        ScreenshotStubActivity activity = getActivity();
+-        assertNotNull(activity);
+-
+-        File screenshotDir = getScreenshotDir();
+-        NewScreenshotObserver observer = new NewScreenshotObserver(
+-                screenshotDir.getAbsolutePath());
+-        observer.startWatching();
+-        takeScreenshot();
+-        // unlikely, but check if a new screenshot file was already created
+-        if (observer.getCreatedPath() == null) {
+-            // wait for screenshot to be created
+-            synchronized(observer) {
+-                observer.wait(SCREEN_WAIT_TIME_SEC*1000);
+-            }
+-        }
+-        assertNotNull(String.format("Could not find screenshot after %d seconds",
+-                SCREEN_WAIT_TIME_SEC), observer.getCreatedPath());
+-
+-        File screenshotFile = new File(screenshotDir, observer.getCreatedPath());
+-        try {
+-            assertTrue(String.format("Detected new screenshot %s but its not a file",
+-                    screenshotFile.getName()), screenshotFile.isFile());
+-            assertTrue(String.format("Detected new screenshot %s but its not an image",
+-                    screenshotFile.getName()), isValidImage(screenshotFile));
+-        } finally {
+-            // delete the file to prevent external storage from filing up
+-            screenshotFile.delete();
+-        }
+-    }
+-
+-    private static class NewScreenshotObserver extends FileObserver {
+-        private String mAddedPath = null;
+-
+-        NewScreenshotObserver(String path) {
+-            super(path, FileObserver.CREATE);
+-        }
+-
+-        synchronized String getCreatedPath() {
+-            return mAddedPath;
+-        }
+-
+-        @Override
+-        public void onEvent(int event, String path) {
+-            Log.d(LOG_TAG, String.format("Detected new file added %s", path));
+-            synchronized (this) {
+-                mAddedPath = path;
+-                notify();
+-            }
+-        }
+-    }
+-
+-    /**
+-     * Inject the key sequence to take a screenshot.
+-     */
+-    private void takeScreenshot() {
+-        getInstrumentation().sendKeySync(new KeyEvent(KeyEvent.ACTION_DOWN,
+-                KeyEvent.KEYCODE_POWER));
+-        getInstrumentation().sendKeySync(new KeyEvent(KeyEvent.ACTION_DOWN,
+-                KeyEvent.KEYCODE_VOLUME_DOWN));
+-        // the volume down key event will cause the 'volume adjustment' UI to appear in the
+-        // foreground, and steal UI focus
+-        // unfortunately this means the next key event will get directed to the
+-        // 'volume adjustment' UI, instead of this test's activity
+-        // for this reason this test must be signed with platform certificate, to grant this test
+-        // permission to inject key events to another process
+-        getInstrumentation().sendKeySync(new KeyEvent(KeyEvent.ACTION_UP,
+-                KeyEvent.KEYCODE_VOLUME_DOWN));
+-        getInstrumentation().sendKeySync(new KeyEvent(KeyEvent.ACTION_UP,
+-                KeyEvent.KEYCODE_POWER));
+-    }
+-
+-    /**
+-     * Get the directory where screenshot images are stored.
+-     */
+-    private File getScreenshotDir() {
+-        // TODO: get this dir location from a constant
+-        return new File(Environment.getExternalStorageDirectory(), "Pictures" + File.separator +
+-                "Screenshots");
+-    }
+-
+-    /**
+-     * Return true if file is valid image file
+-     */
+-    private boolean isValidImage(File screenshotFile) {
+-        Bitmap b = BitmapFactory.decodeFile(screenshotFile.getAbsolutePath());
+-        // TODO: do more checks on image
+-        return b != null;
+-    }
+-}
+-- 
+1.9.1
+
