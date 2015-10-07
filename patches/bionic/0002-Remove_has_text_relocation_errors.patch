@@ -1,0 +1,26 @@
+From c9e41aa244885cb80a6f703a442ac71b1e4eeddb Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Wed, 7 Oct 2015 21:04:00 +0300
+Subject: [PATCH 2/2] Remove_has_text_relocation_errors
+
+Change-Id: I1da7b656f716b37e8f18793cc619d912bf9e485d
+---
+ linker/linker.cpp | 2 --
+ 1 file changed, 2 deletions(-)
+
+diff --git a/linker/linker.cpp b/linker/linker.cpp
+index 11857d2..2859a41 100644
+--- a/linker/linker.cpp
++++ b/linker/linker.cpp
+@@ -2309,8 +2309,6 @@ bool soinfo::LinkImage(const android_dlextinfo* extinfo) {
+   if (has_text_relocations) {
+     // Make segments writable to allow text relocations to work properly. We will later call
+     // phdr_table_protect_segments() after all of them are applied and all constructors are run.
+-    DL_WARN("%s has text relocations. This is wasting memory and prevents "
+-            "security hardening. Please fix.", name);
+     if (phdr_table_unprotect_segments(phdr, phnum, load_bias) < 0) {
+       DL_ERR("can't unprotect loadable segments for \"%s\": %s",
+              name, strerror(errno));
+-- 
+1.9.1
+
