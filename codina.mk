@@ -37,11 +37,7 @@ PRODUCT_PROPERTY_OVERRIDES += \
 
 # Media
 PRODUCT_COPY_FILES += \
-    $(LOCAL_PATH)/configs/omxloaders:system/etc/omxloaders \
-    $(LOCAL_PATH)/configs/media_codecs.xml:system/etc/media_codecs.xml \
-    $(LOCAL_PATH)/configs/media_profiles.xml:system/etc/media_profiles.xml \
-    $(LOCAL_PATH)/configs/audio_effects.conf:system/etc/audio_effects.conf \
-    $(LOCAL_PATH)/configs/media_codecs_ffmpeg.xml:system/etc/media_codecs_ffmpeg.xml \
+    $(call find-copy-subdir-files,*,$(LOCAL_PATH)/configs,system/etc) \
 
 # init.d
 PRODUCT_COPY_FILES += \
@@ -87,7 +83,9 @@ PRODUCT_PACKAGES += \
     audio.usb.default \
     audio.a2dp.default \
     libaudioutils \
-    libtinyalsa
+    libtinyalsa \
+    Launcher3 \
+    Terminal
 
 # U8500 Hardware
 $(call inherit-product, hardware/u8500/u8500.mk)
