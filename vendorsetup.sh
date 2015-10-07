@@ -7,7 +7,8 @@ __codina_init_tools()
 	
 	for n in "$(dirname "${BASH_SOURCE[1]}")"/tools/* ; do
 		[ -x "${n}" ] || continue
-		alias codina-"$(basename "${n}")"="$(realpath "${n}")"	done
+		alias codina-"$(basename "${n}")"="$(realpath "${n}")"
+	done
 }
 
 __codina_init_tools
