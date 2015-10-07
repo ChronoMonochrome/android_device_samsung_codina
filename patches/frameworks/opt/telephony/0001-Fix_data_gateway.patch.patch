@@ -1,18 +1,18 @@
-From 05742dbf9c5a7b5de5cb519b915ed09ad172f8bc Mon Sep 17 00:00:00 2001
+From 0b44615869512f1e6a547a17b47acbaf13f7461c Mon Sep 17 00:00:00 2001
 From: Shilin Victor <chrono.monochrome@gmail.com>
-Date: Sun, 10 May 2015 19:12:27 +0300
-Subject: [PATCH] frameworks-opt-telephony_Fix-data-gateway.patch
+Date: Wed, 7 Oct 2015 21:14:46 +0300
+Subject: [PATCH] Fix_data_gateway.patch
 
-Change-Id: I2ab798e32a65ace347dcfca90e8892daa8909f27
+Change-Id: Ibb253693c28dd381d79f3981d4b5bf5748984cf6
 ---
  .../telephony/dataconnection/DataCallResponse.java | 24 ++--------------------
  1 file changed, 2 insertions(+), 22 deletions(-)
 
 diff --git a/src/java/com/android/internal/telephony/dataconnection/DataCallResponse.java b/src/java/com/android/internal/telephony/dataconnection/DataCallResponse.java
-index ccae8d9..9de5980 100644
+index 024f04e..e133984 100644
 --- a/src/java/com/android/internal/telephony/dataconnection/DataCallResponse.java
 +++ b/src/java/com/android/internal/telephony/dataconnection/DataCallResponse.java
-@@ -161,6 +161,8 @@ public class DataCallResponse {
+@@ -151,6 +151,8 @@ public class DataCallResponse {
                              if (DBG) Rlog.d(LOG_TAG, "addr/pl=" + addr + "/" + addrPrefixLen);
                              la = new LinkAddress(ia, addrPrefixLen);
                              linkProperties.addLinkAddress(la);
@@ -21,7 +21,7 @@ index ccae8d9..9de5980 100644
                          }
                      }
                  } else {
-@@ -203,28 +205,6 @@ public class DataCallResponse {
+@@ -193,28 +195,6 @@ public class DataCallResponse {
                      throw new UnknownHostException("Empty dns response and no system default dns");
                  }
  
@@ -47,9 +47,9 @@ index ccae8d9..9de5980 100644
 -                    linkProperties.addRoute(new RouteInfo(ia));
 -                }
 -
-                 // set interface MTU
-                 // this may clobber the setting read from the APN db, but that's ok
-                 linkProperties.setMtu(mtu);
+                 result = SetupResult.SUCCESS;
+             } catch (UnknownHostException e) {
+                 Rlog.d(LOG_TAG, "setLinkProperties: UnknownHostException " + e);
 -- 
 1.9.1
 

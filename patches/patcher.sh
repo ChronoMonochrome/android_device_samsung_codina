@@ -1,6 +1,6 @@
 LOCAL_PATH=../../../..
 
-PATCHES="bionic build frameworks/av frameworks/base/ frameworks/native/ frameworks/opt/net/wifi/ \
+PATCHES="bionic build frameworks/av frameworks/base/ frameworks/native/  \
         hardware/libhardware frameworks/opt/telephony/ \
         packages/services/Telecomm  packages/services/Telephony  system/core"
 
