@@ -1,3 +1,13 @@
+From 9eb7d9137958bc2d89ca2efa4599e3eea6739e56 Mon Sep 17 00:00:00 2001
+From: repo Shareef Ali <shareefalis@gmail.com>
+Date: Tue, 23 Dec 2014 15:21:01 -0600
+Subject: [PATCH] Telephony: Add OperatorReplace api to framework
+
+* This allows conversion of the operator name into a carrier name
+
+Change-Id: I4273e6091df8c0e59ca86ac6d69bd8e40e9c4d44
+---
+
 diff --git a/src/java/com/android/internal/telephony/Operators.java b/src/java/com/android/internal/telephony/Operators.java
 new file mode 100644
 index 0000000..aa41993

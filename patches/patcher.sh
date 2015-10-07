@@ -9,10 +9,10 @@ if [ "$PATCHES" == "" ] ; then
 		 bionic \
 		 bootable/recovery \
 		 frameworks/av \
-		 frameworks/base \
+		 #frameworks/base \
 		 frameworks/native  \
 		 frameworks/opt/net/wifi \
-		 frameworks/opt/telephony \
+		 #frameworks/opt/telephony \
 		 external/libpng \
 		 external/sepolicy \
 		 hardware/libhardware \
