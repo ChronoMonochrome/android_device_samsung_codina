@@ -1,0 +1,34 @@
+From 137cd8d87d62a612a33cae0d8e2b8c440dccaee0 Mon Sep 17 00:00:00 2001
+From: Kenny Root <kroot@google.com>
+Date: Fri, 14 Nov 2014 08:34:57 -0800
+Subject: [PATCH] Call local finish(String) on cancel
+
+Change I439592b2236261fa683484cd5c3ba26795aece47 to honor "Cancel"
+button presses caused a call directly into finish() instead of the local
+finish(String) which does some extra administrivia.
+
+(cherry picked from commit 13e867cb8d4f45f4a7c7a1552d89dfc5ec95f159)
+
+Bug: 18381187
+Bug: https://code.google.com/p/android/issues/detail?id=79208
+Change-Id: Ica7f52ce3afa82d95ea5cc3cb15c9ac7b734cf93
+---
+ src/com/android/keychain/KeyChainActivity.java | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/com/android/keychain/KeyChainActivity.java b/src/com/android/keychain/KeyChainActivity.java
+index 3859f05..23aa1a1 100644
+--- a/src/com/android/keychain/KeyChainActivity.java
++++ b/src/com/android/keychain/KeyChainActivity.java
+@@ -127,7 +127,7 @@ public class KeyChainActivity extends Activity {
+             case UNLOCK_CANCELED:
+                 // User wanted to cancel the request, so exit.
+                 mState = State.INITIAL;
+-                finish();
++                finish(null);
+                 return;
+             default:
+                 throw new AssertionError();
+-- 
+1.9.1
+

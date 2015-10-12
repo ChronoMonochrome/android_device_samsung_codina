@@ -1,9 +1,10 @@
 LOCAL_PATH=../../../..
 
-
-PATCHES="bionic build frameworks/av frameworks/base/ frameworks/native/ frameworks/opt/net/wifi/ \
-	frameworks/opt/telephony/ libcore packages/apps/Bluetooth/ packages/apps/OmniGears packages/apps/Settings/ \
+if [ "$PATCHES" == "" ] ; then
+	PATCHES="bionic build frameworks/av frameworks/base/ frameworks/native/ frameworks/opt/net/wifi/ \
+	frameworks/opt/telephony/ libcore $(find packages/apps/ -type d) \
         packages/services/Telecomm  packages/services/Telephony  system/core"
+fi
 
 export CL_RED="\033[31m"
 export CL_GRN="\033[32m"
