@@ -3,7 +3,7 @@ LOCAL_PATH=../../../..
 if [ "$PATCHES" == "" ] ; then
 	PATCHES="bionic build frameworks/av frameworks/base/ frameworks/native/ frameworks/opt/net/wifi/ \
 	frameworks/opt/telephony/ libcore $(find packages/apps/ -type d) \
-        packages/services/Telecomm  packages/services/Telephony  system/core"
+        packages/services/Telecomm  packages/services/Telephony  system/core system/security"
 fi
 
 export CL_RED="\033[31m"
