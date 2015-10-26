@@ -10,6 +10,9 @@ PRODUCT_PROPERTY_OVERRIDES := \
 PRODUCT_LOCALES := en_US
 PRODUCT_AAPT_CONFIG := normal
 
+# Get the long list of APNs
+PRODUCT_COPY_FILES += device/sample/etc/apns-full-conf.xml:system/etc/apns-conf.xml
+
 # Use Material sounds.
 $(call inherit-product-if-exists, frameworks/base/data/sounds/AudioPackage13.mk)
 
