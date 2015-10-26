@@ -1,9 +1,10 @@
-From c8cac4b30df6dd7c5a32d2c98559f44dbe59aac0 Mon Sep 17 00:00:00 2001
+From b29d87cc9ac0177af0c7ef500cba465593b15229 Mon Sep 17 00:00:00 2001
 From: Shilin Victor <chrono.monochrome@gmail.com>
-Date: Wed, 7 Oct 2015 01:54:52 +0300
-Subject: [PATCH 2/7] STE_OMX_getSupportedProfileLevel_fix
+Date: Tue, 20 Oct 2015 10:17:41 +0300
+Subject: [PATCH 3/9] 
+ frameworks-av_003-STE-OMX-getSupportedProfileLevel-fix.patch
 
-Change-Id: Ib550e168211c43d783c8b8dd1a3b3f45d61efd60
+Change-Id: I36965f6a20b9b2f90381902994ecf64c927890fb
 ---
  media/libstagefright/OMXClient.cpp | 22 +++++++++++++++++++++-
  1 file changed, 21 insertions(+), 1 deletion(-)

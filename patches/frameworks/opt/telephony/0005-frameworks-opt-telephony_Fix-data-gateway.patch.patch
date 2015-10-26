@@ -1,15 +1,15 @@
-From 05742dbf9c5a7b5de5cb519b915ed09ad172f8bc Mon Sep 17 00:00:00 2001
+From 6fecb36186cab07876471f13503b57b0137a4ef6 Mon Sep 17 00:00:00 2001
 From: Shilin Victor <chrono.monochrome@gmail.com>
-Date: Sun, 10 May 2015 19:12:27 +0300
-Subject: [PATCH] frameworks-opt-telephony_Fix-data-gateway.patch
+Date: Thu, 22 Oct 2015 02:40:52 +0300
+Subject: [PATCH 5/5] frameworks-opt-telephony_Fix-data-gateway.patch
 
-Change-Id: I2ab798e32a65ace347dcfca90e8892daa8909f27
+Change-Id: Ic3e5e328db68a46c32efa62dcc4ffcdbf1e060ef
 ---
  .../telephony/dataconnection/DataCallResponse.java | 24 ++--------------------
  1 file changed, 2 insertions(+), 22 deletions(-)
 
 diff --git a/src/java/com/android/internal/telephony/dataconnection/DataCallResponse.java b/src/java/com/android/internal/telephony/dataconnection/DataCallResponse.java
-index ccae8d9..9de5980 100644
+index 51adce3..60d02a0 100644
 --- a/src/java/com/android/internal/telephony/dataconnection/DataCallResponse.java
 +++ b/src/java/com/android/internal/telephony/dataconnection/DataCallResponse.java
 @@ -161,6 +161,8 @@ public class DataCallResponse {

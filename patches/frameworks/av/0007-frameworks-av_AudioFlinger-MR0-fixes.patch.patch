@@ -1,9 +1,9 @@
-From 08f6b0eb25c1531f7103303207f0d9b1e2fb3115 Mon Sep 17 00:00:00 2001
+From 036a1de3a603279f5453197d10ecf5980443d5c3 Mon Sep 17 00:00:00 2001
 From: Shilin Victor <chrono.monochrome@gmail.com>
-Date: Wed, 7 Oct 2015 01:58:19 +0300
-Subject: [PATCH 5/7] AudioFlinger_MR0_fixes
+Date: Tue, 20 Oct 2015 10:19:07 +0300
+Subject: [PATCH 7/9] frameworks-av_AudioFlinger-MR0-fixes.patch
 
-Change-Id: I52566b0c9eb56dfc7e7516fd553e64fb225b36ea
+Change-Id: I4d3941ff42195dc9ec347e653c85f44de5857118
 ---
  services/audioflinger/AudioFlinger.cpp | 12 ++++++++++++
  1 file changed, 12 insertions(+)
