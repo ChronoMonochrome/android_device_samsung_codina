@@ -22,7 +22,6 @@ PRODUCT_VENDOR_KERNEL_HEADERS := $(LOCAL_PATH)/kernel-headers
 
 # Board
 TARGET_NO_BOOTLOADER := true
-TARGET_NO_KERNEL := true
 TARGET_NO_RADIOIMAGE := true
 TARGET_NO_SEPARATE_RECOVERY := true
 BOARD_CANT_BUILD_RECOVERY_FROM_BOOT_PATCH := true
@@ -58,6 +57,9 @@ TARGET_CPU_ABI2 := armeabi
 ARCH_ARM_HAVE_NEON := true
 TARGET_GLOBAL_CFLAGS += -mtune=cortex-a9 -mfpu=neon -mfloat-abi=softfp
 TARGET_GLOBAL_CPPFLAGS += -mtune=cortex-a9 -mfpu=neon -mfloat-abi=softfp
+
+# Build
+BOARD_CUSTOM_OTA_MK := device/samsung/codina/customota.mk
 
 # Kernel
 BOARD_KERNEL_PAGESIZE := 4096
@@ -165,6 +167,13 @@ TW_NO_USB_STORAGE := true
 TW_NO_REBOOT_BOOTLOADER := true
 TW_HAS_DOWNLOAD_MODE := true
 
+# Superuser
+SUPERUSER_EMBEDDED := false
+TARGET_NO_SUPERUSER := true
+ifneq ($(TARGET_NO_SUPERUSER),true)
+SUPERUSER_EMBEDDED := true
+endif
+
 # SELinux
 BOARD_SEPOLICY_DIRS := \
     $(BOARD_SEPOLICY_DIRS) \
@@ -226,3 +235,8 @@ WITH_DEXPREOPT_COMP := false
 # Enable position-independent code for odex files
 WITH_DEXPREOPT_PIC := true
 
+# Enable Minikin text layout engine (will be the default soon)
+USE_MINIKIN := true
+
+# Include an expanded selection of fonts
+EXTENDED_FONT_FOOTPRINT := true

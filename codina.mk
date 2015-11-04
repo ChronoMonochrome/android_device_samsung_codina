@@ -92,13 +92,25 @@ PRODUCT_PACKAGES += \
 # U8500 Hardware
 $(call inherit-product, hardware/u8500/u8500.mk)
 
+# Boot Animation
+PRODUCT_COPY_FILES += \
+    $(LOCAL_PATH)/bootanimation.zip:system/media/bootanimation.zip
+
+# Superuser
+ifneq ($(TARGET_NO_SUPERUSER),true)
+
+PRODUCT_PACKAGES += \
+    su
+
+PRODUCT_PROPERTY_OVERRIDES += \
+    persist.sys.root_access=3
+
+endif
+
 ADDITIONAL_DEFAULT_PROPERTIES += \
 	ro.secure=0 \
 	ro.adb.secure=0 \
 	persist.sys.force_highendgfx=true 
-
-PRODUCT_PROPERTY_OVERRIDES += \
-        persist.sys.root_access=1
 
 # USB
 PRODUCT_DEFAULT_PROPERTY_OVERRIDES += \
@@ -215,7 +227,7 @@ LOCAL_KERNEL := $(TARGET_PREBUILT_KERNEL)
 endif
 
 PRODUCT_COPY_FILES := \
-	$(LOCAL_KERNEL):kernel
+       $(LOCAL_KERNEL):kernel
 
 # == BEGIN LOCAL CONFIG ==
 
@@ -223,7 +235,7 @@ PRODUCT_COPY_FILES := \
 $(call inherit-product, vendor/samsung/u8500-common/codina/codina-vendor-blobs.mk)
 
 ifneq ($(TARGET_SCREEN_HEIGHT),800)
-# Call omni_codina.mk because somehow it's not being called!
+# Call aosp_codina.mk because somehow it's not being called!
 #$(call inherit-product, device/samsung/codina/aosp_codina.mk)
 endif
 
@@ -232,3 +244,5 @@ PRODUCT_PACKAGES += \
 libwpa_client \
 hostapd \
 dhcpcd.conf
+
+PRODUCT_PREBUILT_WEBVIEWCHROMIUM := yes

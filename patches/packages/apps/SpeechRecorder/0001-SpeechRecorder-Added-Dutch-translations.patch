@@ -1,0 +1,47 @@
+From 48b3c921569a7a326d14e1b986411da77cc8093d Mon Sep 17 00:00:00 2001
+From: Marco Brohet <therbom@gmail.com>
+Date: Fri, 16 Mar 2012 17:18:03 +0100
+Subject: [PATCH] SpeechRecorder: Added Dutch translations
+
+Change-Id: I4f18cf9ce732ca8e27ce0efef1eedd318d2bcb0d
+---
+ res/values-nl/strings.xml | 27 +++++++++++++++++++++++++++
+ 1 file changed, 27 insertions(+)
+ create mode 100644 res/values-nl/strings.xml
+
+diff --git a/res/values-nl/strings.xml b/res/values-nl/strings.xml
+new file mode 100644
+index 0000000..519b22e
+--- /dev/null
++++ b/res/values-nl/strings.xml
+@@ -0,0 +1,27 @@
++<?xml version="1.0" encoding="utf-8"?>
++<!-- Copyright (C) 2006 The Android Open Source Project
++
++     Licensed under the Apache License, Version 2.0 (the "License");
++     you may not use this file except in compliance with the License.
++     You may obtain a copy of the License at
++
++          http://www.apache.org/licenses/LICENSE-2.0
++
++     Unless required by applicable law or agreed to in writing, software
++     distributed under the License is distributed on an "AS IS" BASIS,
++     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++     See the License for the specific language governing permissions and
++     limitations under the License.
++-->
++
++<resources>
++    <!-- application name and title of error dialogs-->
++    <string name="app_name">Spraakrecorder</string>
++
++    <string name="speechrecorderlabel">Spraakrecorder</string>
++    <string name="recordButton">Opnemen</string>
++    <string name="redoButton">Opnieuw</string>
++    <string name="callRadioButton">\"bel ...\"\nUitingen</string>
++    <string name="dialNanpRadioButton">\"draai NANP\"\nUitingen</string>
++    <string name="dialPairsRadioButton">\"draai NANP PAIRS\"\nUitingen</string>
++</resources>
+-- 
+1.9.1
+
