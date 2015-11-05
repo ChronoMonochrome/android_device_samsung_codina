@@ -23,3 +23,4 @@ BOARD_NO_WIFI_HAL := true
 
 # Dex pre-optimization
 WITH_DEXPREOPT := true
+USE_PREBUILT_CHROMIUM := 1
