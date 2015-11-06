@@ -1,6 +1,6 @@
 LOCAL_PATH=../../../..
 
-PATCHES="frameworks/av frameworks/base frameworks/native external/chromium_org \
+PATCHES="build frameworks/av frameworks/base frameworks/native external/chromium_org \
               hardware/libhardware libcore packages/apps/Settings \
 		packages/apps/OmniGears packages/apps/Camera2 \
 		 packages/services/Telephony/  system/vold system/core"

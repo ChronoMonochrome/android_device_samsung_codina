@@ -1,0 +1,70 @@
+From 66cd81853599bbfb4575f60747e7d566c700659c Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Fri, 6 Nov 2015 15:17:22 +0200
+Subject: [PATCH] Fix boot.img compilation
+
+Change-Id: Ib83c8f2b811baf3fd40e72ce7781fe92d826b93e
+---
+ core/tasks/kernel.mk         | 17 +----------------
+ tools/releasetools/common.py |  3 ++-
+ 2 files changed, 3 insertions(+), 17 deletions(-)
+
+diff --git a/core/tasks/kernel.mk b/core/tasks/kernel.mk
+index d27b6ba..99eeec4 100644
+--- a/core/tasks/kernel.mk
++++ b/core/tasks/kernel.mk
+@@ -143,15 +143,7 @@ ifeq ($(TARGET_ARCH),arm)
+         endif
+       endif
+     endif
+-    ifneq ($(TARGET_KERNEL_CUSTOM_TOOLCHAIN),)
+-        ifeq ($(HOST_OS),darwin)
+-            ARM_CROSS_COMPILE:=CROSS_COMPILE="$(ccache) $(ANDROID_BUILD_TOP)/prebuilts/gcc/darwin-x86/arm/$(TARGET_KERNEL_CUSTOM_TOOLCHAIN)/bin/arm-eabi-"
+-        else
+-            ARM_CROSS_COMPILE:=CROSS_COMPILE="$(ccache) $(ANDROID_BUILD_TOP)/prebuilts/gcc/linux-x86/arm/$(TARGET_KERNEL_CUSTOM_TOOLCHAIN)/bin/arm-eabi-"
+-        endif
+-    else
+-        ARM_CROSS_COMPILE:=CROSS_COMPILE="$(ccache) $(ARM_EABI_TOOLCHAIN)/arm-eabi-"
+-    endif
++    ARM_CROSS_COMPILE:=CROSS_COMPILE=$(KERNEL_TOOLCHAIN)
+     ccache = 
+ endif
+ 
+@@ -173,13 +165,6 @@ $(KERNEL_CONFIG): $(KERNEL_OUT)
+ $(KERNEL_OUT)/piggy : $(TARGET_PREBUILT_INT_KERNEL)
+ 	$(hide) gunzip -c $(KERNEL_OUT)/arch/$(TARGET_ARCH)/boot/compressed/piggy.gzip > $(KERNEL_OUT)/piggy
+ 
+-TARGET_KERNEL_BINARIES: $(KERNEL_OUT) $(KERNEL_CONFIG) $(KERNEL_HEADERS_INSTALL)
+-	$(MAKE) $(MAKE_FLAGS) -C $(KERNEL_SRC) O=$(KERNEL_OUT) ARCH=$(TARGET_ARCH) $(ARM_CROSS_COMPILE) $(TARGET_PREBUILT_INT_KERNEL_TYPE)
+-	-$(MAKE) $(MAKE_FLAGS) -C $(KERNEL_SRC) O=$(KERNEL_OUT) ARCH=$(TARGET_ARCH) $(ARM_CROSS_COMPILE) modules
+-	-$(MAKE) $(MAKE_FLAGS) -C $(KERNEL_SRC) O=$(KERNEL_OUT) INSTALL_MOD_PATH=../../$(KERNEL_MODULES_INSTALL) ARCH=$(TARGET_ARCH) $(ARM_CROSS_COMPILE) modules_install
+-	$(mv-modules)
+-	$(clean-module-folder)
+-
+ $(TARGET_KERNEL_MODULES): TARGET_KERNEL_BINARIES
+ 
+ $(TARGET_PREBUILT_INT_KERNEL): $(TARGET_KERNEL_MODULES)
+diff --git a/tools/releasetools/common.py b/tools/releasetools/common.py
+index 360c18d..967aeb6 100644
+--- a/tools/releasetools/common.py
++++ b/tools/releasetools/common.py
+@@ -487,7 +487,7 @@ def CheckSize(data, target, info_dict):
+ 
+   if target.endswith(".img"): target = target[:-4]
+   mount_point = "/" + target
+-
++  fs_type = None
+   if info_dict["fstab"]:
+     if mount_point == "/userdata": mount_point = "/data"
+     p = info_dict["fstab"][mount_point]
+@@ -496,6 +496,7 @@ def CheckSize(data, target, info_dict):
+     if "/" in device:
+       device = device[device.rfind("/")+1:]
+     limit = info_dict.get(device + "_size", None)
++
+   if not fs_type or not limit: return
+ 
+   if fs_type == "yaffs2":
+-- 
+1.9.1
+
