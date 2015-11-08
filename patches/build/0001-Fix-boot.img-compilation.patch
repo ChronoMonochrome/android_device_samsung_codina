@@ -1,27 +1,41 @@
-From 66cd81853599bbfb4575f60747e7d566c700659c Mon Sep 17 00:00:00 2001
+From e69adcb28c40a3aa7a0ba8dfa5bf7eb505d83bb7 Mon Sep 17 00:00:00 2001
 From: Shilin Victor <chrono.monochrome@gmail.com>
-Date: Fri, 6 Nov 2015 15:17:22 +0200
+Date: Sun, 8 Nov 2015 06:49:22 +0200
 Subject: [PATCH] Fix boot.img compilation
 
-Change-Id: Ib83c8f2b811baf3fd40e72ce7781fe92d826b93e
+Change-Id: Id74cb1fee1b9aad29df197601e41abdcb2acc93f
 ---
- core/tasks/kernel.mk         | 17 +----------------
+ core/tasks/kernel.mk         | 32 +-------------------------------
  tools/releasetools/common.py |  3 ++-
- 2 files changed, 3 insertions(+), 17 deletions(-)
+ 2 files changed, 3 insertions(+), 32 deletions(-)
 
 diff --git a/core/tasks/kernel.mk b/core/tasks/kernel.mk
-index d27b6ba..99eeec4 100644
+index d6a81c9..7baa00b 100644
 --- a/core/tasks/kernel.mk
 +++ b/core/tasks/kernel.mk
-@@ -143,15 +143,7 @@ ifeq ($(TARGET_ARCH),arm)
-         endif
-       endif
-     endif
+@@ -139,29 +139,7 @@ define clean-module-folder
+ endef
+ 
+ ifeq ($(TARGET_ARCH),arm)
+-    ifneq ($(USE_CCACHE),)
+-     # search executable
+-      ccache =
+-      ccache := $(shell which ccache)
+-      ifeq ($(ccache),)
+-        ifneq ($(strip $(wildcard $(ANDROID_BUILD_TOP)/prebuilts/misc/$(HOST_PREBUILT_EXTRA_TAG)/ccache/ccache)),)
+-          ccache := $(ANDROID_BUILD_TOP)/prebuilts/misc/$(HOST_PREBUILT_EXTRA_TAG)/ccache/ccache
+-        else
+-          ifneq ($(strip $(wildcard $(ANDROID_BUILD_TOP)/prebuilts/misc/$(HOST_PREBUILT_TAG)/ccache/ccache)),)
+-            ccache := $(ANDROID_BUILD_TOP)/prebuilts/misc/$(HOST_PREBUILT_TAG)/ccache/ccache
+-          endif
+-        endif
+-      endif
+-    endif
 -    ifneq ($(TARGET_KERNEL_CUSTOM_TOOLCHAIN),)
 -        ifeq ($(HOST_OS),darwin)
--            ARM_CROSS_COMPILE:=CROSS_COMPILE="$(ccache) $(ANDROID_BUILD_TOP)/prebuilts/gcc/darwin-x86/arm/$(TARGET_KERNEL_CUSTOM_TOOLCHAIN)/bin/arm-eabi-"
+-            ARM_CROSS_COMPILE:=CROSS_COMPILE="$(ccache) $(ANDROID_BUILD_TOP)/prebuilt/darwin-x86/toolchain/$(TARGET_KERNEL_CUSTOM_TOOLCHAIN)"
 -        else
--            ARM_CROSS_COMPILE:=CROSS_COMPILE="$(ccache) $(ANDROID_BUILD_TOP)/prebuilts/gcc/linux-x86/arm/$(TARGET_KERNEL_CUSTOM_TOOLCHAIN)/bin/arm-eabi-"
+-            ARM_CROSS_COMPILE:=CROSS_COMPILE="$(ccache) $(ANDROID_BUILD_TOP)/prebuilt/linux-x86/toolchain/$(TARGET_KERNEL_CUSTOM_TOOLCHAIN)"
 -        endif
 -    else
 -        ARM_CROSS_COMPILE:=CROSS_COMPILE="$(ccache) $(ARM_EABI_TOOLCHAIN)/arm-eabi-"
@@ -30,14 +44,15 @@ index d27b6ba..99eeec4 100644
      ccache = 
  endif
  
-@@ -173,13 +165,6 @@ $(KERNEL_CONFIG): $(KERNEL_OUT)
+@@ -179,14 +157,6 @@ $(KERNEL_CONFIG): $(KERNEL_OUT)
  $(KERNEL_OUT)/piggy : $(TARGET_PREBUILT_INT_KERNEL)
  	$(hide) gunzip -c $(KERNEL_OUT)/arch/$(TARGET_ARCH)/boot/compressed/piggy.gzip > $(KERNEL_OUT)/piggy
  
 -TARGET_KERNEL_BINARIES: $(KERNEL_OUT) $(KERNEL_CONFIG) $(KERNEL_HEADERS_INSTALL)
--	$(MAKE) $(MAKE_FLAGS) -C $(KERNEL_SRC) O=$(KERNEL_OUT) ARCH=$(TARGET_ARCH) $(ARM_CROSS_COMPILE) $(TARGET_PREBUILT_INT_KERNEL_TYPE)
--	-$(MAKE) $(MAKE_FLAGS) -C $(KERNEL_SRC) O=$(KERNEL_OUT) ARCH=$(TARGET_ARCH) $(ARM_CROSS_COMPILE) modules
--	-$(MAKE) $(MAKE_FLAGS) -C $(KERNEL_SRC) O=$(KERNEL_OUT) INSTALL_MOD_PATH=../../$(KERNEL_MODULES_INSTALL) ARCH=$(TARGET_ARCH) $(ARM_CROSS_COMPILE) modules_install
+-	$(MAKE) -C $(KERNEL_SRC) O=$(KERNEL_OUT) ARCH=$(TARGET_ARCH) $(ARM_CROSS_COMPILE) $(TARGET_PREBUILT_INT_KERNEL_TYPE)
+-	-$(MAKE) -C $(KERNEL_SRC) O=$(KERNEL_OUT) ARCH=$(TARGET_ARCH) $(ARM_CROSS_COMPILE) dtbs
+-	-$(MAKE) -C $(KERNEL_SRC) O=$(KERNEL_OUT) ARCH=$(TARGET_ARCH) $(ARM_CROSS_COMPILE) modules
+-	-$(MAKE) -C $(KERNEL_SRC) O=$(KERNEL_OUT) INSTALL_MOD_PATH=../../$(KERNEL_MODULES_INSTALL) ARCH=$(TARGET_ARCH) $(ARM_CROSS_COMPILE) modules_install
 -	$(mv-modules)
 -	$(clean-module-folder)
 -
@@ -45,7 +60,7 @@ index d27b6ba..99eeec4 100644
  
  $(TARGET_PREBUILT_INT_KERNEL): $(TARGET_KERNEL_MODULES)
 diff --git a/tools/releasetools/common.py b/tools/releasetools/common.py
-index 360c18d..967aeb6 100644
+index 51c48e5..ec8e881 100644
 --- a/tools/releasetools/common.py
 +++ b/tools/releasetools/common.py
 @@ -487,7 +487,7 @@ def CheckSize(data, target, info_dict):
@@ -55,9 +70,9 @@ index 360c18d..967aeb6 100644
 -
 +  fs_type = None
    if info_dict["fstab"]:
+     if mount_point == "/userdata_extra": mount_point = "/data"
      if mount_point == "/userdata": mount_point = "/data"
-     p = info_dict["fstab"][mount_point]
-@@ -496,6 +496,7 @@ def CheckSize(data, target, info_dict):
+@@ -497,6 +497,7 @@ def CheckSize(data, target, info_dict):
      if "/" in device:
        device = device[device.rfind("/")+1:]
      limit = info_dict.get(device + "_size", None)
