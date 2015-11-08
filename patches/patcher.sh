@@ -1,7 +1,7 @@
-LOCAL_PATH=../../../..
+TOP=../../../..
 
 PATCHES="build frameworks/av frameworks/base frameworks/native external/chromium_org \
-              hardware/libhardware libcore packages/apps/Settings \
+                          hardware/libhardware libcore packages/apps/Settings \
 		packages/apps/OmniGears packages/apps/Camera2 \
 		 packages/services/Telephony/  system/vold system/core"
 
@@ -14,58 +14,63 @@ export CL_CYN="\033[36m"
 export CL_RST="\033[0m"
 
 pre_clean() {
-    tmp=$PWD
-    cd $1
+        tmp=$PWD
+        cd $1
 
-    git reset --hard > /dev/null 2>&1
-    git clean -fd > /dev/null 2>&1
-    git am  --abort > /dev/null 2>&1
+        git reset --hard > /dev/null 2>&1
+        git clean -fd > /dev/null 2>&1
+        git am  --abort > /dev/null 2>&1
 
-    cd $tmp
+        cd $tmp
 
-    out=$( repo sync -fl $1 )
+        out=$( git checkout )
 }
 
 apply() {
-    out=$( patch -p1 -i $1 )
-    fail=$( echo $out | grep -ic "FAILED" )
-    ign=$( echo $out | grep -ic "ignore" )
+        out=$( patch -p1 -i $1 )
+        fail=$( echo $out | grep -ic "FAILED" )
+        ign=$( echo $out | grep -ic "ignore" )
 
-    if [ "$fail" == "0" ]  ; then
-         git commit -am "$1"
-         if [ "$ign" != "0" ]  ; then
-             echo -e $CL_RED"some hunks of patch $1 has been ignored"$CL_RST
-             #echo -e $CL_RED$out$CL_RST | tr '.' '\n'
-         fi
-    else 
-         echo -e $CL_RED"patch $1 applies with errors -> reject"$CL_RST
+        if [ "$fail" == "0" ]  ; then
+                 git commit -am "$1"
+                 if [ "$ign" != "0" ]  ; then
+                         echo -e $CL_RED"some hunks of patch $1 has been ignored"$CL_RST
+                         #echo -e $CL_RED$out$CL_RST | tr '.' '\n'
+                 fi
+        else 
+                 echo -e $CL_RED"patch $1 applies with errors -> reject"$CL_RST
 	 git reset --hard
-         #echo -e $CL_RED$l$CL_RST | tr '.' '\n'
-    fi;
+                 #echo -e $CL_RED$l$CL_RST | tr '.' '\n'
+        fi;
 }
 
 apply_all() {
-    tmp=$PWD
-    cd $1
+        tmp=$PWD
+        cd $1
 
-    echo -e $CL_BLU"Applying patches to $1"$CL_RST ; echo "" ; echo "" ;
+	if test -f RESET; then
+		/bin/bash RESET
+	fi
 
-    for i in $( ls *.patch )
-    do
-        echo "applying "$i
-        apply $i
-        echo ""
-    done
+
+        echo -e $CL_BLU"Applying patches to $1"$CL_RST ; echo "" ; echo "" ;
+
+        for i in $( ls *.patch )
+        do
+                echo "applying "$i
+                apply $i
+                echo ""
+        done
  
-    cd $tmp
+        cd $tmp
 }
 
 # pre clean 
 
 echo -e $CL_GRN"get rid of any uncommitted or unstaged changes"$CL_RST
 
-patches=$PWD
-cd $LOCAL_PATH
+LOCAL_PATH=$PWD
+cd $TOP
 
 for i in $PATCHES
 do
@@ -75,19 +80,18 @@ done
 
 if [ "$1" != "clean" ]; then
 
-	cd $patches
+	cd $LOCAL_PATH
 
 	# copy patches
-	cp -r * $LOCAL_PATH 
-	cd $LOCAL_PATH
+	cp -r * $TOP 
+	cd $TOP
 
 	# now apply it 
 
 	for i in  $PATCHES
 	do
-	if test -f RESET; then
-		/bin/bash RESET
-	fi
 	apply_all $i
 	done
 fi
+
+cd $LOCAL_PATH
