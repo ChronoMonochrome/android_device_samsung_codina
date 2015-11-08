@@ -1,9 +1,7 @@
 TOP=../../../..
 
 PATCHES="build frameworks/av frameworks/base frameworks/native external/chromium_org \
-                          hardware/libhardware libcore packages/apps/Settings \
-		packages/apps/OmniGears packages/apps/Camera2 \
-		 packages/services/Telephony/  system/vold system/core"
+                          hardware/libhardware libcore"
 
 export CL_RED="\033[31m"
 export CL_GRN="\033[32m"
@@ -23,7 +21,7 @@ pre_clean() {
 
         cd $tmp
 
-        out=$( git checkout )
+        out=$( repo sync $1 -fl )
 }
 
 apply() {
