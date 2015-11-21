@@ -1,7 +1,7 @@
-From fe71ef8856f1fcc56205135f4bc053d9934c5915 Mon Sep 17 00:00:00 2001
+From b19e726c9dd5419b1d24a4dfa8c1dbcd04be69da Mon Sep 17 00:00:00 2001
 From: Shilin Victor <chrono.monochrome@gmail.com>
 Date: Mon, 11 May 2015 19:53:59 +0300
-Subject: [PATCH 2/9] patch for binder
+Subject: [PATCH 02/21] patch for binder
 
 Change-Id: Ia0407c48777e6b405300cc513a9047ca718024b6
 ---

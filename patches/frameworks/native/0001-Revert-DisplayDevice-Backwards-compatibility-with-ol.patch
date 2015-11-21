@@ -1,7 +1,7 @@
-From 15de107ef6eaced40906d3a5896d2915bdca3a69 Mon Sep 17 00:00:00 2001
+From b274cec2f59f6acbde6cb77e0b49b6ceb86abb35 Mon Sep 17 00:00:00 2001
 From: Shilin Victor <chrono.monochrome@gmail.com>
 Date: Tue, 29 Sep 2015 16:10:49 +0300
-Subject: [PATCH 1/9] Revert "DisplayDevice: Backwards compatibility with old
+Subject: [PATCH 01/21] Revert "DisplayDevice: Backwards compatibility with old
  EGL"
 
 This reverts commit e5960bf563567b1edb5f2a0dcf1d36dcc5ecaae5.

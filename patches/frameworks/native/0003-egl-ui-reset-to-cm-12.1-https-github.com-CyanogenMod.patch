@@ -1,7 +1,7 @@
-From 9718853eb58468433aa933ba3e0272a21bc14bf0 Mon Sep 17 00:00:00 2001
+From c04a5e9ebddd6f7354d823d42ef696257645e97f Mon Sep 17 00:00:00 2001
 From: Shilin Victor <chrono.monochrome@gmail.com>
 Date: Tue, 29 Sep 2015 00:01:43 +0300
-Subject: [PATCH 3/9] egl, ui: reset to cm-12.1
+Subject: [PATCH 03/21] egl, ui: reset to cm-12.1
  (https://github.com/CyanogenMod/android_frameworks_native/commit/b5f98d71e8b37c7a90401128e19887e66913b666)
 
 Change-Id: Iaaba235cacf286e68641967fa85dd572a5eef75e

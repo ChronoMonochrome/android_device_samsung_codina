@@ -1,0 +1,129 @@
+From f7eecd69822e7d84f4dfa5d0eb0f4a07c9da5231 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Sat, 21 Nov 2015 19:53:42 +0200
+Subject: [PATCH 20/21] derp
+
+Change-Id: I8cf093cfc4cce82b3a922896ca2dee24ad972265
+---
+ services/surfaceflinger/SurfaceFlinger.cpp | 98 +++++++-----------------------
+ 1 file changed, 23 insertions(+), 75 deletions(-)
+
+diff --git a/services/surfaceflinger/SurfaceFlinger.cpp b/services/surfaceflinger/SurfaceFlinger.cpp
+index 0cf5f45..4f1a5dd 100644
+--- a/services/surfaceflinger/SurfaceFlinger.cpp
++++ b/services/surfaceflinger/SurfaceFlinger.cpp
+@@ -1282,78 +1282,6 @@ void SurfaceFlinger::handleTransaction(uint32_t transactionFlags)
+     // here the transaction has been committed
+ }
+ 
+-void SurfaceFlinger::configureVirtualDisplay(int32_t &hwcDisplayId,
+-                                        sp<DisplaySurface> &dispSurface,
+-                                        sp<IGraphicBufferProducer> &producer,
+-                                        const DisplayDeviceState state,
+-                                        sp<IGraphicBufferProducer> bqProducer,
+-                                        sp<IGraphicBufferConsumer> bqConsumer)
+-{
+-    bool vdsEnabled = mHwc->isVDSEnabled();
+-
+-    //for V4L2 based virtual display implementation
+-    if(!vdsEnabled) {
+-        // persist.sys.wfd.virtual will be set if WFD is launched via
+-        // settings app. This is currently being done in
+-        // ExtendedRemoteDisplay-WFD stack.
+-        // This flag will be reset at the time of disconnection of virtual WFD
+-        // display.
+-        // This flag is set to zero if WFD is launched via QCOM WFD
+-        // proprietary APIs which use HDMI piggyback approach.
+-        char value[PROPERTY_VALUE_MAX];
+-        property_get("persist.sys.wfd.virtual", value, "0");
+-        int wfdVirtual = atoi(value);
+-        if(!wfdVirtual) {
+-            // This is for non-wfd virtual display scenarios(e.g. SSD/SR/CTS)
+-            sp<VirtualDisplaySurface> vds = new VirtualDisplaySurface(*mHwc,
+-                    hwcDisplayId, state.surface, bqProducer, bqConsumer, state.displayName);
+-            dispSurface = vds;
+-            // There won't be any interaction with HWC for this virtual display.
+-            // so the GLES driver can pass buffers directly to the sink.
+-            producer = state.surface;
+-        } else {
+-            hwcDisplayId = allocateHwcDisplayId(state.type);
+-            if (hwcDisplayId >= 0) {
+-                // This is for WFD virtual display scenario.
+-                // Read virtual display properties and create a
+-                // rendering surface for it inorder to be handled by hwc.
+-                setVirtualDisplayData(hwcDisplayId, state.surface);
+-                dispSurface = new FramebufferSurface(*mHwc, state.type,
+-                bqConsumer);
+-                producer = bqProducer;
+-            } else {
+-                // in case of WFD Virtual + SSD/SR concurrency scenario,
+-                // WFD virtual display instance gets valid hwcDisplayId and
+-                // SSD/SR will get invalid hwcDisplayId
+-                sp<VirtualDisplaySurface> vds = new VirtualDisplaySurface(*mHwc,
+-                        hwcDisplayId, state.surface, bqProducer, bqConsumer, state.displayName);
+-                dispSurface = vds;
+-                // There won't be any interaction with HWC for this virtual
+-                // display, so the GLES driver can pass buffers directly to the
+-                // sink.
+-                producer = state.surface;
+-            }
+-        }
+-    } else {
+-        // VDS solution is enabled
+-        // HWC is allocated for first virtual display.
+-        // Subsequent virtual display sessions will be composed by GLES driver.
+-        // ToDo: Modify VDS component to allocate hwcDisplayId based on
+-        // mForceHwcCopy (which is based on Usage Flags)
+-
+-        sp<VirtualDisplaySurface> vds = new VirtualDisplaySurface(*mHwc,
+-                hwcDisplayId, state.surface, bqProducer, bqConsumer, state.displayName);
+-        dispSurface = vds;
+-        if (hwcDisplayId >= 0) {
+-            producer = vds;
+-        } else {
+-            // There won't be any interaction with HWC for this virtual display,
+-            // so the GLES driver can pass buffers directly to the sink.
+-            producer = state.surface;
+-        }
+-    }
+-}
+-
+ void SurfaceFlinger::handleTransactionLocked(uint32_t transactionFlags)
+ {
+     const LayerVector& currentLayers(mCurrentState.layersSortedByZ);
+@@ -1477,9 +1405,29 @@ void SurfaceFlinger::handleTransactionLocked(uint32_t transactionFlags)
+                         // they have external state (layer stack, projection,
+                         // etc.) but no internal state (i.e. a DisplayDevice).
+                         if (state.surface != NULL) {
+-                            configureVirtualDisplay(hwcDisplayId,
+-                                    dispSurface, producer, state, bqProducer,
+-                                    bqConsumer);
++
++                            int width = 0;
++                            int status = state.surface->query(
++                                    NATIVE_WINDOW_WIDTH, &width);
++                            ALOGE_IF(status != NO_ERROR,
++                                    "Unable to query width (%d)", status);
++                            int height = 0;
++                            status = state.surface->query(
++                                    NATIVE_WINDOW_HEIGHT, &height);
++                            ALOGE_IF(status != NO_ERROR,
++                                    "Unable to query height (%d)", status);
++                            if (MAX_VIRTUAL_DISPLAY_DIMENSION == 0 ||
++                                    (width <= MAX_VIRTUAL_DISPLAY_DIMENSION &&
++                                     height <= MAX_VIRTUAL_DISPLAY_DIMENSION)) {
++                                hwcDisplayId = allocateHwcDisplayId(state.type);
++                            }
++
++                            sp<VirtualDisplaySurface> vds = new VirtualDisplaySurface(
++                                    *mHwc, hwcDisplayId, state.surface,
++                                    bqProducer, bqConsumer, state.displayName);
++
++                            dispSurface = vds;
++                            producer = vds;
+                         }
+                     } else {
+                         ALOGE_IF(state.surface!=NULL,
+-- 
+1.9.1
+

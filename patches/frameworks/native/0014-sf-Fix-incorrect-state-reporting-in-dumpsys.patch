@@ -1,0 +1,56 @@
+From 20c7dc275616bda7273ec29723d5c62d14332fce Mon Sep 17 00:00:00 2001
+From: Manoj Kumar AVM <manojavm@codeaurora.org>
+Date: Tue, 4 Mar 2014 18:15:03 -0800
+Subject: [PATCH 14/21] sf: Fix incorrect state reporting in dumpsys
+
+Dumpsys utility access layer compositionType variable
+with out proper protection. These variables are modified
+during hwc_prepare call. Existing HAL lock protection is not
+sufficient to address this issue. Failure to do this will
+result in incorrect state reporting in dumpsys.
+
+A new drawLock mutex in HWComposer that will be used in both
+dumpsys and draw calls to ensure correct state is accessed.
+
+Change-Id: I6289e0a3d1f5bbf35a18ddcd0538c9cda3e96c27
+---
+ services/surfaceflinger/DisplayHardware/HWComposer.cpp | 2 ++
+ services/surfaceflinger/DisplayHardware/HWComposer.h   | 2 ++
+ 2 files changed, 4 insertions(+)
+
+diff --git a/services/surfaceflinger/DisplayHardware/HWComposer.cpp b/services/surfaceflinger/DisplayHardware/HWComposer.cpp
+index edfed49..4729a3c 100644
+--- a/services/surfaceflinger/DisplayHardware/HWComposer.cpp
++++ b/services/surfaceflinger/DisplayHardware/HWComposer.cpp
+@@ -632,6 +632,7 @@ status_t HWComposer::setFramebufferTarget(int32_t id,
+ }
+ 
+ status_t HWComposer::prepare() {
++    Mutex::Autolock _l(mDrawLock);
+     for (size_t i=0 ; i<mNumDisplays ; i++) {
+         DisplayData& disp(mDisplayData[i]);
+         if (disp.framebufferTarget) {
+@@ -1117,6 +1118,7 @@ static String8 getFormatStr(PixelFormat format) {
+ }
+ 
+ void HWComposer::dump(String8& result) const {
++    Mutex::Autolock _l(mDrawLock);
+     if (mHwc) {
+         result.appendFormat("Hardware Composer state (version %08x):\n", hwcApiVersion(mHwc));
+         result.appendFormat("  mDebugForceFakeVSync=%d\n", mDebugForceFakeVSync);
+diff --git a/services/surfaceflinger/DisplayHardware/HWComposer.h b/services/surfaceflinger/DisplayHardware/HWComposer.h
+index c4c8724..33615c5 100644
+--- a/services/surfaceflinger/DisplayHardware/HWComposer.h
++++ b/services/surfaceflinger/DisplayHardware/HWComposer.h
+@@ -369,6 +369,8 @@ private:
+ 
+     // protected by mLock
+     mutable Mutex mLock;
++    // synchronization between Draw call and Dumpsys call
++    mutable Mutex mDrawLock;
+     mutable nsecs_t mLastHwVSync[HWC_NUM_PHYSICAL_DISPLAY_TYPES];
+ 
+     // thread-safe
+-- 
+1.9.1
+

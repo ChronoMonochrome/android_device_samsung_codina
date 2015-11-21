@@ -1,0 +1,33 @@
+From fa8d6285a9f1b4b03d93075723597183d04f29c1 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Sat, 21 Nov 2015 19:43:32 +0200
+Subject: [PATCH 19/21] Fixup
+
+Change-Id: I01f7de6c82d9cce25ed41cf0bf45088fd2a1428a
+---
+ services/surfaceflinger/SurfaceFlinger.cpp | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/services/surfaceflinger/SurfaceFlinger.cpp b/services/surfaceflinger/SurfaceFlinger.cpp
+index ae6d6c9..0cf5f45 100644
+--- a/services/surfaceflinger/SurfaceFlinger.cpp
++++ b/services/surfaceflinger/SurfaceFlinger.cpp
+@@ -1121,6 +1121,7 @@ void SurfaceFlinger::setUpHWComposer() {
+                      */
+                     const sp<Layer>& layer(currentLayers[i]);
+                     layer->setPerFrameData(hw, *cur);
++#ifndef TARGET_NEEDS_HWC_V0
+                     if(freezeSurfacePresent) {
+                         // if freezeSurfacePresent, set ANIMATING flag
+                         cur->setAnimating(true);
+@@ -1141,6 +1142,7 @@ void SurfaceFlinger::setUpHWComposer() {
+                             }
+                         }
+                     }
++#endif /* TARGET_NEEDS_HWC_V0 */
+                 }
+             }
+         }
+-- 
+1.9.1
+

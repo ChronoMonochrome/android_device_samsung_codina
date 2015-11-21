@@ -1,7 +1,7 @@
-From 3eceb8cbea9eb1595ae8749f38d0a547238f4db6 Mon Sep 17 00:00:00 2001
+From ed9175725b13a00b37e30de0452b86b663a7d2de Mon Sep 17 00:00:00 2001
 From: Christopher Tate <ctate@google.com>
 Date: Sat, 12 Sep 2015 14:58:22 +0200
-Subject: [PATCH 1/2] Disregard alleged binder entities beyond parcel bounds
+Subject: [PATCH 07/21] Disregard alleged binder entities beyond parcel bounds
 
 When appending one parcel's contents to another, ignore binder
 objects within the source Parcel that appear to lie beyond the
@@ -14,7 +14,7 @@ Bug 17312693
 Change-Id: If592a260f3fcd9a56fc160e7feb2c8b44c73f514
 (cherry picked from commit e1b57a39b972d1682f2d14c09a459f8aae04d9f3)
 ---
- libs/binder/Parcel.cpp |    2 +-
+ libs/binder/Parcel.cpp | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/libs/binder/Parcel.cpp b/libs/binder/Parcel.cpp
@@ -31,5 +31,5 @@ index 27e5614..31e5be4 100644
                  firstIndex = i;
              }
 -- 
-1.7.9.5
+1.9.1
 

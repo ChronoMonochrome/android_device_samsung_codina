@@ -1,0 +1,63 @@
+From 3c2b08a9f7d70a2b435903f74fce83fc133c258a Mon Sep 17 00:00:00 2001
+From: Steve Kondik <steve@cyngn.com>
+Date: Wed, 3 Dec 2014 13:58:07 -0800
+Subject: [PATCH 21/21] surfaceflinger: Add ifdefs for secure display query
+
+ * The HWC_SECURE feature is only implemented for devices using
+   QC-CAF hwcomposers.
+
+Change-Id: I1aa72864ba6a0e62fd7cee74631b57200db3db4f
+---
+ services/surfaceflinger/SurfaceFlinger.cpp | 16 +++++++++++++++-
+ 1 file changed, 15 insertions(+), 1 deletion(-)
+
+diff --git a/services/surfaceflinger/SurfaceFlinger.cpp b/services/surfaceflinger/SurfaceFlinger.cpp
+index 4f1a5dd..7a8f71b 100644
+--- a/services/surfaceflinger/SurfaceFlinger.cpp
++++ b/services/surfaceflinger/SurfaceFlinger.cpp
+@@ -414,8 +414,13 @@ void SurfaceFlinger::init() {
+         DisplayDevice::DisplayType type((DisplayDevice::DisplayType)i);
+         // set-up the displays that are already connected
+         if (mHwc->isConnected(i) || type==DisplayDevice::DISPLAY_PRIMARY) {
++#ifdef QCOM_BSP
+             // query from hwc if the non-virtual display is secure.
+             bool isSecure = mHwc->isSecure(i);;
++#else
++            // All non-virtual displays are currently considered secure
++            bool isSecure = true;
++#endif
+             createBuiltinDisplayLocked(type, isSecure);
+             wp<IBinder> token = mBuiltinDisplays[i];
+ 
+@@ -608,9 +613,13 @@ status_t SurfaceFlinger::getDisplayConfigs(const sp<IBinder>& display,
+         info.presentationDeadline =
+                 hwConfig.refresh - SF_VSYNC_EVENT_PHASE_OFFSET_NS + 1000000;
+ 
++#ifdef QCOM_BSP
+         // set secure info based on the hwcConfig
+         info.secure = hwConfig.secure;
+-
++#else
++        // All non-virtual displays are currently considered secure.
++        info.secure = true;
++#endif
+         configs->push_back(info);
+     }
+ 
+@@ -822,8 +831,13 @@ void SurfaceFlinger::onHotplugReceived(int type, bool connected) {
+     if (uint32_t(type) < DisplayDevice::NUM_BUILTIN_DISPLAY_TYPES) {
+         Mutex::Autolock _l(mStateLock);
+         if (connected) {
++#ifdef QCOM_BSP
+             // query from hwc if the connected display is secure
+             bool secure = mHwc->isSecure(type);;
++#else
++            // All non-virtual displays are currently considered secure.
++            bool secure = true;
++#endif
+             createBuiltinDisplayLocked((DisplayDevice::DisplayType)type, secure);
+         } else {
+             mCurrentState.displays.removeItem(mBuiltinDisplays[type]);
+-- 
+1.9.1
+

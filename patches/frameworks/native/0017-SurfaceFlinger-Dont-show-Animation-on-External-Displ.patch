@@ -1,0 +1,247 @@
+From d79d4b3397f7c475319f788b0d447414b2947fec Mon Sep 17 00:00:00 2001
+From: "Arun Kumar K.R" <akumarkr@codeaurora.org>
+Date: Fri, 15 Feb 2013 19:44:32 -0800
+Subject: [PATCH 17/21] SurfaceFlinger: Dont show Animation on External Display
+
+- With this change the animation effect will not be shown on
+  external display.
+- It will change from portrait to landscape in one shot.
+- Primary would still continue the animation effect
+- set property sys.disable_ext_animation to disable animation
+
+CRs-fixed: 453747
+
+Conflicts:
+	services/surfaceflinger/DisplayHardware/HWComposer.cpp
+	services/surfaceflinger/DisplayHardware/HWComposer.h
+
+Conflicts:
+services/surfaceflinger/DisplayHardware/HWComposer.cpp
+Change-Id: Ibd94bf166f08eeab1d504afe69230f7c6a617eb6
+
+Conflicts:
+	services/surfaceflinger/DisplayHardware/HWComposer.h
+---
+ .../surfaceflinger/DisplayHardware/HWComposer.cpp  | 88 +++++++++++++---------
+ .../surfaceflinger/DisplayHardware/HWComposer.h    |  4 +-
+ services/surfaceflinger/SurfaceFlinger.cpp         | 40 ++++++++++
+ services/surfaceflinger/SurfaceFlinger.h           |  3 +-
+ 4 files changed, 97 insertions(+), 38 deletions(-)
+
+diff --git a/services/surfaceflinger/DisplayHardware/HWComposer.cpp b/services/surfaceflinger/DisplayHardware/HWComposer.cpp
+index bf2c112..8f831ee 100644
+--- a/services/surfaceflinger/DisplayHardware/HWComposer.cpp
++++ b/services/surfaceflinger/DisplayHardware/HWComposer.cpp
+@@ -532,42 +532,50 @@ void HWComposer::eventControl(int disp, int event, int enabled) {
+               event, disp, enabled);
+         return;
+     }
+-    if (event != EVENT_VSYNC) {
+-        ALOGW("eventControl got unexpected event %d (disp=%d en=%d)",
+-              event, disp, enabled);
+-        return;
+-    }
+     status_t err = NO_ERROR;
+-    if (mHwc && !mDebugForceFakeVSync) {
+-        // NOTE: we use our own internal lock here because we have to call
+-        // into the HWC with the lock held, and we want to make sure
+-        // that even if HWC blocks (which it shouldn't), it won't
+-        // affect other threads.
+-        Mutex::Autolock _l(mEventControlLock);
+-        const int32_t eventBit = 1UL << event;
+-        const int32_t newValue = enabled ? eventBit : 0;
+-        const int32_t oldValue = mDisplayData[disp].events & eventBit;
+-        if (newValue != oldValue) {
+-            ATRACE_CALL();
+-            err = mHwc->eventControl(mHwc, disp, event, enabled);
+-            if (!err) {
+-                int32_t& events(mDisplayData[disp].events);
+-                events = (events & ~eventBit) | newValue;
+-
+-                char tag[16];
+-                snprintf(tag, sizeof(tag), "HW_VSYNC_ON_%1u", disp);
+-                ATRACE_INT(tag, enabled);
++    switch(event) {
++        case EVENT_VSYNC:
++            if (mHwc && !mDebugForceFakeVSync) {
++                // NOTE: we use our own internal lock here because we have to
++                // call into the HWC with the lock held, and we want to make
++                // sure that even if HWC blocks (which it shouldn't), it won't
++                // affect other threads.
++                Mutex::Autolock _l(mEventControlLock);
++                const int32_t eventBit = 1UL << event;
++                const int32_t newValue = enabled ? eventBit : 0;
++                const int32_t oldValue = mDisplayData[disp].events & eventBit;
++                if (newValue != oldValue) {
++                    ATRACE_CALL();
++                    err = mHwc->eventControl(mHwc, disp, event, enabled);
++                    if (!err) {
++                        int32_t& events(mDisplayData[disp].events);
++                        events = (events & ~eventBit) | newValue;
++
++                        char tag[16];
++                        snprintf(tag, sizeof(tag), "HW_VSYNC_ON_%1u", disp);
++                        ATRACE_INT(tag, enabled);
++                    }
++                }
++                // error here should not happen -- not sure what we should
++                // do if it does.
++                ALOGE_IF(err, "eventControl(%d, %d) failed %s",
++                         event, enabled, strerror(-err));
+             }
+-        }
+-        // error here should not happen -- not sure what we should
+-        // do if it does.
+-        ALOGE_IF(err, "eventControl(%d, %d) failed %s",
+-                event, enabled, strerror(-err));
+-    }
+ 
+-    if (err == NO_ERROR && mVSyncThread != NULL) {
+-        mVSyncThread->setEnabled(enabled);
++            if (err == NO_ERROR && mVSyncThread != NULL) {
++                mVSyncThread->setEnabled(enabled);
++            }
++            break;
++        case EVENT_ORIENTATION:
++            // Orientation event
++            err = mHwc->eventControl(mHwc, disp, event, enabled);
++            break;
++        default:
++            ALOGW("eventControl got unexpected event %d (disp=%d en=%d)",
++                    event, disp, enabled);
++            break;
+     }
++    return;
+ }
+ 
+ status_t HWComposer::createWorkList(int32_t id, size_t numLayers) {
+@@ -700,13 +708,14 @@ status_t HWComposer::prepare() {
+             disp.hasFbComp = false;
+             disp.hasOvComp = false;
+             if (disp.list) {
+-                for (size_t i=0 ; i<disp.list->numHwLayers ; i++) {
+-                    hwc_layer_1_t& l = disp.list->hwLayers[i];
++                for (size_t j=0 ; j<disp.list->numHwLayers ; j++) {
++                    hwc_layer_1_t& l = disp.list->hwLayers[j];
+ 
+                     //ALOGD("prepare: %d, type=%d, handle=%p",
+-                    //        i, l.compositionType, l.handle);
++                    //        j, l.compositionType, l.handle);
+ 
+-                    if (l.flags & HWC_SKIP_LAYER) {
++                    if ((i == DisplayDevice::DISPLAY_PRIMARY) &&
++                                l.flags & HWC_SKIP_LAYER) {
+                         l.compositionType = HWC_FRAMEBUFFER;
+                     }
+                     if (l.compositionType == HWC_FRAMEBUFFER) {
+@@ -1023,6 +1032,13 @@ public:
+             }
+         }
+     }
++    virtual void setAnimating(bool animating) {
++        if (animating) {
++            getLayer()->flags |= HWC_SCREENSHOT_ANIMATOR_LAYER;
++        } else {
++            getLayer()->flags &= ~HWC_SCREENSHOT_ANIMATOR_LAYER;
++        }
++    }
+     virtual void setBlending(uint32_t blending) {
+         getLayer()->blending = blending;
+     }
+diff --git a/services/surfaceflinger/DisplayHardware/HWComposer.h b/services/surfaceflinger/DisplayHardware/HWComposer.h
+index 8fa283a..de867a2 100644
+--- a/services/surfaceflinger/DisplayHardware/HWComposer.h
++++ b/services/surfaceflinger/DisplayHardware/HWComposer.h
+@@ -168,6 +168,7 @@ public:
+ 
+ #ifndef TARGET_NEEDS_HWC_V0
+         virtual void setIsCursorLayerHint(bool isCursor = true) = 0;
++        virtual void setAnimating(bool animating) = 0;
+ #endif
+         virtual void setBlending(uint32_t blending) = 0;
+         virtual void setTransform(uint32_t transform) = 0;
+@@ -253,7 +254,8 @@ public:
+     // Events handling ---------------------------------------------------------
+ 
+     enum {
+-        EVENT_VSYNC = HWC_EVENT_VSYNC
++        EVENT_VSYNC = HWC_EVENT_VSYNC,
++        EVENT_ORIENTATION = HWC_EVENT_ORIENTATION
+     };
+ 
+     void eventControl(int disp, int event, int enabled);
+diff --git a/services/surfaceflinger/SurfaceFlinger.cpp b/services/surfaceflinger/SurfaceFlinger.cpp
+index 7f71b11..dba6f5c 100644
+--- a/services/surfaceflinger/SurfaceFlinger.cpp
++++ b/services/surfaceflinger/SurfaceFlinger.cpp
+@@ -1089,6 +1089,26 @@ void SurfaceFlinger::setUpHWComposer() {
+             sp<const DisplayDevice> hw(mDisplays[dpy]);
+             const int32_t id = hw->getHwcDisplayId();
+             if (id >= 0) {
++                // Get the layers in the current drawying state
++                const LayerVector& layers(mDrawingState.layersSortedByZ);
++                bool freezeSurfacePresent = false;
++                const size_t layerCount = layers.size();
++                char value[PROPERTY_VALUE_MAX];
++                property_get("sys.disable_ext_animation", value, "0");
++                if(atoi(value)) {
++                    for (size_t i = 0 ; i < layerCount ; ++i) {
++                        static int screenShotLen = strlen("ScreenshotSurface");
++                        const sp<Layer>& layer(layers[i]);
++                        if(!strncmp(layer->getName(), "ScreenshotSurface",
++                                    screenShotLen)) {
++                            // Screenshot layer is present, and animation in
++                            // progress
++                            freezeSurfacePresent = true;
++                            break;
++                        }
++                    }
++                }
++
+                 const Vector< sp<Layer> >& currentLayers(
+                     hw->getVisibleLayersSortedByZ());
+                 const size_t count = currentLayers.size();
+@@ -1101,6 +1121,26 @@ void SurfaceFlinger::setUpHWComposer() {
+                      */
+                     const sp<Layer>& layer(currentLayers[i]);
+                     layer->setPerFrameData(hw, *cur);
++                    if(freezeSurfacePresent) {
++                        // if freezeSurfacePresent, set ANIMATING flag
++                        cur->setAnimating(true);
++                    } else {
++                        const KeyedVector<wp<IBinder>, DisplayDeviceState>&
++                                                draw(mDrawingState.displays);
++                        size_t dc = draw.size();
++                        for (size_t i=0 ; i<dc ; i++) {
++                            if (draw[i].isMainDisplay()) {
++                                HWComposer& hwc(getHwComposer());
++                                if (hwc.initCheck() == NO_ERROR)
++                                    // Pass the current orientation to HWC
++                                    // which will be used to block animation
++                                    // on external
++                                    hwc.eventControl(HWC_DISPLAY_PRIMARY,
++                                            SurfaceFlinger::EVENT_ORIENTATION,
++                                            uint32_t(draw[i].orientation));
++                            }
++                        }
++                    }
+                 }
+             }
+         }
+diff --git a/services/surfaceflinger/SurfaceFlinger.h b/services/surfaceflinger/SurfaceFlinger.h
+index 960825b..315d3d8 100644
+--- a/services/surfaceflinger/SurfaceFlinger.h
++++ b/services/surfaceflinger/SurfaceFlinger.h
+@@ -97,7 +97,8 @@ public:
+     void run() ANDROID_API;
+ 
+     enum {
+-        EVENT_VSYNC = HWC_EVENT_VSYNC
++        EVENT_VSYNC = HWC_EVENT_VSYNC,
++        EVENT_ORIENTATION = HWC_EVENT_ORIENTATION
+     };
+ 
+     // post an asynchronous message to the main thread
+-- 
+1.9.1
+

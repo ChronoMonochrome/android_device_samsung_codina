@@ -1,7 +1,7 @@
-From 8b7ec759bf165dcf3bb06115eb34548c1f446250 Mon Sep 17 00:00:00 2001
+From 607e60d140bf5f7401b396b5f23b46d4bc9156d0 Mon Sep 17 00:00:00 2001
 From: Shilin Victor <chrono.monochrome@gmail.com>
 Date: Tue, 29 Sep 2015 16:14:58 +0300
-Subject: [PATCH 4/9] Native fix
+Subject: [PATCH 04/21] Native fix
 
 Change-Id: I9583f69f02204679e875a271e38ca0ec06c435ba
 ---
