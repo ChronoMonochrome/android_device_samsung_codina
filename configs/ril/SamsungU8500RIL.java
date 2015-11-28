@@ -190,9 +190,11 @@ public class SamsungU8500RIL extends RIL implements CommandsInterface {
     private Context mContext;
     private boolean mSignalbarCount = SystemProperties.getInt("ro.telephony.sends_barcount", 0) == 1 ? true : false;
     private boolean mIsSamsungCdma = SystemProperties.getBoolean("ro.ril.samsung_cdma", false);
+    protected int mPreferredNetworkType;
 
     public SamsungU8500RIL(Context context, int networkMode, int cdmaSubscription, Integer instanceId) {
         super(context, networkMode, cdmaSubscription);
+        mPreferredNetworkType = networkMode;
         mQANElements = 5;
         mContext = context;
     }
@@ -207,12 +209,8 @@ public class SamsungU8500RIL extends RIL implements CommandsInterface {
 
     //@Override
     public void setCurrentPreferredNetworkType() {
-        if (RILJ_LOGD) riljLog("setCurrentPreferredNetworkType IGNORED");
-        /* Google added this as a fix for crespo loosing network type after
-         * taking an OTA. This messes up the data connection state for us
-         * due to the way we handle network type change (disable data
-         * then change then re-enable).
-         */
+        if (RILJ_LOGD) riljLog("setCurrentPreferredNetworkType: " + mPreferredNetworkType);
+        setPreferredNetworkType(mPreferredNetworkType, null);
     }
 
     private boolean NeedReconnect()
@@ -281,6 +279,8 @@ public class SamsungU8500RIL extends RIL implements CommandsInterface {
 
         rr.mParcel.writeInt(1);
         rr.mParcel.writeInt(networkType);
+
+        mPreferredNetworkType = networkType;
 
         if (RILJ_LOGD) riljLog(rr.serialString() + "> " + requestToString(rr.mRequest)
                 + " : " + networkType);
