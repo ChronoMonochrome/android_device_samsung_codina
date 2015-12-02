@@ -15,15 +15,12 @@ export CL_RST="\033[0m"
 
 pre_clean() {
         tmp=$PWD
-        cd $1
+	echo "cleaning up in $1"
+        git -C $1 reset --hard > /dev/null 2>&1
+        git -C $1 clean -fd > /dev/null 2>&1
+        git -C $1 am  --abort > /dev/null 2>&1
 
-        git reset --hard > /dev/null 2>&1
-        git clean -fd > /dev/null 2>&1
-        git am  --abort > /dev/null 2>&1
-
-        cd $tmp
-
-        out=$( git checkout )
+        out=$( git -C $1 checkout )
 }
 
 apply() {
@@ -67,7 +64,7 @@ apply_all() {
 
 # pre clean 
 
-echo -e $CL_GRN"get rid of any uncommitted or unstaged changes"$CL_RST
+echo -e $CL_GRN"getting rid of any uncommitted or unstaged changes"$CL_RST
 
 LOCAL_PATH=$PWD
 cd $TOP
