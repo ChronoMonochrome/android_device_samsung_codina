@@ -1,8 +1,9 @@
 # Specify phone tech before including full_phone
-$(call inherit-product, vendor/omni/config/gsm.mk)
+$(call inherit-product, vendor/mahdi/config/gsm.mk)
 
-# Inherit Omni Product configuration
-$(call inherit-product, vendor/omni/config/common.mk)
+# Inherit some common stuff.
+$(call inherit-product, vendor/mahdi/configs/common.mk)
+$(call inherit-product, vendor/mahdi/configs/common_full_phone.mk)
  
 # Release name
 PRODUCT_RELEASE_NAME := GT-I8160
@@ -15,7 +16,7 @@ TARGET_SCREEN_WIDTH := 480
 $(call inherit-product, device/samsung/codina/full_codina.mk)
 
 # Device identifier. This must come after all inclusions
-PRODUCT_NAME := omni_codina
+PRODUCT_NAME := mahdi_codina
 PRODUCT_DEVICE := codina
 PRODUCT_BRAND := samsung
 PRODUCT_MODEL := GT-I8160
@@ -23,3 +24,7 @@ PRODUCT_MANUFACTURER := samsung
 
 # Set build fingerprint / ID / Product Name ect.
 PRODUCT_BUILD_PROP_OVERRIDES += PRODUCT_NAME=GT-I8160 TARGET_DEVICE=codina
+
+# Copy device specific prebuilt files.
+PRODUCT_COPY_FILES += \
+    vendor/mahdi/prebuilt/bootanimations/BOOTANIMATION-800x480.zip:system/media/bootanimation.zip
