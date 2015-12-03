@@ -1,0 +1,33 @@
+From dfdc9ee0bb93736fea6a85afe14afd285d3657dd Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Fri, 17 Jul 2015 23:46:34 +0300
+Subject: [PATCH 8/8] Fix gps blob [Meticulus]
+
+Change-Id: Ia408c5c1dcbf2e581de9b76bfe7dbb9fd70c35d3
+---
+ .../java/com/android/server/location/GpsLocationProvider.java    | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
+
+diff --git a/services/java/com/android/server/location/GpsLocationProvider.java b/services/java/com/android/server/location/GpsLocationProvider.java
+index 5242957..ea7043a 100644
+--- a/services/java/com/android/server/location/GpsLocationProvider.java
++++ b/services/java/com/android/server/location/GpsLocationProvider.java
+@@ -611,7 +611,14 @@ public class GpsLocationProvider implements LocationProviderInterface {
+     }
+ 
+     private void handleUpdateNetworkState(int state, NetworkInfo info) {
+-        mNetworkAvailable = (state == LocationProvider.AVAILABLE);
++
++	/*
++	 * Meticulus:
++	 * If GPS is not on then bail out of here!
++         */
++        LocationManager manager = (LocationManager) mContext.getSystemService( Context.LOCATION_SERVICE );
++        if ( !manager.isProviderEnabled( LocationManager.GPS_PROVIDER ) )
++            return;
+ 
+         if (DEBUG) {
+             Log.d(TAG, "updateNetworkState " + (mNetworkAvailable ? "available" : "unavailable")
+-- 
+1.9.1
+

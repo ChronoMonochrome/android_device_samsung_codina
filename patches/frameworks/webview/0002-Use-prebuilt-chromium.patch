@@ -1,4 +1,4 @@
-From 403ffb148bc3076a81ee793de5048584c5bb49a2 Mon Sep 17 00:00:00 2001
+From 0a97b1c62dec47a4c101d6aa77aed03d9dd8f7d0 Mon Sep 17 00:00:00 2001
 From: Shilin Victor <chrono.monochrome@gmail.com>
 Date: Wed, 16 Sep 2015 18:30:13 +0300
 Subject: [PATCH 2/2] Use prebuilt chromium

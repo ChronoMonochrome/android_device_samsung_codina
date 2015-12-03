@@ -1,0 +1,90 @@
+From dee6ac3484622836de7935ea5c29dde6feb5696b Mon Sep 17 00:00:00 2001
+From: Jiangyi <sam.andrew.jiang@gmail.com>
+Date: Mon, 28 Jul 2014 18:07:09 -0400
+Subject: [PATCH 2/2] vendor/omni: Fix-ups for prebuilt Chromium
+
+- Make copying far more reliable, even on non-clean builds
+- Use $OUT in script in all cases, apparently get_build_var OUT_DIR isn't reliable.
+envsetup.sh, please -_-
+
+Change-Id: I27fa9bc7a043c32bcb29e7667e86b40226222a5a
+---
+ config/common.mk           |  5 +++++
+ utils/chromium_prebuilt.sh | 29 +----------------------------
+ 2 files changed, 6 insertions(+), 28 deletions(-)
+
+diff --git a/config/common.mk b/config/common.mk
+index 4d9c94a..9d9e318 100644
+--- a/config/common.mk
++++ b/config/common.mk
+@@ -100,6 +100,11 @@ PRODUCT_PACKAGES += \
+     VoiceDialer \
+     CellBroadcastReceiver
+ 
++# Chromium Prebuilt
++ifeq ($(PRODUCT_PREBUILT_WEBVIEWCHROMIUM),yes)
++-include prebuilts/chromium/$(TARGET_DEVICE)/chromium_prebuilt.mk
++endif
++
+ # Terminal Emulator
+ PRODUCT_COPY_FILES += \
+     vendor/mahdi/proprietary/Term.apk:system/app/Term.apk \
+diff --git a/utils/chromium_prebuilt.sh b/utils/chromium_prebuilt.sh
+index 9f430e4..2cc62af 100755
+--- a/utils/chromium_prebuilt.sh
++++ b/utils/chromium_prebuilt.sh
+@@ -18,17 +18,16 @@
+ if [ $# -eq 1 ]; then
+     TOP=$1
+     DEVICE=$TARGET_DEVICE
+-    TARGET_DIR=$OUT
+ elif [ -n "$(gettop)" ]; then
+     TOP=$(gettop)
+     DEVICE=$(get_build_var TARGET_DEVICE)
+-    TARGET_DIR=$(get_build_var OUT_DIR)/target/product/$DEVICE
+ else
+     echo "Please run envsetup.sh and lunch before running this script,"
+     echo "or provide the build root directory as the first parameter."
+     return 1
+ fi
+ 
++TARGET_DIR=$OUT
+ PREBUILT_DIR=$TOP/prebuilts/chromium/$DEVICE
+ 
+ if [ -d $PREBUILT_DIR ]; then
+@@ -54,32 +53,6 @@ echo "Generating Makefiles..."
+ HASH=$(git --git-dir=$TOP/external/chromium/.git --work-tree=$TOP/external/chromium rev-parse --verify HEAD)
+ echo $HASH > $PREBUILT_DIR/hash.txt
+ 
+-(cat << EOF) | sed s/__DEVICE__/$DEVICE/g > $PREBUILT_DIR/Android.mk
+-# Copyright (C) 2014 The OmniROM Project
+-#
+-# Licensed under the Apache License, Version 2.0 (the "License");
+-# you may not use this file except in compliance with the License.
+-# You may obtain a copy of the License at
+-#
+-# http://www.apache.org/licenses/LICENSE-2.0
+-#
+-# Unless required by applicable law or agreed to in writing, software
+-# distributed under the License is distributed on an "AS IS" BASIS,
+-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-# See the License for the specific language governing permissions and
+-# limitations under the License.
+-
+-ifeq (\$(TARGET_DEVICE),__DEVICE__)
+-ifeq (\$(PRODUCT_PREBUILT_WEBVIEWCHROMIUM),yes)
+-
+-LOCAL_PATH := \$(call my-dir)
+-
+-include \$(call all-makefiles-under,\$(LOCAL_PATH))
+-endif
+-endif
+-
+-EOF
+-
+ (cat << EOF) | sed s/__DEVICE__/$DEVICE/g > $PREBUILT_DIR/chromium_prebuilt.mk
+ # Copyright (C) 2014 The OmniROM Project
+ #
+-- 
+1.9.1
+

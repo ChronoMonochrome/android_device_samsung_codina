@@ -1,0 +1,28 @@
+From efba5c2c8973d7f0e49ab0c48ec1a93adf88acd1 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Fri, 4 Dec 2015 01:10:53 +0400
+Subject: [PATCH 8/8] libstagefright/MediaDefs.cpp: fix duplicate
+ MEDIA_MIMETYPE_VIDEO_VC1 define
+
+Change-Id: I12e3591135075bbafefdd4e26bc257131bb36b46
+---
+ media/libstagefright/MediaDefs.cpp | 3 ---
+ 1 file changed, 3 deletions(-)
+
+diff --git a/media/libstagefright/MediaDefs.cpp b/media/libstagefright/MediaDefs.cpp
+index ad3a34c..d80d4a9 100644
+--- a/media/libstagefright/MediaDefs.cpp
++++ b/media/libstagefright/MediaDefs.cpp
+@@ -30,9 +30,6 @@ const char *MEDIA_MIMETYPE_VIDEO_H263_SW = "video/3gpp-sw";
+ #endif
+ const char *MEDIA_MIMETYPE_VIDEO_MPEG2 = "video/mpeg2";
+ const char *MEDIA_MIMETYPE_VIDEO_RAW = "video/raw";
+-#ifdef STE_HARDWARE
+-const char *MEDIA_MIMETYPE_VIDEO_VC1 = "video/vc1";
+-#endif
+ 
+ const char *MEDIA_MIMETYPE_AUDIO_AMR_NB = "audio/3gpp";
+ const char *MEDIA_MIMETYPE_AUDIO_AMR_WB = "audio/amr-wb";
+-- 
+1.9.1
+

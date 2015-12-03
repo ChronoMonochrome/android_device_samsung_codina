@@ -1,0 +1,103 @@
+From 44034b7fa4f7c5d590df65e959ec780c9066b511 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Wed, 2 Dec 2015 17:43:23 +0400
+Subject: [PATCH 2/3] sensorservice_Add_legacy_sensors_fusion.patch
+
+---
+ services/sensorservice/Android.mk        | 14 +++++++++++
+ services/sensorservice/SensorService.cpp | 40 ++++++++++++++++++++++++++++++++
+ 2 files changed, 54 insertions(+)
+
+diff --git a/services/sensorservice/Android.mk b/services/sensorservice/Android.mk
+index 683af00..81ca1c2 100644
+--- a/services/sensorservice/Android.mk
++++ b/services/sensorservice/Android.mk
+@@ -14,6 +14,16 @@ LOCAL_SRC_FILES:= \
+     SensorInterface.cpp \
+     SensorService.cpp
+ 
++ifneq ($(BOARD_USE_LEGACY_SENSORS_FUSION),false)
++# Legacy virtual sensors used in combination from accelerometer & magnetometer.
++LOCAL_SRC_FILES += \
++	legacy/SecondOrderLowPassFilter.cpp \
++	legacy/LegacyGravitySensor.cpp \
++	legacy/LegacyLinearAccelerationSensor.cpp \
++	legacy/LegacyOrientationSensor.cpp \
++	legacy/LegacyRotationVectorSensor.cpp
++endif
++
+ LOCAL_CFLAGS:= -DLOG_TAG=\"SensorService\"
+ 
+ LOCAL_CFLAGS += -fvisibility=hidden
+@@ -28,6 +38,10 @@ LOCAL_SHARED_LIBRARIES := \
+ 	libui \
+ 	libgui
+ 
++ifneq ($(BOARD_USE_LEGACY_SENSORS_FUSION),false)
++    LOCAL_CFLAGS += -DUSE_LEGACY_SENSORS_FUSION
++endif
++
+ ifneq ($(BOARD_SYSFS_LIGHT_SENSOR),)
+     LOCAL_CFLAGS += -DSYSFS_LIGHT_SENSOR=\"$(BOARD_SYSFS_LIGHT_SENSOR)\"
+ endif
+diff --git a/services/sensorservice/SensorService.cpp b/services/sensorservice/SensorService.cpp
+index 4b22af1..4ed80a9 100644
+--- a/services/sensorservice/SensorService.cpp
++++ b/services/sensorservice/SensorService.cpp
+@@ -49,6 +49,13 @@
+ #include "SensorFusion.h"
+ #include "SensorService.h"
+ 
++#ifdef USE_LEGACY_SENSORS_FUSION
++#include "legacy/LegacyGravitySensor.h"
++#include "legacy/LegacyLinearAccelerationSensor.h"
++#include "legacy/LegacyOrientationSensor.h"
++#include "legacy/LegacyRotationVectorSensor.h"
++#endif
++
+ namespace android {
+ // ---------------------------------------------------------------------------
+ 
+@@ -152,6 +159,39 @@ void SensorService::onFirstRef()
+                 registerVirtualSensor( new CorrectedGyroSensor(list, count) );
+                 registerVirtualSensor( new GyroDriftSensor() );
+             }
++#ifdef USE_LEGACY_SENSORS_FUSION
++            else {
++                Sensor aSensor;
++
++                // Add Android virtual sensors if they're not already
++                // available in the HAL
++
++                aSensor = registerVirtualSensor( new LegacyRotationVectorSensor() );
++                if (virtualSensorsNeeds & (1<<SENSOR_TYPE_ROTATION_VECTOR)) {
++                    mUserSensorList.add(aSensor);
++                }
++
++                aSensor = registerVirtualSensor( new LegacyGravitySensor(list, count) );
++                if (virtualSensorsNeeds & (1<<SENSOR_TYPE_GRAVITY)) {
++                    mUserSensorList.add(aSensor);
++                }
++
++                aSensor = registerVirtualSensor( new LegacyLinearAccelerationSensor(list, count) );
++                if (virtualSensorsNeeds & (1<<SENSOR_TYPE_LINEAR_ACCELERATION)) {
++                    mUserSensorList.add(aSensor);
++                }
++
++                aSensor = registerVirtualSensor( new LegacyOrientationSensor() );
++                if (virtualSensorsNeeds & (1<<SENSOR_TYPE_ROTATION_VECTOR)) {
++                    // if we are doing our own rotation-vector, also add
++                    // the orientation sensor and remove the HAL provided one.
++                    if (orientationIndex != -1)
++                        mUserSensorList.replaceAt(aSensor, orientationIndex);
++                    else
++                        mUserSensorList.add(aSensor);
++                }
++            }
++#endif
+ 
+             // debugging sensor list
+             mUserSensorListDebug = mSensorList;
+-- 
+1.9.1
+

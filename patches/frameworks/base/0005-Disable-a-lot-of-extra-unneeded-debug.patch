@@ -1,0 +1,152 @@
+From 2f9d51540b378a6b5ba1835a2941381bf1cc5e93 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Wed, 2 Dec 2015 17:55:24 +0400
+Subject: [PATCH 5/8] Disable a lot of extra unneeded debug
+
+Change-Id: If64b562ba1b3cfc42696311d9065118a9cf75ad3
+---
+ core/java/android/app/backup/BackupAgent.java                           | 2 +-
+ core/java/com/android/internal/app/NetInitiatedActivity.java            | 2 +-
+ core/java/com/android/internal/backup/LocalTransport.java               | 2 +-
+ location/java/com/android/internal/location/GpsNetInitiatedHandler.java | 2 +-
+ media/tests/SoundPoolTest/src/com/android/SoundPoolTest.java            | 2 +-
+ .../src/com/android/backupconfirm/BackupRestoreConfirmation.java        | 2 +-
+ .../src/com/android/sharedstoragebackup/ObbBackupService.java           | 2 +-
+ .../src/com/android/sharedstoragebackup/SharedStorageAgent.java         | 2 +-
+ services/java/com/android/server/BackupManagerService.java              | 2 +-
+ telephony/java/com/android/internal/telephony/CallerInfo.java           | 2 +-
+ 10 files changed, 10 insertions(+), 10 deletions(-)
+
+diff --git a/core/java/android/app/backup/BackupAgent.java b/core/java/android/app/backup/BackupAgent.java
+index 67c772b..6d372fd 100644
+--- a/core/java/android/app/backup/BackupAgent.java
++++ b/core/java/android/app/backup/BackupAgent.java
+@@ -106,7 +106,7 @@ import libcore.io.StructStat;
+  */
+ public abstract class BackupAgent extends ContextWrapper {
+     private static final String TAG = "BackupAgent";
+-    private static final boolean DEBUG = true;
++    private static final boolean DEBUG = false;
+ 
+     /** @hide */
+     public static final int TYPE_EOF = 0;
+diff --git a/core/java/com/android/internal/app/NetInitiatedActivity.java b/core/java/com/android/internal/app/NetInitiatedActivity.java
+index e1166f1..3bcc077 100644
+--- a/core/java/com/android/internal/app/NetInitiatedActivity.java
++++ b/core/java/com/android/internal/app/NetInitiatedActivity.java
+@@ -40,7 +40,7 @@ public class NetInitiatedActivity extends AlertActivity implements DialogInterfa
+ 
+     private static final String TAG = "NetInitiatedActivity";
+ 
+-    private static final boolean DEBUG = true;
++    private static final boolean DEBUG = false;
+     private static final boolean VERBOSE = false;
+ 
+     private static final int POSITIVE_BUTTON = AlertDialog.BUTTON_POSITIVE;
+diff --git a/core/java/com/android/internal/backup/LocalTransport.java b/core/java/com/android/internal/backup/LocalTransport.java
+index 494bc78..26433d2 100644
+--- a/core/java/com/android/internal/backup/LocalTransport.java
++++ b/core/java/com/android/internal/backup/LocalTransport.java
+@@ -47,7 +47,7 @@ import java.util.ArrayList;
+ 
+ public class LocalTransport extends IBackupTransport.Stub {
+     private static final String TAG = "LocalTransport";
+-    private static final boolean DEBUG = true;
++    private static final boolean DEBUG = false;
+ 
+     private static final String TRANSPORT_DIR_NAME
+             = "com.android.internal.backup.LocalTransport";
+diff --git a/location/java/com/android/internal/location/GpsNetInitiatedHandler.java b/location/java/com/android/internal/location/GpsNetInitiatedHandler.java
+index 57e2786..c462d14 100644
+--- a/location/java/com/android/internal/location/GpsNetInitiatedHandler.java
++++ b/location/java/com/android/internal/location/GpsNetInitiatedHandler.java
+@@ -41,7 +41,7 @@ public class GpsNetInitiatedHandler {
+ 
+     private static final String TAG = "GpsNetInitiatedHandler";
+ 
+-    private static final boolean DEBUG = true;
++    private static final boolean DEBUG = false;
+     private static final boolean VERBOSE = false;
+ 
+     // NI verify activity for bringing up UI (not used yet)
+diff --git a/media/tests/SoundPoolTest/src/com/android/SoundPoolTest.java b/media/tests/SoundPoolTest/src/com/android/SoundPoolTest.java
+index cc3306c..472f370 100644
+--- a/media/tests/SoundPoolTest/src/com/android/SoundPoolTest.java
++++ b/media/tests/SoundPoolTest/src/com/android/SoundPoolTest.java
+@@ -37,7 +37,7 @@ import com.android.soundpooltest.R;
+ public class SoundPoolTest extends Activity
+ {
+     private static final String LOG_TAG = "SoundPoolTest";
+-    private static final boolean DEBUG = true;
++    private static final boolean DEBUG = false;
+     private static final boolean VERBOSE = false;
+     private TestThread mThread;
+ 
+diff --git a/packages/BackupRestoreConfirmation/src/com/android/backupconfirm/BackupRestoreConfirmation.java b/packages/BackupRestoreConfirmation/src/com/android/backupconfirm/BackupRestoreConfirmation.java
+index 82ac8cb..500c0d5 100644
+--- a/packages/BackupRestoreConfirmation/src/com/android/backupconfirm/BackupRestoreConfirmation.java
++++ b/packages/BackupRestoreConfirmation/src/com/android/backupconfirm/BackupRestoreConfirmation.java
+@@ -48,7 +48,7 @@ import android.widget.Toast;
+  */
+ public class BackupRestoreConfirmation extends Activity {
+     static final String TAG = "BackupRestoreConfirmation";
+-    static final boolean DEBUG = true;
++    static final boolean DEBUG = false;
+ 
+     static final String DID_ACKNOWLEDGE = "did_acknowledge";
+ 
+diff --git a/packages/SharedStorageBackup/src/com/android/sharedstoragebackup/ObbBackupService.java b/packages/SharedStorageBackup/src/com/android/sharedstoragebackup/ObbBackupService.java
+index 0485334..88fa3e8 100644
+--- a/packages/SharedStorageBackup/src/com/android/sharedstoragebackup/ObbBackupService.java
++++ b/packages/SharedStorageBackup/src/com/android/sharedstoragebackup/ObbBackupService.java
+@@ -43,7 +43,7 @@ import com.android.internal.backup.IObbBackupService;
+  */
+ public class ObbBackupService extends Service {
+     static final String TAG = "ObbBackupService";
+-    static final boolean DEBUG = true;
++    static final boolean DEBUG = false;
+ 
+     /**
+      * IObbBackupService interface implementation
+diff --git a/packages/SharedStorageBackup/src/com/android/sharedstoragebackup/SharedStorageAgent.java b/packages/SharedStorageBackup/src/com/android/sharedstoragebackup/SharedStorageAgent.java
+index 89f84fc..a0ed73a 100644
+--- a/packages/SharedStorageBackup/src/com/android/sharedstoragebackup/SharedStorageAgent.java
++++ b/packages/SharedStorageBackup/src/com/android/sharedstoragebackup/SharedStorageAgent.java
+@@ -16,7 +16,7 @@ import java.util.HashSet;
+ 
+ public class SharedStorageAgent extends FullBackupAgent {
+     static final String TAG = "SharedStorageAgent";
+-    static final boolean DEBUG = true;
++    static final boolean DEBUG = false;
+ 
+     StorageVolume[] mVolumes;
+ 
+diff --git a/services/java/com/android/server/BackupManagerService.java b/services/java/com/android/server/BackupManagerService.java
+index 6d65a70..9866dd7 100644
+--- a/services/java/com/android/server/BackupManagerService.java
++++ b/services/java/com/android/server/BackupManagerService.java
+@@ -137,7 +137,7 @@ import javax.crypto.spec.SecretKeySpec;
+ 
+ class BackupManagerService extends IBackupManager.Stub {
+     private static final String TAG = "BackupManagerService";
+-    private static final boolean DEBUG = true;
++    private static final boolean DEBUG = false;
+     private static final boolean MORE_DEBUG = false;
+ 
+     // Historical and current algorithm names
+diff --git a/telephony/java/com/android/internal/telephony/CallerInfo.java b/telephony/java/com/android/internal/telephony/CallerInfo.java
+index f6143ed..b62abbb 100644
+--- a/telephony/java/com/android/internal/telephony/CallerInfo.java
++++ b/telephony/java/com/android/internal/telephony/CallerInfo.java
+@@ -589,7 +589,7 @@ public class CallerInfo {
+      * @return a string debug representation of this instance.
+      */
+     public String toString() {
+-        // Warning: never check in this file with VERBOSE_DEBUG = true
++        // Warning: never check in this file with VERBOSE_DEBUG = false
+         // because that will result in PII in the system log.
+         final boolean VERBOSE_DEBUG = false;
+ 
+-- 
+1.9.1
+

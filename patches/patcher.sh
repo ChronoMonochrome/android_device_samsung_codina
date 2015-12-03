@@ -1,9 +1,8 @@
 TOP=../../../..
 
-PATCHES="build frameworks/av frameworks/base frameworks/native external/chromium_org \
-                          hardware/libhardware libcore packages/apps/Settings \
-		packages/apps/OmniGears packages/apps/Camera2 \
-		 packages/services/Telephony/  system/vold system/core"
+PATCHES="art build frameworks/av frameworks/base frameworks/native frameworks/webview external/chromium_org \
+external/fuse hardware/libhardware libcore  \
+packages/services/Telephony/ prebuilt/tools prebuilt/misc  system/vold system/core vendor/mahdi"
 
 export CL_RED="\033[31m"
 export CL_GRN="\033[32m"

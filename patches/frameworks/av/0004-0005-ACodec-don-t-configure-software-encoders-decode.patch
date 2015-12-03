@@ -1,0 +1,34 @@
+From 9d0ccd6d294929f1b052cdb39c09b2689511eefa Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Wed, 2 Dec 2015 17:43:15 +0400
+Subject: [PATCH 4/8] 
+ 0005-ACodec-don-t-configure-software-encoders-decoders.patch
+
+Change-Id: Ie6e3222ad90b9c5c43ecf6cb9954b291fdf6aded
+---
+ media/libstagefright/ACodec.cpp | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/media/libstagefright/ACodec.cpp b/media/libstagefright/ACodec.cpp
+index 2369257..e3e67cc 100755
+--- a/media/libstagefright/ACodec.cpp
++++ b/media/libstagefright/ACodec.cpp
+@@ -1100,6 +1100,15 @@ status_t ACodec::configureCodec(
+     }
+ 
+     mIsEncoder = encoder;
++   /* Meticulus:
++    * Software codecs don't require configuration? Not sure
++    * but skipping configuration for them seems to work.
++    */
++    if(strncmp("OMX.google.h264", mComponentName.c_str(), 15) == 0
++       || strncmp("OMX.ffmpeg.h264", mComponentName.c_str(), 15) == 0){
++	ALOGI("Meticulus: Soft codec %s detected, skipping configureCodec\n", mComponentName.c_str());
++       return OK;
++    }
+ 
+     status_t err = setComponentRole(encoder /* isEncoder */, mime);
+ 
+-- 
+1.9.1
+

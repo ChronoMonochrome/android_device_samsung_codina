@@ -4,12 +4,16 @@ $(call inherit-product, device/samsung/u8500-common/common.mk)
 # For better compatibility with ROMs (like Slim, PAC)
 $(call inherit-product, vendor/samsung/u8500-common/codina/codina-vendor-blobs.mk)
 
-ifneq ($(TARGET_SCREEN_HEIGHT),800)
-# Call omni_codina.mk because somehow it's not being called!
-$(call inherit-product, device/samsung/codina/omni_codina.mk)
-endif
-
 LOCAL_PATH := device/samsung/codina
+
+TARGET_PREBUILT_KERNEL=$(LOCAL_PATH)/prebuilt/boot.img
+
+ifneq ($(TARGET_PREBUILT_KERNEL),)
+LOCAL_KERNEL := $(TARGET_PREBUILT_KERNEL)
+
+PRODUCT_COPY_FILES := \
+	$(LOCAL_KERNEL):kernel
+endif
 
 # Overlay
 DEVICE_PACKAGE_OVERLAYS += $(LOCAL_PATH)/overlay
@@ -39,11 +43,11 @@ PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/configs/apns-conf.xml:system/etc/apns-conf.xml \
 
 # Optional CM packages
-PRODUCT_PACKAGES += \
-    Calendar \
-    CMFileManager \
-    Apollo \
-    SoundRecorder
+#PRODUCT_PACKAGES += \
+#    Calendar \
+#    CMFileManager \
+#    Apollo \
+#    SoundRecorder
 
 
 # temporary hack
