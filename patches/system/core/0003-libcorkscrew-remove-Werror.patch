@@ -1,0 +1,26 @@
+From 8bae0b9d00cd3ec3b703daab06647e4d3161c587 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Sun, 24 Jan 2016 09:22:42 +0700
+Subject: [PATCH 3/3] libcorkscrew: remove -Werror
+
+Change-Id: Ib5e7648fe56cdd384e6e9f543e7304475b097a00
+---
+ libcorkscrew/Android.mk | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/libcorkscrew/Android.mk b/libcorkscrew/Android.mk
+index 76fc285..73714fc 100644
+--- a/libcorkscrew/Android.mk
++++ b/libcorkscrew/Android.mk
+@@ -51,7 +51,7 @@ endif
+ 
+ LOCAL_SHARED_LIBRARIES += libdl libcutils liblog libgccdemangle
+ 
+-LOCAL_CFLAGS += -std=gnu99 -Werror -Wno-unused-parameter
++LOCAL_CFLAGS += -std=gnu99 -Wno-unused-parameter
+ LOCAL_MODULE := libcorkscrew
+ LOCAL_MODULE_TAGS := optional
+ 
+-- 
+2.5.0
+
