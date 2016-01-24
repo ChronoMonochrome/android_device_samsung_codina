@@ -1,0 +1,259 @@
+From d28221c8d4a7cb85facd033d97ab269508ce43ab Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Mon, 25 Jan 2016 06:55:09 +0700
+Subject: [PATCH 2/2] Remove NavBar && NavRing remnants
+
+Change-Id: Ic4eb7fbfd002a80bf8dfe364a153cbed1a5b412f
+---
+ res/values/cm_strings.xml                          |  28 -----
+ .../settings/cyanogenmod/SystemUiSettings.java     | 131 +--------------------
+ 2 files changed, 2 insertions(+), 157 deletions(-)
+
+diff --git a/res/values/cm_strings.xml b/res/values/cm_strings.xml
+index e6a54c6..3c41333 100644
+--- a/res/values/cm_strings.xml
++++ b/res/values/cm_strings.xml
+@@ -796,34 +796,6 @@ two in order to insert additional control points. \'Remove\' deletes the selecte
+     <string name="lockscreen_buttons_sleep">Go to sleep</string>
+     <string name="lockscreen_enable_modlock_title">Custom lock screen</string>
+ 
+-    <!-- Navigation Bar -->
+-    <string name="navigation_bar_category">Navigation bar</string>
+-    <string name="navigation_bar_title">Navigation bar</string>
+-    <string name="navigation_bar_help_text">1 - To begin editing, tap the lock icon\n\n2 - Tap any button to assign or change functionality\n\n3 - Long press any button to rearrange the order\n\n4 - To save, tap the lock icon again\n\n5 - To restore system default, tap the reset button\n\n</string>
+-    <string name="navigation_bar_tips">\u2022 Actions can only be assigned to one button at a time\n\n\u2022 The home button cannot be re-assigned\n\n\u2022 Side buttons cannot be rearranged</string>
+-    <string name="navigation_bar_tips_title">Quick tips</string>
+-    <string name="navigation_bar_reset_message">Delete current settings and restore to default?</string>
+-    <string name="navigation_bar_save_message">Navigation bar settings saved</string>
+-    <string name="navigation_bar_reset_toast">Navigation bar reset to default</string>
+-    <string name="navigation_bar_menu_editable">Editable</string>
+-    <string name="navigation_bar_menu_locked">Locked</string>
+-
+-    <!-- Navigation ring shortcuts -->
+-    <string name="navigation_ring_title">Navring shortcuts</string>
+-    <string name="navring_target_reset_message">Delete all user created navigation bar shortcuts and restore to default?</string>
+-    <string name="navring_target_reset">Navigation bar shortcuts reset to default</string>
+-    <string name="navring_action_open_ime_switcher">Open IME Switcher</string>
+-    <string name="navring_action_kill_app">Kill app</string>
+-    <string name="navring_action_none">None</string>
+-    <string name="navring_action_take_screenshot">Take screenshot</string>
+-    <string name="navring_action_ring_vibrate">Ring/Vibration</string>
+-    <string name="navring_action_ring_silent">Ring/Silent</string>
+-    <string name="navring_action_ring_vibrate_silent">Ring/Vibration/Silent</string>
+-    <string name="navring_action_screen_off">Screen off</string>
+-    <string name="navring_action_torch">Toggle torch</string>
+-    <string name="navring_action_google_now">Google Now</string>
+-    <string name="navring_choose_action_title">Choose action</string>
+-
+     <!-- Power menu enable disable -->
+     <string name="power_menu_title">Power menu</string>
+     <string name="power_menu_reboot_title">Reboot menu</string>
+diff --git a/src/com/android/settings/cyanogenmod/SystemUiSettings.java b/src/com/android/settings/cyanogenmod/SystemUiSettings.java
+index c16630f..6445cd7 100644
+--- a/src/com/android/settings/cyanogenmod/SystemUiSettings.java
++++ b/src/com/android/settings/cyanogenmod/SystemUiSettings.java
+@@ -47,36 +47,17 @@ import com.android.settings.vanir.gesturepanel.GestureBuilderActivity;
+ import java.util.ArrayList;
+ import java.util.List;
+ 
+-import com.android.settings.util.HardwareKeyNavbarHelper;
+-
+ public class SystemUiSettings extends SettingsPreferenceFragment implements
+         Preference.OnPreferenceChangeListener {
+     private static final String TAG = "SystemSettings";
+ 
+     private static final String KEY_EXPANDED_DESKTOP = "expanded_desktop";
+-    private static final String KEY_IMMERSIVE_MODE_STYLE = "immersive_mode_style";
+-    private static final String KEY_IMMERSIVE_MODE_STATE = "immersive_mode_state";
+-    private static final String KEY_IMMERSIVE_LOL = "immersive_mode_lol_profile";
+-    private static final String KEY_IMMERSIVE_ORIENTATION = "immersive_orientation";
+-    private static final String KEY_NAVRING_SWITCH = "navigation_bar_ring";
+-    private static final String KEY_NAVBAR_SWITCH = "navigation_bar";
+     private static final String KEY_BUTTON_NAVIGATION = "old_buttons_navigation";
+-    private static final String HARDWARE_IMMERSIVE_STYLE = "hardware_immersive_style";
+-    private static final String IMMERSIVE_ENABLED = "immersive_enabled";
+-    private static final String IMMERSIVE_DISABLED = "immersive_disabled";
+ 
+     private ListPreference mExpandedDesktopPref;
+-    private CheckBoxPreference mExpandedDesktopNoNavbarPref;
+-    private ListPreference mImmersiveOrientation;
+-    private ListPreference mImmersiveModePref;
+-    private CheckBoxPreference mImmersiveLOL;
+     private CheckBoxPreference mExpandedDesktop;
+-    private SwitchPreference mImmersiveModeState;
+     private Preference mNavigation;
+ 
+-    private VanirPreferenceSwitch mNavringPreference;
+-    private VanirPreferenceSwitch mNavbarPreference;
+-    private int immersiveModeValue;
+     private int deviceKeys;
+ 
+     private SettingsObserver mSettingsObserver;
+@@ -88,18 +69,12 @@ public class SystemUiSettings extends SettingsPreferenceFragment implements
+ 
+         void observe() {
+             ContentResolver resolver = mContext.getContentResolver();
+-            resolver.registerContentObserver(Settings.System.getUriFor(
+-                    Settings.System.ENABLE_NAVIGATION_BAR), false, this);
+         }
+ 
+         @Override
+         public void onChange(boolean selfChange) {
+             final ContentResolver resolver = mContext.getContentResolver();
+ 
+-            boolean enabled = Settings.System.getInt(resolver,
+-                         Settings.System.ENABLE_NAVIGATION_BAR, 0) == 1;
+-
+-            setHardwareImmersiveState(enabled);
+         }
+     }
+ 
+@@ -115,40 +90,11 @@ public class SystemUiSettings extends SettingsPreferenceFragment implements
+             getPreferenceScreen().removePreference(mNavigation);
+         }
+ 
+-        mNavringPreference = (VanirPreferenceSwitch) findPreference(KEY_NAVRING_SWITCH);
+-        mNavringPreference.setSettingToWatch(Settings.System.ENABLE_NAVIGATION_RING, 1);
+-
+-        mNavbarPreference = (VanirPreferenceSwitch) findPreference(KEY_NAVBAR_SWITCH);
+-        if (HardwareKeyNavbarHelper.shouldShowNavbarToggle())
+-            mNavbarPreference.setSettingToWatch(Settings.System.ENABLE_NAVIGATION_BAR);
+-
+-        mImmersiveModeState = (SwitchPreference) findPreference(KEY_IMMERSIVE_MODE_STATE);
+-        mImmersiveModeState.setChecked(Settings.System.getInt(getContentResolver(),
+-                    Settings.System.GLOBAL_IMMERSIVE_MODE_STATE, 0) == 1);
+-        mImmersiveModeState.setOnPreferenceChangeListener(this);
+-
+-        mImmersiveLOL = (CheckBoxPreference) findPreference(KEY_IMMERSIVE_LOL);
+-        mImmersiveLOL.setChecked(Settings.System.getInt(getContentResolver(),
+-                    Settings.System.IMMERSIVE_LOL_PROFILE, 0) == 1);
+-        mImmersiveLOL.setOnPreferenceChangeListener(this);
+-
+         mExpandedDesktop = (CheckBoxPreference) findPreference(KEY_EXPANDED_DESKTOP);
+         mExpandedDesktop.setChecked(Settings.System.getInt(getContentResolver(),
+                     Settings.System.EXPANDED_DESKTOP, 0) == 1);
+         mExpandedDesktop.setOnPreferenceChangeListener(this);
+ 
+-        mImmersiveOrientation = (ListPreference) findPreference(KEY_IMMERSIVE_ORIENTATION);
+-        int orientationValue = Settings.System.getInt(getContentResolver(), Settings.System.IMMERSIVE_ORIENTATION, 0);
+-        final String strValueOrientation = String.valueOf(orientationValue);
+-        mImmersiveOrientation.setValue(strValueOrientation);
+-        setListPreferenceSummary(mImmersiveOrientation, strValueOrientation);
+-        mImmersiveOrientation.setOnPreferenceChangeListener(this);
+-    
+-        mImmersiveModePref = (ListPreference) findPreference(KEY_IMMERSIVE_MODE_STYLE);
+-        immersiveModeValue = Settings.System.getInt(getContentResolver(),
+-                    Settings.System.GLOBAL_IMMERSIVE_MODE_STYLE, 2);
+-        updateImmersiveModeDependencies();
+-        mImmersiveModePref.setOnPreferenceChangeListener(this);
+     }
+ 
+     @Override
+@@ -178,9 +124,6 @@ public class SystemUiSettings extends SettingsPreferenceFragment implements
+ 
+     @Override
+     public boolean onPreferenceTreeClick(PreferenceScreen preferenceScreen, Preference preference) {
+-        if (preference == mNavringPreference || preference == mNavbarPreference) {
+-            return super.onPreferenceTreeClick(preferenceScreen, preference);
+-        }
+         return super.onPreferenceTreeClick(preferenceScreen, preference);
+     }
+ 
+@@ -188,44 +131,15 @@ public class SystemUiSettings extends SettingsPreferenceFragment implements
+     public boolean onPreferenceChange(Preference preference, Object objValue) {
+         final String key = preference.getKey();
+ 
+-        if (preference == mImmersiveModePref) {
+-            final String strValue = (String) objValue;
+-            immersiveModeValue = Integer.valueOf(strValue);
+-            Settings.System.putInt(getActivity().getContentResolver(),
+-                    Settings.System.GLOBAL_IMMERSIVE_MODE_STYLE, immersiveModeValue);
+-            setListPreferenceSummary(mImmersiveModePref, strValue);
+-            if (deviceKeys > 0) saveImmersiveState(immersiveModeValue);
+-            updateImmersiveModeDependencies();
+-            updateRebootDialog();
+-            return true;
+-
+-        } else if (preference == mImmersiveOrientation) {
+-            final String strValue = (String)objValue;
+-            int value = Integer.valueOf(strValue);
+-            Settings.System.putInt(getContentResolver(), Settings.System.IMMERSIVE_ORIENTATION,
+-                    value);
+-            setListPreferenceSummary(mImmersiveOrientation, strValue);
+-            return true;
+-
+-        } else if (preference == mImmersiveLOL) {
+-            Settings.System.putInt(getActivity().getContentResolver(),
+-                    Settings.System.IMMERSIVE_LOL_PROFILE,
+-                    (Boolean) objValue ? 1 : 0);
+-            return true;
+-
+-        } else if (preference == mExpandedDesktop) {
++        if (preference == mExpandedDesktop) {
+             Settings.System.putInt(getActivity().getContentResolver(),
+                     Settings.System.EXPANDED_DESKTOP,
+                     (Boolean) objValue ? 1 : 0);
+             updateRebootDialog();
+             return true;
+ 
+-        } else if (preference == mImmersiveModeState) {
+-            Settings.System.putInt(getActivity().getContentResolver(),
+-                    Settings.System.GLOBAL_IMMERSIVE_MODE_STATE,
+-                    (Boolean) objValue ? 1 : 0);
+-            return true;
+         }
++
+         return false;
+     }
+ 
+@@ -235,47 +149,6 @@ public class SystemUiSettings extends SettingsPreferenceFragment implements
+         mContext.sendBroadcastAsUser(u, UserHandle.ALL);
+     }
+ 
+-    private void updateImmersiveModeDependencies() {
+-        boolean mmmBBQChickenSandwich = (immersiveModeValue > 0);
+-        mExpandedDesktop.setEnabled(mmmBBQChickenSandwich);
+-        mImmersiveOrientation.setEnabled(mmmBBQChickenSandwich);
+-        mImmersiveModeState.setEnabled(mmmBBQChickenSandwich);
+-    }
+-
+-    public void setHardwareImmersiveState(boolean enabled) {
+-        final SharedPreferences prefs = mContext.getSharedPreferences(HARDWARE_IMMERSIVE_STYLE, Context.MODE_PRIVATE);
+-        int previousEnabledValue = prefs.getInt(IMMERSIVE_ENABLED, 2);
+-        int previousDisabledValue = prefs.getInt(IMMERSIVE_DISABLED, 1);
+-        if (previousDisabledValue > 1) previousDisabledValue = 1;
+-
+-        final Resources res = getResources();
+-        mImmersiveModePref.setEntryValues(res.getStringArray(
+-                enabled ? R.array.immersive_mode_values : R.array.immersive_mode_values_no_navbar));
+-        mImmersiveModePref.setEntries(res.getStringArray(
+-                enabled ? R.array.immersive_mode_entries : R.array.immersive_mode_entries_no_navbar));
+-
+-        Settings.System.putInt(getActivity().getContentResolver(),
+-                Settings.System.GLOBAL_IMMERSIVE_MODE_STYLE, enabled ? previousEnabledValue : previousDisabledValue);
+-
+-        String strValue = String.valueOf(enabled ? previousEnabledValue : previousDisabledValue);
+-        mImmersiveModePref.setValue(strValue);
+-        setListPreferenceSummary(mImmersiveModePref, strValue);
+-    }
+-
+-    private void saveImmersiveState(int newValue) {
+-        final SharedPreferences prefs = mContext.getSharedPreferences(HARDWARE_IMMERSIVE_STYLE, Context.MODE_PRIVATE);
+-        final ContentResolver resolver = mContext.getContentResolver();
+-
+-        boolean enabled = Settings.System.getInt(resolver,
+-                Settings.System.ENABLE_NAVIGATION_BAR, 0) == 1;
+-
+-        if (enabled) {
+-            prefs.edit().putInt(IMMERSIVE_ENABLED, newValue).commit();
+-        } else {
+-            prefs.edit().putInt(IMMERSIVE_DISABLED, newValue).commit();
+-        }
+-    }
+-
+     private void setListPreferenceSummary(final ListPreference pref, final String value) {
+         pref.setSummary(pref.getEntries()[pref.findIndexOfValue(value)]);
+     }
+-- 
+2.5.0
+

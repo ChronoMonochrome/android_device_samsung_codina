@@ -1,0 +1,68 @@
+From a8e86c73a91a03c0c3e493cb6e78847d80954899 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Mon, 25 Jan 2016 02:48:25 +0700
+Subject: [PATCH 55/64] Revert "NavigationButtonView: remove redundant onchange
+ from setting observer, and prevent double (un)registration."
+
+This reverts commit dcf6d6a3d47339a774301c3a2ace47fb0de7d843.
+
+Change-Id: I9cad4ba7d5740278dd0ef3915a8744753303078a
+---
+ .../statusbar/phone/NavigationBarView.java         | 27 +++++++++++-----------
+ 1 file changed, 13 insertions(+), 14 deletions(-)
+
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/phone/NavigationBarView.java b/packages/SystemUI/src/com/android/systemui/statusbar/phone/NavigationBarView.java
+index 87ae91c..515c93b 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/phone/NavigationBarView.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/phone/NavigationBarView.java
+@@ -94,7 +94,17 @@ public class NavigationBarView extends LinearLayout {
+ 
+     private ArrayList<AwesomeButtonInfo> mNavButtons = new ArrayList<AwesomeButtonInfo>();
+ 
+-    private ContentObserver mSettingsObserver;
++    private ContentObserver mSettingsObserver = new ContentObserver(new Handler()) {
++        @Override
++        public void onChange(boolean selfChange) {
++            setupNavigationButtons();
++        }
++
++        @Override
++        public void onChange(boolean selfChange, Uri uri) {
++            setupNavigationButtons();
++        }
++    };
+ 
+     boolean mWasNotifsButtonVisible = false;
+ 
+@@ -541,26 +551,15 @@ public class NavigationBarView extends LinearLayout {
+     protected void onAttachedToWindow() {
+         super.onAttachedToWindow();
+ 
+-        if (mSettingsObserver == null) {
+-            mSettingsObserver = new ContentObserver(new Handler()) {
+-                @Override
+-                public void onChange(boolean selfChange) {
+-                    setupNavigationButtons();
+-                }};
+-
+-            mContext.getContentResolver().registerContentObserver(Settings.System.getUriFor(Settings.System.NAVIGATION_BAR_BUTTONS),
++        mContext.getContentResolver().registerContentObserver(Settings.System.getUriFor(Settings.System.NAVIGATION_BAR_BUTTONS),
+                 false, mSettingsObserver);
+-        }
+     }
+ 
+     @Override
+     protected void onDetachedFromWindow() {
+         super.onDetachedFromWindow();
+ 
+-        if (mSettingsObserver != null) {
+-            mContext.getContentResolver().unregisterContentObserver(mSettingsObserver);
+-            mSettingsObserver = null;
+-        }
++        mContext.getContentResolver().unregisterContentObserver(mSettingsObserver);
+     }
+ 
+     private void readUserConfig() {
+-- 
+2.5.0
+

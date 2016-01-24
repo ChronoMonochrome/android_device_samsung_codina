@@ -1,0 +1,975 @@
+From 08e6102248f1c8464a6208c80b4c5eadc223c6d1 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Mon, 25 Jan 2016 04:15:26 +0700
+Subject: [PATCH 63/64] Remove Navigation bar
+
+Change-Id: I2cb4ae557734fe474fa7bcf1e1a34801fa56230e
+---
+ .../android/internal/util/aokp/NavBarHelpers.java  | 144 -------------
+ .../SystemUI/res/layout-sw600dp/navigation_bar.xml | 181 ----------------
+ packages/SystemUI/res/layout/navigation_bar.xml    | 152 --------------
+ .../statusbar/phone/NavigationBarTransitions.java  | 227 ---------------------
+ .../statusbar/phone/NavigationBarView.java         | 126 ------------
+ .../bridge/resources/bars/navigation_bar.xml       |  20 --
+ .../layoutlib/bridge/bars/NavigationBar.java       |  57 ------
+ 7 files changed, 907 deletions(-)
+ delete mode 100644 core/java/com/android/internal/util/aokp/NavBarHelpers.java
+ delete mode 100644 packages/SystemUI/res/layout-sw600dp/navigation_bar.xml
+ delete mode 100644 packages/SystemUI/res/layout/navigation_bar.xml
+ delete mode 100644 packages/SystemUI/src/com/android/systemui/statusbar/phone/NavigationBarTransitions.java
+ delete mode 100644 packages/SystemUI/src/com/android/systemui/statusbar/phone/NavigationBarView.java
+ delete mode 100644 tools/layoutlib/bridge/resources/bars/navigation_bar.xml
+ delete mode 100644 tools/layoutlib/bridge/src/com/android/layoutlib/bridge/bars/NavigationBar.java
+
+diff --git a/core/java/com/android/internal/util/aokp/NavBarHelpers.java b/core/java/com/android/internal/util/aokp/NavBarHelpers.java
+deleted file mode 100644
+index e67af86..0000000
+--- a/core/java/com/android/internal/util/aokp/NavBarHelpers.java
++++ /dev/null
+@@ -1,144 +0,0 @@
+-/*
+- * Copyright (C) 2013 The CyanogenMod Project
+- *
+- * Licensed under the Apache License, Version 2.0 (the "License");
+- * you may not use this file except in compliance with the License.
+- * You may obtain a copy of the License at
+- *
+- *      http://www.apache.org/licenses/LICENSE-2.0
+- *
+- * Unless required by applicable law or agreed to in writing, software
+- * distributed under the License is distributed on an "AS IS" BASIS,
+- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- * See the License for the specific language governing permissions and
+- * limitations under the License.
+- */
+-
+-package com.android.internal.util.aokp;
+-
+-import android.content.Context;
+-import android.content.Intent;
+-import android.content.pm.ActivityInfo;
+-import android.content.pm.PackageManager;
+-import android.content.pm.PackageManager.NameNotFoundException;
+-import android.graphics.drawable.Drawable;
+-import android.text.TextUtils;
+-
+-import java.net.URISyntaxException;
+-import java.util.ArrayList;
+-
+-import static com.android.internal.util.aokp.AwesomeConstants.AwesomeConstant;
+-
+-public class NavBarHelpers {
+-
+-    // These items will be subtracted from NavBar Actions when RC requests list of
+-    // Available Actions
+-    private static final AwesomeConstant[] EXCLUDED_FROM_NAVBAR = {
+-            AwesomeConstant.ACTION_SILENT,
+-            AwesomeConstant.ACTION_VIB,
+-            AwesomeConstant.ACTION_SILENT_VIB,
+-            AwesomeConstant.ACTION_NULL,
+-            AwesomeConstant.ACTION_ARROW_LEFT,
+-            AwesomeConstant.ACTION_ARROW_RIGHT,
+-            AwesomeConstant.ACTION_ARROW_UP,
+-            AwesomeConstant.ACTION_ARROW_DOWN,
+-            /* these are just not implemented yet: */
+-            AwesomeConstant.ACTION_WIDGETS
+-    };
+-
+-    private NavBarHelpers() {
+-    }
+-
+-    public static Drawable getIconImage(Context mContext, String uri) {
+-        Drawable actionIcon;
+-        if (TextUtils.isEmpty(uri)) {
+-            uri = AwesomeConstants.AwesomeConstant.ACTION_NULL.value();
+-        }
+-        if (uri.startsWith("**")) {
+-            return AwesomeConstants.getActionIcon(mContext, uri);
+-        } else {  // This must be an app 
+-            try {
+-                actionIcon = mContext.getPackageManager().getActivityIcon(Intent.parseUri(uri, 0));
+-            } catch (NameNotFoundException e) {
+-                e.printStackTrace();
+-                actionIcon = AwesomeConstants.getActionIcon(mContext,
+-                        AwesomeConstants.AwesomeConstant.ACTION_NULL.value());
+-            } catch (URISyntaxException e) {
+-                e.printStackTrace();
+-                actionIcon = AwesomeConstants.getActionIcon(mContext,
+-                        AwesomeConstants.AwesomeConstant.ACTION_NULL.value());
+-            }
+-        }
+-        return actionIcon;
+-    }
+-
+-    public static String[] getNavBarActions() {
+-        boolean itemFound;
+-        String[] mActions;
+-        ArrayList<String> mActionList = new ArrayList<String>();
+-        String[] mActionStart = AwesomeConstants.AwesomeActions();
+-        int startLength = mActionStart.length;
+-        int excludeLength = EXCLUDED_FROM_NAVBAR.length;
+-        for (int i = 0; i < startLength; i++) {
+-            itemFound = false;
+-            for (int j = 0; j < excludeLength; j++) {
+-                if (mActionStart[i].equals(EXCLUDED_FROM_NAVBAR[j].value())) {
+-                    itemFound = true;
+-                }
+-            }
+-            if (!itemFound) {
+-                mActionList.add(mActionStart[i]);
+-            }
+-        }
+-        int actionSize = mActionList.size();
+-        mActions = new String[actionSize];
+-        for (int i = 0; i < actionSize; i++) {
+-            mActions[i] = mActionList.get(i);
+-        }
+-        return mActions;
+-    }
+-
+-    public static String getProperSummary(Context mContext, String uri) {
+-        if (TextUtils.isEmpty(uri)) {
+-            uri = AwesomeConstants.AwesomeConstant.ACTION_NULL.value();
+-        }
+-        if (uri.startsWith("**")) {
+-            return AwesomeConstants.getProperName(mContext, uri);
+-        } else {  // This must be an app 
+-            try {
+-                Intent intent = Intent.parseUri(uri, 0);
+-                if (Intent.ACTION_MAIN.equals(intent.getAction())) {
+-                    return getFriendlyActivityName(mContext, intent);
+-                }
+-                return getFriendlyShortcutName(mContext, intent);
+-            } catch (URISyntaxException e) {
+-                return AwesomeConstants.getProperName(mContext, AwesomeConstants.AwesomeConstant.ACTION_NULL.value());
+-            }
+-        }
+-    }
+-
+-    private static String getFriendlyActivityName(Context mContext, Intent intent) {
+-        PackageManager pm = mContext.getPackageManager();
+-        ActivityInfo ai = intent.resolveActivityInfo(pm, PackageManager.GET_ACTIVITIES);
+-        String friendlyName = null;
+-
+-        if (ai != null) {
+-            friendlyName = ai.loadLabel(pm).toString();
+-            if (friendlyName == null) {
+-                friendlyName = ai.name;
+-            }
+-        }
+-
+-        return (friendlyName != null) ? friendlyName : intent.toUri(0);
+-    }
+-
+-    private static String getFriendlyShortcutName(Context mContext, Intent intent) {
+-        String activityName = getFriendlyActivityName(mContext, intent);
+-        String name = intent.getStringExtra(Intent.EXTRA_SHORTCUT_NAME);
+-
+-        if (activityName != null && name != null) {
+-            return activityName + ": " + name;
+-        }
+-        return name != null ? name : intent.toUri(0);
+-    }
+-}
+diff --git a/packages/SystemUI/res/layout-sw600dp/navigation_bar.xml b/packages/SystemUI/res/layout-sw600dp/navigation_bar.xml
+deleted file mode 100644
+index 4faee3c..0000000
+--- a/packages/SystemUI/res/layout-sw600dp/navigation_bar.xml
++++ /dev/null
+@@ -1,181 +0,0 @@
+-<?xml version="1.0" encoding="utf-8"?>
+-<!--
+-/* apps/common/assets/default/default/skins/StatusBar.xml
+-**
+-** Copyright 2011, The Android Open Source Project
+-**
+-** Licensed under the Apache License, Version 2.0 (the "License");
+-** you may not use this file except in compliance with the License.
+-** You may obtain a copy of the License at
+-**
+-**     http://www.apache.org/licenses/LICENSE-2.0
+-**
+-** Unless required by applicable law or agreed to in writing, software
+-** distributed under the License is distributed on an "AS IS" BASIS,
+-** WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-** See the License for the specific language governing permissions and
+-** limitations under the License.
+-*/
+--->
+-
+-<com.android.systemui.statusbar.phone.NavigationBarView
+-        xmlns:android="http://schemas.android.com/apk/res/android"
+-        xmlns:systemui="http://schemas.android.com/apk/res/com.android.systemui"
+-        android:layout_height="match_parent"
+-        android:layout_width="match_parent"
+-        android:background="@drawable/system_bar_background"
+-        >
+-
+-    <FrameLayout
+-            android:id="@+id/rot0"
+-            android:layout_height="match_parent"
+-            android:layout_width="match_parent"
+-            >
+-
+-        <LinearLayout
+-                android:layout_height="match_parent"
+-                android:layout_width="match_parent"
+-                android:orientation="horizontal"
+-                android:clipChildren="false"
+-                android:clipToPadding="false"
+-                android:id="@+id/nav_buttons"
+-                android:animateLayoutChanges="true"
+-                >
+-
+-
+-        </LinearLayout>
+-
+-        <!-- lights out layout to match exactly -->
+-        <LinearLayout
+-                android:layout_height="match_parent"
+-                android:layout_width="match_parent"
+-                android:orientation="horizontal"
+-                android:id="@+id/lights_out"
+-                android:visibility="gone"
+-                >
+-
+-        </LinearLayout>
+-
+-        <FrameLayout
+-                android:layout_width="match_parent"
+-                android:layout_height="match_parent">
+-
+-            <com.android.systemui.statusbar.policy.KeyButtonView
+-                android:layout_width="80dp"
+-                android:id="@+id/show_notifs"
+-                android:layout_height="match_parent"
+-                android:layout_gravity="center_vertical|left"
+-                android:scaleType="center"
+-                android:visibility="gone" />
+-
+-            <com.android.systemui.statusbar.policy.KeyButtonView
+-                    android:layout_width="80dp"
+-                    android:id="@+id/search_light"
+-                    android:layout_height="match_parent"
+-                    android:layout_gravity="center"
+-                    android:src="@drawable/search_light"
+-                    android:scaleType="center"
+-                    android:visibility="gone"
+-                    android:contentDescription="@string/accessibility_search_light"
+-                    />
+-
+-            <com.android.systemui.statusbar.policy.KeyButtonView
+-                    android:id="@+id/camera_button"
+-                    android:layout_height="match_parent"
+-                    android:layout_width="80dp"
+-                    android:layout_gravity="center_vertical|right"
+-                    android:src="@drawable/ic_sysbar_camera"
+-                    android:scaleType="center"
+-                    android:visibility="gone"
+-                    android:contentDescription="@string/accessibility_camera_button"
+-                    />
+-        </FrameLayout>
+-
+-        <com.android.systemui.statusbar.policy.DeadZone
+-                android:id="@+id/deadzone"
+-                android:layout_height="match_parent"
+-                android:layout_width="match_parent"
+-                systemui:minSize="@dimen/navigation_bar_deadzone_size"
+-                systemui:maxSize="@dimen/navigation_bar_deadzone_size_max"
+-                systemui:holdTime="@integer/navigation_bar_deadzone_hold"
+-                systemui:decayTime="@integer/navigation_bar_deadzone_decay"
+-                systemui:orientation="horizontal"
+-                android:layout_gravity="top"
+-                />
+-    </FrameLayout>
+-
+-    <FrameLayout
+-            android:id="@+id/rot90"
+-            android:layout_height="match_parent"
+-            android:layout_width="match_parent"
+-            android:visibility="gone"
+-            android:paddingTop="0dp"
+-            >
+-
+-        <LinearLayout
+-                android:layout_height="match_parent"
+-                android:layout_width="match_parent"
+-                android:orientation="horizontal"
+-                android:clipChildren="false"
+-                android:clipToPadding="false"
+-                android:id="@+id/nav_buttons"
+-                android:animateLayoutChanges="true"
+-                >
+-
+-
+-        </LinearLayout>
+-
+-        <!-- lights out layout to match exactly -->
+-        <LinearLayout
+-                android:layout_height="match_parent"
+-                android:layout_width="match_parent"
+-                android:orientation="vertical"
+-                android:id="@+id/lights_out"
+-                android:visibility="gone"
+-                >
+-
+-        </LinearLayout>
+-
+-        <com.android.systemui.statusbar.policy.KeyButtonView
+-                android:layout_width="80dp"
+-                android:id="@+id/show_notifs"
+-                android:layout_height="match_parent"
+-                android:layout_gravity="center_vertical|left"
+-                android:scaleType="center"
+-                android:visibility="gone"/>
+-
+-        <com.android.systemui.statusbar.policy.KeyButtonView
+-                android:id="@+id/search_light"
+-                android:layout_height="80dp"
+-                android:layout_width="match_parent"
+-                android:layout_gravity="center_vertical"
+-                android:src="@drawable/search_light_land"
+-                android:scaleType="center"
+-                android:visibility="gone"
+-                android:contentDescription="@string/accessibility_search_light"
+-                />
+-
+-        <!-- No camera button in landscape mode -->
+-
+-        <com.android.systemui.statusbar.policy.DeadZone
+-                android:id="@+id/deadzone"
+-                android:layout_height="match_parent"
+-                android:layout_width="match_parent"
+-                systemui:minSize="@dimen/navigation_bar_deadzone_size"
+-                systemui:maxSize="@dimen/navigation_bar_deadzone_size_max"
+-                systemui:holdTime="@integer/navigation_bar_deadzone_hold"
+-                systemui:decayTime="@integer/navigation_bar_deadzone_decay"
+-                systemui:orientation="vertical"
+-                android:layout_gravity="top"
+-                />
+-    </FrameLayout>
+-
+-    <!-- not used -->
+-    <View
+-            android:id="@+id/rot270"
+-            android:layout_height="match_parent"
+-            android:layout_width="match_parent"
+-            android:visibility="gone"
+-            />
+-
+-</com.android.systemui.statusbar.phone.NavigationBarView>
+diff --git a/packages/SystemUI/res/layout/navigation_bar.xml b/packages/SystemUI/res/layout/navigation_bar.xml
+deleted file mode 100644
+index bc2f7ee..0000000
+--- a/packages/SystemUI/res/layout/navigation_bar.xml
++++ /dev/null
+@@ -1,152 +0,0 @@
+-<?xml version="1.0" encoding="utf-8"?>
+-<!--
+-/* apps/common/assets/default/default/skins/StatusBar.xml
+-**
+-** Copyright 2011, The Android Open Source Project
+-**
+-** Licensed under the Apache License, Version 2.0 (the "License"); 
+-** you may not use this file except in compliance with the License. 
+-** You may obtain a copy of the License at 
+-**
+-**     http://www.apache.org/licenses/LICENSE-2.0 
+-**
+-** Unless required by applicable law or agreed to in writing, software 
+-** distributed under the License is distributed on an "AS IS" BASIS, 
+-** WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+-** See the License for the specific language governing permissions and 
+-** limitations under the License.
+-*/
+--->
+-
+-<com.android.systemui.statusbar.phone.NavigationBarView
+-    xmlns:android="http://schemas.android.com/apk/res/android"
+-    xmlns:systemui="http://schemas.android.com/apk/res/com.android.systemui"
+-    android:layout_height="match_parent"
+-    android:layout_width="match_parent"
+-    >
+-
+-    <FrameLayout
+-        android:id="@+id/background"
+-        android:layout_height="match_parent"
+-        android:layout_width="match_parent"
+-        android:background="#FF000000"
+-        >
+-
+-        <LinearLayout android:id="@+id/rot0"
+-            android:layout_height="match_parent"
+-            android:layout_width="match_parent"
+-            android:orientation="horizontal"
+-            >
+-
+-            <!-- navigation controls -->
+-            <View
+-                android:layout_width="32dp"
+-                android:layout_height="match_parent"
+-                android:layout_weight="0"
+-                />
+-            <com.android.systemui.statusbar.policy.KeyButtonView android:id="@+id/back"
+-                android:layout_width="54dp"
+-                android:layout_height="match_parent"
+-                android:src="@drawable/ic_sysbar_back_default"
+-                systemui:keyCode="4"
+-                android:layout_weight="0"
+-                />
+-            <View 
+-                android:layout_width="match_parent"
+-                android:layout_height="match_parent"
+-                android:layout_weight="1"
+-                />
+-            <com.android.systemui.statusbar.policy.KeyButtonView android:id="@+id/home"
+-                android:layout_width="54dp"
+-                android:layout_height="match_parent"
+-                android:src="@drawable/ic_sysbar_home_default"
+-                systemui:keyCode="3"
+-                android:layout_weight="0"
+-                />
+-            <View 
+-                android:layout_width="match_parent"
+-                android:layout_height="match_parent"
+-                android:layout_weight="1"
+-                />
+-            <ImageView android:id="@+id/recent_apps"
+-                android:layout_width="54dp"
+-                android:layout_height="match_parent"
+-                android:src="@drawable/ic_sysbar_recent_default"
+-                android:layout_weight="0"
+-                />
+-            <com.android.systemui.statusbar.policy.KeyButtonView android:id="@+id/menu"
+-                android:layout_width="32dp"
+-                android:layout_height="match_parent"
+-                android:src="@drawable/ic_sysbar_menu_default"
+-                systemui:keyCode="82"
+-                android:layout_weight="0"
+-                android:visibility="invisible"
+-                />
+-        </LinearLayout>
+-
+-        <LinearLayout android:id="@+id/rot90"
+-            android:layout_height="match_parent"
+-            android:layout_width="match_parent"
+-            android:orientation="vertical"
+-            android:visibility="gone"
+-            android:paddingTop="24dp"
+-            >
+-            
+-            <!-- navigation controls -->
+-            <com.android.systemui.statusbar.policy.KeyButtonView android:id="@+id/menu"
+-                android:layout_height="32dp"
+-                android:layout_width="match_parent"
+-                android:src="@drawable/ic_sysbar_menu_default_land"
+-                systemui:keyCode="82"
+-                android:layout_weight="0"
+-                android:visibility="invisible"
+-                />
+-            <ImageView android:id="@+id/recent_apps"
+-                android:layout_height="54dp"
+-                android:layout_width="match_parent"
+-                android:src="@drawable/ic_sysbar_recent_default_land"
+-                android:layout_weight="0"
+-                />
+-            <View 
+-                android:layout_height="match_parent"
+-                android:layout_width="match_parent"
+-                android:layout_weight="1"
+-                />
+-            <com.android.systemui.statusbar.policy.KeyButtonView android:id="@+id/home"
+-                android:layout_height="54dp"
+-                android:layout_width="match_parent"
+-                android:src="@drawable/ic_sysbar_home_default_land"
+-                systemui:keyCode="3"
+-                android:layout_weight="0"
+-                />
+-            <View 
+-                android:layout_height="match_parent"
+-                android:layout_width="match_parent"
+-                android:layout_weight="1"
+-                />
+-            <com.android.systemui.statusbar.policy.KeyButtonView android:id="@+id/back"
+-                android:layout_height="54dp"
+-                android:layout_width="match_parent"
+-                android:src="@drawable/ic_sysbar_back_default_land"
+-                systemui:keyCode="4"
+-                android:layout_weight="0"
+-                />
+-            <View
+-                android:layout_height="32dp"
+-                android:layout_width="match_parent"
+-                android:layout_weight="0"
+-                />
+-        </LinearLayout>
+-
+-        <LinearLayout android:id="@+id/rot270"
+-            android:layout_height="match_parent"
+-            android:layout_width="match_parent"
+-            android:orientation="vertical"
+-            android:visibility="gone"
+-            >
+-
+-            <!-- not used -->
+-        </LinearLayout>
+-    
+-    </FrameLayout>
+-</com.android.systemui.statusbar.phone.NavigationBarView>
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/phone/NavigationBarTransitions.java b/packages/SystemUI/src/com/android/systemui/statusbar/phone/NavigationBarTransitions.java
+deleted file mode 100644
+index 5d02ee9..0000000
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/phone/NavigationBarTransitions.java
++++ /dev/null
+@@ -1,227 +0,0 @@
+-/*
+- * Copyright (C) 2013 The Android Open Source Project
+- *
+- * Licensed under the Apache License, Version 2.0 (the "License");
+- * you may not use this file except in compliance with the License.
+- * You may obtain a copy of the License at
+- *
+- *      http://www.apache.org/licenses/LICENSE-2.0
+- *
+- * Unless required by applicable law or agreed to in writing, software
+- * distributed under the License is distributed on an "AS IS" BASIS,
+- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- * See the License for the specific language governing permissions and
+- * limitations under the License.
+- */
+-
+-package com.android.systemui.statusbar.phone;
+-
+-import android.animation.Animator;
+-import android.animation.AnimatorListenerAdapter;
+-import android.content.Context;
+-import android.os.ServiceManager;
+-import android.view.MotionEvent;
+-import android.view.View;
+-import android.view.animation.AccelerateInterpolator;
+-
+-import com.android.internal.statusbar.IStatusBarService;
+-import com.android.internal.util.aokp.AwesomeConstants.AwesomeConstant;
+-import com.android.systemui.R;
+-import com.android.systemui.statusbar.policy.KeyButtonView;
+-
+-public final class NavigationBarTransitions extends BarTransitions {
+-
+-    private static final float KEYGUARD_QUIESCENT_ALPHA = 0.5f;
+-    private static final int CONTENT_FADE_DURATION = 200;
+-
+-    private final NavigationBarView mView;
+-    private final IStatusBarService mBarService;
+-
+-    private boolean mLightsOut;
+-    private boolean mVertical;
+-    private int mRequestedMode;
+-    private boolean mStickyTransparent;
+-
+-    public NavigationBarTransitions(NavigationBarView view) {
+-        super(view, R.drawable.nav_background, R.color.navigation_bar_background_opaque,
+-                R.color.navigation_bar_background_semi_transparent);
+-        mView = view;
+-        mBarService = IStatusBarService.Stub.asInterface(
+-                ServiceManager.getService(Context.STATUS_BAR_SERVICE));
+-    }
+-
+-    public void init(boolean isVertical) {
+-        setVertical(isVertical);
+-        applyModeBackground(-1, getMode(), false /*animate*/);
+-        applyMode(getMode(), false /*animate*/, true /*force*/);
+-    }
+-
+-    public void setVertical(boolean isVertical) {
+-        mVertical = isVertical;
+-        transitionTo(mRequestedMode, false /*animate*/);
+-    }
+-
+-    @Override
+-    public void transitionTo(int mode, boolean animate) {
+-        mRequestedMode = mode;
+-        if (mVertical && mode == MODE_TRANSLUCENT) {
+-            // translucent mode not allowed when vertical
+-            mode = MODE_OPAQUE;
+-        } else if (mStickyTransparent) {
+-            mode = MODE_TRANSPARENT;
+-        }
+-        super.transitionTo(mode, animate);
+-    }
+-
+-    @Override
+-    protected void onTransition(int oldMode, int newMode, boolean animate) {
+-        super.onTransition(oldMode, newMode, animate);
+-        applyMode(newMode, animate, false /*force*/);
+-    }
+-
+-    private void applyMode(int mode, boolean animate, boolean force) {
+-        // apply to key buttons
+-        final float alpha = alphaForMode(mode);
+-        View[] views = mView.getAllButtons();
+-
+-        for(View v : views) {
+-            if (AwesomeConstant.ACTION_BACK.value().equals(v.getTag())) {
+-                // back button was skipped in original calculations
+-                continue;
+-            }
+-            setKeyButtonViewQuiescentAlpha(v, alpha, animate);
+-        }
+-
+-        setKeyButtonViewQuiescentAlpha(mView.getSearchLight(), KEYGUARD_QUIESCENT_ALPHA, animate);
+-        setKeyButtonViewQuiescentAlpha(mView.getCameraButton(), KEYGUARD_QUIESCENT_ALPHA, animate);
+-        setKeyButtonViewQuiescentAlpha(mView.getNotifsButton(), KEYGUARD_QUIESCENT_ALPHA, animate);
+-        applyBackButtonQuiescentAlpha(mode, animate);
+-
+-        // apply to lights out
+-        applyLightsOut(mode == MODE_LIGHTS_OUT, animate, force);
+-    }
+-
+-    private float alphaForMode(int mode) {
+-        final boolean isOpaque = mode == MODE_OPAQUE || mode == MODE_LIGHTS_OUT;
+-        return isOpaque ? KeyButtonView.DEFAULT_QUIESCENT_ALPHA : 1f;
+-    }
+-
+-    public void applyBackButtonQuiescentAlpha(int mode, boolean animate) {
+-        float backAlpha = 0;
+-        View[] views = mView.getAllButtons();
+-        for(View v : views) {
+-            if (AwesomeConstant.ACTION_BACK.value().equals(v.getTag())) {
+-                // back button was skipped in original calculations
+-                continue;
+-            }
+-            backAlpha = maxVisibleQuiescentAlpha(backAlpha, v);
+-        }
+-
+-        backAlpha = maxVisibleQuiescentAlpha(backAlpha, mView.getNotifsButton());
+-
+-        if (backAlpha > 0) {
+-            setKeyButtonViewQuiescentAlpha(mView.getBackButton(), backAlpha, animate);
+-        }
+-    }
+-
+-    public void applyTransparent(boolean sticky) {
+-        if (sticky != mStickyTransparent) {
+-            mStickyTransparent = sticky;
+-            if (!mStickyTransparent) {
+-                transitionTo(mRequestedMode, false);
+-            } else {
+-                transitionTo(MODE_TRANSPARENT, false);
+-            }
+-        }
+-    }
+-
+-    private static float maxVisibleQuiescentAlpha(float max, View v) {
+-        if ((v instanceof KeyButtonView) && v.isShown()) {
+-            return Math.max(max, ((KeyButtonView)v).getQuiescentAlpha());
+-        }
+-        return max;
+-    }
+-
+-    @Override
+-    public void setContentVisible(boolean visible) {
+-        final float alpha = visible ? 1 : 0;
+-        fadeContent(mView.getCameraButton(), alpha);
+-        fadeContent(mView.getNotifsButton(), alpha);
+-        fadeContent(mView.getSearchLight(), alpha);
+-    }
+-
+-    private void fadeContent(View v, float alpha) {
+-        if (v != null) {
+-            v.animate().alpha(alpha).setDuration(CONTENT_FADE_DURATION);
+-        }
+-    }
+-
+-    private void setKeyButtonViewQuiescentAlpha(View button, float alpha, boolean animate) {
+-        if (button instanceof KeyButtonView) {
+-            ((KeyButtonView) button).setQuiescentAlpha(alpha, animate);
+-        }
+-    }
+-
+-    private void applyLightsOut(boolean lightsOut, boolean animate, boolean force) {
+-        if (!force && lightsOut == mLightsOut) return;
+-
+-        mLightsOut = lightsOut;
+-
+-        final View navButtons = mView.getCurrentView().findViewById(R.id.nav_buttons);
+-        final View lowLights = mView.getCurrentView().findViewById(R.id.lights_out);
+-
+-        // ok, everyone, stop it right there
+-        navButtons.animate().cancel();
+-        lowLights.animate().cancel();
+-
+-        final float navButtonsAlpha = lightsOut ? 0f : 1f;
+-        final float lowLightsAlpha = lightsOut ? 1f : 0f;
+-
+-        if (!animate) {
+-            navButtons.setAlpha(navButtonsAlpha);
+-            lowLights.setAlpha(lowLightsAlpha);
+-            lowLights.setVisibility(lightsOut ? View.VISIBLE : View.GONE);
+-        } else {
+-            final int duration = lightsOut ? LIGHTS_OUT_DURATION : LIGHTS_IN_DURATION;
+-            navButtons.animate()
+-                .alpha(navButtonsAlpha)
+-                .setDuration(duration)
+-                .start();
+-
+-            lowLights.setOnTouchListener(mLightsOutListener);
+-            if (lowLights.getVisibility() == View.GONE) {
+-                lowLights.setAlpha(0f);
+-                lowLights.setVisibility(View.VISIBLE);
+-            }
+-            lowLights.animate()
+-                .alpha(lowLightsAlpha)
+-                .setDuration(duration)
+-                .setInterpolator(new AccelerateInterpolator(2.0f))
+-                .setListener(lightsOut ? null : new AnimatorListenerAdapter() {
+-                    @Override
+-                    public void onAnimationEnd(Animator _a) {
+-                        lowLights.setVisibility(View.GONE);
+-                    }
+-                })
+-                .start();
+-        }
+-    }
+-
+-    private final View.OnTouchListener mLightsOutListener = new View.OnTouchListener() {
+-        @Override
+-        public boolean onTouch(View v, MotionEvent ev) {
+-            if (ev.getAction() == MotionEvent.ACTION_DOWN) {
+-                // even though setting the systemUI visibility below will turn these views
+-                // on, we need them to come up faster so that they can catch this motion
+-                // event
+-                applyLightsOut(false, false, false);
+-
+-                try {
+-                    mBarService.setSystemUiVisibility(0, View.SYSTEM_UI_FLAG_LOW_PROFILE);
+-                } catch (android.os.RemoteException ex) {
+-                }
+-            }
+-            return false;
+-        }
+-    };
+-}
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/phone/NavigationBarView.java b/packages/SystemUI/src/com/android/systemui/statusbar/phone/NavigationBarView.java
+deleted file mode 100644
+index 22181b8..0000000
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/phone/NavigationBarView.java
++++ /dev/null
+@@ -1,126 +0,0 @@
+-/*
+- * Copyright (C) 2008 The Android Open Source Project
+- *
+- * Licensed under the Apache License, Version 2.0 (the "License");
+- * you may not use this file except in compliance with the License.
+- * You may obtain a copy of the License at
+- *
+- *      http://www.apache.org/licenses/LICENSE-2.0
+- *
+- * Unless required by applicable law or agreed to in writing, software
+- * distributed under the License is distributed on an "AS IS" BASIS,
+- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- * See the License for the specific language governing permissions and
+- * limitations under the License.
+- */
+-
+-package com.android.systemui.statusbar.phone;
+-
+-import android.animation.Animator;
+-import android.animation.AnimatorListenerAdapter;
+-import android.animation.ObjectAnimator;
+-import android.content.Context;
+-import android.os.ServiceManager;
+-import android.util.AttributeSet;
+-import android.view.Display;
+-import android.view.KeyEvent;
+-import android.view.MotionEvent;
+-import android.view.View;
+-import android.view.Surface;
+-import android.view.WindowManager;
+-import android.widget.LinearLayout;
+-import android.content.res.Configuration;
+-
+-import com.android.internal.statusbar.IStatusBarService;
+-
+-import com.android.systemui.R;
+-
+-public class NavigationBarView extends LinearLayout {
+-    final static boolean NAVBAR_ALWAYS_AT_RIGHT = true;
+-
+-    protected IStatusBarService mBarService;
+-    final Display mDisplay;
+-    View mCurrentView = null;
+-    View[] mRotatedViews = new View[4];
+-    View mBackground;
+-    Animator mLastAnimator = null;
+-
+-    public View getRecentsButton() {
+-        return mCurrentView.findViewById(R.id.recent_apps);
+-    }
+-
+-    public View getMenuButton() {
+-        return mCurrentView.findViewById(R.id.menu);
+-    }
+-
+-    public NavigationBarView(Context context, AttributeSet attrs) {
+-        super(context, attrs);
+-        mDisplay = ((WindowManager)context.getSystemService(
+-                Context.WINDOW_SERVICE)).getDefaultDisplay();
+-        mBarService = IStatusBarService.Stub.asInterface(
+-                ServiceManager.getService(Context.STATUS_BAR_SERVICE));
+-
+-        //setLayerType(View.LAYER_TYPE_HARDWARE, null);
+-
+-        setOnSystemUiVisibilityChangeListener(new View.OnSystemUiVisibilityChangeListener() {
+-            @Override
+-            public void onSystemUiVisibilityChange(int visibility) {
+-                boolean on = (visibility == View.STATUS_BAR_VISIBLE);
+-                android.util.Log.d("NavigationBarView", "LIGHTS " 
+-                    + (on ? "ON" : "OUT"));
+-                setLights(on);
+-            }
+-        });
+-    }
+-
+-    private void setLights(final boolean on) {
+-        float oldAlpha = mBackground.getAlpha();
+-        android.util.Log.d("NavigationBarView", "animating alpha: " + oldAlpha + " -> "
+-            + (on ? 1f : 0f));
+-
+-        if (mLastAnimator != null && mLastAnimator.isRunning()) mLastAnimator.cancel();
+-
+-        mLastAnimator = ObjectAnimator.ofFloat(mBackground, "alpha", oldAlpha, on ? 1f : 0f)
+-            .setDuration(on ? 250 : 1500);
+-        mLastAnimator.addListener(new AnimatorListenerAdapter() {
+-            @Override
+-            public void onAnimationEnd(Animator _a) {
+-                mLastAnimator = null;
+-            }
+-        });
+-        mLastAnimator.start();
+-    }
+-
+-    public void onFinishInflate() {
+-        mBackground = findViewById(R.id.background);
+-
+-        mRotatedViews[Surface.ROTATION_0] = 
+-        mRotatedViews[Surface.ROTATION_180] = findViewById(R.id.rot0);
+-
+-        mRotatedViews[Surface.ROTATION_90] = findViewById(R.id.rot90);
+-        
+-        mRotatedViews[Surface.ROTATION_270] = NAVBAR_ALWAYS_AT_RIGHT
+-                                                ? findViewById(R.id.rot90)
+-                                                : findViewById(R.id.rot270);
+-
+-        mCurrentView = mRotatedViews[Surface.ROTATION_0];
+-    }
+-
+-    @Override
+-    public boolean onTouchEvent(MotionEvent ev) {
+-        // immediately bring up the lights
+-        setLights(true);
+-        return false; // pass it on
+-    }
+-
+-    public void reorient() {
+-        final int rot = mDisplay.getRotation();
+-        for (int i=0; i<4; i++) {
+-            mRotatedViews[i].setVisibility(View.GONE);
+-        }
+-        mCurrentView = mRotatedViews[rot];
+-        mCurrentView.setVisibility(View.VISIBLE);
+-
+-        android.util.Log.d("NavigationBarView", "reorient(): rot=" + mDisplay.getRotation());
+-    }
+-}
+diff --git a/tools/layoutlib/bridge/resources/bars/navigation_bar.xml b/tools/layoutlib/bridge/resources/bars/navigation_bar.xml
+deleted file mode 100644
+index 599ca08..0000000
+--- a/tools/layoutlib/bridge/resources/bars/navigation_bar.xml
++++ /dev/null
+@@ -1,20 +0,0 @@
+-<?xml version="1.0" encoding="utf-8"?>
+-<merge xmlns:android="http://schemas.android.com/apk/res/android">
+-	<TextView
+-			android:layout_width="wrap_content"
+-			android:layout_height="wrap_content"
+-			android:layout_weight="1"/>
+-	<ImageView
+-			android:layout_height="wrap_content"
+-			android:layout_width="wrap_content"/>
+-	<ImageView
+-			android:layout_height="wrap_content"
+-			android:layout_width="wrap_content"/>
+-	<ImageView
+-			android:layout_height="wrap_content"
+-			android:layout_width="wrap_content"/>
+-	<TextView
+-			android:layout_width="wrap_content"
+-			android:layout_height="wrap_content"
+-			android:layout_weight="1"/>
+-</merge>
+diff --git a/tools/layoutlib/bridge/src/com/android/layoutlib/bridge/bars/NavigationBar.java b/tools/layoutlib/bridge/src/com/android/layoutlib/bridge/bars/NavigationBar.java
+deleted file mode 100644
+index 84e676e..0000000
+--- a/tools/layoutlib/bridge/src/com/android/layoutlib/bridge/bars/NavigationBar.java
++++ /dev/null
+@@ -1,57 +0,0 @@
+-/*
+- * Copyright (C) 2011 The Android Open Source Project
+- *
+- * Licensed under the Apache License, Version 2.0 (the "License");
+- * you may not use this file except in compliance with the License.
+- * You may obtain a copy of the License at
+- *
+- *      http://www.apache.org/licenses/LICENSE-2.0
+- *
+- * Unless required by applicable law or agreed to in writing, software
+- * distributed under the License is distributed on an "AS IS" BASIS,
+- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- * See the License for the specific language governing permissions and
+- * limitations under the License.
+- */
+-
+-package com.android.layoutlib.bridge.bars;
+-
+-import com.android.resources.Density;
+-import com.android.layoutlib.bridge.Bridge;
+-
+-import org.xmlpull.v1.XmlPullParserException;
+-
+-import android.content.Context;
+-import android.widget.LinearLayout;
+-import android.widget.TextView;
+-
+-public class NavigationBar extends CustomBar {
+-
+-    public NavigationBar(Context context, Density density, int orientation, boolean isRtl,
+-            boolean rtlEnabled) throws XmlPullParserException {
+-        super(context, density, orientation, "/bars/navigation_bar.xml", "navigation_bar.xml");
+-
+-        setBackgroundColor(0xFF000000);
+-
+-        // Cannot access the inside items through id because no R.id values have been
+-        // created for them.
+-        // We do know the order though.
+-        // 0 is a spacer.
+-        int back = 1;
+-        int recent = 3;
+-        if (orientation == LinearLayout.VERTICAL || (isRtl && !rtlEnabled)) {
+-            // If RTL is enabled, then layoutlib mirrors the layout for us.
+-            back = 3;
+-            recent = 1;
+-        }
+-
+-        loadIcon(back,   "ic_sysbar_back.png",   density, isRtl);
+-        loadIcon(2,      "ic_sysbar_home.png",   density, isRtl);
+-        loadIcon(recent, "ic_sysbar_recent.png", density, isRtl);
+-    }
+-
+-    @Override
+-    protected TextView getStyleableTextView() {
+-        return null;
+-    }
+-}
+-- 
+2.5.0
+

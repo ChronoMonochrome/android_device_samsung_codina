@@ -1,0 +1,83 @@
+From 44cfaea621a2fb70507774c682467d54ee4fa022 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Mon, 25 Jan 2016 01:13:48 +0700
+Subject: [PATCH 26/64] Revert "Revert "hardware keys: use proper key layout
+ when adding a navbar with the keyboard up""
+
+This reverts commit d99c560e08ee13bcef0663f5aed42da5b1e1b623.
+---
+ .../systemui/statusbar/phone/NavigationBarView.java      |  9 +++++++--
+ .../android/systemui/statusbar/phone/PhoneStatusBar.java | 16 ++++++++--------
+ 2 files changed, 15 insertions(+), 10 deletions(-)
+
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/phone/NavigationBarView.java b/packages/SystemUI/src/com/android/systemui/statusbar/phone/NavigationBarView.java
+index 7623d44..796ea60 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/phone/NavigationBarView.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/phone/NavigationBarView.java
+@@ -874,8 +874,13 @@ public class NavigationBarView extends LinearLayout {
+         return mVertical;
+     }
+ 
+-    void setIMEState(boolean showing) {
+-        showingIME = showing;
++    void inflateForHardwareDevice(int hints) {
++        // We're inflating the class here specifically for a hardware key device so we need
++        // to get the IME window state values from PhoneStatusBar since NavigationBarView has not been
++        // initialized
++        showingIME = (hints & StatusBarManager.NAVIGATION_HINT_BACK_ALT) != 0;
++        mNavigationIconHints = hints;
++        reorient();
+     }
+ 
+     public void reorient() {
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/phone/PhoneStatusBar.java b/packages/SystemUI/src/com/android/systemui/statusbar/phone/PhoneStatusBar.java
+index 0ef817c..829cb93 100755
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/phone/PhoneStatusBar.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/phone/PhoneStatusBar.java
+@@ -311,6 +311,7 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
+     // on-screen navigation buttons
+     private NavigationBarView mNavigationBarView = null;
+     private int mNavigationBarWindowState = WINDOW_STATE_SHOWING;
++    private boolean mNavbarRequired;
+ 
+     // member to store notification alpha
+     private int mAlpha = 255;
+@@ -713,6 +714,7 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
+         loadDimens();
+ 
+         mIconSize = res.getDimensionPixelSize(com.android.internal.R.dimen.status_bar_icon_size);
++        mNavbarRequired = res.getBoolean(com.android.internal.R.bool.config_showNavigationBar);
+         final boolean isMultiSimEnabled = MSimTelephonyManager.getDefault().isMultiSimEnabled();
+ 
+         if (isMultiSimEnabled) {
+@@ -1264,8 +1266,11 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
+     }
+ 
+     private void prepareNavigationBarView() {
+-        mNavigationBarView.setIMEState(showingIME);
+-        mNavigationBarView.reorient();
++        if (mNavbarRequired) {
++            mNavigationBarView.reorient();
++        } else {
++            mNavigationBarView.inflateForHardwareDevice(mNavigationIconHints);
++        }
+ 
+         if (mNavigationBarView.getRecentsButton() != null) {
+             mNavigationBarView.getRecentsButton().setOnClickListener(mRecentsClickListener);
+@@ -2671,12 +2676,7 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
+         mNavigationIconHints = hints;
+ 
+         if (mNavigationBarView != null) {
+-            boolean nav = true;
+-            try {
+-                nav = mWindowManagerService.needsNavigationBar();
+-            } catch(RemoteException re) {
+-            }
+-            mNavigationBarView.setNavigationIconHints(hints, !nav);
++            mNavigationBarView.setNavigationIconHints(hints);
+         }
+         checkBarModes();
+     }
+-- 
+2.5.0
+

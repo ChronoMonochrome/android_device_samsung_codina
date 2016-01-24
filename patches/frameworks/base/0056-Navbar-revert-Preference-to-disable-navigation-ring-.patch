@@ -1,0 +1,29 @@
+From cf67e52d0446c4985f560c597811522c57684985 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Mon, 25 Jan 2016 02:50:17 +0700
+Subject: [PATCH 56/64] Navbar: revert "Preference to disable navigation ring
+ [1/2]"
+
+Change-Id: I677616e87025e66479ab753624aaa1992a5d055a
+---
+ .../src/com/android/systemui/statusbar/phone/NavigationBarView.java   | 4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
+
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/phone/NavigationBarView.java b/packages/SystemUI/src/com/android/systemui/statusbar/phone/NavigationBarView.java
+index 515c93b..077c656 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/phone/NavigationBarView.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/phone/NavigationBarView.java
+@@ -449,9 +449,7 @@ public class NavigationBarView extends LinearLayout {
+             }
+         }
+ 
+-        final boolean showSearch = disableHome && !disableSearch &&
+-                Settings.System.getInt(mContext.getContentResolver(),
+-                        Settings.System.ENABLE_NAVIGATION_RING, 1) == 1;
++        final boolean showSearch = disableHome && !disableSearch;
+         final boolean showCamera = showSearch && !mCameraDisabledByDpm
+                 && mLockUtils.getCameraEnabled();
+         final boolean showNotifs = showSearch &&
+-- 
+2.5.0
+

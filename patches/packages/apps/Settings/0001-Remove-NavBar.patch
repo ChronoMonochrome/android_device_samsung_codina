@@ -1,0 +1,1745 @@
+From 24718b20387dee7bef899553d21e2a584f3a3495 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Mon, 25 Jan 2016 05:24:59 +0700
+Subject: [PATCH] Remove NavBar
+
+Change-Id: Ib2322725a8c925705932c5a2b977e108821cdc14
+---
+ res/values/config.xml                              |   4 +-
+ src/com/android/settings/Settings.java             |   1 -
+ src/com/android/settings/vanir/NavRingTargets.java | 504 ----------------
+ .../vanir/navbar/ArrangeNavbarFragment.java        | 648 ---------------------
+ .../vanir/navbar/NavbarSettingsFragment.java       | 455 ---------------
+ .../vanir/navbar/NavbarTabHostFragment.java        |  64 --
+ 6 files changed, 2 insertions(+), 1674 deletions(-)
+ delete mode 100644 src/com/android/settings/vanir/NavRingTargets.java
+ delete mode 100644 src/com/android/settings/vanir/navbar/ArrangeNavbarFragment.java
+ delete mode 100644 src/com/android/settings/vanir/navbar/NavbarSettingsFragment.java
+ delete mode 100644 src/com/android/settings/vanir/navbar/NavbarTabHostFragment.java
+
+diff --git a/res/values/config.xml b/res/values/config.xml
+index 7cffa5e..71e08f3 100755
+--- a/res/values/config.xml
++++ b/res/values/config.xml
+@@ -55,9 +55,9 @@
+     <!-- Show Expanded Desktop preference -->
+     <bool name="config_show_expandedDesktop">false</bool>
+ 
+-    <integer name="navigation_bar_height_min_percent">35</integer>
++    <integer name="navigation_bar_height_min_percent">0</integer>
+     <integer name="navigation_bar_height_max_percent">135</integer>
+-    <integer name="navigation_bar_width_min_percent">35</integer>
++    <integer name="navigation_bar_width_min_percent">0</integer>
+     <integer name="navigation_bar_width_max_percent">135</integer>
+ 
+     <!-- Multi SIM Tune Away/Priority Subscription Support. Some device RILs do not support this.
+diff --git a/src/com/android/settings/Settings.java b/src/com/android/settings/Settings.java
+index 3c14048..03ad2ac 100755
+--- a/src/com/android/settings/Settings.java
++++ b/src/com/android/settings/Settings.java
+@@ -487,7 +487,6 @@ public class Settings extends PreferenceActivity
+         PolicyNativeFragment.class.getName(),
+         com.android.settings.quicksettings.QuickSettingsTiles.class.getName(),
+         com.android.settings.vanir.QuietHours.class.getName(),
+-        com.android.settings.vanir.navbar.NavbarTabHostFragment.class.getName(),
+         ThemeSettings.class.getName(),
+         com.android.settings.wifi.WifiApSettings.class.getName()
+     };
+diff --git a/src/com/android/settings/vanir/NavRingTargets.java b/src/com/android/settings/vanir/NavRingTargets.java
+deleted file mode 100644
+index 0dba98b..0000000
+--- a/src/com/android/settings/vanir/NavRingTargets.java
++++ /dev/null
+@@ -1,504 +0,0 @@
+-/*
+- * Copyright (C) 2013 Android Open Kang Project
+- * Copyright (C) 2013 The Cyanogenmod Project
+- *
+- * Licensed under the Apache License, Version 2.0 (the "License");
+- * you may not use this file except in compliance with the License.
+- * You may obtain a copy of the License at
+- *
+- * http://www.apache.org/licenses/LICENSE-2.0
+- *
+- * Unless required by applicable law or agreed to in writing, software
+- * distributed under the License is distributed on an "AS IS" BASIS,
+- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- * See the License for the specific language governing permissions and
+- * limitations under the License.
+- */
+-
+-package com.android.settings.vanir;
+-
+-import android.app.Activity;
+-import android.app.AlertDialog;
+-import android.app.Fragment;
+-import android.app.SearchManager;
+-import android.content.ComponentName;
+-import android.content.ContentResolver;
+-import android.content.Context;
+-import android.content.DialogInterface;
+-import android.content.Intent;
+-import android.content.res.Configuration;
+-import android.graphics.Bitmap;
+-import android.graphics.BitmapFactory;
+-import android.net.Uri;
+-import android.os.Bundle;
+-import android.os.Environment;
+-import android.os.Handler;
+-import android.os.Message;
+-import android.os.UserHandle;
+-import android.provider.MediaStore;
+-import android.provider.Settings;
+-import android.text.TextUtils;
+-import android.util.Log;
+-import android.view.LayoutInflater;
+-import android.view.Menu;
+-import android.view.MenuInflater;
+-import android.view.MenuItem;
+-import android.view.View;
+-import android.view.ViewGroup;
+-import android.widget.AdapterView;
+-import android.widget.AdapterView.OnItemSelectedListener;
+-import android.widget.ArrayAdapter;
+-import android.widget.CompoundButton;
+-import android.widget.Spinner;
+-import android.widget.Switch;
+-import android.widget.Toast;
+-import com.android.internal.util.vanir.AwesomeConstants;
+-import com.android.internal.util.aokp.NavRingHelpers;
+-import com.android.internal.widget.multiwaveview.GlowPadView;
+-import com.android.internal.widget.multiwaveview.TargetDrawable;
+-import com.android.settings.R;
+-import com.android.settings.util.ShortcutPickerHelper;
+-
+-import java.io.File;
+-import java.io.FileNotFoundException;
+-import java.io.FileOutputStream;
+-import java.util.ArrayList;
+-
+-import static com.android.internal.util.vanir.AwesomeConstants.ASSIST_ICON_METADATA_NAME;
+-import static com.android.internal.util.vanir.AwesomeConstants.AwesomeConstant;
+-
+-public class NavRingTargets extends Fragment implements GlowPadView.OnTriggerListener {
+-    private static final String TAG = "NavRing";
+-    private static final boolean DEBUG = true;
+-
+-    public static final int REQUEST_PICK_CUSTOM_ICON = 200;
+-    public static final int REQUEST_PICK_LANDSCAPE_ICON = 201;
+-
+-    private GlowPadView mGlowPadView;
+-    private Spinner mTargetNumAmount;
+-    private Switch mLongPressStatus;
+-
+-    private ShortcutPickerHelper mPicker;
+-    private String[] targetActivities = new String[5];
+-    private String[] longActivities = new String[5];
+-    private String[] customIcons = new String[5];
+-    private ViewGroup mContainer;
+-
+-    private int mTargetIndex = 0;
+-    private int startPosOffset;
+-    private int endPosOffset;
+-    private int mNavRingAmount;
+-    private boolean mBoolLongPress;
+-
+-    private enum E_Action {
+-        T_SHORT,
+-        T_LONG,
+-        T_ICON
+-    };
+-    private static final E_Action[] navring_noicon_dialog_values = new E_Action[] { E_Action.T_SHORT };
+-    private static final E_Action[] navring_noicon_withlong_dialog_values = new E_Action[] { E_Action.T_SHORT, E_Action.T_LONG };
+-    private static final E_Action[] navring_dialog_values = new E_Action[] { E_Action.T_SHORT, E_Action.T_ICON };
+-    private static final E_Action[] navring_withlong_dialog_values = new E_Action[] { E_Action.T_SHORT, E_Action.T_LONG, E_Action.T_ICON };
+-
+-    //for onActivityResult handling
+-    private NavRingClickerer mCurrentClickerer;
+-
+-    private ArrayList<Integer> intentList = new ArrayList<Integer>();
+-    private int intentCounter;
+-
+-    @Override
+-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+-            Bundle savedInstanceState) {
+-        mContainer = container;
+-
+-        return inflater.inflate(R.layout.navigation_ring_targets, container,
+-                false);
+-    }
+-
+-    @Override
+-    public void onActivityCreated(Bundle savedInstanceState) {
+-        super.onActivityCreated(savedInstanceState);
+-        mGlowPadView = ((GlowPadView) getActivity().findViewById(
+-                R.id.navring_target));
+-        mGlowPadView.setOnTriggerListener(this);
+-
+-        mTargetNumAmount = (Spinner) getActivity().findViewById(
+-                R.id.amount_spinner);
+-        ArrayAdapter<CharSequence> spinnerAdapter = new ArrayAdapter<CharSequence>(
+-                getActivity(), android.R.layout.simple_spinner_item);
+-        spinnerAdapter
+-                .setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+-        final String[] entries = getResources().getStringArray(
+-                R.array.pref_navring_amount_entries);
+-        for (int i = 0; i < entries.length; i++) {
+-            spinnerAdapter.add(entries[i]);
+-        }
+-        mTargetNumAmount.setAdapter(spinnerAdapter);
+-
+-        mLongPressStatus = (Switch) getActivity().findViewById(
+-                R.id.longpress_switch);
+-
+-        mBoolLongPress = (Settings.System.getBoolean(getActivity().getContentResolver(),
+-                Settings.System.SYSTEMUI_NAVRING_LONG_ENABLE, false));
+-        mNavRingAmount = Settings.System.getInt(getActivity().getContentResolver(),
+-                Settings.System.SYSTEMUI_NAVRING_AMOUNT, 1);
+-
+-        mTargetNumAmount.setSelection(mNavRingAmount - 1);
+-        mLongPressStatus.setChecked(mBoolLongPress);
+-
+-        mTargetNumAmount.post(new Runnable() {
+-            public void run() {
+-                mTargetNumAmount
+-                        .setOnItemSelectedListener(new AmountListener());
+-            }
+-        });
+-        mLongPressStatus
+-                .setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+-                    @Override
+-                    public void onCheckedChanged(CompoundButton v,
+-                            boolean checked) {
+-                        Settings.System.putBoolean(getActivity().getContentResolver(),
+-                                Settings.System.SYSTEMUI_NAVRING_LONG_ENABLE,
+-                                checked);
+-                        mBoolLongPress = checked;
+-                    }
+-                });
+-
+-        for (int i = 0; i < 5; i++) {
+-            targetActivities[i] = Settings.System.getString(getActivity().getContentResolver(),
+-                    Settings.System.SYSTEMUI_NAVRING[i]);
+-            longActivities[i] = Settings.System.getString(getActivity().getContentResolver(),
+-                    Settings.System.SYSTEMUI_NAVRING_LONG[i]);
+-            customIcons[i] = Settings.System.getString(getActivity().getContentResolver(),
+-                    Settings.System.SYSTEMUI_NAVRING_ICON[i]);
+-        }
+-
+-        setDrawables();
+-    }
+-
+-    public class AmountListener implements OnItemSelectedListener {
+-        public void onItemSelected(AdapterView<?> parent, View view, int pos,
+-                long id) {
+-            final String[] values = getResources().getStringArray(
+-                    R.array.pref_navring_amount_values);
+-            mNavRingAmount = Integer.parseInt((String) values[pos]);
+-            Settings.System.putInt(getActivity().getContentResolver(), Settings.System.SYSTEMUI_NAVRING_AMOUNT, mNavRingAmount);
+-            setDrawables();
+-        }
+-
+-        public void onNothingSelected(AdapterView<?> parent) {
+-            // Do nothing.
+-        }
+-    }
+-
+-    private void setDrawables() {
+-        intentCounter = 0;
+-        intentList.clear();
+-
+-        // Custom Targets
+-        ArrayList<TargetDrawable> storedDraw = new ArrayList<TargetDrawable>();
+-
+-        int endPosOffset = 0;
+-        int middleBlanks = 0;
+-
+-        if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) { // NavRing on Bottom
+-            startPosOffset = 1;
+-            endPosOffset = (mNavRingAmount) + 1;
+-
+-        } else { // Right... (Ring actually on left side of tablet)
+-            startPosOffset = (Math.min(1, mNavRingAmount / 2)) + 2;
+-            endPosOffset = startPosOffset - 1;
+-        }
+-
+-        int middleStart = mNavRingAmount;
+-        int tqty = middleStart;
+-        int middleFinish = 0;
+-
+-        if (middleBlanks > 0) {
+-            middleStart = (tqty / 2) + (tqty % 2);
+-            middleFinish = (tqty / 2);
+-        }
+-
+-        // Add Initial Place Holder Targets
+-        for (int i = 0; i < startPosOffset; i++) {
+-            intentList.add(-1);
+-            storedDraw.add(NavRingHelpers.getTargetDrawable(getActivity(), null));
+-        }
+-        // Add User Targets
+-        for (int i = 0; i < middleStart; i++) {
+-            TargetDrawable drawable;
+-            if (!TextUtils.isEmpty(customIcons[i])) {
+-                drawable = NavRingHelpers.getCustomDrawable(getActivity(),
+-                        customIcons[i]);
+-            } else {
+-                drawable = NavRingHelpers.getTargetDrawable(getActivity(),
+-                        targetActivities[i]);
+-            }
+-            drawable.setEnabled(true);
+-            storedDraw.add(drawable);
+-            intentList.add(intentCounter);
+-            intentCounter = intentCounter + 1;
+-        }
+-
+-        // Add middle Place Holder Targets
+-        for (int j = 0; j < middleBlanks; j++) {
+-            intentList.add(-1);
+-            storedDraw.add(NavRingHelpers.getTargetDrawable(getActivity(), null));
+-        }
+-
+-        // Add Rest of User Targets for leftys
+-        for (int j = 0; j < middleFinish; j++) {
+-            TargetDrawable drawable;
+-            int i = j + middleStart;
+-            if (!TextUtils.isEmpty(customIcons[i])) {
+-                drawable = NavRingHelpers.getCustomDrawable(getActivity(),
+-                        customIcons[i]);
+-            } else {
+-                drawable = NavRingHelpers.getTargetDrawable(getActivity(),
+-                        targetActivities[i]);
+-            }
+-            drawable.setEnabled(true);
+-            storedDraw.add(drawable);
+-            intentList.add(intentCounter);
+-            intentCounter = intentCounter + 1;
+-        }
+-
+-        // Add End Place Holder Targets
+-        for (int i = 0; i < endPosOffset; i++) {
+-            intentList.add(-1);
+-            storedDraw.add(NavRingHelpers.getTargetDrawable(getActivity(), null));
+-        }
+-
+-        mGlowPadView.setTargetResources(storedDraw);
+-
+-        if (DEBUG) {
+-            Log.i(TAG, "Drawables set");
+-        }
+-
+-        //maybe swap search icon
+-        Intent intent = ((SearchManager) getActivity()
+-                .getSystemService(Context.SEARCH_SERVICE)).getAssistIntent(
+-                getActivity(), true, UserHandle.USER_CURRENT);
+-        if (intent != null) {
+-            ComponentName component = intent.getComponent();
+-            if (component == null
+-                    || !mGlowPadView
+-                            .replaceTargetDrawablesIfPresent(
+-                                    component,
+-                                    ASSIST_ICON_METADATA_NAME,
+-                                    com.android.internal.R.drawable.ic_action_assist_generic)) {
+-                if (DEBUG) {
+-                    Log.v(TAG, "MaybeSwapSearchIcon: Couldn't grab icon for component " + component);
+-                }
+-            }
+-        }
+-    }
+-
+-    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+-        if (resultCode == Activity.RESULT_OK) {
+-            if (requestCode == ShortcutPickerHelper.REQUEST_PICK_SHORTCUT
+-                    || requestCode == ShortcutPickerHelper.REQUEST_PICK_APPLICATION
+-                    || requestCode == ShortcutPickerHelper.REQUEST_CREATE_SHORTCUT) {
+-                if (mCurrentClickerer != null) //it shouldn't be, but let's check anyways
+-                    mCurrentClickerer.onActivityResult(requestCode, resultCode, data);
+-            } else if ((requestCode == REQUEST_PICK_CUSTOM_ICON)
+-                    || (requestCode == REQUEST_PICK_LANDSCAPE_ICON)) {
+-
+-                String iconName = "navring_icon_" + mTargetIndex + ".png";
+-                FileOutputStream iconStream = null;
+-                try {
+-                    iconStream = getActivity().openFileOutput(iconName,
+-                            Context.MODE_WORLD_READABLE);
+-                } catch (FileNotFoundException e) {
+-                    Log.e(TAG, "Could not find icon file: "+iconName);
+-                    return; // NOOOOO
+-                }
+-
+-                Uri selectedImageUri = Uri.fromFile(new File(Environment.getExternalStorageDirectory(),
+-                        "tmp_icon_" + mTargetIndex + ".png"));
+-                if (selectedImageUri == null) {
+-                    Log.e(TAG, "selectedImageUri is null?");
+-                    super.onActivityResult(requestCode, resultCode, data);
+-                    return;
+-                }
+-                Bitmap bitmap = BitmapFactory.decodeFile(selectedImageUri.getPath());
+-                if (bitmap == null) {
+-                    Log.e(TAG, "decode failed or file wasn't there");
+-                    super.onActivityResult(requestCode, resultCode, data);
+-                    return;
+-                }
+-                bitmap.compress(Bitmap.CompressFormat.PNG, 100, iconStream);
+-                customIcons[mTargetIndex] = Uri.fromFile(
+-                        new File(getActivity().getFilesDir(), iconName)).getPath();
+-
+-                File f = new File(selectedImageUri.getPath());
+-                if (f.exists()) {
+-                    f.delete();
+-                }
+-                Settings.System.putString(getActivity().getContentResolver(), Settings.System.SYSTEMUI_NAVRING_ICON[mTargetIndex],customIcons[mTargetIndex]);
+-                setDrawables();
+-            }
+-        }
+-        super.onActivityResult(requestCode, resultCode, data);
+-    }
+-
+-    @Override
+-    public void onTrigger(View v, final int target) {
+-        mTargetIndex = intentList.get(target);
+-
+-        Log.i(TAG, "onTrigger target: "+target);
+-
+-        final int entRes = mBoolLongPress ? R.array.navring_long_dialog_entries : R.array.navring_short_dialog_entries;
+-
+-        final String[] entries = getActivity().getResources().getStringArray(entRes);
+-
+-        final ArrayList<String> moddedEntries = new ArrayList<String>();
+-
+-        final String shortact = AwesomeConstants.getProperName(getActivity(), targetActivities[mTargetIndex]);
+-        if (DEBUG) Log.d(TAG, "\""+entries[0]+"\" ==> \""+entries[0]+" : "+shortact+"\"");
+-        moddedEntries.add(entries[0] + "  :  " + shortact);
+-
+-        if (mBoolLongPress) {
+-            final String longact = AwesomeConstants.getProperName(getActivity(), longActivities[mTargetIndex]);
+-            if (DEBUG) Log.d(TAG, "\""+entries[1]+"\" ==> \""+entries[1]+" : "+longact+"\"");
+-            moddedEntries.add(entries[1] + "  :  " + longact);
+-        }
+-
+-        final boolean canSetIcon = !shortact.equals("**app**");
+-        if (canSetIcon)
+-            moddedEntries.add(entries[entries.length-1]);
+-
+-        new AlertDialog.Builder(getActivity()).setTitle(getResources().getString(R.string.choose_action_title)).setItems(
+-                moddedEntries.toArray(new String[0]),
+-                new NavRingSettingTypeClickerer(this, 
+-                            canSetIcon ?
+-                                    (mBoolLongPress ? navring_withlong_dialog_values : navring_dialog_values) :
+-                                    (mBoolLongPress ? navring_noicon_withlong_dialog_values : navring_noicon_dialog_values)
+-                            )).show();
+-    }
+-
+-    //this handles the short/icon or short/long/icon selection
+-    private class NavRingSettingTypeClickerer implements DialogInterface.OnClickListener {
+-
+-        private final E_Action[] vals;
+-
+-        private final Fragment mParent;
+-
+-        public NavRingSettingTypeClickerer(final Fragment p, final E_Action[] v) {
+-            if (DEBUG) Log.i("NavRingSettingTypeClickerer", "Constructing");
+-            vals = v;
+-            mParent = p;
+-        }
+-
+-        @Override
+-        public void onClick(DialogInterface dialog, int item) {
+-            if (DEBUG) Log.v("NavRingSettingTypeClickerer", "Clicked on vals["+item+"]="+vals[item]);
+-            if (vals[item] == E_Action.T_ICON) {
+-                final int width = 85;
+-                final int height = width;
+-
+-                final Uri tmpfile = Uri.fromFile(new File(Environment.getExternalStorageDirectory(),"tmp_icon_" + mTargetIndex + ".png"));
+-
+-                final Intent intent = new Intent(Intent.ACTION_GET_CONTENT, null);
+-                intent.setType("image/*");
+-                intent.putExtra("crop", "true");
+-                intent.putExtra("aspectX", width);
+-                intent.putExtra("aspectY", height);
+-                intent.putExtra("outputX", width);
+-                intent.putExtra("outputY", height);
+-                intent.putExtra("scale", true);
+-                intent.putExtra(MediaStore.EXTRA_OUTPUT, tmpfile);
+-                intent.putExtra("outputFormat",
+-                        Bitmap.CompressFormat.PNG.toString());
+-                if (DEBUG) {
+-                    Log.i("NavRingSettingTypeClickerer", "picking custom icon that should output to: "
+-                            + tmpfile);
+-                }
+-                startActivityForResult(intent, REQUEST_PICK_CUSTOM_ICON);
+-            } else {
+-                //handle short and long press options
+-                final boolean isLong = vals[item] == E_Action.T_LONG;
+-                final int titleRes = isLong ? R.string.choose_action_long_title : R.string.choose_action_short_title;
+-                final String[] acts = NavRingHelpers.getNavRingActions(getActivity());
+-                final int l = acts.length;
+-                final String[] mActionNames = new String[l];
+-                for(int i=0;i<l;i++)
+-                    mActionNames[i] = AwesomeConstants.getProperName(getActivity(), acts[i]);
+-                new AlertDialog.Builder(getActivity()).setTitle(getResources().getString(R.string.choose_action_title))
+-                        .setItems(mActionNames,
+-                                (mCurrentClickerer = new NavRingClickerer(mParent, isLong)))
+-                        .show();
+-            }
+-        }
+-    }
+-
+-    //displays action list, etc.
+-    private class NavRingClickerer implements DialogInterface.OnClickListener, ShortcutPickerHelper.OnPickListener {
+-
+-        private boolean isLong = false;
+-        private final ShortcutPickerHelper mPicker;
+-
+-        private static final String T_APP = "**app**";
+-
+-        public NavRingClickerer(Fragment f, boolean l) {
+-            if (DEBUG) Log.i("NavRingClickerer", "Constructing");
+-            isLong = l;
+-            mPicker = new ShortcutPickerHelper(f, this);
+-        }
+-
+-        public void onActivityResult(int req, int res, Intent i) {
+-            mPicker.onActivityResult(req, res, i);
+-        }
+-
+-        public void shortcutPicked(String uri, String friendlyName, Bitmap bmp, boolean isApplication) {
+-            if (isLong) {
+-                longActivities[mTargetIndex] = uri;
+-                Settings.System.putString(getActivity().getContentResolver(), Settings.System.SYSTEMUI_NAVRING_LONG[mTargetIndex],longActivities[mTargetIndex]);
+-            } else {
+-                targetActivities[mTargetIndex] = uri;
+-                Settings.System.putString(getActivity().getContentResolver(), Settings.System.SYSTEMUI_NAVRING[mTargetIndex],targetActivities[mTargetIndex]);
+-            }
+-            setDrawables();
+-        }
+-
+-        @Override
+-        public void onClick(DialogInterface dialog, int item) {
+-            String act = NavRingHelpers.getNavRingActions(getActivity())[item];
+-            if (DEBUG) Log.v("NavRingClickerer", "Clicked on action["+item+"]="+act);
+-            if (T_APP.equals(act)) {
+-                mPicker.pickShortcut();
+-            } else {
+-                if (isLong) {
+-                    longActivities[mTargetIndex] = act;
+-                    Settings.System.putString(getActivity().getContentResolver(), Settings.System.SYSTEMUI_NAVRING_LONG[mTargetIndex],longActivities[mTargetIndex]);
+-                } else {
+-                    // clear previous custom action, because the new short action has its own
+-                    Settings.System.putString(getActivity().getContentResolver(),Settings.System.SYSTEMUI_NAVRING_ICON[mTargetIndex],(customIcons[mTargetIndex] = ""));
+-
+-                    targetActivities[mTargetIndex] = act;
+-                    Settings.System.putString(getActivity().getContentResolver(), Settings.System.SYSTEMUI_NAVRING[mTargetIndex],targetActivities[mTargetIndex]);
+-                }
+-            }
+-            setDrawables();
+-        }
+-    }
+-
+-    @Override
+-    public void onGrabbed(View v, int handle) {
+-    }
+-
+-    @Override
+-    public void onReleased(View v, int handle) {
+-    }
+-
+-    @Override
+-    public void onGrabbedStateChange(View v, int handle) {
+-    }
+-
+-    public void onTargetChange(View v, final int target) {
+-    }
+-
+-    @Override
+-    public void onFinishFinalAnimation() {
+-    }
+-}
+diff --git a/src/com/android/settings/vanir/navbar/ArrangeNavbarFragment.java b/src/com/android/settings/vanir/navbar/ArrangeNavbarFragment.java
+deleted file mode 100644
+index 16ec184..0000000
+--- a/src/com/android/settings/vanir/navbar/ArrangeNavbarFragment.java
++++ /dev/null
+@@ -1,648 +0,0 @@
+-package com.android.settings.vanir.navbar;
+-
+-import android.app.Activity;
+-import android.app.AlertDialog;
+-import android.app.Fragment;
+-import android.content.Context;
+-import android.content.ContentResolver;
+-import android.content.DialogInterface;
+-import android.content.Intent;
+-import android.graphics.Bitmap;
+-import android.graphics.BitmapFactory;
+-import android.graphics.Point;
+-import android.net.Uri;
+-import android.os.Bundle;
+-import android.os.Environment;
+-import android.provider.MediaStore;
+-import android.provider.Settings;
+-import android.util.Log;
+-import android.view.LayoutInflater;
+-import android.view.Menu;
+-import android.view.MenuInflater;
+-import android.view.MenuItem;
+-import android.view.MotionEvent;
+-import android.view.View;
+-import android.view.View.OnTouchListener;
+-import android.view.ViewGroup;
+-import android.widget.AdapterView;
+-import android.widget.AdapterView.OnItemClickListener;
+-import android.widget.ArrayAdapter;
+-import android.widget.ImageView;
+-import android.widget.ListView;
+-import android.widget.TextView;
+-import com.android.internal.util.vanir.AwesomeConstants;
+-import com.android.internal.util.vanir.AwesomeConstants.AwesomeConstant;
+-import com.android.internal.util.aokp.NavBarHelpers;
+-import com.android.settings.R;
+-import com.android.settings.util.ShortcutPickerHelper;
+-import com.android.settings.util.ShortcutPickerHelper.OnPickListener;
+-import com.google.android.apps.dashclock.ui.DragGripView;
+-import com.google.android.apps.dashclock.ui.SwipeDismissListViewTouchListener;
+-import com.mobeta.android.dslv.DragSortController;
+-import com.mobeta.android.dslv.DragSortListView;
+-
+-import java.io.File;
+-import java.io.FileNotFoundException;
+-import java.io.FileOutputStream;
+-import java.util.ArrayList;
+-
+-
+-public class ArrangeNavbarFragment extends Fragment implements OnPickListener {
+-
+-    private static final String TAG = ArrangeNavbarFragment.class.getSimpleName();
+-
+-    public static final int REQUEST_PICK_CUSTOM_ICON = 200;
+-    public static final int REQUEST_PICK_LANDSCAPE_ICON = 201;
+-
+-    private static final String[] buttonSettingsStrings = new String[] {
+-        Settings.System.NAVIGATION_BAR_BUTTONS,Settings.System.NAVIGATION_BAR_BUTTONS_TWO,Settings.System.NAVIGATION_BAR_BUTTONS_THREE,Settings.System.NAVIGATION_BAR_BUTTONS_FOUR
+-    };
+-
+-    DragSortListView mListView;
+-    NavbarButtonsAdapter mAdapter;
+-    DragSortController mDragSortController;
+-
+-    private ArrayList<AwesomeButtonInfo> mNavButtons = new ArrayList<AwesomeButtonInfo>();
+-
+-    private ShortcutPickerHelper mPicker;
+-    private int mTargetIndex = 0;
+-    private int mTarget = 0;
+-    DialogConstant mActionTypeToChange;
+-    AwesomeButtonInfo mSelectedButton;
+-    private String[] mActions;
+-    private String[] mActionCodes;
+-    CharSequence[] items;
+-    int mCurrentLayout = 1;
+-    TextView mLayoutInfo;
+-    ViewGroup rootView;
+-
+-    public static enum DialogConstant {
+-        ICON_ACTION {
+-            @Override
+-            public String value() {
+-                return "**icon**";
+-            }
+-        },
+-        LONG_ACTION {
+-            @Override
+-            public String value() {
+-                return "**long**";
+-            }
+-        },
+-        DOUBLE_TAP_ACTION {
+-            @Override
+-            public String value() {
+-                return "**double**";
+-            }
+-        },
+-        SHORT_ACTION {
+-            @Override
+-            public String value() {
+-                return "**short**";
+-            }
+-        },
+-        CUSTOM_APP {
+-            @Override
+-            public String value() {
+-                return "**app**";
+-            }
+-        },
+-        NOT_IN_ENUM {
+-            @Override
+-            public String value() {
+-                return "**notinenum**";
+-            }
+-        };
+-
+-        public String value() {
+-            return this.value();
+-        }
+-    }
+-
+-    public static DialogConstant funcFromString(String string) {
+-        DialogConstant[] allTargs = DialogConstant.values();
+-        for (int i = 0; i < allTargs.length; i++) {
+-            if (string.equals(allTargs[i].value())) {
+-                return allTargs[i];
+-            }
+-        }
+-        // not in ENUM must be custom
+-        return DialogConstant.NOT_IN_ENUM;
+-    }
+-
+-    public ArrangeNavbarFragment() {
+-    }
+-
+-    @Override
+-    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+-        super.onCreateOptionsMenu(menu, inflater);
+-        inflater.inflate(R.menu.navbar_setup, menu);
+-        final ContentResolver cr = getActivity().getContentResolver();
+-        final int layoutnumber = Settings.System.getInt(cr,
+-                Settings.System.NAVIGATION_BAR_ALTERNATE_LAYOUTS, 1);
+-        MenuItem item = menu.findItem(R.id.change_navbar_number);
+-
+-        if (layoutnumber == 1) {
+-            item.setVisible(false);
+-        } else {
+-            item.setVisible(true);
+-        }
+-    }
+-
+-    @Override
+-    public boolean onOptionsItemSelected(MenuItem item) {
+-
+-        switch (item.getItemId()) {
+-            case R.id.change_navbar_number:
+-                openLayoutPreferenceDialog();
+-                break;
+-            case R.id.menu_add_button:
+-                mNavButtons.add(new AwesomeButtonInfo(null, null, null, null));
+-                saveUserConfig();
+-                mAdapter.notifyDataSetChanged();
+-                break;
+-            default:
+-                return super.onOptionsItemSelected(item);
+-        }
+-
+-        return true;
+-    }
+-
+-    @Override
+-    public void onCreate(Bundle savedInstanceState) {
+-        super.onCreate(savedInstanceState);
+-        setHasOptionsMenu(true);
+-
+-        // Get NavBar Actions
+-        mActionCodes = NavBarHelpers.getNavBarActions(getActivity());
+-        mActions = new String[mActionCodes.length];
+-        int actionqty = mActions.length;
+-        for (int i = 0; i < actionqty; i++) {
+-            mActions[i] = AwesomeConstants.getProperName(getActivity(),
+-                    mActionCodes[i]);
+-        }
+-
+-        mPicker = new ShortcutPickerHelper(this, this);
+-        readUserConfig();
+-    }
+-
+-    @Override
+-    public void onResume() {
+-        super.onResume();
+-        updateLayoutInfo();
+-    }
+-
+-    @Override
+-    public void onPause() {
+-        super.onPause();
+-    }
+-
+-    @Override
+-    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+-        rootView = (ViewGroup)
+-                inflater.inflate(R.layout.fragment_arrange_toggles, container, false);
+-        mLayoutInfo = (TextView) rootView.findViewById(R.id.navbar_arrange_info);
+-
+-        mListView = (DragSortListView) rootView.findViewById(android.R.id.list);
+-
+-        return rootView;
+-    }
+-
+-    @Override
+-    public void onViewCreated(View view, Bundle savedInstanceState) {
+-        super.onViewCreated(view, savedInstanceState);
+-
+-        mListView.setDropListener(new DragSortListView.DropListener() {
+-            @Override
+-            public void drop(int from, int to) {
+-                if (from != to) {
+-                    AwesomeButtonInfo remove = mNavButtons.remove(from);
+-                    mNavButtons.add(to, remove);
+-                    saveUserConfig();
+-                    mAdapter.notifyDataSetChanged();
+-                }
+-            }
+-        });
+-        final SwipeDismissListViewTouchListener swipeOnTouchListener =
+-                new SwipeDismissListViewTouchListener(
+-                        mListView,
+-                        new SwipeDismissListViewTouchListener.DismissCallbacks() {
+-
+-                            public boolean canDismiss(int position) {
+-                                return position < mAdapter.getCount();
+-                            }
+-
+-                            public void onDismiss(ListView listView, int[]
+-                                    reverseSortedPositions) {
+-                                for (int index : reverseSortedPositions) {
+-                                    mNavButtons.remove(index);
+-                                }
+-                                saveUserConfig();
+-                                mAdapter.notifyDataSetChanged();
+-                            }
+-                        });
+-        mListView.setFloatViewManager(mDragSortController = new ConfigurationDragSortController());
+-        mListView.setOnTouchListener(new OnTouchListener() {
+-            @Override
+-            public boolean onTouch(View view, MotionEvent motionEvent) {
+-                return mDragSortController.onTouch(view, motionEvent)
+-                        || (!mDragSortController.isDragging()
+-                        && swipeOnTouchListener.onTouch(view, motionEvent));
+-            }
+-        });
+-        mListView.setOnItemClickListener(new OnItemClickListener() {
+-            @Override
+-            public void onItemClick(AdapterView<?> adapterView, View view, int postition, long id) {
+-                mSelectedButton = mAdapter.getItem(postition);
+-
+-                final String[] entries = getActivity().getResources()
+-                        .getStringArray(R.array.navbar_dialog_entries);
+-                entries[0] = entries[0]
+-                        + "  :  "
+-                        + NavBarHelpers.getProperSummary(getActivity(),
+-                        mSelectedButton.singleAction);
+-                entries[1] = entries[1]
+-                        + "  :  "
+-                        + NavBarHelpers.getProperSummary(getActivity(),
+-                        mSelectedButton.longPressAction);
+-                entries[2] = entries[2]
+-                        + "  :  "
+-                        + NavBarHelpers.getProperSummary(getActivity(),
+-                        mSelectedButton.doubleTapAction);
+-
+-                final DialogInterface.OnClickListener l = new DialogInterface.OnClickListener() {
+-                    @Override
+-                    public void onClick(DialogInterface dialog, int item) {
+-                        onValueChange(getResources().getStringArray(R.array.navbar_dialog_values)[item]);
+-                        dialog.dismiss();
+-                    }
+-                };
+-
+-                final AlertDialog dialog = new AlertDialog.Builder(getActivity())
+-                        .setTitle(getResources().getString(R.string.choose_action_title))
+-                        .setItems(entries, l)
+-                        .create();
+-
+-                dialog.show();
+-            }
+-        });
+-        mListView.setOnScrollListener(swipeOnTouchListener.makeScrollListener());
+-        mListView.setItemsCanFocus(true);
+-        mListView.setDragEnabled(true);
+-        mListView.setFloatAlpha(0.8f);
+-        mListView.setAdapter(mAdapter = new NavbarButtonsAdapter(getActivity(), mNavButtons));
+-    }
+-
+-    @Override
+-    public void onDestroyView() {
+-        super.onDestroyView();
+-        mListView.setAdapter(null);
+-        mAdapter = null;
+-    }
+-
+-    public void onValueChange(String uri) {
+-        DialogConstant dConstant = funcFromString(uri);
+-
+-        switch (dConstant) {
+-            case CUSTOM_APP:
+-                mPicker.pickShortcut();
+-                break;
+-            case SHORT_ACTION:
+-            case LONG_ACTION:
+-            case DOUBLE_TAP_ACTION:
+-                mActionTypeToChange = dConstant;
+-                createDialog(getTitleForTargetType(dConstant),
+-                        mActions, mActionCodes);
+-                break;
+-            case ICON_ACTION:
+-                mActionTypeToChange = dConstant;
+-                int width = 85;
+-                int height = width;
+-
+-                Intent intent = new Intent(Intent.ACTION_GET_CONTENT, null);
+-                intent.setType("image/*");
+-                intent.putExtra("crop", "true");
+-                intent.putExtra("aspectX", width);
+-                intent.putExtra("aspectY", height);
+-                intent.putExtra("outputX", width);
+-                intent.putExtra("outputY", height);
+-                intent.putExtra("scale", true);
+-                intent.putExtra(MediaStore.EXTRA_OUTPUT, getTempFileUri());
+-                intent.putExtra("outputFormat",
+-                        Bitmap.CompressFormat.PNG.toString());
+-                Log.i(TAG, "started for result, should output to: "
+-                        + getTempFileUri());
+-                startActivityForResult(intent, REQUEST_PICK_CUSTOM_ICON);
+-                break;
+-            case NOT_IN_ENUM:
+-                // action was selected, uri should be the value
+-                // mSelectedButton
+-                switch (mActionTypeToChange) {
+-                    case SHORT_ACTION:
+-                        mSelectedButton.singleAction = uri;
+-                        break;
+-                    case LONG_ACTION:
+-                        mSelectedButton.longPressAction = uri;
+-                        break;
+-                    case DOUBLE_TAP_ACTION:
+-                        mSelectedButton.doubleTapAction = uri;
+-                        break;
+-                    case ICON_ACTION:
+-                        mSelectedButton.iconUri = uri;
+-                        break;
+-                }
+-                saveUserConfig();
+-                mAdapter.notifyDataSetChanged();
+-                break;
+-        }
+-    }
+-
+-    private String getTitleForTargetType(final DialogConstant constant) {
+-        String title = "";
+-        int stringRes = R.string.choose_action_double_tap_title;
+-        switch (constant) {
+-            case SHORT_ACTION:
+-                stringRes = R.string.choose_action_short_title;
+-                break;
+-            case LONG_ACTION:
+-                stringRes = R.string.choose_action_long_title;
+-                break;
+-            case DOUBLE_TAP_ACTION:
+-                stringRes = R.string.choose_action_double_tap_title;
+-                break;
+-            default:
+-                break;
+-        }
+-        title = getString(stringRes);
+-        return title;
+-    }
+-
+-    private class NavbarButtonsAdapter extends ArrayAdapter<AwesomeButtonInfo> {
+-
+-        boolean mShowDragGrips = true;
+-
+-        public NavbarButtonsAdapter(Context context, ArrayList<AwesomeButtonInfo> toggles) {
+-            super(context, android.R.id.text1, toggles);
+-        }
+-
+-        public void setShowDragGrips(boolean show) {
+-            this.mShowDragGrips = show;
+-        }
+-
+-        @Override
+-        public View getView(int position, View convertView, ViewGroup parent) {
+-            convertView = getActivity().getLayoutInflater().inflate(R.layout.list_item_toggle, parent, false);
+-
+-            TextView titleView = (TextView) convertView.findViewById(android.R.id.text1);
+-
+-            AwesomeButtonInfo button = getItem(position);
+-            String text = NavBarHelpers.getProperSummary(getContext(), button.singleAction);
+-            ImageView image = (ImageView) convertView.findViewById(R.id.image);
+-            DragGripView dragGripView = (DragGripView) convertView.findViewById(R.id.drag_handle);
+-
+-            titleView.setText(text);
+-            image.setImageDrawable(NavBarHelpers.getIconImage(getContext(),
+-                    button.iconUri.isEmpty() ? button.singleAction : button.iconUri));
+-
+-
+-            return convertView;
+-        }
+-
+-    }
+-
+-    public void createDialog(final String title, final String[] entries,
+-                             final String[] values) {
+-        final DialogInterface.OnClickListener l = new DialogInterface.OnClickListener() {
+-            @Override
+-            public void onClick(DialogInterface dialog, int item) {
+-                onValueChange(values[item]);
+-                dialog.dismiss();
+-            }
+-        };
+-
+-        final AlertDialog dialog = new AlertDialog.Builder(getActivity())
+-                .setTitle(title).setItems(entries, l).create();
+-
+-        dialog.show();
+-    }
+-
+-    @Override
+-    public void shortcutPicked(String uri, String friendlyName, Bitmap bmp,
+-                               boolean isApplication) {
+-        switch (mActionTypeToChange) {
+-            case SHORT_ACTION:
+-                mSelectedButton.singleAction = uri;
+-                break;
+-            case LONG_ACTION:
+-                mSelectedButton.longPressAction = uri;
+-                break;
+-            case DOUBLE_TAP_ACTION:
+-                mSelectedButton.doubleTapAction = uri;
+-                break;
+-            case ICON_ACTION:
+-                mSelectedButton.iconUri = uri;
+-                break;
+-        }
+-        saveUserConfig();
+-        mAdapter.notifyDataSetChanged();
+-    }
+-
+-    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+-        if (resultCode == Activity.RESULT_OK) {
+-            if (requestCode == ShortcutPickerHelper.REQUEST_PICK_SHORTCUT
+-                    || requestCode == ShortcutPickerHelper.REQUEST_PICK_APPLICATION
+-                    || requestCode == ShortcutPickerHelper.REQUEST_CREATE_SHORTCUT) {
+-                mPicker.onActivityResult(requestCode, resultCode, data);
+-
+-            } else if ((requestCode == REQUEST_PICK_CUSTOM_ICON)
+-                    || (requestCode == REQUEST_PICK_LANDSCAPE_ICON)) {
+-
+-                String iconName = getIconFileName(mNavButtons.indexOf(mSelectedButton));
+-                FileOutputStream iconStream = null;
+-                try {
+-                    iconStream = getActivity().openFileOutput(iconName,
+-                            Context.MODE_WORLD_READABLE);
+-                } catch (FileNotFoundException e) {
+-                    return; // NOOOOO
+-                }
+-
+-                Uri tempSelectedUri = getTempFileUri();
+-                try {
+-                    Log.e(TAG,
+-                            "Selected image path: "
+-                                    + tempSelectedUri.getPath());
+-                    Bitmap bitmap = BitmapFactory.decodeFile(tempSelectedUri
+-                            .getPath());
+-                    bitmap.compress(Bitmap.CompressFormat.PNG, 100, iconStream);
+-                } catch (NullPointerException npe) {
+-                    Log.e(TAG, "SeletedImageUri was null.");
+-                    super.onActivityResult(requestCode, resultCode, data);
+-                    return;
+-                }
+-
+-                String imageUri = Uri.fromFile(
+-                        new File(getActivity().getFilesDir(), iconName)).getPath();
+-
+-                switch (mActionTypeToChange) {
+-                    case SHORT_ACTION:
+-                        mSelectedButton.singleAction = imageUri;
+-                        break;
+-                    case LONG_ACTION:
+-                        mSelectedButton.longPressAction = imageUri;
+-                        break;
+-                    case DOUBLE_TAP_ACTION:
+-                        mSelectedButton.doubleTapAction = imageUri;
+-                        break;
+-                    case ICON_ACTION:
+-                        mSelectedButton.iconUri = imageUri;
+-                        break;
+-                }
+-
+-                File f = new File(tempSelectedUri.getPath());
+-                if (f.exists()) {
+-                    f.delete();
+-                }
+-
+-                saveUserConfig();
+-                mAdapter.notifyDataSetChanged();
+-            }
+-        } else if (resultCode == Activity.RESULT_CANCELED && data != null) {
+-
+-        }
+-        super.onActivityResult(requestCode, resultCode, data);
+-    }
+-
+-    private Uri getTempFileUri() {
+-        return Uri.fromFile(new File(Environment.getExternalStorageDirectory(),
+-                "tmp_icon_" + mNavButtons.indexOf(mSelectedButton) + ".png"));
+-
+-    }
+-
+-    private String getIconFileName(int index) {
+-        return "navbar_icon_" + index + ".png";
+-    }
+-
+-    private void openLayoutPreferenceDialog() {
+-        final ContentResolver cr = getActivity().getContentResolver();
+-        final int layoutnumber = Settings.System.getInt(cr,
+-                Settings.System.NAVIGATION_BAR_ALTERNATE_LAYOUTS, 1);
+-
+-        items = new CharSequence[layoutnumber];
+-        for (int i = 0; i < layoutnumber; i++) {
+-            items[i] = Integer.toString(i + 1);
+-        }
+-
+-        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+-        builder.setTitle(R.string.change_layouts_dialog_title);
+-        builder.setSingleChoiceItems(items, mCurrentLayout - 1, new DialogInterface.OnClickListener() {
+-            public void onClick(DialogInterface dialog, int item) {
+-                mCurrentLayout = item + 1;
+-                readUserConfig();
+-                mAdapter.notifyDataSetChanged();
+-                updateLayoutInfo();
+-                dialog.dismiss();
+-            }
+-        });
+-        AlertDialog dialog = builder.create();
+-        dialog.show();
+-    }
+-
+-    private void updateLayoutInfo() {
+-         final ContentResolver cr = getActivity().getContentResolver();
+-        int numberLayouts = Settings.System.getInt(cr, Settings.System.NAVIGATION_BAR_ALTERNATE_LAYOUTS, 1);
+-        String string = (getString(R.string.change_layouts_title)+ " " + mCurrentLayout);
+-        if (numberLayouts != 1) {
+-            mLayoutInfo.setText(string + ": " + getString(R.string.toggles_arrange_instructions));
+-        } else {
+-            mLayoutInfo.setText(getString(R.string.toggles_arrange_instructions));
+-        }
+-    }
+-
+-    private class ConfigurationDragSortController extends DragSortController {
+-
+-        public ConfigurationDragSortController() {
+-            super(ArrangeNavbarFragment.this.mListView, R.id.drag_handle,
+-                    DragSortController.ON_DRAG, (DragSortController.FLING_LEFT_REMOVE & DragSortController.FLING_RIGHT_REMOVE));
+-            setBackgroundColor(0x363636);
+-        }
+-
+-        @Override
+-        public void onDragFloatView(View floatView, Point floatPoint, Point touchPoint) {
+-        }
+-
+-        @Override
+-        public View onCreateFloatView(int position) {
+-            View v = mAdapter.getView(position, null, ArrangeNavbarFragment.this.mListView);
+-            return v;
+-        }
+-
+-        @Override
+-        public void onDestroyFloatView(View floatView) {
+-        }
+-
+-    }
+-
+-    private void saveUserConfig() {
+-        StringBuilder s = new StringBuilder();
+-
+-        for (int i = 0; i < mNavButtons.size(); i++) {
+-            s.append(mNavButtons.get(i).toString());
+-            if (i != mNavButtons.size() - 1) {
+-                s.append("|");
+-            }
+-        }
+-        Settings.System.putString(getActivity().getContentResolver(), buttonSettingsStrings[mCurrentLayout-1], s.toString());
+-    }
+-
+-    private void readUserConfig() {
+-        final ContentResolver cr = getActivity().getContentResolver();
+-        String buttons = "";
+-        mNavButtons.clear();
+-        buttons = Settings.System.getString(cr, buttonSettingsStrings[mCurrentLayout-1]);
+-        if (buttons == null || buttons.isEmpty()) {
+-            buttons = AwesomeConstants.defaultNavbarLayout(getActivity());
+-        }
+-        /**
+-        * Format:
+-        *
+-        * singleTapAction,doubleTapAction,longPressAction,iconUri|singleTap...
+-        */
+-        String[] userButtons = buttons.split("\\|");
+-        if (userButtons != null) {
+-            for (String button : userButtons) {
+-                String[] actions = button.split(",", 4);
+-                mNavButtons.add(new AwesomeButtonInfo(actions[0], actions[1], actions[2], actions[3]));
+-            }
+-        }
+-    }
+-
+-    public static class AwesomeButtonInfo {
+-        String singleAction, doubleTapAction, longPressAction, iconUri;
+-
+-        public AwesomeButtonInfo(String singleTap, String doubleTap, String longPress, String uri) {
+-            this.singleAction = singleTap;
+-            this.doubleTapAction = doubleTap;
+-            this.longPressAction = longPress;
+-            this.iconUri = uri;
+-
+-            if (singleAction == null) {
+-                singleAction = "";
+-            }
+-            if (doubleTapAction == null) {
+-                doubleTapAction = "";
+-            }
+-            if (longPressAction == null) {
+-                longPressAction = "";
+-            }
+-
+-            if (iconUri == null) {
+-                iconUri = "";
+-            }
+-        }
+-
+-        @Override
+-        public String toString() {
+-            return singleAction + "," + doubleTapAction + "," + longPressAction + "," + iconUri;
+-        }
+-    }
+-}
+diff --git a/src/com/android/settings/vanir/navbar/NavbarSettingsFragment.java b/src/com/android/settings/vanir/navbar/NavbarSettingsFragment.java
+deleted file mode 100644
+index f066270..0000000
+--- a/src/com/android/settings/vanir/navbar/NavbarSettingsFragment.java
++++ /dev/null
+@@ -1,455 +0,0 @@
+-package com.android.settings.vanir.navbar;
+-
+-import android.app.ActionBar;
+-import android.app.Activity;
+-import android.app.AlertDialog;
+-import android.app.AlertDialog.Builder;
+-import android.app.Fragment;
+-import android.content.ContentResolver;
+-import android.content.Context;
+-import android.content.DialogInterface;
+-import android.content.DialogInterface.OnDismissListener;
+-import android.content.res.Resources;
+-import android.content.SharedPreferences;
+-import android.content.SharedPreferences.Editor;
+-import android.database.ContentObserver;
+-import android.os.Bundle;
+-import android.os.Handler;
+-import android.provider.Settings;
+-import android.util.Log;
+-import android.view.Gravity;
+-import android.view.LayoutInflater;
+-import android.view.View;
+-import android.view.View.OnClickListener;
+-import android.view.ViewGroup;
+-import android.widget.CheckBox;
+-import android.widget.CompoundButton;
+-import android.widget.LinearLayout;
+-import android.widget.SeekBar;
+-import android.widget.Switch;
+-import android.widget.TextView;
+-
+-import com.android.internal.util.vanir.AwesomeConstants.AwesomeConstant;
+-import com.android.settings.R;
+-import com.android.settings.util.HardwareKeyNavbarHelper;
+-import com.vanir.util.DeviceUtils;
+-
+-import java.util.ArrayList;
+-import java.util.HashMap;
+-
+-public class NavbarSettingsFragment extends Fragment implements SeekBar.OnSeekBarChangeListener,
+-        CompoundButton.OnCheckedChangeListener {
+-    private static final String TAG = NavbarSettingsFragment.class.getSimpleName();
+-
+-    private SeekBar mNavigationBarHeight;
+-    private SeekBar mNavigationBarHeightLandscape;
+-    private SeekBar mNavigationBarWidth;
+-    private TextView mBarHeightValue;
+-    private TextView mBarHeightLandscapeValue;
+-    private TextView mBarWidthValue;
+-    private CheckBox mSideKeys;
+-    private CheckBox mArrows;
+-    private LinearLayout mLayouts;
+-
+-    private Switch mEnabledSwitch;
+-
+-    private static int HValue;
+-    private static int LValue;
+-    private static int WValue;
+-    private static int mDefaultHeight;
+-    private static int mDefaultHeightLandscape;
+-    private static int mDefaultWidth;
+-
+-    int mMinHeightPercent;
+-    int mMinWidthPercent;
+-    int mMaxHeightPercent;
+-    int mMaxWidthPercent;
+-
+-    boolean imebutton;
+-    boolean homebutton;
+-    boolean blankspace;
+-    CharSequence[] items;
+-    ArrayList selectedItems = new ArrayList();
+-
+-    private static final HashMap<Integer, String> IME_LAYOUT = new HashMap<Integer, String>() {{
+-        put(1,"**back**,,,");
+-        put(2,"**ime**,,,");
+-        put(3,"**home**,,,");
+-        put(4,"**blank**,,,");
+-        put(5,"**arrow_left**,,,");
+-        put(6,"**arrow_up**,,,");
+-        put(7,"**arrow_down**,,,");
+-        put(8,"**arrow_right**,,,");
+-    }};
+-
+-    private Handler mHandler = new Handler();
+-    private SettingsObserver mSettingsObserver;
+-
+-    class SettingsObserver extends ContentObserver {
+-        SettingsObserver(Handler handler) {
+-            super(handler);
+-        }
+-
+-        void observe() {
+-            ContentResolver resolver = getActivity().getContentResolver();
+-            resolver.registerContentObserver(Settings.System.getUriFor(
+-                    Settings.System.ENABLE_NAVIGATION_BAR), false, this);
+-        }
+-
+-        @Override
+-        public void onChange(boolean selfChange) {
+-            final ContentResolver resolver = getActivity().getContentResolver();
+-
+-            boolean enabled = Settings.System.getInt(resolver,
+-                         Settings.System.ENABLE_NAVIGATION_BAR, 0) == 1;
+-            mEnabledSwitch.setChecked(enabled);
+-        }
+-    }
+-
+-    public NavbarSettingsFragment() {
+-    }
+-
+-    @Override
+-    public void onActivityCreated(Bundle savedInstanceState) {
+-        super.onActivityCreated(savedInstanceState);
+-
+-        if (HardwareKeyNavbarHelper.shouldShowNavbarToggle()) {
+-            final Activity activity = getActivity();
+-            mEnabledSwitch = new Switch(activity);
+-            final int padding = activity.getResources().getDimensionPixelSize(R.dimen.action_bar_switch_padding);
+-            mEnabledSwitch.setPaddingRelative(0, 0, padding, 0);
+-            mEnabledSwitch.setOnCheckedChangeListener(this);
+-        }
+-    }
+-
+-    @Override
+-    public void onStart() {
+-        super.onStart();
+-        if (HardwareKeyNavbarHelper.shouldShowNavbarToggle()) {
+-            final Activity activity = getActivity();
+-            activity.getActionBar().setDisplayOptions(ActionBar.DISPLAY_SHOW_CUSTOM,
+-                    ActionBar.DISPLAY_SHOW_CUSTOM);
+-            activity.getActionBar().setCustomView(mEnabledSwitch, new ActionBar.LayoutParams(
+-                    ActionBar.LayoutParams.WRAP_CONTENT,
+-                    ActionBar.LayoutParams.WRAP_CONTENT,
+-                    Gravity.CENTER_VERTICAL | Gravity.END));
+-            mEnabledSwitch.setChecked((Settings.System.getInt(activity.getContentResolver(),
+-                Settings.System.ENABLE_NAVIGATION_BAR, 0) == 1));
+-        }
+-    }
+-
+-    @Override
+-    public void onStop() {
+-        super.onStop();
+-        if (HardwareKeyNavbarHelper.shouldShowNavbarToggle()) {
+-            final Activity activity = getActivity();
+-            activity.getActionBar().setDisplayOptions(0, ActionBar.DISPLAY_SHOW_CUSTOM);
+-            activity.getActionBar().setCustomView(null);
+-        }
+-    }
+-
+-    @Override
+-    public void onCreate(Bundle savedInstanceState) {
+-        super.onCreate(savedInstanceState);
+-        final Resources res = getActivity().getResources();
+-        final ContentResolver cr = getActivity().getContentResolver();
+-
+-        items = new CharSequence[3];
+-        items[0] = res.getString(R.string.ime_layout_ime);
+-        items[1] = res.getString(R.string.ime_layout_home);
+-        items[2] = res.getString(R.string.ime_layout_blank);
+-
+-        mMinHeightPercent = res.getInteger(R.integer.navigation_bar_height_min_percent);
+-        mMinWidthPercent = res.getInteger(R.integer.navigation_bar_width_min_percent);
+-        mMaxHeightPercent = res.getInteger(R.integer.navigation_bar_height_max_percent);
+-        mMaxWidthPercent = res.getInteger(R.integer.navigation_bar_width_max_percent);
+-        mDefaultHeight = res.getDimensionPixelSize(com.android.internal.R.dimen.navigation_bar_height);
+-        mDefaultHeightLandscape = res.getDimensionPixelSize(com.android.internal.R.dimen.navigation_bar_height_landscape);
+-        mDefaultWidth = res.getDimensionPixelSize(com.android.internal.R.dimen.navigation_bar_width);
+-
+-        // load user settings
+-        HValue = Settings.System.getInt(cr, Settings.System.NAVIGATION_BAR_HEIGHT, mDefaultHeight);
+-        LValue = Settings.System.getInt(cr, Settings.System.NAVIGATION_BAR_HEIGHT_LANDSCAPE, mDefaultHeightLandscape);
+-        WValue = Settings.System.getInt(cr, Settings.System.NAVIGATION_BAR_WIDTH, mDefaultWidth);
+-    }
+-
+-    @Override
+-    public void onResume() {
+-        super.onResume();
+-        if (HardwareKeyNavbarHelper.shouldShowNavbarToggle()) {
+-            if (mSettingsObserver == null) {
+-                mSettingsObserver = new SettingsObserver(mHandler);
+-                mSettingsObserver.observe();
+-            }
+-        }
+-        imebutton = selectedItems.contains(0);
+-        homebutton = selectedItems.contains(1);
+-        blankspace = selectedItems.contains(2);
+-    }
+-
+-    @Override
+-    public void onPause() {
+-        super.onPause();
+-        if (mSettingsObserver != null) {
+-            ContentResolver resolver = getActivity().getContentResolver();
+-            resolver.unregisterContentObserver(mSettingsObserver);
+-            mSettingsObserver = null;
+-        }
+-    }
+-
+-    @Override
+-    public void onDestroy() {
+-        super.onDestroy();
+-    }
+-
+-    @Override
+-    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+-        View v = inflater.inflate(R.layout.fragment_navbar_settings, container, false);
+-        final View view = v;
+-
+-        final Activity activity = getActivity();
+-        final ContentResolver cr = activity.getContentResolver();
+-        final int currentHeightPercent =
+-                getSharedPreferenceValue("heightPercent", mDefaultHeight, HValue);
+-        final int currentHeightLandscapePercent =
+-                getSharedPreferenceValue("heightLandscapePercent", mDefaultHeightLandscape, LValue);
+-        final int currentWidthPercent =
+-                getSharedPreferenceValue("widthPercent", mDefaultWidth, WValue);
+-
+-        // Navbar height
+-        mNavigationBarHeight = (SeekBar) v.findViewById(R.id.navigation_bar_height);
+-        mBarHeightValue = (TextView) v.findViewById(R.id.navigation_bar_height_value);
+-        mNavigationBarHeight.setMax(mMaxHeightPercent - mMinHeightPercent);
+-        mNavigationBarHeight.setProgress(currentHeightPercent);
+-        mBarHeightValue.setText(String.valueOf(currentHeightPercent + mMinHeightPercent)+"%");
+-        mNavigationBarHeight.setOnSeekBarChangeListener(this);
+-
+-        // Navbar height landscape seekbar (tablets only)
+-        mNavigationBarHeightLandscape = (SeekBar) v.findViewById(R.id.navigation_bar_height_landscape);
+-        mBarHeightLandscapeValue = (TextView) v.findViewById(R.id.navigation_bar_height_landscape_value);
+-        mNavigationBarHeightLandscape.setMax(mMaxHeightPercent - mMinHeightPercent);
+-        mNavigationBarHeightLandscape.setProgress(currentHeightLandscapePercent);
+-        mBarHeightLandscapeValue.setText(String.valueOf(currentHeightLandscapePercent + mMinHeightPercent)+"%");
+-        mNavigationBarHeightLandscape.setOnSeekBarChangeListener(this);
+-
+-        // Navbar width (phones only)
+-        mNavigationBarWidth = (SeekBar) v.findViewById(R.id.navigation_bar_width);
+-        mBarWidthValue = (TextView) v.findViewById(R.id.navigation_bar_width_value);
+-        mNavigationBarWidth.setMax(mMaxWidthPercent - mMinWidthPercent);
+-        mNavigationBarWidth.setProgress(currentWidthPercent);
+-        mBarWidthValue.setText(String.valueOf(currentWidthPercent + mMinWidthPercent)+"%");
+-        mNavigationBarWidth.setOnSeekBarChangeListener(this);
+-
+-        // Legacy side menu keys
+-        mSideKeys = (CheckBox) v.findViewById(R.id.sidekey_checkbox);
+-        mSideKeys.setChecked(Settings.System.getInt(cr, Settings.System.NAVIGATION_BAR_SIDEKEYS, 1) == 1);
+-        mSideKeys.setOnClickListener(new OnClickListener() {
+-            @Override
+-            public void onClick(View v) {
+-                boolean isChecked = ((CheckBox) v).isChecked();
+-                Settings.System.putInt(cr, Settings.System.NAVIGATION_BAR_SIDEKEYS, isChecked ? 1 : 0);
+-            }
+-        });
+-
+-        // Custom IME key layout
+-        mArrows = (CheckBox) v.findViewById(R.id.arrows_checkbox);
+-        mArrows.setChecked(Settings.System.getInt(cr, Settings.System.NAVIGATION_BAR_ARROWS, 0) == 1);
+-        mArrows.setOnClickListener(new OnClickListener() {
+-            @Override
+-            public void onClick(View v) {
+-                boolean isChecked = ((CheckBox) v).isChecked();
+-                if (isChecked) {
+-                    AlertDialog.Builder builder = new AlertDialog.Builder(activity);
+-                    builder.setTitle(getString(R.string.customize_ime_layout_dialog_title));
+-                    builder.setMultiChoiceItems(items, null,
+-                            new DialogInterface.OnMultiChoiceClickListener() {
+-                                @Override
+-                                public void onClick(DialogInterface dialog, int indexSelected, boolean isChecked) {
+-                                    if (isChecked) {
+-                                        selectedItems.add(indexSelected);
+-                                    } else if (selectedItems.contains(indexSelected)) {
+-                                        selectedItems.remove(Integer.valueOf(indexSelected));
+-                                    }
+-                                    imebutton = selectedItems.contains(0);
+-                                    homebutton = selectedItems.contains(1);
+-                                    blankspace = selectedItems.contains(2);
+-                                }
+-                            })
+-                            .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+-                                @Override
+-                                public void onClick(DialogInterface dialog, int id) {
+-                                    mHandler.post(updateLayoutRunnable);
+-                                }
+-                            })
+-                            .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+-                                @Override
+-                                public void onClick(DialogInterface dialog, int id) {
+-                                    dialog.cancel();
+-                                }
+-                            });
+-
+-                    AlertDialog dialog = builder.create(); //AlertDialog dialog; create like this outside onClick
+-                    dialog.setOnDismissListener(new OnDismissListener() {
+-                        public void onDismiss(DialogInterface dialog) {
+-                        }
+-                    });
+-                    dialog.show();
+-                }
+-                Settings.System.putInt(cr, Settings.System.NAVIGATION_BAR_ARROWS, isChecked ? 1 : 0);
+-            }
+-        });
+-
+-        // Alternate key layouts
+-        mLayouts = (LinearLayout) v.findViewById(R.id.alternate_layouts);
+-        mLayouts.setOnClickListener(new View.OnClickListener() {
+-            @Override
+-            public void onClick(View v) {
+-                int layoutnumber = Settings.System.getInt(cr, Settings.System.NAVIGATION_BAR_ALTERNATE_LAYOUTS, 1);
+-                final CharSequence[] items = {" 1 "," 2 "," 3 "," 4 "," 5 "};
+-                AlertDialog dialog;
+-
+-                AlertDialog.Builder builder = new AlertDialog.Builder(activity);
+-                builder.setTitle(R.string.layouts_dialog_title);
+-                builder.setSingleChoiceItems(items, layoutnumber - 1, new DialogInterface.OnClickListener() {
+-                    public void onClick(DialogInterface dialog, int item) {
+-                        Settings.System.putInt(cr, Settings.System.NAVIGATION_BAR_ALTERNATE_LAYOUTS, item+1);
+-                        dialog.dismiss();
+-                        updatePreferenceSummaries(view);
+-                    }
+-                });
+-                dialog = builder.create();
+-                dialog.show();
+-            }
+-        });
+-
+-        if (DeviceUtils.isPhone(activity)) {
+-            v.findViewById(R.id.navigation_bar_height_landscape_text).setVisibility(View.GONE);
+-            mBarHeightLandscapeValue.setVisibility(View.GONE);
+-            mNavigationBarHeightLandscape.setVisibility(View.GONE);
+-        } else {
+-            v.findViewById(R.id.navigation_bar_width_text).setVisibility(View.GONE);
+-            mBarWidthValue.setVisibility(View.GONE);
+-            mNavigationBarWidth.setVisibility(View.GONE);
+-        }
+-        updatePreferenceSummaries(view);
+-        return v;
+-    }
+-
+-    private int getSharedPreferenceValue(String string, int value, int storedValue) {
+-        // loads previous bar states per type
+-        SharedPreferences prefs = getActivity().getSharedPreferences("last_slider_values", Context.MODE_PRIVATE);
+-        return prefs.getInt(string,
+-                (int)(100.0 * ( storedValue - (mMinHeightPercent/100.0) * value) /
+-                ( (mMaxHeightPercent/100.0) * value - (mMinHeightPercent/100.0) * value )));
+-    }
+-
+-    private Runnable updateLayoutRunnable = new Runnable() {
+-        @Override
+-        public void run() {
+-
+-            StringBuilder mEtallica = new StringBuilder();
+-            String delimiter = "|";
+-
+-            for (Integer button : IME_LAYOUT.keySet()) {
+-                switch (button) {
+-                    case 2: // back
+-                        if (!imebutton) continue;
+-                        break;
+-                    case 3: // home
+-                        if (!homebutton) continue;
+-                        break;
+-                    case 4: // space
+-                        if (!blankspace) continue;
+-                        break;
+-                    case 8: // last iteration
+-                        delimiter = "";
+-                        break;
+-                }
+-
+-                mEtallica.append(IME_LAYOUT.get(button));
+-                mEtallica.append(delimiter);
+-            }
+-
+-            Settings.System.putString(getActivity().getContentResolver(),
+-                    Settings.System.NAVIGATION_IME_LAYOUT, mEtallica.toString());
+-        }
+-    };
+-
+-    @Override
+-    public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+-        if (buttonView == mEnabledSwitch) {
+-            mEnabledSwitch.setEnabled(false);
+-            HardwareKeyNavbarHelper.writeEnableNavbarOption(getActivity(), mEnabledSwitch.isChecked());
+-            mHandler.postDelayed(new Runnable() {
+-                @Override
+-                public void run() {
+-                    mEnabledSwitch.setEnabled(true);
+-                }
+-            }, 1000);
+-        }
+-    }
+-
+-    @Override
+-    public void onProgressChanged(SeekBar seekbar, int rawprogress, boolean fromUser) {
+-        ContentResolver cr = getActivity().getContentResolver();
+-        double proportion = 1.0;
+-
+-        if (fromUser) {
+-            if (seekbar == mNavigationBarWidth) {
+-                final int progress = rawprogress + mMinWidthPercent;
+-                proportion = ((double)progress/100.0);
+-                mBarWidthValue.setText(String.valueOf(progress)+"%");
+-                WValue = (int)(proportion*mDefaultWidth);
+-                Settings.System.putInt(cr,
+-                        Settings.System.NAVIGATION_BAR_WIDTH, WValue);
+-
+-            } else if (seekbar == mNavigationBarHeight) {
+-                final int progress = rawprogress + mMinHeightPercent;
+-                proportion = ((double)progress/100.0);
+-                mBarHeightValue.setText(String.valueOf(progress)+"%");
+-                HValue = (int)(proportion*mDefaultHeight);
+-                Settings.System.putInt(cr,
+-                        Settings.System.NAVIGATION_BAR_HEIGHT, HValue);
+-
+-            } else if (seekbar == mNavigationBarHeightLandscape) {
+-                final int progress = rawprogress + mMinHeightPercent;
+-                proportion = ((double)progress/100.0);
+-                mBarHeightLandscapeValue.setText(String.valueOf(progress)+"%");
+-                LValue = (int)(proportion*mDefaultHeightLandscape);
+-                Settings.System.putInt(cr,
+-                        Settings.System.NAVIGATION_BAR_HEIGHT_LANDSCAPE, LValue);
+-            }
+-        }
+-    }
+-
+-    @Override
+-    public void onStartTrackingTouch(SeekBar seekBar) {
+-    }
+-
+-    @Override
+-    public void onStopTrackingTouch(SeekBar seekBar) {
+-        SharedPreferences prefs = getActivity().getSharedPreferences("last_slider_values", Context.MODE_PRIVATE);
+-        prefs.edit().putInt("heightPercent", mNavigationBarHeight.getProgress())
+-                    .putInt("heightLandscapePercent", mNavigationBarHeightLandscape.getProgress())
+-                    .putInt("widthPercent", mNavigationBarWidth.getProgress()).commit();
+-    }
+-
+-    private void updatePreferenceSummaries(final View v) {
+-        final ContentResolver cr = getActivity().getContentResolver();
+-        TextView menuSummary = (TextView) v.findViewById(R.id.sidekey_text);
+-        TextView layoutSummary = (TextView) v.findViewById(R.id.alternate_layout_text);
+-        int layoutnumber = Settings.System.getInt(cr, Settings.System.NAVIGATION_BAR_ALTERNATE_LAYOUTS, 1);
+-        if (layoutnumber > 1 && layoutnumber < 5) {
+-            menuSummary.setText(getString(R.string.alternate_menu_summary));
+-            layoutSummary.setText(layoutnumber
+-                    + " " + getString(R.string.alternate_key_layouts_enabled_partial_summary)
+-                    + " " + getString(R.string.alternate_key_layouts_enabled_summary));
+-        } else if (layoutnumber == 5) {
+-            menuSummary.setText(getString(R.string.alternate_menu_summary));
+-            layoutSummary.setText(getString(R.string.alternate_key_layouts_all_enabled_summary));
+-        } else {
+-            menuSummary.setText(getString(R.string.enable_sidekeys_summary));
+-            layoutSummary.setText(getString(R.string.alternate_key_layouts_summary));
+-        }
+-    }
+-}
+diff --git a/src/com/android/settings/vanir/navbar/NavbarTabHostFragment.java b/src/com/android/settings/vanir/navbar/NavbarTabHostFragment.java
+deleted file mode 100644
+index 97bb099..0000000
+--- a/src/com/android/settings/vanir/navbar/NavbarTabHostFragment.java
++++ /dev/null
+@@ -1,64 +0,0 @@
+-package com.android.settings.vanir.navbar;
+-
+-import android.app.Fragment;
+-import android.content.res.Resources;
+-import android.os.Bundle;
+-import android.support.v13.app.FragmentTabHost;
+-import android.view.LayoutInflater;
+-import android.view.View;
+-import android.view.ViewGroup;
+-import android.widget.TabHost.OnTabChangeListener;
+-import com.android.settings.R;
+-
+-public class NavbarTabHostFragment extends Fragment implements OnTabChangeListener {
+-
+-    private FragmentTabHost mTabHost;
+-
+-    static String sLastTab;
+-
+-    public NavbarTabHostFragment() {
+-    }
+-
+-    @Override
+-    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+-        mTabHost = new FragmentTabHost(getActivity());
+-        mTabHost.setup(getActivity(), getChildFragmentManager(), R.id.container);
+-
+-        final int deviceKeys = getResources().getInteger(
+-                com.android.internal.R.integer.config_deviceHardwareKeys);
+-
+-        if (deviceKeys == 0) {
+-            mTabHost.addTab(mTabHost.newTabSpec("rearrange").setIndicator(getString(R.string.navbar_tab_arrange)),
+-                    ArrangeNavbarFragment.class, null);
+-            mTabHost.addTab(mTabHost.newTabSpec("settings").setIndicator(getString(R.string.navbar_tab_settings)),
+-                    NavbarSettingsFragment.class, null);
+-        } else {
+-            mTabHost.addTab(mTabHost.newTabSpec("settings").setIndicator(getString(R.string.navbar_tab_settings)),
+-                    NavbarSettingsFragment.class, null);
+-            mTabHost.addTab(mTabHost.newTabSpec("rearrange").setIndicator(getString(R.string.navbar_tab_arrange)),
+-                    ArrangeNavbarFragment.class, null);
+-        }
+-
+-        mTabHost.setOnTabChangedListener(this);
+-        return mTabHost;
+-    }
+-
+-    @Override
+-    public void onResume() {
+-        super.onResume();
+-        if (sLastTab != null) {
+-            mTabHost.setCurrentTabByTag(sLastTab);
+-        }
+-    }
+-
+-    @Override
+-    public void onDestroyView() {
+-        super.onDestroyView();
+-        mTabHost = null;
+-    }
+-
+-    @Override
+-    public void onTabChanged(String s) {
+-        sLastTab = s;
+-    }
+-}
+-- 
+2.5.0
+

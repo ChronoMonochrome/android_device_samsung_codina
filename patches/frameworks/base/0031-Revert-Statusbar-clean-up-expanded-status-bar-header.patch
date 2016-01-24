@@ -1,0 +1,136 @@
+From 927324e96ad97c52199313f97e06b94d60311dd5 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Mon, 25 Jan 2016 01:29:20 +0700
+Subject: [PATCH 31/64] Revert "Statusbar: clean up expanded status bar header
+ layout"
+
+This reverts commit a2474087f82651544e73eabe2924c80cf8a17e35.
+---
+ .../res/layout/status_bar_expanded_header.xml      | 32 +++++++++++-----------
+ .../android/systemui/statusbar/BaseStatusBar.java  |  1 -
+ 2 files changed, 16 insertions(+), 17 deletions(-)
+
+diff --git a/packages/SystemUI/res/layout/status_bar_expanded_header.xml b/packages/SystemUI/res/layout/status_bar_expanded_header.xml
+index 2a66d7db8..53d0dfe 100644
+--- a/packages/SystemUI/res/layout/status_bar_expanded_header.xml
++++ b/packages/SystemUI/res/layout/status_bar_expanded_header.xml
+@@ -36,7 +36,7 @@
+             android:id="@+id/clock"
+             android:layout_width="wrap_content"
+             android:layout_height="match_parent"
+-            android:paddingStart="2dp"
++            android:paddingStart="8dp"
+             android:paddingEnd="4dp"
+             android:singleLine="true"
+             android:tag="expanded"
+@@ -55,7 +55,7 @@
+             android:background="@drawable/ic_notify_button_bg"
+             android:gravity="center_vertical"
+             android:paddingStart="4dp"
+-            android:paddingEnd="0dp"
++            android:paddingEnd="8dp"
+             />
+     </RelativeLayout>
+ 
+@@ -67,9 +67,9 @@
+ 
+     <TextView
+         android:id="@+id/header_debug_info"
+-        android:visibility="gone"
++        android:visibility="invisible"
+         android:layout_width="wrap_content"
+-        android:layout_height="match_parent"
++        android:layout_height="wrap_content"
+         android:layout_gravity="center_vertical"
+         android:fontFamily="sans-serif-condensed"
+         android:textSize="11dp"
+@@ -80,12 +80,12 @@
+ 
+     <FrameLayout android:id="@+id/customize_button_holder"
+         android:layout_marginStart="0dp"
+-        android:layout_width="wrap_content"
+-        android:layout_height="match_parent"
++        android:layout_width="50dp"
++        android:layout_height="50dp"
+         >
+ 
+     <ImageView android:id="@+id/halo_button"
+-            android:layout_width="45dp"
++            android:layout_width="50dp"
+             android:layout_height="50dp"
+             android:scaleType="center"
+             android:src="@drawable/ic_notify_halo"
+@@ -95,7 +95,7 @@
+             />
+ 
+     <ImageView android:id="@+id/hover_button"
+-            android:layout_width="45dp"
++            android:layout_width="50dp"
+             android:layout_height="50dp"
+             android:scaleType="center"
+             android:src="@drawable/ic_notify_hover_normal"
+@@ -108,12 +108,12 @@
+ 
+     <FrameLayout android:id="@+id/action_button_holder"
+         android:layout_marginStart="0dp"
+-        android:layout_width="wrap_content"
+-        android:layout_height="match_parent"
++        android:layout_width="50dp"
++        android:layout_height="50dp"
+         >
+ 
+         <ImageView android:id="@+id/clear_all_button"
+-            android:layout_width="45dp"
++            android:layout_width="50dp"
+             android:layout_height="50dp"
+             android:scaleType="center"
+             android:src="@drawable/ic_notify_clear"
+@@ -121,7 +121,7 @@
+             android:contentDescription="@string/accessibility_clear_all"
+             />
+         <ImageView android:id="@+id/add_tile_button"
+-            android:layout_width="45dp"
++            android:layout_width="50dp"
+             android:layout_height="50dp"
+             android:scaleType="center"
+             android:src="@drawable/ic_menu_add"
+@@ -132,12 +132,12 @@
+     </FrameLayout>
+ 
+     <FrameLayout android:id="@+id/settings_button_holder"
+-        android:layout_width="wrap_content"
+-        android:layout_height="match_parent"
++        android:layout_width="50dp"
++        android:layout_height="50dp"
+         android:layout_alignRight="@+id/header">
+ 
+         <ImageView android:id="@+id/settings_button"
+-            android:layout_width="45dp"
++            android:layout_width="50dp"
+             android:layout_height="50dp"
+             android:scaleType="center"
+             android:src="@drawable/ic_notify_settings"
+@@ -145,7 +145,7 @@
+             android:contentDescription="@string/accessibility_desc_quick_settings"
+             />
+         <ImageView android:id="@+id/notification_button"
+-            android:layout_width="45dp"
++            android:layout_width="50dp"
+             android:layout_height="50dp"
+             android:scaleType="center"
+             android:src="@drawable/ic_notifications"
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/BaseStatusBar.java b/packages/SystemUI/src/com/android/systemui/statusbar/BaseStatusBar.java
+index afc6a35..7b8ca6a 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/BaseStatusBar.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/BaseStatusBar.java
+@@ -710,7 +710,6 @@ public abstract class BaseStatusBar extends SystemUI implements
+             mHoverButton.setVisibility(View.VISIBLE);
+         } else {
+             mHoverState = HOVER_DISABLED;
+-            mHoverButton.setVisibility(View.GONE);
+         }
+ 
+         mHoverButton.setImageResource(mHoverState != HOVER_DISABLED
+-- 
+2.5.0
+

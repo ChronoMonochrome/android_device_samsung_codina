@@ -1,0 +1,27 @@
+From 74ca6eacf0c0e1855184385090b668a1aa15b9dc Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Mon, 25 Jan 2016 01:02:08 +0700
+Subject: [PATCH 09/64] Revert "TF this is keeps icons from being the wrong
+ size when the screen rotates. Revert "wtf is this?""
+
+This reverts commit b9829404e2664a227aa344276553f97ca372b21e.
+---
+ .../src/com/android/systemui/statusbar/phone/NavigationBarView.java     | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/phone/NavigationBarView.java b/packages/SystemUI/src/com/android/systemui/statusbar/phone/NavigationBarView.java
+index 27229eb..a0beeae 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/phone/NavigationBarView.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/phone/NavigationBarView.java
+@@ -495,7 +495,7 @@ public class NavigationBarView extends LinearLayout {
+     final Runnable mNotifyLayoutChanged = new Runnable() {
+         @Override
+         public void run() {
+-            loadButtonArrays();
++            setupNavigationButtons();
+         }
+     };
+ 
+-- 
+2.5.0
+

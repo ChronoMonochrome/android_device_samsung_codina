@@ -1,0 +1,42 @@
+From 4e716546f6ce8c3a9eb3ba899745afd7864669f5 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Mon, 25 Jan 2016 02:51:00 +0700
+Subject: [PATCH 57/64] Revert "navbar: make empty space not create a lightsout
+ target"
+
+This reverts commit 6ebd10b523fa8c920d092c7a5a551ee9c8d40e79.
+---
+ .../android/systemui/statusbar/phone/NavigationBarView.java    | 10 +---------
+ 1 file changed, 1 insertion(+), 9 deletions(-)
+
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/phone/NavigationBarView.java b/packages/SystemUI/src/com/android/systemui/statusbar/phone/NavigationBarView.java
+index 077c656..ceda80e 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/phone/NavigationBarView.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/phone/NavigationBarView.java
+@@ -319,10 +319,6 @@ public class NavigationBarView extends LinearLayout {
+         return mCurrentView.findViewWithTag(AwesomeConstant.ACTION_BACK.value());
+     }
+ 
+-    public View getEmptySpace() {
+-        return mCurrentView.findViewWithTag(AwesomeConstant.ACTION_BLANK.value());
+-    }
+-
+     public View getHomeButton() {
+         return mCurrentView.findViewWithTag(AwesomeConstant.ACTION_HOME.value());
+     }
+@@ -663,11 +659,7 @@ public class NavigationBarView extends LinearLayout {
+ 
+                 // add button
+                 addButton(navButtons, button, landscape);
+-                if (button != getEmptySpace()) {
+-                    addLightsOutButton(lightsOut, button, landscape, false);
+-                } else {
+-                    addSeparator(lightsOut, landscape, (int) mButtonWidth, 0.5f);
+-                }
++                addLightsOutButton(lightsOut, button, landscape, false);
+ 
+                 if (!mTablet && stockThreeButtonLayout && j != (mNavButtons.size() - 1)) {
+                     // in the case of a 'stock' 3-button layout, the buttons need to be spaced further out apart
+-- 
+2.5.0
+

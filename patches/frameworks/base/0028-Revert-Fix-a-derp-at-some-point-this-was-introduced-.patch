@@ -1,0 +1,28 @@
+From 56d9de7e9c8614b65b2dff4407b94bb8cd441234 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Mon, 25 Jan 2016 01:13:52 +0700
+Subject: [PATCH 28/64] Revert "Fix-a-derp: at some point this was introduced
+ to a patchset for configurable IME navkey layouts"
+
+This reverts commit e2fe402014eeb5f31a3d1373dc0565f25ba4bc8c.
+---
+ .../src/com/android/systemui/statusbar/phone/NavigationBarView.java    | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/phone/NavigationBarView.java b/packages/SystemUI/src/com/android/systemui/statusbar/phone/NavigationBarView.java
+index 7623d44..9646e2e 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/phone/NavigationBarView.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/phone/NavigationBarView.java
+@@ -892,8 +892,7 @@ public class NavigationBarView extends LinearLayout {
+         // force the low profile & disabled states into compliance
+         try {
+             mBarTransitions.init(mVertical);
+-        } catch (NullPointerException WTF) {
+-            Log.d(TAG, "mBarTransitions.init(mVertical) ... " + WTF);
++        } finally {
+         }
+ 
+         setMenuVisibility(mShowMenu, true /* force */);
+-- 
+2.5.0
+

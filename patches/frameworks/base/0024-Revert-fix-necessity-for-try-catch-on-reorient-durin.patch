@@ -1,0 +1,58 @@
+From 8e5acbe364223aa00e0fcf2a236d8b7a168975ef Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Mon, 25 Jan 2016 01:10:18 +0700
+Subject: [PATCH 24/64] Revert "fix necessity for try/catch on reorient()
+ during adding NBV"
+
+This reverts commit 2d60a6c91747c7f84df3b65296893293924801f8.
+---
+ .../systemui/statusbar/phone/NavigationBarTransitions.java        | 8 ++++++++
+ .../com/android/systemui/statusbar/phone/NavigationBarView.java   | 6 +++++-
+ 2 files changed, 13 insertions(+), 1 deletion(-)
+
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/phone/NavigationBarTransitions.java b/packages/SystemUI/src/com/android/systemui/statusbar/phone/NavigationBarTransitions.java
+index 850e7a8..5d02ee9 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/phone/NavigationBarTransitions.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/phone/NavigationBarTransitions.java
+@@ -85,6 +85,10 @@ public final class NavigationBarTransitions extends BarTransitions {
+         View[] views = mView.getAllButtons();
+ 
+         for(View v : views) {
++            if (AwesomeConstant.ACTION_BACK.value().equals(v.getTag())) {
++                // back button was skipped in original calculations
++                continue;
++            }
+             setKeyButtonViewQuiescentAlpha(v, alpha, animate);
+         }
+ 
+@@ -106,6 +110,10 @@ public final class NavigationBarTransitions extends BarTransitions {
+         float backAlpha = 0;
+         View[] views = mView.getAllButtons();
+         for(View v : views) {
++            if (AwesomeConstant.ACTION_BACK.value().equals(v.getTag())) {
++                // back button was skipped in original calculations
++                continue;
++            }
+             backAlpha = maxVisibleQuiescentAlpha(backAlpha, v);
+         }
+ 
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/phone/NavigationBarView.java b/packages/SystemUI/src/com/android/systemui/statusbar/phone/NavigationBarView.java
+index b90f9ca..370d387 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/phone/NavigationBarView.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/phone/NavigationBarView.java
+@@ -886,7 +886,11 @@ public class NavigationBarView extends LinearLayout {
+         mDeadZone = (DeadZone) mCurrentView.findViewById(R.id.deadzone);
+ 
+         // force the low profile & disabled states into compliance
+-        mBarTransitions.init(mVertical);
++        try {
++            mBarTransitions.init(mVertical);
++        } catch (NullPointerException WTF) {
++            Log.d(TAG, "mBarTransitions.init(mVertical) ... " + WTF);
++        }
+ 
+         setMenuVisibility(mShowMenu, true /* force */);
+ 
+-- 
+2.5.0
+

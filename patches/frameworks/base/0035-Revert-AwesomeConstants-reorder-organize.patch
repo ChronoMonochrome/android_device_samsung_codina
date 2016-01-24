@@ -1,0 +1,487 @@
+From cebedd67cfb5f26454cb4715b335886cd5d3c040 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Mon, 25 Jan 2016 01:41:16 +0700
+Subject: [PATCH 35/64] Revert "AwesomeConstants: reorder/organize"
+
+This reverts commit 7cb509114eced249319f8c76a19440c4a6840687.
+
+Change-Id: I768cde668d0a17be6392691298ad3fe029d35dae
+---
+ .../android/internal/util/aokp/AwesomeAction.java  |  6 --
+ .../internal/util/aokp/AwesomeConstants.java       | 86 ++++++++++++----------
+ .../android/internal/util/aokp/NavBarHelpers.java  |  8 +-
+ .../android/internal/util/aokp/NavRingHelpers.java | 11 +--
+ core/res/res/values/vanir_strings.xml              | 14 ++--
+ packages/SystemUI/AndroidManifest.xml              |  7 +-
+ packages/SystemUI/res/values/vanir_strings.xml     |  2 +-
+ .../com/android/systemui/AOKPSearchPanelView.java  |  1 -
+ .../src/com/android/systemui/CreateShortcut.java   |  6 +-
+ .../src/com/android/systemui/vanir/ScreenOff.java  | 47 ------------
+ .../src/com/android/systemui/vanir/Torch.java      | 47 ++++++++++++
+ 11 files changed, 115 insertions(+), 120 deletions(-)
+ delete mode 100644 packages/SystemUI/src/com/android/systemui/vanir/ScreenOff.java
+ create mode 100644 packages/SystemUI/src/com/android/systemui/vanir/Torch.java
+
+diff --git a/core/java/com/android/internal/util/aokp/AwesomeAction.java b/core/java/com/android/internal/util/aokp/AwesomeAction.java
+index 5bdd597..00e4730 100755
+--- a/core/java/com/android/internal/util/aokp/AwesomeAction.java
++++ b/core/java/com/android/internal/util/aokp/AwesomeAction.java
+@@ -52,7 +52,6 @@ import com.android.internal.statusbar.IStatusBarService;
+ import java.net.URISyntaxException;
+ import java.util.List;
+ 
+-import com.android.internal.util.cm.TorchConstants;
+ import static com.android.internal.util.aokp.AwesomeConstants.AwesomeConstant;
+ import static com.android.internal.util.aokp.AwesomeConstants.fromString;
+ import com.android.internal.util.cm.ActionUtils;
+@@ -133,11 +132,6 @@ public class AwesomeAction {
+                 triggerVirtualKeypress(KeyEvent.KEYCODE_POWER, STANDARD_FLAGS);
+                 break;
+ 
+-            case ACTION_TORCH:
+-                Intent intentTorch = new Intent(TorchConstants.ACTION_TOGGLE_STATE);
+-                mContext.sendBroadcast(intentTorch);
+-                break;
+-
+             case ACTION_LAST_APP:
+                 ActionUtils.switchToLastApp(mContext, mCurrentUserId);
+                 break;
+diff --git a/core/java/com/android/internal/util/aokp/AwesomeConstants.java b/core/java/com/android/internal/util/aokp/AwesomeConstants.java
+index a85e585..67b27d7 100644
+--- a/core/java/com/android/internal/util/aokp/AwesomeConstants.java
++++ b/core/java/com/android/internal/util/aokp/AwesomeConstants.java
+@@ -35,37 +35,37 @@ public class AwesomeConstants {
+     public final static int SPEN_REMOVE = 6;
+     public final static int SPEN_INSERT = 7;
+ 
+-    /* Adding Actions here will automatically add them to NavBar actions in Settings.
++    /* Adding Actions here will automatically add them to NavBar actions in ROMControl.
++     * **app** must remain the last action.  Add other actions before that final action.
++     * For clarity, **null** should probably also be just before APP.  New actions
++     * should be added prior to **null**
+      */
+     public static enum AwesomeConstant {
+-        // Assignable actions
+-        ACTION_APP           { @Override public String value() { return "**app**";}},
+-        ACTION_BACK          { @Override public String value() { return "**back**";}},
+         ACTION_HOME          { @Override public String value() { return "**home**";}},
+-        ACTION_RECENTS       { @Override public String value() { return "**recents**";}},
+-        ACTION_BLANK         { @Override public String value() { return "**blank**";}},
+-        GESTURE_ACTIONS      { @Override public String value() { return "**gesture_actions**";}},
+-        ACTION_KILL          { @Override public String value() { return "**kill**";}},
+-        ACTION_LAST_APP      { @Override public String value() { return "**lastapp**";}},
++        ACTION_BACK          { @Override public String value() { return "**back**";}},
+         ACTION_MENU          { @Override public String value() { return "**menu**";}},
+-        ACTION_NOTIFICATIONS { @Override public String value() { return "**notifications**";}},
+-        ACTION_IME           { @Override public String value() { return "**ime**";}},
+-        ACTION_ASSIST        { @Override public String value() { return "**assist**";}},
+         ACTION_SEARCH        { @Override public String value() { return "**search**";}},
+-        ACTION_VOICEASSIST   { @Override public String value() { return "**voiceassist**";}},
+-        ACTION_SILENT        { @Override public String value() { return "**ring_silent**";}},
+-        ACTION_SILENT_VIB    { @Override public String value() { return "**ring_vib_silent**";}},
+-        ACTION_TORCH         { @Override public String value() { return "**torch**";}},
+-        ACTION_VIB           { @Override public String value() { return "**ring_vib**";}},
+-        // Disabled or non-assignable actions
++        ACTION_RECENTS       { @Override public String value() { return "**recents**";}},
++        ACTION_ASSIST        { @Override public String value() { return "**assist**";}},
+         ACTION_POWER         { @Override public String value() { return "**power**";}},
+         ACTION_WIDGETS       { @Override public String value() { return "**widgets**";}},
+         ACTION_APP_WINDOW    { @Override public String value() { return "**app_window**";}},
++        ACTION_NOTIFICATIONS { @Override public String value() { return "**notifications**";}},
++        ACTION_VOICEASSIST   { @Override public String value() { return "**voiceassist**";}},
++        ACTION_LAST_APP      { @Override public String value() { return "**lastapp**";}},
++        ACTION_IME           { @Override public String value() { return "**ime**";}},
++        ACTION_KILL          { @Override public String value() { return "**kill**";}},
++        ACTION_BLANK         { @Override public String value() { return "**blank**";}},
++        ACTION_SILENT        { @Override public String value() { return "**ring_silent**";}},
++        ACTION_VIB           { @Override public String value() { return "**ring_vib**";}},
++        ACTION_SILENT_VIB    { @Override public String value() { return "**ring_vib_silent**";}},
+         ACTION_NULL          { @Override public String value() { return "**null**";}},
++        ACTION_APP           { @Override public String value() { return "**app**";}},
+         ACTION_ARROW_LEFT    { @Override public String value() { return "**arrow_left**";}},
+         ACTION_ARROW_RIGHT   { @Override public String value() { return "**arrow_right**";}},
+         ACTION_ARROW_UP      { @Override public String value() { return "**arrow_up**";}},
+-        ACTION_ARROW_DOWN    { @Override public String value() { return "**arrow_down**";}};
++        ACTION_ARROW_DOWN    { @Override public String value() { return "**arrow_down**";}},
++        GESTURE_ACTIONS      { @Override public String value() { return "**gesture_actions**";}};
+         public String value() { return this.value(); }
+     }
+ 
+@@ -154,8 +154,14 @@ public class AwesomeConstants {
+             case ACTION_LAST_APP:
+                 value = res.getString(com.android.internal.R.string.action_lastapp);
+                 break;
+-            case ACTION_TORCH:
+-                value = res.getString(com.android.internal.R.string.action_torch);
++            case ACTION_POWER:
++                value = res.getString(com.android.internal.R.string.action_power);
++                break;
++            case ACTION_WIDGETS:
++                value = res.getString(com.android.internal.R.string.action_widgets);
++                break;
++            case ACTION_APP_WINDOW:
++                value = res.getString(com.android.internal.R.string.action_app_window);
+                 break;
+             case ACTION_NOTIFICATIONS:
+                 value = res.getString(com.android.internal.R.string.action_notifications);
+@@ -181,16 +187,22 @@ public class AwesomeConstants {
+             case ACTION_APP:
+                 value = res.getString(com.android.internal.R.string.action_app);
+                 break;
+-            case GESTURE_ACTIONS:
+-                value = res.getString(com.android.internal.R.string.gesture_actions);
++            case ACTION_ARROW_LEFT:
++                value = res.getString(com.android.internal.R.string.action_arrow_left);
+                 break;
+-/*          case ACTION_WIDGETS:
+-                value = res.getString(com.android.internal.R.string.action_widgets);
++            case ACTION_ARROW_RIGHT:
++                value = res.getString(com.android.internal.R.string.action_arrow_right);
+                 break;
+-            case ACTION_APP_WINDOW:
+-                value = res.getString(com.android.internal.R.string.action_app_window);
++            case ACTION_ARROW_UP:
++                value = res.getString(com.android.internal.R.string.action_arrow_up);
++                break;
++            case ACTION_ARROW_DOWN:
++                value = res.getString(com.android.internal.R.string.action_arrow_down);
+                 break;
+-*/          case ACTION_NULL:
++            case GESTURE_ACTIONS:
++                value = res.getString(com.android.internal.R.string.gesture_actions);
++                break;
++            case ACTION_NULL:
+             default:
+                 value = res.getString(com.android.internal.R.string.action_null);
+                 break;
+@@ -228,8 +240,14 @@ public class AwesomeConstants {
+             case ACTION_LAST_APP:
+                 value = getSystemUIDrawable(context, "com.android.systemui:drawable/ic_sysbar_lastapp");
+                 break;
+-            case ACTION_TORCH:
+-                value = getSystemUIDrawable(context, "com.android.systemui:drawable/ic_sysbar_torch");
++            case ACTION_POWER:
++                value = getSystemUIDrawable(context, "com.android.systemui:drawable/ic_sysbar_power");
++                break;
++            case ACTION_WIDGETS:
++                value = getSystemUIDrawable(context, "com.android.systemui:drawable/ic_sysbar_widget");
++                break;
++            case ACTION_APP_WINDOW:
++                value = getSystemUIDrawable(context, "com.android.systemui:drawable/ic_sysbar_widget");
+                 break;
+             case ACTION_NOTIFICATIONS:
+                 value = getSystemUIDrawable(context, "com.android.systemui:drawable/ic_sysbar_notifications");
+@@ -269,13 +287,7 @@ public class AwesomeConstants {
+                 break;
+             case ACTION_APP: // APP doesn't really have an icon - it should look up
+                         //the package icon - we'll return the 'null' on just in case
+-/*          case ACTION_WIDGETS:
+-                value = getSystemUIDrawable(context, "com.android.systemui:drawable/ic_sysbar_widget");
+-                break;
+-            case ACTION_APP_WINDOW:
+-                value = getSystemUIDrawable(context, "com.android.systemui:drawable/ic_sysbar_widget");
+-                break;
+-*/          case ACTION_NULL:
++            case ACTION_NULL:
+             default:
+                 value = getSystemUIDrawable(context, "com.android.systemui:drawable/ic_sysbar_null");
+                 break;
+diff --git a/core/java/com/android/internal/util/aokp/NavBarHelpers.java b/core/java/com/android/internal/util/aokp/NavBarHelpers.java
+index 6ad199b..f92e86d 100644
+--- a/core/java/com/android/internal/util/aokp/NavBarHelpers.java
++++ b/core/java/com/android/internal/util/aokp/NavBarHelpers.java
+@@ -18,7 +18,6 @@ package com.android.internal.util.aokp;
+ 
+ import android.content.Context;
+ import android.content.Intent;
+-import android.content.res.Resources;
+ import android.content.pm.ActivityInfo;
+ import android.content.pm.PackageManager;
+ import android.content.pm.PackageManager.NameNotFoundException;
+@@ -28,7 +27,6 @@ import android.text.TextUtils;
+ import java.net.URISyntaxException;
+ import java.util.ArrayList;
+ 
+-import com.android.internal.util.cm.QSUtils;
+ import static com.android.internal.util.aokp.AwesomeConstants.AwesomeConstant;
+ 
+ public class NavBarHelpers {
+@@ -40,7 +38,6 @@ public class NavBarHelpers {
+             AwesomeConstant.ACTION_VIB,
+             AwesomeConstant.ACTION_SILENT_VIB,
+             AwesomeConstant.ACTION_NULL,
+-            AwesomeConstant.ACTION_POWER,
+             AwesomeConstant.ACTION_ARROW_LEFT,
+             AwesomeConstant.ACTION_ARROW_RIGHT,
+             AwesomeConstant.ACTION_ARROW_UP,
+@@ -76,7 +73,7 @@ public class NavBarHelpers {
+         return actionIcon;
+     }
+ 
+-    public static String[] getNavBarActions(Context context) {
++    public static String[] getNavBarActions() {
+         boolean itemFound;
+         String[] mActions;
+         ArrayList<String> mActionList = new ArrayList<String>();
+@@ -93,9 +90,6 @@ public class NavBarHelpers {
+             if (!itemFound) {
+                 mActionList.add(mActionStart[i]);
+             }
+-            if (!context.getResources().getBoolean(com.android.internal.R.bool.config_enableTorch)) {
+-                mActionList.remove(AwesomeConstants.AwesomeConstant.ACTION_TORCH.value());
+-            }
+         }
+         int actionSize = mActionList.size();
+         mActions = new String[actionSize];
+diff --git a/core/java/com/android/internal/util/aokp/NavRingHelpers.java b/core/java/com/android/internal/util/aokp/NavRingHelpers.java
+index 2a5c215..703dbf7 100644
+--- a/core/java/com/android/internal/util/aokp/NavRingHelpers.java
++++ b/core/java/com/android/internal/util/aokp/NavRingHelpers.java
+@@ -47,7 +47,6 @@ import android.util.DisplayMetrics;
+ import android.util.Log;
+ import android.view.WindowManager;
+ 
+-import com.android.internal.util.cm.QSUtils;
+ import static com.android.internal.util.aokp.AwesomeConstants.*;
+ import com.android.internal.widget.multiwaveview.GlowPadView;
+ import com.android.internal.widget.multiwaveview.TargetDrawable;
+@@ -63,11 +62,10 @@ public class NavRingHelpers {
+     // Available Actions
+     private static final AwesomeConstant[] EXCLUDED_FROM_NAVRING = {
+             // these can be removed as the features are added back
+-            AwesomeConstant.ACTION_BLANK,
+-            AwesomeConstant.ACTION_NULL,
+-            AwesomeConstant.ACTION_POWER,
+             AwesomeConstant.ACTION_WIDGETS,
+             AwesomeConstant.ACTION_APP_WINDOW,
++            AwesomeConstant.ACTION_BLANK,
++            AwesomeConstant.ACTION_NULL,
+             AwesomeConstant.ACTION_ARROW_LEFT,
+             AwesomeConstant.ACTION_ARROW_RIGHT,
+             AwesomeConstant.ACTION_ARROW_UP,
+@@ -77,7 +75,7 @@ public class NavRingHelpers {
+     private NavRingHelpers() {
+     }
+ 
+-    public static String[] getNavRingActions(Context context) {
++    public static String[] getNavRingActions() {
+         boolean itemFound;
+         String[] mActions;
+         ArrayList<String> mActionList = new ArrayList<String>();
+@@ -94,9 +92,6 @@ public class NavRingHelpers {
+             if (!itemFound) {
+                 mActionList.add(mActionStart[i]);
+             }
+-            if (!context.getResources().getBoolean(com.android.internal.R.bool.config_enableTorch)) {
+-                mActionList.remove(AwesomeConstants.AwesomeConstant.ACTION_TORCH.value());
+-            }
+         }
+         int actionSize = mActionList.size();
+         mActions = new String[actionSize];
+diff --git a/core/res/res/values/vanir_strings.xml b/core/res/res/values/vanir_strings.xml
+index c22511d..f4e5b7f 100644
+--- a/core/res/res/values/vanir_strings.xml
++++ b/core/res/res/values/vanir_strings.xml
+@@ -45,21 +45,21 @@
+     <string name="global_actions_global_immersive_mode_off_status">Disabled</string>
+ 
+     <!-- Awesome Action Stuff-->
+-    <string name="action_home">Default: Home</string>
+-    <string name="action_back">Default: Back</string>
+-    <string name="action_recents">Default: Recents</string>
+-    <string name="action_search">Search: In-app search</string>
++    <string name="action_home">Home</string>
++    <string name="action_back">Back</string>
++    <string name="action_recents">Recents</string>
++    <string name="action_search">Search</string>
+     <string name="action_screenshot">Screenshot</string>
+     <string name="action_menu">Menu</string>
+     <string name="action_ime">Open IME Switcher</string>
+     <string name="action_kill">Kill task</string>
+     <string name="action_lastapp">Last app</string>
+-    <string name="action_power">Screen off</string>
++    <string name="action_power">Power</string>
+     <string name="action_blank">Empty spacer</string>
+     <string name="action_notifications">Notifications</string>
+-    <string name="action_assist">Search: Google Now</string>
++    <string name="action_assist">Search (Google Now)</string>
+     <string name="action_robocop">Reboot menu</string>
+-    <string name="action_voiceassist">Search: Voice search</string>
++    <string name="action_voiceassist">Voice search</string>
+     <string name="action_torch">Torch</string>
+     <string name="action_silent">Ring/Silent</string>
+     <string name="action_vib">Ring/Vibrate</string>
+diff --git a/packages/SystemUI/AndroidManifest.xml b/packages/SystemUI/AndroidManifest.xml
+index 32ab01a..42698a4 100755
+--- a/packages/SystemUI/AndroidManifest.xml
++++ b/packages/SystemUI/AndroidManifest.xml
+@@ -363,13 +363,14 @@
+             </intent-filter>
+         </activity>
+         <activity
+-            android:name="com.android.systemui.vanir.ScreenOff"
+-            android:label="@string/action_power"
+-            android:icon="@drawable/ic_sysbar_power"
++            android:name="com.android.systemui.vanir.Torch"
++            android:label="@string/toggle_torch"
++            android:icon="@drawable/ic_sysbar_torch"
+             android:theme="@android:style/Theme.Holo.Panel"
+             android:excludeFromRecents="true"
+             android:launchMode="singleTop" >
+             <intent-filter>
++                <action android:name="com.android.systemui.INTENT_TORCH_TOGGLE" />
+                 <action android:name="android.intent.action.MAIN" />
+                 <category android:name="com.android.systemui.SHORTCUT" />
+             </intent-filter>
+diff --git a/packages/SystemUI/res/values/vanir_strings.xml b/packages/SystemUI/res/values/vanir_strings.xml
+index 1f9b007..a8599d5 100644
+--- a/packages/SystemUI/res/values/vanir_strings.xml
++++ b/packages/SystemUI/res/values/vanir_strings.xml
+@@ -27,7 +27,7 @@
+     <string name="toggle_profile_toast">Profiles are currently disabled</string>
+     <string name="toggle_dream">Screensaver</string>
+     <string name="toggle_dream_failed">Dreams are off or disabled</string>
+-    <string name="action_power">Screen off</string>
++    <string name="toggle_torch">Torch</string>
+     <string name="toggle_flushmemory">Free memory</string>
+     <string name="toggle_immersive">Immersive mode</string>
+     <string name="toggle_ring_vib">Ring/Vib - toggle</string>
+diff --git a/packages/SystemUI/src/com/android/systemui/AOKPSearchPanelView.java b/packages/SystemUI/src/com/android/systemui/AOKPSearchPanelView.java
+index 6aba2df..0ae5085 100644
+--- a/packages/SystemUI/src/com/android/systemui/AOKPSearchPanelView.java
++++ b/packages/SystemUI/src/com/android/systemui/AOKPSearchPanelView.java
+@@ -275,7 +275,6 @@ public class AOKPSearchPanelView extends FrameLayout implements
+         if (action.equals(AwesomeConstant.ACTION_SILENT_VIB.value()) ||
+             action.equals(AwesomeConstant.ACTION_VIB.value()) ||
+             action.equals(AwesomeConstant.ACTION_POWER.value()) ||
+-            action.equals(AwesomeConstant.ACTION_TORCH.value()) ||
+             action.equals(AwesomeConstant.ACTION_NOTIFICATIONS.value()) ||
+             action.equals(AwesomeConstant.ACTION_SILENT.value())) {
+             return false;
+diff --git a/packages/SystemUI/src/com/android/systemui/CreateShortcut.java b/packages/SystemUI/src/com/android/systemui/CreateShortcut.java
+index bdc89c9..a41a3d7 100644
+--- a/packages/SystemUI/src/com/android/systemui/CreateShortcut.java
++++ b/packages/SystemUI/src/com/android/systemui/CreateShortcut.java
+@@ -56,10 +56,10 @@ public class CreateShortcut extends LauncherActivity {
+     private int getProperShortcutIcon(String className) {
+         String c = className.substring(className.lastIndexOf(".") + 1);
+ 
+-        if (c.equals ("ScreenShotAction")) {
++        if (c.equals("Torch")) {
++            return R.drawable.ic_sysbar_torch;
++        } else if (c.equals ("ScreenShotAction")) {
+             return R.drawable.ic_sysbar_screenshot;
+-        } else if (c.equals ("ScreenOff")) {
+-            return R.drawable.ic_sysbar_power;
+         } else if (c.equals ("FlushMemory")) {
+             return R.drawable.vanir_flush_memory;
+         } else if (c.equals ("Reboot")) {
+diff --git a/packages/SystemUI/src/com/android/systemui/vanir/ScreenOff.java b/packages/SystemUI/src/com/android/systemui/vanir/ScreenOff.java
+deleted file mode 100644
+index 07de9bc..0000000
+--- a/packages/SystemUI/src/com/android/systemui/vanir/ScreenOff.java
++++ /dev/null
+@@ -1,47 +0,0 @@
+-/*
+- * Copyright 2014 VanirAOSP && the Android Open Source Project
+- *
+- * Licensed under the Apache License, Version 2.0 (the "License");
+- * you may not use this file except in compliance with the License.
+- * You may obtain a copy of the License at
+- *
+- *      http://www.apache.org/licenses/LICENSE-2.0
+- *
+- * Unless required by applicable law or agreed to in writing, software
+- * distributed under the License is distributed on an "AS IS" BASIS,
+- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- * See the License for the specific language governing permissions and
+- * limitations under the License.
+- */
+-
+-package com.android.systemui.vanir;
+-
+-import android.app.Activity;
+-import android.content.Intent;
+-import android.os.Bundle;
+-
+-import com.android.internal.util.aokp.AwesomeAction;
+-import com.android.internal.util.aokp.AwesomeConstants.AwesomeConstant;
+-
+-/*
+- * Screen off
+- */
+-
+-public class ScreenOff extends Activity {
+-    public ScreenOff() {
+-        super();
+-    }
+-
+-    /** Called when the activity is first created. */
+-    @Override
+-    public void onCreate(Bundle savedInstanceState) {
+-        super.onCreate(savedInstanceState);
+-    }
+-
+-    @Override
+-    public void onResume() {
+-        super.onResume();
+-        AwesomeAction.launchAction(this, AwesomeConstant.ACTION_POWER.value());
+-        this.finish();
+-    }
+-}
+diff --git a/packages/SystemUI/src/com/android/systemui/vanir/Torch.java b/packages/SystemUI/src/com/android/systemui/vanir/Torch.java
+new file mode 100644
+index 0000000..62145f9
+--- /dev/null
++++ b/packages/SystemUI/src/com/android/systemui/vanir/Torch.java
+@@ -0,0 +1,47 @@
++/*
++ * Copyright 2014 VanirAOSP && the Android Open Source Project
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++package com.android.systemui.vanir;
++
++import android.app.Activity;
++import android.content.Intent;
++import android.os.Bundle;
++
++import com.android.internal.util.cm.TorchConstants;
++
++/*
++ * Torch activity toggle
++ */
++
++public class Torch extends Activity {
++  public Torch() {
++    super();
++  }
++
++  /** Called when the activity is first created. */
++  @Override
++  public void onCreate(Bundle savedInstanceState) {
++    super.onCreate(savedInstanceState);
++  }
++
++  @Override
++  public void onResume() {
++    super.onResume();
++    Intent i = new Intent(TorchConstants.ACTION_TOGGLE_STATE);
++    sendBroadcast(i);
++    this.finish();
++  }
++}
+-- 
+2.5.0
+

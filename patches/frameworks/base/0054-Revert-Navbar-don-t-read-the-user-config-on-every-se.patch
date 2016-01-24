@@ -1,0 +1,78 @@
+From 04e5c8fdd9d6606224fe14f960becd5d60bef5e9 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Mon, 25 Jan 2016 02:45:23 +0700
+Subject: [PATCH 54/64] Revert "Navbar: don't read the user config on every
+ setupNavigationButtons call"
+
+This reverts commit a1ef6d3e1465e9cd8f998ee853ee6b042abada99.
+---
+ .../systemui/statusbar/phone/NavigationBarView.java     | 17 +++++------------
+ 1 file changed, 5 insertions(+), 12 deletions(-)
+
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/phone/NavigationBarView.java b/packages/SystemUI/src/com/android/systemui/statusbar/phone/NavigationBarView.java
+index c47fb7f..87ae91c 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/phone/NavigationBarView.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/phone/NavigationBarView.java
+@@ -102,10 +102,6 @@ public class NavigationBarView extends LinearLayout {
+     private DeadZone mDeadZone;
+     private final NavigationBarTransitions mBarTransitions;
+ 
+-    private boolean mPrefNavring;
+-    private boolean mPrefLockscreen;
+-    private String mUserButtons;
+-
+     // workaround for LayoutTransitions leaving the nav buttons in a weird state (bug 5549288)
+     final static boolean WORKAROUND_INVALID_LAYOUT = true;
+     final static int MSG_CHECK_INVALID_LAYOUT = 8686;
+@@ -245,8 +241,6 @@ public class NavigationBarView extends LinearLayout {
+ 
+         mBarTransitions = new NavigationBarTransitions(this);
+ 
+-        mUserButtons = Settings.System.getString(mContext.getContentResolver(), Settings.System.NAVIGATION_BAR_BUTTONS);
+-
+         mCameraDisabledByDpm = isCameraDisabledByDpm();
+         watchForDevicePolicyChanges();
+ 
+@@ -551,7 +545,6 @@ public class NavigationBarView extends LinearLayout {
+             mSettingsObserver = new ContentObserver(new Handler()) {
+                 @Override
+                 public void onChange(boolean selfChange) {
+-                    mUserButtons = Settings.System.getString(r, Settings.System.NAVIGATION_BAR_BUTTONS);
+                     setupNavigationButtons();
+                 }};
+ 
+@@ -570,10 +563,10 @@ public class NavigationBarView extends LinearLayout {
+         }
+     }
+ 
+-    private void updateUserConfig() {
++    private void readUserConfig() {
+         mNavButtons.clear();
+-
+-        if (mUserButtons == null || mUserButtons.isEmpty()) {
++        String buttons = Settings.System.getString(getContext().getContentResolver(), Settings.System.NAVIGATION_BAR_BUTTONS);
++        if (buttons == null || buttons.isEmpty()) {
+             // use default buttons
+             mNavButtons.add(new AwesomeButtonInfo(
+                     AwesomeConstant.ACTION_BACK.value(),    /* short press */
+@@ -599,7 +592,7 @@ public class NavigationBarView extends LinearLayout {
+              *
+              * singleTapAction,doubleTapAction,longPressAction,iconUri|singleTap...
+              */
+-            String[] userButtons = mUserButtons.split("\\|");
++            String[] userButtons = buttons.split("\\|");
+             if (userButtons != null) {
+                 for (String button : userButtons) {
+                     String[] actions = button.split(",", 4);
+@@ -610,7 +603,7 @@ public class NavigationBarView extends LinearLayout {
+     }
+ 
+     private void setupNavigationButtons() {
+-        updateUserConfig();
++        readUserConfig();
+         final boolean stockThreeButtonLayout = mNavButtons.size() == 3;
+         int separatorSize = (int) mMenuButtonWidth;
+ 
+-- 
+2.5.0
+

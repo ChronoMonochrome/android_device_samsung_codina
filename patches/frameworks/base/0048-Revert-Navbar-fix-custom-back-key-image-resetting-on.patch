@@ -1,0 +1,88 @@
+From 2b93ad4797e0712749f39159c64b9a8d0a43e0fe Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Mon, 25 Jan 2016 02:38:16 +0700
+Subject: [PATCH 48/64] Revert "Navbar: fix custom back key image resetting on
+ rotation"
+
+This reverts commit a20eeb2ea4e202ff2d5d4e966ace9684d817f61d.
+
+Change-Id: Ie72fd1fbf34b4279a759af51c927324caf1a162d
+---
+ .../statusbar/phone/NavigationBarView.java         |  9 ++----
+ .../systemui/statusbar/policy/KeyButtonView.java   | 33 ++++++----------------
+ 2 files changed, 12 insertions(+), 30 deletions(-)
+
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/phone/NavigationBarView.java b/packages/SystemUI/src/com/android/systemui/statusbar/phone/NavigationBarView.java
+index c671604..cd01a70 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/phone/NavigationBarView.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/phone/NavigationBarView.java
+@@ -371,12 +371,9 @@ public class NavigationBarView extends LinearLayout {
+         mNavigationIconHints = hints;
+ 
+         if (getBackButton() != null) {
+-            if (backAlt) {
+-                ((ImageView) getBackButton()).setImageResource(R.drawable.ic_sysbar_back_ime);
+-            } else {
+-                ((KeyButtonView) getBackButton()).setImage();
+-            }
+-
++            ((ImageView) getBackButton()).setImageResource(backAlt
++                    ? R.drawable.ic_sysbar_back_ime
++                    : R.drawable.ic_sysbar_back);
+         }
+ 
+         setDisabledFlags(mDisabledFlags, true);
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/policy/KeyButtonView.java b/packages/SystemUI/src/com/android/systemui/statusbar/policy/KeyButtonView.java
+index 7d40474..bfa94db 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/policy/KeyButtonView.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/policy/KeyButtonView.java
+@@ -140,30 +140,6 @@ public class KeyButtonView extends ImageView {
+ 
+         setImage();
+ 
+-        mHasSingleAction = mActions != null && (mActions.singleAction != null);
+-        mHasLongAction = mActions != null && mActions.longPressAction != null;
+-        mHasDoubleAction = mActions != null && mActions.doubleTapAction != null;
+-        mHasBlankSingleAction = mHasSingleAction && mActions.singleAction.equals(BLANK_ACTION);
+-
+-        // TO DO: determine type of key prior to getting a keybuttonview instance to allow more specialized
+-        // and efficiently coded keybuttonview classes.
+-        mIsDPadAction = mHasSingleAction
+-                && (mActions.singleAction.equals(ARROW_LEFT)
+-                || mActions.singleAction.equals(ARROW_UP)
+-                || mActions.singleAction.equals(ARROW_DOWN)
+-                || mActions.singleAction.equals(ARROW_RIGHT));
+-
+-        mIsRecentsSingleAction = (mHasSingleAction && mActions.singleAction.equals(RECENTS_ACTION));
+-        mIsRecentsLongAction = (mHasLongAction && mActions.longPressAction.equals(RECENTS_ACTION));
+-        mIsRecentsDoubleTapAction = (mHasDoubleAction && mActions.doubleTapAction.equals(RECENTS_ACTION));
+-
+-        if (mIsRecentsSingleAction || mIsRecentsLongAction || mIsRecentsDoubleTapAction) {
+-            mIsRecentsAction = true;
+-            getStatusBarInstance();
+-        }
+-
+-        setLongClickable(mHasLongAction);
+-        Log.e(TAG, "Adding a navbar button in landscape or portrait");
+     }
+ 
+     /* @hide */
+@@ -185,6 +161,15 @@ public class KeyButtonView extends ImageView {
+         } else {
+             setImageResource(R.drawable.ic_sysbar_null);
+         }
++
++        mHasSingleAction = mActions != null && (mActions.singleAction != null);
++        mHasLongAction = mActions != null && mActions.longPressAction != null;
++        mHasDoubleAction = mActions != null && mActions.doubleTapAction != null;
++        mHasBlankSingleAction = mActions != null
++                && mActions.singleAction != null
++                && mActions.singleAction.equals(BLANK_ACTION);
++        setLongClickable(mHasLongAction);
++        Log.e(TAG, "Adding a navbar button in landscape or portrait");
+     }
+ 
+     @Override
+-- 
+2.5.0
+

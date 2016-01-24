@@ -1,0 +1,38 @@
+From 632fd77e466f95ba369243bc0fa9c15afe11c5bf Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Mon, 25 Jan 2016 02:43:24 +0700
+Subject: [PATCH 50/64] Revert "navbar: make the camera and notification
+ buttons independent of the navring"
+
+This reverts commit d96387275c33d8dcf72b0a95ebfd126d1dd61fb4.
+---
+ .../src/com/android/systemui/statusbar/phone/NavigationBarView.java | 6 ++----
+ 1 file changed, 2 insertions(+), 4 deletions(-)
+
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/phone/NavigationBarView.java b/packages/SystemUI/src/com/android/systemui/statusbar/phone/NavigationBarView.java
+index c991d69..5a72b95 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/phone/NavigationBarView.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/phone/NavigationBarView.java
+@@ -252,8 +252,6 @@ public class NavigationBarView extends LinearLayout {
+ 
+         mCameraDisabledByDpm = isCameraDisabledByDpm();
+         watchForDevicePolicyChanges();
+-
+-        mLockPatternUtils = new LockPatternUtils(context);
+         updateNavbarDisabledForPrefs();
+     }
+ 
+@@ -450,8 +448,8 @@ public class NavigationBarView extends LinearLayout {
+         }
+ 
+         final boolean showSearch = disableHome && !disableSearch && mPrefNavring;
+-        final boolean showCamera = disableHome && !disableSearch && !mCameraDisabledByDpm && mLockPatternUtils.getCameraEnabled();
+-        final boolean showNotifs = disableHome && !disableSearch && mPrefLockscreen;
++        final boolean showCamera = showSearch && !mCameraDisabledByDpm && mLockPatternUtils.getCameraEnabled();
++        final boolean showNotifs = showSearch && mPrefLockscreen;
+ 
+         setVisibleOrGone(getSearchLight(), showSearch);
+         setVisibleOrGone(getCameraButton(), showCamera);
+-- 
+2.5.0
+

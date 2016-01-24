@@ -1,0 +1,32 @@
+From 74c06c30b9f5a84cfb7a7808816b4233d461d034 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Mon, 25 Jan 2016 01:50:18 +0700
+Subject: [PATCH 41/64] Revert "AwesomeAction: this handler doesn't need to
+ override handleMessage"
+
+This reverts commit 476d94812f19d01c630278f65a212881419120c5.
+---
+ core/java/com/android/internal/util/aokp/AwesomeAction.java | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/core/java/com/android/internal/util/aokp/AwesomeAction.java b/core/java/com/android/internal/util/aokp/AwesomeAction.java
+index 9c36d8c..a7b9b7b 100755
+--- a/core/java/com/android/internal/util/aokp/AwesomeAction.java
++++ b/core/java/com/android/internal/util/aokp/AwesomeAction.java
+@@ -302,7 +302,12 @@ public class AwesomeAction {
+         im.injectInputEvent(upEvent, InputManager.INJECT_INPUT_EVENT_MODE_ASYNC);
+     }
+ 
+-    private static Handler mHandler = new Handler();
++    private static Handler mHandler = new Handler() {
++        public void handleMessage(Message msg) {
++            switch (msg.what) {
++            }
++        }
++    };
+ 
+     public static void wtfHelper() {
+         wtf = true;
+-- 
+2.5.0
+

@@ -1,0 +1,56 @@
+From 9ec3f991694b1decb1e15ad14db2263a9b328642 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Mon, 25 Jan 2016 01:27:05 +0700
+Subject: [PATCH 29/64] Revert "On hardware key devices, ACTION_APP hardware
+ buttons block the input threat... for stuff like Camera, that's a LOONNNGGG
+ time to block."
+
+This reverts commit 0aabba890721dec0c05f526a12e02bcd94b6a7fd.
+---
+ .../android/internal/util/aokp/AwesomeAction.java  | 23 ++++++++++------------
+ 1 file changed, 10 insertions(+), 13 deletions(-)
+
+diff --git a/core/java/com/android/internal/util/aokp/AwesomeAction.java b/core/java/com/android/internal/util/aokp/AwesomeAction.java
+index 3f0013b..9b3c882 100755
+--- a/core/java/com/android/internal/util/aokp/AwesomeAction.java
++++ b/core/java/com/android/internal/util/aokp/AwesomeAction.java
+@@ -105,6 +105,7 @@ public class AwesomeAction {
+                 break;
+ 
+             case ACTION_KILL:
++                mHandler.removeCallbacksAndMessages(null);
+                 mHandler.post(new Runnable() {
+                     @Override
+                     public void run() {
+@@ -151,19 +152,15 @@ public class AwesomeAction {
+                 break;
+ 
+             case ACTION_APP:
+-                mHandler.post(new Runnable() {
+-                    @Override
+-                    public void run() {
+-                        try {
+-                            Intent intentapp = Intent.parseUri(action, 0);
+-                            intentapp.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+-                            mContext.startActivity(intentapp);
+-                        } catch (URISyntaxException e) {
+-                            Log.e(TAG, "URISyntaxException: [" + action + "]");
+-                        } catch (ActivityNotFoundException e) {
+-                            Log.e(TAG, "ActivityNotFound: [" + action + "]");
+-                        }
+-                }});
++                try {
++                    Intent intentapp = Intent.parseUri(action, 0);
++                    intentapp.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
++                    mContext.startActivity(intentapp);
++                } catch (URISyntaxException e) {
++                    Log.e(TAG, "URISyntaxException: [" + action + "]");
++                } catch (ActivityNotFoundException e) {
++                    Log.e(TAG, "ActivityNotFound: [" + action + "]");
++                }
+                 break;
+ 
+             case ACTION_APP_WINDOW:
+-- 
+2.5.0
+

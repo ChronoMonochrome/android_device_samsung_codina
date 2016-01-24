@@ -1,0 +1,1989 @@
+From 5e4d873ffbd1dade69b7af39b38e6e1ac1d0d271 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Mon, 25 Jan 2016 01:01:59 +0700
+Subject: [PATCH 02/64] Revert "Keyguard: Allow applications to customize
+ left-corner widget"
+
+This reverts commit 3c45804e35720d8baf207d5096c0b4bd9ec868c6.
+---
+ .../android/app/admin/DevicePolicyManager.java     |   6 -
+ core/java/android/content/Intent.java              |  56 ---
+ .../android/internal/policy/IKeyguardService.aidl  |   4 +-
+ .../android/internal/widget/LockPatternUtils.java  |  18 -
+ core/res/AndroidManifest.xml                       |   8 -
+ core/res/res/values/cm_strings.xml                 |   4 +-
+ packages/Keyguard/AndroidManifest.xml              |   3 -
+ packages/Keyguard/res/values-land/bools.xml        |   1 -
+ packages/Keyguard/res/values-sw600dp/bools.xml     |   1 -
+ packages/Keyguard/res/values/bools.xml             |   1 -
+ .../android/keyguard/ApplicationWidgetFrame.java   | 508 ---------------------
+ .../android/keyguard/KeyguardActivityLauncher.java |  22 -
+ .../src/com/android/keyguard/KeyguardHostView.java | 106 +----
+ .../com/android/keyguard/KeyguardSelectorView.java |   2 -
+ .../src/com/android/keyguard/KeyguardService.java  |  12 +-
+ .../android/keyguard/KeyguardUpdateMonitor.java    |  56 ---
+ .../keyguard/KeyguardUpdateMonitorCallback.java    |   5 -
+ .../com/android/keyguard/KeyguardViewManager.java  |  22 +-
+ .../com/android/keyguard/KeyguardViewMediator.java |  45 +-
+ .../android/keyguard/KeyguardViewStateManager.java |   5 -
+ .../com/android/keyguard/KeyguardWidgetPager.java  |  39 --
+ .../src/com/android/keyguard/PagedView.java        |  66 +--
+ packages/SystemUI/AndroidManifest.xml              |   3 -
+ .../SystemUI/res/layout-sw600dp/navigation_bar.xml |   9 -
+ packages/SystemUI/res/layout/navigation_bar.xml    |  19 -
+ .../statusbar/phone/KeyguardTouchDelegate.java     |  35 +-
+ .../statusbar/phone/NavigationBarTransitions.java  |   4 +-
+ .../statusbar/phone/NavigationBarView.java         | 113 +----
+ .../impl/keyguard/KeyguardServiceWrapper.java      |  10 +-
+ 29 files changed, 47 insertions(+), 1136 deletions(-)
+ delete mode 100644 packages/Keyguard/src/com/android/keyguard/ApplicationWidgetFrame.java
+
+diff --git a/core/java/android/app/admin/DevicePolicyManager.java b/core/java/android/app/admin/DevicePolicyManager.java
+index 4755373..5e80744 100644
+--- a/core/java/android/app/admin/DevicePolicyManager.java
++++ b/core/java/android/app/admin/DevicePolicyManager.java
+@@ -1237,12 +1237,6 @@ public class DevicePolicyManager {
+     public static final int KEYGUARD_DISABLE_SECURE_CAMERA = 1 << 1;
+ 
+     /**
+-     * Disable the application widget on keyguard screens (e.g. PIN/Pattern/Password)
+-     * @hide
+-     */
+-    public static final int KEYGUARD_DISABLE_APPLICATION_WIDGET = 1 << 2;
+-
+-    /**
+      * Disable all current and future keyguard customizations.
+      */
+     public static final int KEYGUARD_DISABLE_FEATURES_ALL = 0x7fffffff;
+diff --git a/core/java/android/content/Intent.java b/core/java/android/content/Intent.java
+index 02c6e3e..cd4eb5c 100644
+--- a/core/java/android/content/Intent.java
++++ b/core/java/android/content/Intent.java
+@@ -2809,43 +2809,6 @@ public class Intent implements Parcelable, Cloneable {
+     public static final String ACTION_THEME_RESOURCES_CACHED =
+             "android.intent.action.THEME_RESOURCES_CACHED";
+ 
+-   /**
+-    * Allows an application to add a widget to the keyguard which will launch the application
+-    * associated with the widget. It has 2 extras - one for the icon to use
+-    * {@link #EXTRA_KEYGUARD_APPLICATION_WIDGET_ICON} and the other for the package name
+-    * {@link #EXTRA_KEYGUARD_APPLICATION_WIDGET_PACKAGE_NAME} of the application associated with
+-    * the widget. You must hold "android.permission.SET_KEYGUARD_APPLICATION_WIDGET" to receive
+-    * this broadcast.
+-    *
+-    * @hide
+-    */
+-    public static final String ACTION_SET_KEYGUARD_APPLICATION_WIDGET =
+-            "android.intent.action.SET_KEYGUARD_APPLICATION_WIDGET_ACTION";
+-
+-    /**
+-     * Allows an application to remove the widget on the keyguard which was added using the
+-     * {@link #ACTION_SET_KEYGUARD_APPLICATION_WIDGET} intent. You must hold
+-     * "android.permission.SET_KEYGUARD_APPLICATION_WIDGET" to receive this
+-     * broadcast.
+-     *
+-     * @hide
+-     */
+-    public static final String ACTION_UNSET_KEYGUARD_APPLICATION_WIDGET =
+-            "android.intent.action.UNSET_KEYGUARD_APPLICATION_WIDGET_ACTION";
+-
+-    /**
+-     * Allows an application to know when the application associated with the keyguard application
+-     * widget has been launched. It has 1 extra -
+-     * {@link #EXTRA_KEYGUARD_APPLICATION_WIDGET_PACKAGE_NAME} which has the package name
+-     * associated with the widget. You must hold
+-     * "android.permission.SET_KEYGUARD_APPLICATION_WIDGET" to receive this broadcast.
+-     *
+-     * @see #ACTION_SET_KEYGUARD_APPLICATION_WIDGET
+-     * @hide
+-     */
+-    public static final String ACTION_KEYGUARD_APPLICATION_WIDGET_LAUNCH_ACTION =
+-            "android.intent.action.KEYGUARD_APPLICATION_WIDGET_LAUNCH_ACTION";
+-
+     // ---------------------------------------------------------------------
+     // ---------------------------------------------------------------------
+     // Standard intent categories (see addCategory()).
+@@ -3514,25 +3477,6 @@ public class Intent implements Parcelable, Cloneable {
+      */
+     public static final String EXTRA_THEME_PACKAGE_NAME = "android.intent.extra.PACKAGE_NAME";
+ 
+-    /**
+-     * Extra for {@link #ACTION_SET_KEYGUARD_APPLICATION_WIDGET} which tells the keyguard
+-     * the icon to use for the widget.
+-     *
+-     * @hide
+-     */
+-    public static final String EXTRA_KEYGUARD_APPLICATION_WIDGET_ICON =
+-            "android.intent.extra.EXTRA_KEYGUARD_APPLICATION_WIDGET_ICON";
+-
+-    /**
+-     * Extra for {@link #ACTION_SET_KEYGUARD_APPLICATION_WIDGET} and
+-     * {@link #ACTION_KEYGUARD_APPLICATION_WIDGET_LAUNCH_ACTION}. It contains the package name
+-     * of the application widget.
+-     *
+-     * @hide
+-     */
+-    public static final String EXTRA_KEYGUARD_APPLICATION_WIDGET_PACKAGE_NAME =
+-            "android.intent.extra.EXTRA_KEYGUARD_APPLICATION_WIDGET_PACKAGE_NAME";
+-
+     // ---------------------------------------------------------------------
+     // ---------------------------------------------------------------------
+     // Intent flags (see mFlags variable).
+diff --git a/core/java/com/android/internal/policy/IKeyguardService.aidl b/core/java/com/android/internal/policy/IKeyguardService.aidl
+index f0ade59..f1f1e18 100644
+--- a/core/java/com/android/internal/policy/IKeyguardService.aidl
++++ b/core/java/com/android/internal/policy/IKeyguardService.aidl
+@@ -41,11 +41,9 @@ interface IKeyguardService {
+     oneway void doKeyguardTimeout(in Bundle options);
+     oneway void setCurrentUser(int userId);
+     oneway void showAssistant();
+-    oneway void dispatchCameraEvent(in MotionEvent event);
+-    oneway void dispatchApplicationWidgetEvent(in MotionEvent event);
++    oneway void dispatch(in MotionEvent event);
+     oneway void dispatchButtonClick(int buttonId);
+     oneway void launchCamera();
+-    oneway void launchApplicationWidget();
+     oneway void onBootCompleted();
+     oneway void setBackgroundBitmap();
+ }
+diff --git a/core/java/com/android/internal/widget/LockPatternUtils.java b/core/java/com/android/internal/widget/LockPatternUtils.java
+index 98efda0..ca15551 100644
+--- a/core/java/com/android/internal/widget/LockPatternUtils.java
++++ b/core/java/com/android/internal/widget/LockPatternUtils.java
+@@ -157,8 +157,6 @@ public class LockPatternUtils {
+     public final static String LOCKSCREEN_POWER_BUTTON_INSTANTLY_LOCKS
+             = "lockscreen.power_button_instantly_locks";
+     public final static String LOCKSCREEN_WIDGETS_ENABLED = "lockscreen.widgets_enabled";
+-    public final static String LOCKSCREEN_APPLICATION_WIDGET_ENABLED =
+-            "lockscreen.application_widget_enabled";
+     public final static String LOCKSCREEN_CAMERA_ENABLED = "lockscreen.camera_enabled";
+ 
+     public final static String PASSWORD_HISTORY_KEY = "lockscreen.passwordhistory";
+@@ -1585,22 +1583,6 @@ public class LockPatternUtils {
+         setBoolean(LOCKSCREEN_WIDGETS_ENABLED, enabled, userId);
+     }
+ 
+-    public boolean getApplicationWidgetEnabled() {
+-        return getApplicationWidgetEnabled(getCurrentOrCallingUserId());
+-    }
+-
+-    public boolean getApplicationWidgetEnabled(int userId) {
+-        return getBoolean(LOCKSCREEN_APPLICATION_WIDGET_ENABLED, true, userId);
+-    }
+-
+-    public void setApplicationWidgetEnabled(boolean enabled) {
+-        setApplicationWidgetEnabled(enabled, getCurrentOrCallingUserId());
+-    }
+-
+-    public void setApplicationWidgetEnabled(boolean enabled, int userId) {
+-        setBoolean(LOCKSCREEN_APPLICATION_WIDGET_ENABLED, enabled, userId);
+-    }
+-
+     public boolean getCameraEnabled() {
+         return getCameraEnabled(getCurrentOrCallingUserId());
+     }
+diff --git a/core/res/AndroidManifest.xml b/core/res/AndroidManifest.xml
+index 2b3b4c7..3307b8a 100755
+--- a/core/res/AndroidManifest.xml
++++ b/core/res/AndroidManifest.xml
+@@ -2657,14 +2657,6 @@
+         android:description="@string/permdesc_interceptPackageLaunch"
+         android:protectionLevel="system|signature" />
+ 
+-    <!-- Allows an application to set the application widget on the keyguard.
+-         <p> Not for use by third-party applications.
+-         @hide -->
+-    <permission android:name="android.permission.SET_KEYGUARD_APPLICATION_WIDGET"
+-        android:label="@string/permlab_keyguardApplicationWidget"
+-        android:description="@string/permdesc_keyguardApplicationWidget"
+-        android:protectionLevel="system|signature" />
+-
+     <!-- The system process is explicitly the only one allowed to launch the
+          confirmation UI for full backup/restore -->
+     <uses-permission android:name="android.permission.CONFIRM_FULL_BACKUP"/>
+diff --git a/core/res/res/values/cm_strings.xml b/core/res/res/values/cm_strings.xml
+index 7057c23..72725d4 100755
+--- a/core/res/res/values/cm_strings.xml
++++ b/core/res/res/values/cm_strings.xml
+@@ -247,9 +247,9 @@
+     <string name="permdesc_useHardwareFramework">Allows an app access to the CM hardware framework.</string>
+ 
+     <!-- Title of an application permission, listed so the user can choose whether they want the application to do this. -->
+-    <string name="permlab_keyguardApplicationWidget">set keyguard application widget</string>
++    <string name="permlab_keyguardApplicationWidget">set keyguard app widget</string>
+     <!-- Description of an application permission, listed so the user can choose whether they want to allow the application to do this. -->
+-    <string name="permdesc_keyguardApplicationWidget">Allows an app to set the application widget on the keyguard.</string>
++    <string name="permdesc_keyguardApplicationWidget">Allows an app to set the app widget on the keyguard.</string>
+ 
+     <!-- Title of an application permission, listed so the user can choose whether they want the application to do this. -->
+     <string name="permlab_interceptPackageLaunch">intercept application launch</string>
+diff --git a/packages/Keyguard/AndroidManifest.xml b/packages/Keyguard/AndroidManifest.xml
+index 9576057..cafa26f 100644
+--- a/packages/Keyguard/AndroidManifest.xml
++++ b/packages/Keyguard/AndroidManifest.xml
+@@ -49,9 +49,6 @@
+     <uses-permission android:name="android.permission.BROADCAST_STICKY" />
+     <uses-permission android:name="com.cyanogenmod.lockclock.permission.READ_WEATHER" />
+ 
+-    <!-- Application Widget on the keyguard -->
+-    <uses-permission android:name="android.permission.SET_KEYGUARD_APPLICATION_WIDGET" />
+-
+     <application android:label="@string/app_name"
+         android:process="com.android.systemui"
+         android:persistent="true"
+diff --git a/packages/Keyguard/res/values-land/bools.xml b/packages/Keyguard/res/values-land/bools.xml
+index 402527f..a1dd2e4 100644
+--- a/packages/Keyguard/res/values-land/bools.xml
++++ b/packages/Keyguard/res/values-land/bools.xml
+@@ -16,7 +16,6 @@
+ 
+ <resources>
+     <bool name="kg_enable_camera_default_widget">false</bool>
+-    <bool name="kg_enable_application_widget">true</bool>
+     <bool name="kg_top_align_page_shrink_on_bouncer_visible">true</bool>
+     <bool name="kg_share_status_area">false</bool>
+     <bool name="kg_sim_puk_account_full_screen">false</bool>
+diff --git a/packages/Keyguard/res/values-sw600dp/bools.xml b/packages/Keyguard/res/values-sw600dp/bools.xml
+index ced7845..2abac38 100644
+--- a/packages/Keyguard/res/values-sw600dp/bools.xml
++++ b/packages/Keyguard/res/values-sw600dp/bools.xml
+@@ -22,7 +22,6 @@
+     <bool name="kg_show_ime_at_screen_on">false</bool>
+     <!-- No camera for you, tablet user -->
+     <bool name="kg_enable_camera_default_widget">true</bool>
+-    <bool name="kg_enable_application_widget">true</bool>
+     <bool name="kg_center_small_widgets_vertically">true</bool>
+     <bool name="kg_top_align_page_shrink_on_bouncer_visible">false</bool>
+ </resources>
+diff --git a/packages/Keyguard/res/values/bools.xml b/packages/Keyguard/res/values/bools.xml
+index 4796957..5e842d7 100644
+--- a/packages/Keyguard/res/values/bools.xml
++++ b/packages/Keyguard/res/values/bools.xml
+@@ -16,7 +16,6 @@
+ 
+ <resources>
+     <bool name="kg_enable_camera_default_widget">true</bool>
+-    <bool name="kg_enable_application_widget">true</bool>
+     <bool name="kg_center_small_widgets_vertically">false</bool>
+     <bool name="kg_top_align_page_shrink_on_bouncer_visible">true</bool>
+     <bool name="kg_show_ime_at_screen_on">true</bool>
+diff --git a/packages/Keyguard/src/com/android/keyguard/ApplicationWidgetFrame.java b/packages/Keyguard/src/com/android/keyguard/ApplicationWidgetFrame.java
+deleted file mode 100644
+index 4cc99b1..0000000
+--- a/packages/Keyguard/src/com/android/keyguard/ApplicationWidgetFrame.java
++++ /dev/null
+@@ -1,508 +0,0 @@
+-/*
+- * Copyright (C) 2014 The CyanogenMod Project
+- *
+- * Licensed under the Apache License, Version 2.0 (the "License");
+- * you may not use this file except in compliance with the License.
+- * You may obtain a copy of the License at
+- *
+- *      http://www.apache.org/licenses/LICENSE-2.0
+- *
+- * Unless required by applicable law or agreed to in writing, software
+- * distributed under the License is distributed on an "AS IS" BASIS,
+- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- * See the License for the specific language governing permissions and
+- * limitations under the License.
+- */
+-
+-package com.android.keyguard;
+-
+-import android.content.Context;
+-import android.graphics.BitmapFactory;
+-import android.graphics.Color;
+-import android.graphics.Point;
+-import android.graphics.Rect;
+-import android.os.Handler;
+-import android.os.SystemClock;
+-import android.util.Log;
+-import android.view.Gravity;
+-import android.view.MotionEvent;
+-import android.view.View;
+-import android.view.ViewGroup;
+-import android.view.WindowManager;
+-import android.widget.FrameLayout;
+-import android.widget.ImageView;
+-import android.widget.ImageView.ScaleType;
+-
+-public class ApplicationWidgetFrame extends KeyguardWidgetFrame implements View.OnClickListener {
+-    private static final String TAG = ApplicationWidgetFrame.class.getSimpleName();
+-    private static final boolean DEBUG = KeyguardHostView.DEBUG;
+-    private static final int WIDGET_ANIMATION_DURATION = 250; // ms
+-    private static final int WIDGET_WAIT_DURATION = 400; // ms
+-
+-    interface Callbacks {
+-        void onLaunchingApplicationWidgetContainer();
+-        void onApplicationWidgetContainerLaunchedSuccessfully();
+-        void onApplicationWidgetContainerLaunchedUnsuccessfully();
+-    }
+-
+-    private final Handler mHandler = new Handler();
+-    private final KeyguardActivityLauncher mActivityLauncher;
+-    private final Callbacks mCallbacks;
+-    private final WindowManager mWindowManager;
+-    private final Point mRenderedSize = new Point();
+-    private final int[] mTmpLoc = new int[2];
+-
+-    private long mLaunchApplicationWidgetContainerStart;
+-    private boolean mActive;
+-    private boolean mTransitioning;
+-    private boolean mDown;
+-
+-    private final Rect mInsets = new Rect();
+-
+-    private FixedSizeFrameLayout mPreview;
+-    private View mFullscreenPreview;
+-    private View mFakeNavBar;
+-    private boolean mUseFastTransition;
+-    private String mApplicationWidgetPackageName;
+-
+-    private final Runnable mTransitionToApplicationWidgetContainerRunnable = new Runnable() {
+-        @Override
+-        public void run() {
+-            transitionToApplicationWidgetContainer();
+-        }};
+-
+-    private final Runnable mTransitionToApplicationWidgetContainerEndAction = new Runnable() {
+-        @Override
+-        public void run() {
+-            if (!mTransitioning) {
+-                return;
+-            }
+-            Handler worker =  getWorkerHandler() != null ? getWorkerHandler() : mHandler;
+-            mLaunchApplicationWidgetContainerStart = SystemClock.uptimeMillis();
+-            if (DEBUG) Log.d(TAG, "Launching ApplicationWidget at " +
+-                    mLaunchApplicationWidgetContainerStart);
+-            mActivityLauncher.launchApplicationWidget(worker, null, mApplicationWidgetPackageName);
+-        }};
+-
+-    private final Runnable mPosttransitionToApplicationWidgetContainerEndAction = new Runnable() {
+-        @Override
+-        public void run() {
+-            mHandler.post(mTransitionToApplicationWidgetContainerEndAction);
+-        }};
+-
+-    private final Runnable mRecoverRunnable = new Runnable() {
+-        @Override
+-        public void run() {
+-            recover();
+-        }};
+-
+-    private final Runnable mRenderRunnable = new Runnable() {
+-        @Override
+-        public void run() {
+-            render();
+-        }};
+-
+-    private final KeyguardUpdateMonitorCallback mCallback = new KeyguardUpdateMonitorCallback() {
+-        private boolean mShowing;
+-        void onKeyguardVisibilityChanged(boolean showing) {
+-            if (mShowing == showing) {
+-                return;
+-            }
+-            mShowing = showing;
+-            ApplicationWidgetFrame.this.onKeyguardVisibilityChanged(mShowing);
+-        };
+-
+-        void onApplicationWidgetUpdated(String packageName, byte[] icon) {
+-            setApplicationWidgetPackageName(packageName);
+-            updatePreviewImage(icon);
+-        }
+-    };
+-
+-    private static final class FixedSizeFrameLayout extends FrameLayout {
+-        int width;
+-        int height;
+-
+-        FixedSizeFrameLayout(Context context) {
+-            super(context);
+-        }
+-
+-        @Override
+-        protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+-            measureChildren(
+-                    MeasureSpec.makeMeasureSpec(width, MeasureSpec.EXACTLY),
+-                    MeasureSpec.makeMeasureSpec(height, MeasureSpec.EXACTLY));
+-            setMeasuredDimension(width, height);
+-        }
+-    }
+-
+-    private ApplicationWidgetFrame(Context context, Callbacks callbacks,
+-            KeyguardActivityLauncher activityLauncher, View previewWidget) {
+-        super(context);
+-        mCallbacks = callbacks;
+-        mActivityLauncher = activityLauncher;
+-        mWindowManager = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+-        KeyguardUpdateMonitor.getInstance(context).registerCallback(mCallback);
+-
+-        mPreview = new FixedSizeFrameLayout(context);
+-        mPreview.addView(previewWidget);
+-        addView(mPreview);
+-
+-        View clickBlocker = new View(context);
+-        clickBlocker.setBackgroundColor(Color.TRANSPARENT);
+-        clickBlocker.setOnClickListener(this);
+-        addView(clickBlocker);
+-
+-        setContentDescription(context.getString(R.string.keyguard_accessibility_camera));
+-        if (DEBUG) Log.d(TAG, "new ApplicationWidget instance " + instanceId());
+-    }
+-
+-    public void updatePreviewImage(byte[] icon) {
+-        ImageView child = (ImageView) mPreview.getChildAt(0);
+-        child.setImageBitmap(BitmapFactory.decodeByteArray(icon, 0, icon.length));
+-    }
+-
+-    public static ApplicationWidgetFrame create(Context context, Callbacks callbacks,
+-            KeyguardActivityLauncher launcher) {
+-        if (context == null || callbacks == null || launcher == null) {
+-            return null;
+-        }
+-
+-        View previewWidget = getPreviewWidget(context);
+-        if (previewWidget == null) {
+-            return null;
+-        }
+-
+-        return new ApplicationWidgetFrame(context, callbacks, launcher, previewWidget);
+-    }
+-
+-    private static View getPreviewWidget(Context context) {
+-        return inflateGenericWidgetView(context);
+-    }
+-
+-    private static View inflateGenericWidgetView(Context context) {
+-        if (DEBUG) Log.d(TAG, "inflateGenericWidgetView");
+-        ImageView iv = new ImageView(context);
+-        iv.setScaleType(ScaleType.CENTER);
+-        iv.setBackgroundColor(Color.argb(127, 0, 0, 0));
+-        return iv;
+-    }
+-
+-    private void render() {
+-        final View root = getRootView();
+-        final int width = root.getWidth() - mInsets.right;    // leave room
+-        final int height = root.getHeight() - mInsets.bottom; // for bars
+-        if (mRenderedSize.x == width && mRenderedSize.y == height) {
+-            if (DEBUG) Log.d(TAG, String.format("Already rendered at size=%sx%s %d%%",
+-                    width, height, (int)(100*mPreview.getScaleX())));
+-            return;
+-        }
+-        if (width == 0 || height == 0) {
+-            return;
+-        }
+-
+-        mPreview.width = width;
+-        mPreview.height = height;
+-        mPreview.requestLayout();
+-
+-        final int thisWidth = getWidth() - getPaddingLeft() - getPaddingRight();
+-        final int thisHeight = getHeight() - getPaddingTop() - getPaddingBottom();
+-
+-        final float pvScaleX = (float) thisWidth / width;
+-        final float pvScaleY = (float) thisHeight / height;
+-        final float pvScale = Math.min(pvScaleX, pvScaleY);
+-
+-        final int pvWidth = (int) (pvScale * width);
+-        final int pvHeight = (int) (pvScale * height);
+-
+-        final float pvTransX = pvWidth < thisWidth ? (thisWidth - pvWidth) / 2 : 0;
+-        final float pvTransY = pvHeight < thisHeight ? (thisHeight - pvHeight) / 2 : 0;
+-
+-        final boolean isRtl = mPreview.getLayoutDirection() == LAYOUT_DIRECTION_RTL;
+-        mPreview.setPivotX(isRtl ? mPreview.width : 0 );
+-        mPreview.setPivotY(0);
+-        mPreview.setScaleX(pvScale);
+-        mPreview.setScaleY(pvScale);
+-        mPreview.setTranslationX((isRtl ? -1 : 1) * pvTransX);
+-        mPreview.setTranslationY(pvTransY);
+-
+-        mRenderedSize.set(width, height);
+-        if (DEBUG) Log.d(TAG, String.format("Rendered application widget size=%sx%s %d%% instance=%s",
+-                width, height, (int)(100*mPreview.getScaleX()), instanceId()));
+-    }
+-
+-    private void transitionToApplicationWidgetContainer() {
+-        if (mTransitioning || mDown) {
+-            return;
+-        }
+-
+-        mTransitioning = true;
+-
+-        enableWindowExitAnimation(false);
+-
+-        final int navHeight = mInsets.bottom;
+-        final int navWidth = mInsets.right;
+-
+-        mPreview.getLocationInWindow(mTmpLoc);
+-        final float pvHeight = mPreview.getHeight() * mPreview.getScaleY();
+-        final float pvCenter = mTmpLoc[1] + pvHeight / 2f;
+-
+-        final ViewGroup root = (ViewGroup) getRootView();
+-
+-        if (DEBUG) {
+-            Log.d(TAG, "root = " + root.getLeft() + "," + root.getTop() + " "
+-                    + root.getWidth() + "x" + root.getHeight());
+-        }
+-
+-        if (mFullscreenPreview == null) {
+-            mFullscreenPreview = getPreviewWidget(mContext);
+-            mFullscreenPreview.setClickable(false);
+-            root.addView(mFullscreenPreview, new LayoutParams(
+-                        root.getWidth() - navWidth,
+-                        root.getHeight() - navHeight));
+-        }
+-
+-        final float fsHeight = root.getHeight() - navHeight;
+-        final float fsCenter = root.getTop() + fsHeight / 2;
+-
+-        final float fsScaleY = mPreview.getScaleY();
+-        final float fsTransY = pvCenter - fsCenter;
+-        final float fsScaleX = fsScaleY;
+-
+-        mPreview.setVisibility(View.GONE);
+-        mFullscreenPreview.setVisibility(View.VISIBLE);
+-        mFullscreenPreview.setTranslationY(fsTransY);
+-        mFullscreenPreview.setScaleX(fsScaleX);
+-        mFullscreenPreview.setScaleY(fsScaleY);
+-        mFullscreenPreview
+-            .animate()
+-            .scaleX(1)
+-            .scaleY(1)
+-            .translationX(0)
+-            .translationY(0)
+-            .setDuration(WIDGET_ANIMATION_DURATION)
+-            .withEndAction(mPosttransitionToApplicationWidgetContainerEndAction)
+-            .start();
+-
+-        if (navHeight > 0 || navWidth > 0) {
+-            final boolean atBottom = navHeight > 0;
+-            if (mFakeNavBar == null) {
+-                mFakeNavBar = new View(mContext);
+-                mFakeNavBar.setBackgroundColor(Color.BLACK);
+-                root.addView(mFakeNavBar, new LayoutParams(
+-                            atBottom ? LayoutParams.MATCH_PARENT
+-                                     : navWidth,
+-                            atBottom ? navHeight
+-                                     : LayoutParams.MATCH_PARENT,
+-                            atBottom ? Gravity.BOTTOM|Gravity.FILL_HORIZONTAL
+-                                     : Gravity.RIGHT|Gravity.FILL_VERTICAL));
+-                mFakeNavBar.setPivotY(navHeight);
+-                mFakeNavBar.setPivotX(navWidth);
+-            }
+-            mFakeNavBar.setAlpha(0f);
+-            if (atBottom) {
+-                mFakeNavBar.setScaleY(0.5f);
+-            } else {
+-                mFakeNavBar.setScaleX(0.5f);
+-            }
+-            mFakeNavBar.setVisibility(View.VISIBLE);
+-            mFakeNavBar.animate()
+-                .alpha(1f)
+-                .scaleY(1f)
+-                .scaleY(1f)
+-                .setDuration(WIDGET_ANIMATION_DURATION)
+-                .start();
+-        }
+-        mCallbacks.onLaunchingApplicationWidgetContainer();
+-    }
+-
+-    private void recover() {
+-        if (DEBUG) Log.d(TAG, "recovering at " + SystemClock.uptimeMillis());
+-        mCallbacks.onApplicationWidgetContainerLaunchedUnsuccessfully();
+-        reset();
+-    }
+-
+-    @Override
+-    public void setOnLongClickListener(OnLongClickListener l) {
+-        // ignore
+-    }
+-
+-    @Override
+-    public void onClick(View v) {
+-        if (DEBUG) Log.d(TAG, "clicked");
+-        if (mTransitioning) {
+-            return;
+-        }
+-        if (mActive) {
+-            cancelTransitionToApplicationWidgetContainer();
+-            transitionToApplicationWidgetContainer();
+-        }
+-    }
+-
+-    @Override
+-    protected void onDetachedFromWindow() {
+-        if (DEBUG) Log.d(TAG, "onDetachedFromWindow: instance " + instanceId()
+-                + " at " + SystemClock.uptimeMillis());
+-        super.onDetachedFromWindow();
+-        KeyguardUpdateMonitor.getInstance(mContext).removeCallback(mCallback);
+-        cancelTransitionToApplicationWidgetContainer();
+-        mHandler.removeCallbacks(mRecoverRunnable);
+-    }
+-
+-    @Override
+-    public void onActive(boolean isActive) {
+-        if (DEBUG) Log.d(TAG, "onActive");
+-
+-        mActive = isActive;
+-        if (mActive) {
+-            rescheduleTransitionToApplicationWidgetContainer();
+-        } else {
+-            reset();
+-        }
+-    }
+-
+-    @Override
+-    public boolean onUserInteraction(MotionEvent event) {
+-        if (DEBUG) Log.d(TAG, "onUserInteraction");
+-
+-        if (mTransitioning) {
+-            if (DEBUG) Log.d(TAG, "onUserInteraction eaten: mTransitioning");
+-            return true;
+-        }
+-
+-        getLocationOnScreen(mTmpLoc);
+-        int rawBottom = mTmpLoc[1] + getHeight();
+-        if (event.getRawY() > rawBottom) {
+-            if (DEBUG) Log.d(TAG, "onUserInteraction eaten: below widget");
+-            return true;
+-        }
+-
+-        int action = event.getAction();
+-        mDown = action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_MOVE;
+-        if (mActive) {
+-            rescheduleTransitionToApplicationWidgetContainer();
+-        }
+-        if (DEBUG) Log.d(TAG, "onUserInteraction observed, not eaten");
+-        return false;
+-    }
+-
+-
+-    public void setApplicationWidgetPackageName(String packageName) {
+-        mApplicationWidgetPackageName = packageName;
+-    }
+-
+-    @Override
+-    protected void onFocusLost() {
+-        if (DEBUG) Log.d(TAG, "onFocusLost at " + SystemClock.uptimeMillis());
+-        cancelTransitionToApplicationWidgetContainer();
+-        super.onFocusLost();
+-    }
+-
+-    public void onScreenTurnedOff() {
+-        if (DEBUG) Log.d(TAG, "onScreenTurnedOff");
+-        reset();
+-    }
+-
+-    private void rescheduleTransitionToApplicationWidgetContainer() {
+-        if (DEBUG) Log.d(TAG, "rescheduleTransitionToApplicationWidgetContainer at " +
+-                SystemClock.uptimeMillis());
+-        mHandler.removeCallbacks(mTransitionToApplicationWidgetContainerRunnable);
+-        final long duration = mUseFastTransition ? 0 : WIDGET_WAIT_DURATION;
+-        mHandler.postDelayed(mTransitionToApplicationWidgetContainerRunnable, duration);
+-    }
+-
+-    private void cancelTransitionToApplicationWidgetContainer() {
+-        if (DEBUG) Log.d(TAG, "cancelTransitionToApplicationWidgetContainer at " +
+-                SystemClock.uptimeMillis());
+-        mHandler.removeCallbacks(mTransitionToApplicationWidgetContainerRunnable);
+-    }
+-
+-    private void onApplicationWidgetContainerLaunched() {
+-        mCallbacks.onApplicationWidgetContainerLaunchedSuccessfully();
+-        reset();
+-    }
+-
+-    private void reset() {
+-        if (DEBUG) Log.d(TAG, "reset at " + SystemClock.uptimeMillis());
+-        mLaunchApplicationWidgetContainerStart = 0;
+-        mTransitioning = false;
+-        mDown = false;
+-        cancelTransitionToApplicationWidgetContainer();
+-        mHandler.removeCallbacks(mRecoverRunnable);
+-        mPreview.setVisibility(View.VISIBLE);
+-        if (mFullscreenPreview != null) {
+-            mFullscreenPreview.animate().cancel();
+-            mFullscreenPreview.setVisibility(View.GONE);
+-        }
+-        if (mFakeNavBar != null) {
+-            mFakeNavBar.animate().cancel();
+-            mFakeNavBar.setVisibility(View.GONE);
+-        }
+-        enableWindowExitAnimation(true);
+-    }
+-
+-    @Override
+-    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+-        if (DEBUG) Log.d(TAG, String.format("onSizeChanged new=%sx%s old=%sx%s at %s",
+-                w, h, oldw, oldh, SystemClock.uptimeMillis()));
+-        if ((w != oldw && oldw > 0) || (h != oldh && oldh > 0)) {
+-            // we can't trust the old geometry anymore; force a re-render
+-            mRenderedSize.x = mRenderedSize.y = -1;
+-        }
+-        mHandler.post(mRenderRunnable);
+-        super.onSizeChanged(w, h, oldw, oldh);
+-    }
+-
+-    @Override
+-    public void onBouncerShowing(boolean showing) {
+-        if (showing) {
+-            mTransitioning = false;
+-            mHandler.post(mRecoverRunnable);
+-        }
+-    }
+-
+-    private void enableWindowExitAnimation(boolean isEnabled) {
+-        View root = getRootView();
+-        ViewGroup.LayoutParams lp = root.getLayoutParams();
+-        if (!(lp instanceof WindowManager.LayoutParams)) {
+-            return;
+-        }
+-        WindowManager.LayoutParams wlp = (WindowManager.LayoutParams) lp;
+-        int newWindowAnimations = isEnabled ? R.style.Animation_LockScreen : 0;
+-        if (newWindowAnimations != wlp.windowAnimations) {
+-            if (DEBUG) Log.d(TAG, "setting windowAnimations to: " + newWindowAnimations
+-                    + " at " + SystemClock.uptimeMillis());
+-            wlp.windowAnimations = newWindowAnimations;
+-            mWindowManager.updateViewLayout(root, wlp);
+-        }
+-    }
+-
+-    private void onKeyguardVisibilityChanged(boolean showing) {
+-        if (DEBUG) Log.d(TAG, "onKeyguardVisibilityChanged " + showing
+-                + " at " + SystemClock.uptimeMillis());
+-        if (mTransitioning && !showing) {
+-            mTransitioning = false;
+-            mHandler.removeCallbacks(mRecoverRunnable);
+-            if (mLaunchApplicationWidgetContainerStart > 0) {
+-                long launchTime = SystemClock.uptimeMillis() -
+-                        mLaunchApplicationWidgetContainerStart;
+-                if (DEBUG) Log.d(TAG, String.format("ApplicationWidget Container launch" +
+-                        "took %sms to launch", launchTime));
+-                mLaunchApplicationWidgetContainerStart = 0;
+-                onApplicationWidgetContainerLaunched();
+-            }
+-        }
+-    }
+-
+-    private String instanceId() {
+-        return Integer.toHexString(hashCode());
+-    }
+-
+-    public void setInsets(Rect insets) {
+-        if (DEBUG) Log.d(TAG, "setInsets: " + insets);
+-        mInsets.set(insets);
+-    }
+-
+-    public void setUseFastTransition(boolean useFastTransition) {
+-        mUseFastTransition = useFastTransition;
+-    }
+-}
+diff --git a/packages/Keyguard/src/com/android/keyguard/KeyguardActivityLauncher.java b/packages/Keyguard/src/com/android/keyguard/KeyguardActivityLauncher.java
+index 0a4ec85..2c4620f 100644
+--- a/packages/Keyguard/src/com/android/keyguard/KeyguardActivityLauncher.java
++++ b/packages/Keyguard/src/com/android/keyguard/KeyguardActivityLauncher.java
+@@ -121,28 +121,6 @@ public abstract class KeyguardActivityLauncher {
+         }
+     }
+ 
+-    public void launchApplicationWidget(Handler worker, Runnable onStarted, String packageName) {
+-        if (DEBUG) {
+-            Log.d(TAG, "Launch Application Widget Called for packageName: " + packageName);
+-        }
+-        try {
+-            // Dismiss the lock screen when Settings starts.
+-            ActivityManagerNative.getDefault().dismissKeyguardOnNextActivity();
+-        } catch (RemoteException e) {
+-        }
+-
+-        Intent appLaunchIntent = getContext().getPackageManager()
+-                .getLaunchIntentForPackage(packageName);
+-        appLaunchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK |
+-                Intent.FLAG_ACTIVITY_CLEAR_TOP);
+-
+-        Intent i = new Intent(Intent.ACTION_KEYGUARD_APPLICATION_WIDGET_LAUNCH_ACTION);
+-        i.putExtra(Intent.EXTRA_KEYGUARD_APPLICATION_WIDGET_PACKAGE_NAME, packageName);
+-        getContext().sendBroadcast(i, "android.permission.SET_KEYGUARD_APPLICATION_WIDGET");
+-
+-        launchActivity(appLaunchIntent, false, false, null, null);
+-    }
+-
+     public void launchWidgetPicker(int appWidgetId) {
+         Intent pickIntent = new Intent(AppWidgetManager.ACTION_KEYGUARD_APPWIDGET_PICK);
+ 
+diff --git a/packages/Keyguard/src/com/android/keyguard/KeyguardHostView.java b/packages/Keyguard/src/com/android/keyguard/KeyguardHostView.java
+index 4e3576f..5cc6938 100644
+--- a/packages/Keyguard/src/com/android/keyguard/KeyguardHostView.java
++++ b/packages/Keyguard/src/com/android/keyguard/KeyguardHostView.java
+@@ -54,9 +54,9 @@ import android.os.SystemClock;
+ import android.os.UserHandle;
+ import android.os.UserManager;
+ import android.provider.Settings;
++import android.telephony.MSimTelephonyManager;
+ import android.util.AttributeSet;
+ import android.util.Log;
+-import android.util.Pair;
+ import android.util.Slog;
+ import android.view.HapticFeedbackConstants;
+ import android.view.LayoutInflater;
+@@ -103,8 +103,6 @@ public class KeyguardHostView extends KeyguardViewBase {
+ 
+     private View mExpandChallengeView;
+ 
+-    private View mApplicationWidgetView;
+-
+     private boolean mDefaultAppWidgetAttached;
+ 
+     protected OnDismissAction mDismissAction;
+@@ -270,9 +268,6 @@ public class KeyguardHostView extends KeyguardViewBase {
+         if ((mDisabledFeatures & DevicePolicyManager.KEYGUARD_DISABLE_SECURE_CAMERA) != 0) {
+             Log.v(TAG, "Keyguard secure camera disabled by DPM");
+         }
+-        if ((mDisabledFeatures & DevicePolicyManager.KEYGUARD_DISABLE_APPLICATION_WIDGET) != 0) {
+-            Log.v(TAG, "Keyguard application widget disabled by DPM");
+-        }
+     }
+ 
+     public void announceCurrentSecurityMethod() {
+@@ -555,13 +550,6 @@ public class KeyguardHostView extends KeyguardViewBase {
+         return mCameraDisabled || disabledSecureKeyguard || !mLockPatternUtils.getCameraEnabled();
+     }
+ 
+-    private boolean applicationWidgetDisabledByDpm() {
+-        boolean disabledByDpm =
+-                (mDisabledFeatures & DevicePolicyManager.KEYGUARD_DISABLE_APPLICATION_WIDGET) != 0;
+-        boolean disabledByUser = !mLockPatternUtils.getApplicationWidgetEnabled();
+-        return disabledByDpm || disabledByUser;
+-    }
+-
+     private void updateSecurityViews() {
+         int children = mSecurityViewContainer.getChildCount();
+         for (int i = 0; i < children; i++) {
+@@ -1185,10 +1173,6 @@ public class KeyguardHostView extends KeyguardViewBase {
+         if (cameraPage != null) {
+             cameraPage.onScreenTurnedOff();
+         }
+-        ApplicationWidgetFrame applicationWidgetPage = findApplicationWidgetPage();
+-        if (applicationWidgetPage != null) {
+-            applicationWidgetPage.onScreenTurnedOff();
+-        }
+ 
+         clearFocus();
+     }
+@@ -1331,37 +1315,6 @@ public class KeyguardHostView extends KeyguardViewBase {
+             }
+         };
+ 
+-    private final ApplicationWidgetFrame.Callbacks mApplicationWidgetFrame =
+-        new ApplicationWidgetFrame.Callbacks() {
+-            @Override
+-            public void onLaunchingApplicationWidgetContainer() {
+-                setSliderHandleAlpha(0);
+-            }
+-
+-            @Override
+-            public void onApplicationWidgetContainerLaunchedSuccessfully() {
+-                if (mAppWidgetContainer.isApplicationWidgetPage(
+-                        mAppWidgetContainer.getCurrentPage())) {
+-                    mAppWidgetContainer.scrollRight();
+-                }
+-                setSliderHandleAlpha(1);
+-                mShowSecurityWhenReturn = true;
+-            }
+-
+-            @Override
+-            public void onApplicationWidgetContainerLaunchedUnsuccessfully() {
+-                setSliderHandleAlpha(1);
+-            }
+-
+-            private void setSliderHandleAlpha(float alpha) {
+-                SlidingChallengeLayout slider =
+-                        (SlidingChallengeLayout) findViewById(R.id.sliding_layout);
+-                if (slider != null) {
+-                    slider.setHandleAlpha(alpha);
+-                }
+-            }
+-        };
+-
+     private final KeyguardActivityLauncher mActivityLauncher = new KeyguardActivityLauncher() {
+         @Override
+         Context getContext() {
+@@ -1405,27 +1358,6 @@ public class KeyguardHostView extends KeyguardViewBase {
+             });
+         }
+ 
+-        // We currently don't display the application widget in safe mode
+-        if (!mSafeModeEnabled && !applicationWidgetDisabledByDpm() && mUserSetupCompleted
+-                && mContext.getResources().getBoolean(R.bool.kg_enable_application_widget)) {
+-            Pair<String, byte[]> applicationWidget =
+-                    KeyguardUpdateMonitor.getInstance(mContext).getApplicationWidgetDetails();
+-
+-            if (applicationWidget.first != null) {
+-                mApplicationWidgetView =
+-                        ApplicationWidgetFrame.create(mContext, mApplicationWidgetFrame,
+-                                mActivityLauncher);
+-                if (mApplicationWidgetView != null) {
+-                    ((ApplicationWidgetFrame)mApplicationWidgetView).
+-                            setApplicationWidgetPackageName(applicationWidget.first);
+-                    ((ApplicationWidgetFrame)mApplicationWidgetView).updatePreviewImage(
+-                            applicationWidget.second);
+-
+-                    mAppWidgetContainer.addWidget(mApplicationWidgetView);
+-                }
+-            }
+-        }
+-
+         // We currently disable cameras in safe mode because we support loading 3rd party
+         // cameras we can't trust.  TODO: plumb safe mode into camera creation code and only
+         // inflate system-provided camera?
+@@ -1460,18 +1392,11 @@ public class KeyguardHostView extends KeyguardViewBase {
+ 
+     private int getInsertPageIndex() {
+         View addWidget = mAppWidgetContainer.findViewById(R.id.keyguard_add_widget);
+-        int addWidgetIndex = mAppWidgetContainer.indexOfChild(addWidget);
+-        int applicationWidgetIndex = -1;
+-        if (mApplicationWidgetView != null) {
+-            applicationWidgetIndex = mAppWidgetContainer.getWidgetPageIndex(mApplicationWidgetView);
+-        }
+-        int insertionIndex;
+-        if (addWidgetIndex < 0 && applicationWidgetIndex < 0) {
+-            insertionIndex = 0; // no add widget page and application widget page found
+-        } else if (addWidgetIndex >=0 && applicationWidgetIndex >= 0) {
+-            insertionIndex = 2 ; // place after add widget and application widget
++        int insertionIndex = mAppWidgetContainer.indexOfChild(addWidget);
++        if (insertionIndex < 0) {
++            insertionIndex = 0; // no add widget page found
+         } else {
+-            insertionIndex = 1; // One of add widget page / application widget is present.
++            insertionIndex++; // place after add widget
+         }
+         return insertionIndex;
+     }
+@@ -1669,9 +1594,6 @@ public class KeyguardHostView extends KeyguardViewBase {
+ 
+         final CameraWidgetFrame cameraWidget = findCameraPage();
+         if (cameraWidget != null) cameraWidget.setInsets(mInsets);
+-
+-        final ApplicationWidgetFrame applicationWidgetFrame = findApplicationWidgetPage();
+-        if (applicationWidgetFrame != null) applicationWidgetFrame.setInsets(mInsets);
+     }
+ 
+     @Override
+@@ -1762,15 +1684,6 @@ public class KeyguardHostView extends KeyguardViewBase {
+         return null;
+     }
+ 
+-    private ApplicationWidgetFrame findApplicationWidgetPage() {
+-        for (int i = mAppWidgetContainer.getChildCount() - 1; i >= 0; i--) {
+-            if (mAppWidgetContainer.isApplicationWidgetPage(i)) {
+-                return (ApplicationWidgetFrame) mAppWidgetContainer.getChildAt(i);
+-            }
+-        }
+-        return null;
+-    }
+-
+     boolean isMusicPage(int pageIndex) {
+         return pageIndex >= 0 && pageIndex == getWidgetPosition(R.id.keyguard_transport_control);
+     }
+@@ -1971,19 +1884,12 @@ public class KeyguardHostView extends KeyguardViewBase {
+                 intent, false, opts.toBundle(), null, null);
+     }
+ 
+-    public void dispatchCameraEvent(MotionEvent event) {
++    public void dispatch(MotionEvent event) {
+         mAppWidgetContainer.handleExternalCameraEvent(event);
+     }
+ 
+-    public void dispatchApplicationWidgetEvent(MotionEvent event) {
+-        mAppWidgetContainer.handleExternalApplicationWidgetEvent(event);
+-    }
+-
+     public void launchCamera() {
+         mActivityLauncher.launchCamera(getHandler(), null);
+     }
+ 
+-    public void launchApplicationWidget(String packageName) {
+-        mActivityLauncher.launchApplicationWidget(getHandler(), null, packageName);
+-    }
+ }
+diff --git a/packages/Keyguard/src/com/android/keyguard/KeyguardSelectorView.java b/packages/Keyguard/src/com/android/keyguard/KeyguardSelectorView.java
+index 2e94956..4f907e9 100644
+--- a/packages/Keyguard/src/com/android/keyguard/KeyguardSelectorView.java
++++ b/packages/Keyguard/src/com/android/keyguard/KeyguardSelectorView.java
+@@ -75,7 +75,6 @@ public class KeyguardSelectorView extends LinearLayout implements KeyguardSecuri
+     private boolean mIsBouncing;
+     private boolean mCameraDisabled;
+     private boolean mSearchDisabled;
+-    private boolean mApplicationWidgetDisabled;
+     private LockPatternUtils mLockPatternUtils;
+     private SecurityMessageDisplay mSecurityMessageDisplay;
+     private Drawable mBouncerFrame;
+@@ -283,7 +282,6 @@ public class KeyguardSelectorView extends LinearLayout implements KeyguardSecuri
+                 .getAssistIntent(mContext, false, UserHandle.USER_CURRENT) != null;
+         mCameraDisabled = cameraDisabledByAdmin || disabledBySimState || !cameraTargetPresent
+                 || !currentUserSetup;
+-        mApplicationWidgetDisabled = !currentUserSetup; //TODO(): Hook up to DevicePolicyManager.
+         mSearchDisabled = disabledBySimState || !searchActionAvailable || !searchTargetPresent
+                 || !currentUserSetup;
+         updateResources();
+diff --git a/packages/Keyguard/src/com/android/keyguard/KeyguardService.java b/packages/Keyguard/src/com/android/keyguard/KeyguardService.java
+index af87d35..924bde4 100644
+--- a/packages/Keyguard/src/com/android/keyguard/KeyguardService.java
++++ b/packages/Keyguard/src/com/android/keyguard/KeyguardService.java
+@@ -132,13 +132,9 @@ public class KeyguardService extends Service {
+             checkPermission();
+             mKeyguardViewMediator.showAssistant();
+         }
+-        public void dispatchCameraEvent(MotionEvent event) {
++        public void dispatch(MotionEvent event) {
+             checkPermission();
+-            mKeyguardViewMediator.dispatchCameraEvent(event);
+-        }
+-        public void dispatchApplicationWidgetEvent(MotionEvent event) {
+-            checkPermission();
+-            mKeyguardViewMediator.dispatchApplicationWidgetEvent(event);
++            mKeyguardViewMediator.dispatch(event);
+         }
+         public void dispatchButtonClick(int buttonId) {
+             checkPermission();
+@@ -148,10 +144,6 @@ public class KeyguardService extends Service {
+             checkPermission();
+             mKeyguardViewMediator.launchCamera();
+         }
+-        public void launchApplicationWidget() {
+-            checkPermission();
+-            mKeyguardViewMediator.launchApplicationWidget();
+-        }
+         public void onBootCompleted() {
+             checkPermission();
+             mKeyguardViewMediator.onBootCompleted();
+diff --git a/packages/Keyguard/src/com/android/keyguard/KeyguardUpdateMonitor.java b/packages/Keyguard/src/com/android/keyguard/KeyguardUpdateMonitor.java
+index ee27cad..d094cc6 100644
+--- a/packages/Keyguard/src/com/android/keyguard/KeyguardUpdateMonitor.java
++++ b/packages/Keyguard/src/com/android/keyguard/KeyguardUpdateMonitor.java
+@@ -54,8 +54,6 @@ import com.android.internal.telephony.TelephonyIntents;
+ import android.telephony.MSimTelephonyManager;
+ import android.telephony.TelephonyManager;
+ import android.util.Log;
+-import android.util.Pair;
+-
+ import com.google.android.collect.Lists;
+ 
+ import java.lang.ref.WeakReference;
+@@ -79,10 +77,6 @@ public class KeyguardUpdateMonitor {
+     private static final int FAILED_BIOMETRIC_UNLOCK_ATTEMPTS_BEFORE_BACKUP = 3;
+     private static final int LOW_BATTERY_THRESHOLD = 20;
+ 
+-    private String mApplicationWidgetPackageName;
+-    private byte[] mApplicationWidgetIcon;
+-    private Object mApplicationWidgetLock = new Object();
+-
+     // Callback messages
+     private static final int MSG_TIME_UPDATE = 301;
+     private static final int MSG_BATTERY_UPDATE = 302;
+@@ -105,7 +99,6 @@ public class KeyguardUpdateMonitor {
+     private static final int MSG_SCREEN_TURNED_ON = 319;
+     private static final int MSG_SCREEN_TURNED_OFF = 320;
+     private static final int MSG_LID_STATE_CHANGED = 321;
+-    private static final int MSG_APPLICATION_WIDGET_UPDATED = 322;
+ 
+     private static KeyguardUpdateMonitor sInstance;
+ 
+@@ -211,9 +204,6 @@ public class KeyguardUpdateMonitor {
+                 case MSG_LID_STATE_CHANGED:
+                     handleLidStateChanged(msg.arg1);
+                     break;
+-                case MSG_APPLICATION_WIDGET_UPDATED:
+-                    handleApplicationWidgetUpdated();
+-                    break;
+             }
+         }
+     };
+@@ -464,19 +454,6 @@ public class KeyguardUpdateMonitor {
+         }
+     }
+ 
+-    protected void handleApplicationWidgetUpdated() {
+-        final int count = mCallbacks.size();
+-        synchronized (mApplicationWidgetLock) {
+-            for (int i = 0; i < count; i++) {
+-                KeyguardUpdateMonitorCallback cb = mCallbacks.get(i).get();
+-                if (cb != null) {
+-                    cb.onApplicationWidgetUpdated(mApplicationWidgetPackageName,
+-                            mApplicationWidgetIcon);
+-                }
+-            }
+-        }
+-    }
+-
+     protected void handleScreenTurnedOn() {
+         final int count = mCallbacks.size();
+         for (int i = 0; i < count; i++) {
+@@ -600,33 +577,6 @@ public class KeyguardUpdateMonitor {
+         context.registerReceiverAsUser(mBroadcastAllReceiver, UserHandle.ALL, userInfoFilter,
+                 null, null);
+ 
+-        // Register the receiver for ACTION_SET_KEYGUARD_APPLICATION_WIDGET and
+-        // ACTION_UNSET_KEYGUARD_APPLICATION_WIDGET intents.
+-        IntentFilter applicationWidgetFilter = new IntentFilter();
+-        applicationWidgetFilter.addAction(Intent.ACTION_SET_KEYGUARD_APPLICATION_WIDGET);
+-        applicationWidgetFilter.addAction(Intent.ACTION_UNSET_KEYGUARD_APPLICATION_WIDGET);
+-
+-        context.registerReceiver(new BroadcastReceiver() {
+-            @Override
+-            public void onReceive(Context context, Intent intent) {
+-                synchronized (mApplicationWidgetLock) {
+-                    if (Intent.ACTION_SET_KEYGUARD_APPLICATION_WIDGET.equals(intent.getAction())) {
+-                        mApplicationWidgetPackageName = intent.getStringExtra(
+-                                Intent.EXTRA_KEYGUARD_APPLICATION_WIDGET_PACKAGE_NAME);
+-                        mApplicationWidgetIcon = intent.getByteArrayExtra(
+-                                Intent.EXTRA_KEYGUARD_APPLICATION_WIDGET_ICON);
+-                        mHandler.sendMessage(mHandler.obtainMessage(MSG_APPLICATION_WIDGET_UPDATED));
+-
+-                    } else if (Intent.ACTION_UNSET_KEYGUARD_APPLICATION_WIDGET.equals(
+-                            intent.getAction())) {
+-                        mApplicationWidgetPackageName = null;
+-                        mApplicationWidgetIcon = null;
+-                        mHandler.sendMessage(mHandler.obtainMessage(MSG_APPLICATION_WIDGET_UPDATED));
+-                    }
+-                }
+-            }
+-        }, applicationWidgetFilter, "android.permission.SET_KEYGUARD_APPLICATION_WIDGET", null);
+-
+         try {
+             ActivityManagerNative.getDefault().registerUserSwitchObserver(
+                     new IUserSwitchObserver.Stub() {
+@@ -1282,10 +1232,4 @@ public class KeyguardUpdateMonitor {
+     public boolean isScreenOn() {
+         return mScreenOn;
+     }
+-
+-    public Pair<String, byte[]> getApplicationWidgetDetails() {
+-        synchronized (mApplicationWidgetLock) {
+-            return new Pair<String, byte[]>(mApplicationWidgetPackageName, mApplicationWidgetIcon);
+-        }
+-    }
+ }
+diff --git a/packages/Keyguard/src/com/android/keyguard/KeyguardUpdateMonitorCallback.java b/packages/Keyguard/src/com/android/keyguard/KeyguardUpdateMonitorCallback.java
+index 66f7000..d94856f 100644
+--- a/packages/Keyguard/src/com/android/keyguard/KeyguardUpdateMonitorCallback.java
++++ b/packages/Keyguard/src/com/android/keyguard/KeyguardUpdateMonitorCallback.java
+@@ -199,9 +199,4 @@ class KeyguardUpdateMonitorCallback {
+      *    {@link WindowManagerPolicy#LID_CLOSED}
+      */
+     public void onLidStateChanged(int state) { }
+-
+-    /**
+-     * Called when the package name and the icon change for the application widget
+-     */
+-    void onApplicationWidgetUpdated(String packageName, byte[] icon) { }
+ }
+diff --git a/packages/Keyguard/src/com/android/keyguard/KeyguardViewManager.java b/packages/Keyguard/src/com/android/keyguard/KeyguardViewManager.java
+index aa19901..d0b8e55 100755
+--- a/packages/Keyguard/src/com/android/keyguard/KeyguardViewManager.java
++++ b/packages/Keyguard/src/com/android/keyguard/KeyguardViewManager.java
+@@ -23,7 +23,6 @@ import android.graphics.drawable.TransitionDrawable;
+ 
+ import android.telephony.TelephonyManager;
+ import android.util.DisplayMetrics;
+-import android.util.Pair;
+ import android.view.Gravity;
+ import android.view.WindowManagerPolicy;
+ import android.widget.LinearLayout;
+@@ -1080,15 +1079,9 @@ public class KeyguardViewManager {
+         }
+     }
+ 
+-    public void dispatchCameraEvent(MotionEvent event) {
++    public void dispatch(MotionEvent event) {
+         if (mKeyguardView != null) {
+-            mKeyguardView.dispatchCameraEvent(event);
+-        }
+-    }
+-
+-    public void dispatchApplicationWidgetEvent(MotionEvent event) {
+-        if (mKeyguardView != null) {
+-            mKeyguardView.dispatchApplicationWidgetEvent(event);
++            mKeyguardView.dispatch(event);
+         }
+     }
+ 
+@@ -1102,17 +1095,6 @@ public class KeyguardViewManager {
+         }
+     }
+ 
+-    public void launchApplicationWidget() {
+-        if (mKeyguardView != null) {
+-            Pair<String, byte[]> applicationWidget =
+-                    KeyguardUpdateMonitor.getInstance(mContext).getApplicationWidgetDetails();
+-            if (applicationWidget.first != null) {
+-                String packageName = applicationWidget.first;
+-                mKeyguardView.launchApplicationWidget(packageName);
+-            }
+-        }
+-    }
+-
+     public void showCover() {
+         if(DEBUG) Log.v(TAG, "showCover()");
+ 
+diff --git a/packages/Keyguard/src/com/android/keyguard/KeyguardViewMediator.java b/packages/Keyguard/src/com/android/keyguard/KeyguardViewMediator.java
+index c1af9a0..83f1ced 100644
+--- a/packages/Keyguard/src/com/android/keyguard/KeyguardViewMediator.java
++++ b/packages/Keyguard/src/com/android/keyguard/KeyguardViewMediator.java
+@@ -128,12 +128,10 @@ public class KeyguardViewMediator {
+     private static final int SET_HIDDEN = 12;
+     private static final int KEYGUARD_TIMEOUT = 13;
+     private static final int SHOW_ASSISTANT = 14;
+-    private static final int DISPATCH_CAMERA_EVENT = 15;
+-    private static final int DISPATCH_APPLICATION_WIDGET_EVENT = 16;
+-    private static final int LAUNCH_CAMERA = 17;
++    private static final int DISPATCH_EVENT = 15;
++    private static final int LAUNCH_CAMERA = 16;
++    private static final int DISMISS = 17;
+     private static final int DISPATCH_BUTTON_CLICK_EVENT = 18;
+-    private static final int LAUNCH_APPLICATION_WIDGET = 19;
+-    private static final int DISMISS = 20;
+ 
+     /**
+      * The default amount of time we stay awake (used for all key input)
+@@ -1141,11 +1139,8 @@ public class KeyguardViewMediator {
+                 case SHOW_ASSISTANT:
+                     handleShowAssistant();
+                     break;
+-                case DISPATCH_CAMERA_EVENT:
+-                    handleDispatchCameraEvent((MotionEvent) msg.obj);
+-                    break;
+-                case DISPATCH_APPLICATION_WIDGET_EVENT:
+-                    handleDispatchApplicationWidgetEvent((MotionEvent) msg.obj);
++                case DISPATCH_EVENT:
++                    handleDispatchEvent((MotionEvent) msg.obj);
+                     break;
+                 case DISPATCH_BUTTON_CLICK_EVENT:
+                     handleDispatchButtonClickEvent(msg.arg1);
+@@ -1153,9 +1148,6 @@ public class KeyguardViewMediator {
+                 case LAUNCH_CAMERA:
+                     handleLaunchCamera();
+                     break;
+-                case LAUNCH_APPLICATION_WIDGET:
+-                    handleLaunchApplicationWidget();
+-                    break;
+                 case DISMISS:
+                     handleDismiss();
+                     break;
+@@ -1199,16 +1191,8 @@ public class KeyguardViewMediator {
+         mKeyguardViewManager.launchCamera();
+     }
+ 
+-    protected void handleLaunchApplicationWidget() {
+-        mKeyguardViewManager.launchApplicationWidget();
+-    }
+-
+-    protected void handleDispatchCameraEvent(MotionEvent event) {
+-        mKeyguardViewManager.dispatchCameraEvent(event);
+-    }
+-
+-    protected void handleDispatchApplicationWidgetEvent(MotionEvent event) {
+-        mKeyguardViewManager.dispatchApplicationWidgetEvent(event);
++    protected void handleDispatchEvent(MotionEvent event) {
++        mKeyguardViewManager.dispatch(event);
+     }
+ 
+     protected void handleDispatchButtonClickEvent(int buttonId) {
+@@ -1459,8 +1443,8 @@ public class KeyguardViewMediator {
+         return sMultiUserAvatarCache;
+     }
+ 
+-    public void dispatchCameraEvent(MotionEvent event) {
+-        Message msg = mHandler.obtainMessage(DISPATCH_CAMERA_EVENT, event);
++    public void dispatch(MotionEvent event) {
++        Message msg = mHandler.obtainMessage(DISPATCH_EVENT, event);
+         mHandler.sendMessage(msg);
+     }
+ 
+@@ -1470,22 +1454,11 @@ public class KeyguardViewMediator {
+         mHandler.sendMessage(msg);
+     }
+     
+-    public void dispatchApplicationWidgetEvent(MotionEvent event) {
+-        Message msg = mHandler.obtainMessage(DISPATCH_APPLICATION_WIDGET_EVENT, event);
+-        mHandler.sendMessage(msg);
+-    }
+-
+-
+     public void launchCamera() {
+         Message msg = mHandler.obtainMessage(LAUNCH_CAMERA);
+         mHandler.sendMessage(msg);
+     }
+ 
+-    public void launchApplicationWidget() {
+-        Message msg = mHandler.obtainMessage(LAUNCH_APPLICATION_WIDGET);
+-        mHandler.sendMessage(msg);
+-    }
+-
+     public void onBootCompleted() {
+         mUpdateMonitor.dispatchBootCompleted();
+     }
+diff --git a/packages/Keyguard/src/com/android/keyguard/KeyguardViewStateManager.java b/packages/Keyguard/src/com/android/keyguard/KeyguardViewStateManager.java
+index eea3b21..169899f 100644
+--- a/packages/Keyguard/src/com/android/keyguard/KeyguardViewStateManager.java
++++ b/packages/Keyguard/src/com/android/keyguard/KeyguardViewStateManager.java
+@@ -158,11 +158,6 @@ public class KeyguardViewStateManager implements
+                 CameraWidgetFrame camera = (CameraWidgetFrame) newPage;
+                 camera.setUseFastTransition(mKeyguardWidgetPager.isWarping());
+             }
+-            boolean isApplicationWidgetPage = newPage instanceof ApplicationWidgetFrame;
+-            if (isApplicationWidgetPage) {
+-                ApplicationWidgetFrame applicationWidgetFrame = (ApplicationWidgetFrame) newPage;
+-                applicationWidgetFrame.setUseFastTransition(mKeyguardWidgetPager.isWarping());
+-            }
+             SlidingChallengeLayout scl = (SlidingChallengeLayout) mChallengeLayout;
+             scl.setChallengeInteractive(!isCameraPage);
+             final int currentFlags = mKeyguardWidgetPager.getSystemUiVisibility();
+diff --git a/packages/Keyguard/src/com/android/keyguard/KeyguardWidgetPager.java b/packages/Keyguard/src/com/android/keyguard/KeyguardWidgetPager.java
+index 9eeee89..e8a93a2 100644
+--- a/packages/Keyguard/src/com/android/keyguard/KeyguardWidgetPager.java
++++ b/packages/Keyguard/src/com/android/keyguard/KeyguardWidgetPager.java
+@@ -91,7 +91,6 @@ public class KeyguardWidgetPager extends PagedView implements PagedView.PageSwit
+     private final HandlerThread mBackgroundWorkerThread;
+     private final Handler mBackgroundWorkerHandler;
+     private boolean mCameraEventInProgress;
+-    private boolean mApplicationWidgetEventInProgress;
+ 
+     public KeyguardWidgetPager(Context context, AttributeSet attrs) {
+         this(context, attrs, 0);
+@@ -889,11 +888,6 @@ public class KeyguardWidgetPager extends PagedView implements PagedView.PageSwit
+         return v != null && v instanceof CameraWidgetFrame;
+     }
+ 
+-    boolean isApplicationWidgetPage(int pageIndex) {
+-        View v = getChildAt(pageIndex);
+-        return v != null && v instanceof ApplicationWidgetFrame;
+-    }
+-
+     @Override
+     protected boolean shouldSetTopAlignedPivotForWidget(int childIndex) {
+         return !isCameraPage(childIndex) && super.shouldSetTopAlignedPivotForWidget(childIndex);
+@@ -948,39 +942,6 @@ public class KeyguardWidgetPager extends PagedView implements PagedView.PageSwit
+         return flags;
+     }
+ 
+-    public void handleExternalApplicationWidgetEvent(MotionEvent event) {
+-        beginApplicationWidgetEvent();
+-        int applicationWidgetPage;
+-        boolean endWarp = false;
+-        int appWidgetIndex = indexOfChild(findViewById(R.id.keyguard_add_widget));
+-        if (appWidgetIndex < 0) {
+-            applicationWidgetPage = 0;
+-        } else {
+-            applicationWidgetPage = PagedView.APPLICATION_WIDGET_PAGE_NUMBER;
+-        }
+-
+-        if (isApplicationWidgetPage(applicationWidgetPage) || mApplicationWidgetEventInProgress) {
+-            switch (event.getAction()) {
+-                case MotionEvent.ACTION_DOWN:
+-                    // Once we start dispatching application widget events, we must continue to do so
+-                    // to keep event dispatch happy.
+-                    mApplicationWidgetEventInProgress = true;
+-                    userActivity();
+-                    startPageWarp(applicationWidgetPage);
+-                    break;
+-                case MotionEvent.ACTION_UP:
+-                case MotionEvent.ACTION_CANCEL:
+-                    mApplicationWidgetEventInProgress = false;
+-                    endWarp = isWarping();
+-                    break;
+-            }
+-            dispatchTouchEvent(event);
+-            // This has to happen after the event has been handled by the real widget pager
+-            if (endWarp) stopPageWarp();
+-        }
+-        endApplicationWidgetEvent();
+-    }
+-
+     public void handleExternalCameraEvent(MotionEvent event) {
+         Slog.e(TAG, "External camera event!");
+         beginCameraEvent();
+diff --git a/packages/Keyguard/src/com/android/keyguard/PagedView.java b/packages/Keyguard/src/com/android/keyguard/PagedView.java
+index a4a7413..09af1af 100644
+--- a/packages/Keyguard/src/com/android/keyguard/PagedView.java
++++ b/packages/Keyguard/src/com/android/keyguard/PagedView.java
+@@ -95,9 +95,6 @@ public abstract class PagedView extends ViewGroup implements ViewGroup.OnHierarc
+     private static final boolean DISABLE_TOUCH_SIDE_PAGES = true;
+     private static final boolean DISABLE_FLING_TO_DELETE = false;
+ 
+-    // Page number for the ApplicationWidget"
+-    static final int APPLICATION_WIDGET_PAGE_NUMBER = 1;
+-
+     static final int AUTOMATIC_PAGE_SPACING = -1;
+ 
+     protected int mFlingThresholdVelocity;
+@@ -269,7 +266,6 @@ public abstract class PagedView extends ViewGroup implements ViewGroup.OnHierarc
+     private ViewPropertyAnimator mWarpAnimation;
+ 
+     private boolean mIsCameraEvent;
+-    private boolean mIsApplicationWidgetEvent;
+     private float mWarpPeekAmount;
+     private boolean mOnPageEndWarpCalled;
+     private boolean mOnPageBeginWarpCalled;
+@@ -972,7 +968,7 @@ public abstract class PagedView extends ViewGroup implements ViewGroup.OnHierarc
+                     final View v = getPageAt(i);
+                     if (v == mDragView) continue;
+                     if (mForceDrawAllChildrenNextFrame ||
+-                            (leftScreen <= i && i <= rightScreen && shouldDrawChild(v))) {
++                               (leftScreen <= i && i <= rightScreen && shouldDrawChild(v))) {
+                         drawChild(canvas, v, drawingTime);
+                     }
+                 }
+@@ -1138,8 +1134,7 @@ public abstract class PagedView extends ViewGroup implements ViewGroup.OnHierarc
+                  * whether the user has moved far enough from his original down touch.
+                  */
+                 if (mActivePointerId != INVALID_POINTER) {
+-                    if (mIsCameraEvent || mIsApplicationWidgetEvent ||
+-                            determineScrollingStart(ev)) {
++                    if (mIsCameraEvent || determineScrollingStart(ev)) {
+                         startScrolling(ev);
+                     }
+                     break;
+@@ -1154,7 +1149,7 @@ public abstract class PagedView extends ViewGroup implements ViewGroup.OnHierarc
+             }
+ 
+             case MotionEvent.ACTION_DOWN: {
+-                if (mIsCameraEvent || mIsApplicationWidgetEvent) {
++                if (mIsCameraEvent) {
+                     animateWarpPageOnScreen("interceptTouch(): DOWN");
+                 }
+                 // Remember where the motion event started
+@@ -1171,9 +1166,8 @@ public abstract class PagedView extends ViewGroup implements ViewGroup.OnHierarc
+                     setTouchState(TOUCH_STATE_REST);
+                     mScroller.abortAnimation();
+                 } else {
+-                    if (mIsCameraEvent || mIsApplicationWidgetEvent ||
+-                            isTouchPointInViewportWithBuffer((int) mDownMotionX,
+-                                    (int) mDownMotionY)) {
++                    if (mIsCameraEvent || isTouchPointInViewportWithBuffer(
++                            (int) mDownMotionX, (int) mDownMotionY)) {
+                         setTouchState(TOUCH_STATE_SCROLLING);
+                     } else {
+                         setTouchState(TOUCH_STATE_REST);
+@@ -1429,7 +1423,7 @@ public abstract class PagedView extends ViewGroup implements ViewGroup.OnHierarc
+                 setTouchState(TOUCH_STATE_READY);
+             }
+ 
+-            if (mIsCameraEvent || mIsApplicationWidgetEvent) {
++            if (mIsCameraEvent) {
+                 animateWarpPageOnScreen("onTouch(): DOWN");
+             }
+             break;
+@@ -1572,7 +1566,7 @@ public abstract class PagedView extends ViewGroup implements ViewGroup.OnHierarc
+                     removeCallbacks(mSidePageHoverRunnable);
+                     mSidePageHoverIndex = -1;
+                 }
+-            } else if (mIsCameraEvent || mIsApplicationWidgetEvent || determineScrollingStart(ev)) {
++            } else if (mIsCameraEvent || determineScrollingStart(ev)) {
+                 startScrolling(ev);
+             }
+             break;
+@@ -1613,16 +1607,13 @@ public abstract class PagedView extends ViewGroup implements ViewGroup.OnHierarc
+                 // move to the left and fling to the right will register as a fling to the right.
+                 if (((isSignificantMove && deltaX > 0 && !isFling) ||
+                         (isFling && velocityX > 0)) && mCurrentPage > 0) {
+-                    int moveToPage = (mPageWarpIndex != -1) ? mPageWarpIndex :  mCurrentPage - 1;
+-                    finalPage = returnToOriginalPage ? mCurrentPage : moveToPage;
+-
++                    finalPage = returnToOriginalPage || isWarping()
++                            ? mCurrentPage : mCurrentPage - 1;
+                     snapToPageWithVelocity(finalPage, velocityX);
+                 } else if (((isSignificantMove && deltaX < 0 && !isFling) ||
+                         (isFling && velocityX < 0)) &&
+                         mCurrentPage < getChildCount() - 1) {
+-                    int moveToPage = (mPageWarpIndex != -1) ? mPageWarpIndex :  mCurrentPage + 1;
+-                    finalPage = returnToOriginalPage ? mCurrentPage : moveToPage;
+-
++                    finalPage = returnToOriginalPage ? mCurrentPage : mCurrentPage + 1;
+                     snapToPageWithVelocity(finalPage, velocityX);
+                 } else {
+                     snapToDestination();
+@@ -2163,8 +2154,7 @@ public abstract class PagedView extends ViewGroup implements ViewGroup.OnHierarc
+ 
+         float offset = Math.max(0f, Math.min(1f, (float) getScrollX() / maxScrollX));
+         int indicatorSpace = trackWidth / numPages;
+-        int indicatorPos = (int) (offset * (trackWidth - indicatorSpace)) +
+-                mScrollIndicatorPaddingLeft;
++        int indicatorPos = (int) (offset * (trackWidth - indicatorSpace)) + mScrollIndicatorPaddingLeft;
+         if (hasElasticScrollIndicator()) {
+             if (mScrollIndicator.getMeasuredWidth() != indicatorSpace) {
+                 mScrollIndicator.getLayoutParams().width = indicatorSpace;
+@@ -2244,8 +2234,7 @@ public abstract class PagedView extends ViewGroup implements ViewGroup.OnHierarc
+         getVisiblePages(mTempVisiblePagesRange);
+         boundByReorderablePages(true, mTempVisiblePagesRange);
+         for (int i = 0; i < getPageCount(); ++i) {
+-            if (i < mTempVisiblePagesRange[0] ||
+-                    i > mTempVisiblePagesRange[1]) {
++            if (i < mTempVisiblePagesRange[0] || i > mTempVisiblePagesRange[1]) {
+                 getPageAt(i).setAlpha(0f);
+             }
+         }
+@@ -2281,8 +2270,7 @@ public abstract class PagedView extends ViewGroup implements ViewGroup.OnHierarc
+         getVisiblePages(mTempVisiblePagesRange);
+         boundByReorderablePages(true, mTempVisiblePagesRange);
+         for (int i = 0; i < getPageCount(); ++i) {
+-            if (i < mTempVisiblePagesRange[0] ||
+-                    i > mTempVisiblePagesRange[1]) {
++            if (i < mTempVisiblePagesRange[0] || i > mTempVisiblePagesRange[1]) {
+                 getPageAt(i).setAlpha(1f);
+             }
+         }
+@@ -2721,14 +2709,6 @@ public abstract class PagedView extends ViewGroup implements ViewGroup.OnHierarc
+         mIsCameraEvent = false;
+     }
+ 
+-    void beginApplicationWidgetEvent() {
+-        mIsApplicationWidgetEvent = true;
+-    }
+-
+-    void endApplicationWidgetEvent() {
+-        mIsApplicationWidgetEvent = false;
+-    }
+-
+     AnimatorListenerAdapter mOnScreenAnimationListener = new AnimatorListenerAdapter() {
+         @Override
+         public void onAnimationEnd(Animator animation) {
+@@ -2775,14 +2755,7 @@ public abstract class PagedView extends ViewGroup implements ViewGroup.OnHierarc
+             if (DEBUG_WARP) Log.v(TAG, "moving page on screen: Tx=" + v.getTranslationX());
+             DecelerateInterpolator interp = new DecelerateInterpolator(1.5f);
+             mWarpAnimation = v.animate();
+-            float translationX = 0;
+-            if (mCurrentPage < mPageWarpIndex) {
+-                translationX = mWarpPeekAmount;
+-            } else if (mCurrentPage > mPageWarpIndex) {
+-                float offset = (mCurrentPage - mPageWarpIndex - 1) * v.getWidth();
+-                translationX = offset - mWarpPeekAmount;
+-            }
+-            mWarpAnimation.translationX(translationX)
++            mWarpAnimation.translationX(mWarpPeekAmount)
+                     .setInterpolator(interp)
+                     .setDuration(WARP_PEEK_ANIMATION_DURATION)
+                     .setListener(mOnScreenAnimationListener);
+@@ -2820,16 +2793,7 @@ public abstract class PagedView extends ViewGroup implements ViewGroup.OnHierarc
+ 
+     public void startPageWarp(int pageIndex) {
+         if (DEBUG_WARP) Log.v(TAG, "START WARP");
+-        int cameraPage = getPageCount() - 1;
+-        int applicationWidgetPage;
+-        int appWidgetIndex = indexOfChild(findViewById(R.id.keyguard_add_widget));
+-        if (appWidgetIndex < 0) {
+-            applicationWidgetPage = 0;
+-        } else {
+-            applicationWidgetPage = APPLICATION_WIDGET_PAGE_NUMBER;
+-        }
+-
+-        if (pageIndex != cameraPage && pageIndex != applicationWidgetPage) {
++        if (pageIndex != mCurrentPage + 1) {
+             mPageSwapIndex = mCurrentPage + 1;
+         }
+         mPageWarpIndex = pageIndex;
+diff --git a/packages/SystemUI/AndroidManifest.xml b/packages/SystemUI/AndroidManifest.xml
+index db676e6..32ab01a 100755
+--- a/packages/SystemUI/AndroidManifest.xml
++++ b/packages/SystemUI/AndroidManifest.xml
+@@ -101,9 +101,6 @@
+     <!-- WallpaperManager -->
+     <uses-permission android:name="android.permission.SET_WALLPAPER" />
+ 
+-    <!-- Keyguard widget on the Navigation Bar for the application -->
+-    <uses-permission android:name="android.permission.SET_KEYGUARD_APPLICATION_WIDGET" />
+-
+     <application
+         android:persistent="true"
+         android:allowClearUserData="false"
+diff --git a/packages/SystemUI/res/layout-sw600dp/navigation_bar.xml b/packages/SystemUI/res/layout-sw600dp/navigation_bar.xml
+index 1350e8e..4faee3c 100644
+--- a/packages/SystemUI/res/layout-sw600dp/navigation_bar.xml
++++ b/packages/SystemUI/res/layout-sw600dp/navigation_bar.xml
+@@ -70,15 +70,6 @@
+ 
+             <com.android.systemui.statusbar.policy.KeyButtonView
+                     android:layout_width="80dp"
+-            android:id="@+id/application_widget_button"
+-            android:layout_height="match_parent"
+-            android:layout_gravity="center_horizontal|left"
+-            android:scaleType="center"
+-            android:visibility="gone"
+-            />
+-
+-        <com.android.systemui.statusbar.policy.KeyButtonView
+-            android:layout_width="128dp"
+                     android:id="@+id/search_light"
+                     android:layout_height="match_parent"
+                     android:layout_gravity="center"
+diff --git a/packages/SystemUI/res/layout/navigation_bar.xml b/packages/SystemUI/res/layout/navigation_bar.xml
+index 2d09885..bbda9ef 100644
+--- a/packages/SystemUI/res/layout/navigation_bar.xml
++++ b/packages/SystemUI/res/layout/navigation_bar.xml
+@@ -61,15 +61,6 @@
+                 android:layout_height="match_parent">
+ 
+             <com.android.systemui.statusbar.policy.KeyButtonView
+-                android:id="@+id/application_widget_button"
+-                android:layout_height="match_parent"
+-                android:layout_width="80dp"
+-                android:layout_gravity="center_vertical|left"
+-                android:scaleType="center"
+-                android:visibility="gone"
+-                />
+-
+-            <com.android.systemui.statusbar.policy.KeyButtonView
+                 android:layout_width="80dp"
+                 android:id="@+id/show_notifs"
+                 android:layout_height="match_parent"
+@@ -146,16 +137,6 @@
+         </LinearLayout>
+ 
+         <com.android.systemui.statusbar.policy.KeyButtonView
+-            android:id="@+id/application_widget_button"
+-            android:layout_height="match_parent"
+-            android:layout_width="80dp"
+-            android:layout_gravity="center_vertical|left"
+-            android:scaleType="center"
+-            android:visibility="gone"
+-            android:rotation="270"
+-            />
+-
+-        <com.android.systemui.statusbar.policy.KeyButtonView
+                 android:layout_width="80dp"
+                 android:id="@+id/show_notifs"
+                 android:layout_height="match_parent"
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/phone/KeyguardTouchDelegate.java b/packages/SystemUI/src/com/android/systemui/statusbar/phone/KeyguardTouchDelegate.java
+index 4217389..9760444 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/phone/KeyguardTouchDelegate.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/phone/KeyguardTouchDelegate.java
+@@ -98,27 +98,12 @@ public class KeyguardTouchDelegate {
+         return false;
+     }
+ 
+-    public boolean dispatchCameraEvent(MotionEvent event) {
++    public boolean dispatch(MotionEvent event) {
+         final IKeyguardService service = mService;
+         if (service != null) {
+             try {
+-                service.dispatchCameraEvent(event);
+-                return true;
+-            } catch (RemoteException e) {
+-                // What to do?
+-                Slog.e(TAG, "RemoteException sending event to keyguard!", e);
+-            }
+-        } else {
+-            Slog.w(TAG, "dispatch(event): NO SERVICE!");
+-        }
+-        return false;
+-    }
+-
+-    public boolean dispatchApplicationWidgetEvent(MotionEvent event) {
+-        final IKeyguardService service = mService;
+-        if (service != null) {
+-            try {
+-                service.dispatchApplicationWidgetEvent(event);
++                Slog.e(TAG, "dispatch!");
++                service.dispatch(event);
+                 return true;
+             } catch (RemoteException e) {
+                 // What to do?
+@@ -200,20 +185,6 @@ public class KeyguardTouchDelegate {
+         }
+     }
+ 
+-    public void launchApplicationWidget() {
+-        final IKeyguardService service = mService;
+-        if (service != null) {
+-            try {
+-                service.launchApplicationWidget();
+-            } catch (RemoteException e) {
+-                // What to do?
+-                Slog.e(TAG, "RemoteException launching ApplicationWidget!", e);
+-            }
+-        } else {
+-            Slog.w(TAG, "launchApplicationWidget(): NO SERVICE!");
+-        }
+-    }
+-
+     public void dismiss() {
+         final IKeyguardService service = mService;
+         if (service != null) {
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/phone/NavigationBarTransitions.java b/packages/SystemUI/src/com/android/systemui/statusbar/phone/NavigationBarTransitions.java
+index 08c3af7..4df9952 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/phone/NavigationBarTransitions.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/phone/NavigationBarTransitions.java
+@@ -91,7 +91,6 @@ public final class NavigationBarTransitions extends BarTransitions {
+         setKeyButtonViewQuiescentAlpha(mView.getSearchLight(), KEYGUARD_QUIESCENT_ALPHA, animate);
+         setKeyButtonViewQuiescentAlpha(mView.getCameraButton(), KEYGUARD_QUIESCENT_ALPHA, animate);
+         setKeyButtonViewQuiescentAlpha(mView.getNotifsButton(), KEYGUARD_QUIESCENT_ALPHA, animate);
+-        setKeyButtonViewQuiescentAlpha(mView.getApplicationWidgetButton(), KEYGUARD_QUIESCENT_ALPHA, animate);
+         applyBackButtonQuiescentAlpha(mode, animate);
+ 
+         // apply to lights out
+@@ -109,7 +108,7 @@ public final class NavigationBarTransitions extends BarTransitions {
+         for(View v : views) {
+             backAlpha = maxVisibleQuiescentAlpha(backAlpha, v);
+         }
+-        backAlpha = maxVisibleQuiescentAlpha(backAlpha, mView.getApplicationWidgetButton());
++
+         backAlpha = maxVisibleQuiescentAlpha(backAlpha, mView.getNotifsButton());
+ 
+         if (backAlpha > 0) {
+@@ -141,7 +140,6 @@ public final class NavigationBarTransitions extends BarTransitions {
+         fadeContent(mView.getCameraButton(), alpha);
+         fadeContent(mView.getNotifsButton(), alpha);
+         fadeContent(mView.getSearchLight(), alpha);
+-        fadeContent(mView.getApplicationWidgetButton(), alpha);
+     }
+ 
+     private void fadeContent(View v, float alpha) {
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/phone/NavigationBarView.java b/packages/SystemUI/src/com/android/systemui/statusbar/phone/NavigationBarView.java
+index 8d1dee3..27229eb 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/phone/NavigationBarView.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/phone/NavigationBarView.java
+@@ -29,22 +29,15 @@ import android.content.ContentResolver;
+ import android.content.Context;
+ import android.content.Intent;
+ import android.content.IntentFilter;
+-import android.content.pm.PackageInfo;
+-import android.content.pm.PackageManager;
+ import android.content.res.Configuration;
+ import android.content.res.Resources;
+ import android.database.ContentObserver;
+-import android.graphics.Bitmap;
+-import android.graphics.BitmapFactory;
+-import android.graphics.drawable.BitmapDrawable;
+-import android.graphics.drawable.Drawable;
+ import android.graphics.Point;
+ import android.graphics.Rect;
+ import android.net.Uri;
+ import android.os.Handler;
+ import android.os.Message;
+ import android.os.RemoteException;
+-import android.os.UserHandle;
+ import android.provider.Settings;
+ import android.util.AttributeSet;
+ import android.util.Log;
+@@ -145,9 +138,6 @@ public class NavigationBarView extends LinearLayout {
+ 
+     private Resources mThemedResources;
+ 
+-    private String mApplicationWidgetPackageName;
+-    private byte[] mApplicationWidgetIcon;
+-
+     private class NavTransitionListener implements TransitionListener {
+         private boolean mBackTransitioning;
+         private boolean mHomeAppearing;
+@@ -208,19 +198,16 @@ public class NavigationBarView extends LinearLayout {
+                 KeyguardTouchDelegate.getInstance(getContext()).launchCamera();
+             } else if (v.getId() == R.id.search_light) {
+                 KeyguardTouchDelegate.getInstance(getContext()).showAssistant();
+-            } else if (v.getId() == R.id.application_widget_button) {
+-                KeyguardTouchDelegate.getInstance(getContext()).launchApplicationWidget();
+             }
+         }
+     };
+ 
+-    private final OnTouchListener mTouchListener = new OnTouchListener() {
++    private final OnTouchListener mCameraTouchListener = new OnTouchListener() {
+         @Override
+         public boolean onTouch(View view, MotionEvent event) {
+             switch (event.getAction()) {
+                 case MotionEvent.ACTION_DOWN:
+-                    // disable search gesture while interacting with application widget / camera
+-                    // button
++                    // disable search gesture while interacting with additional navbar button
+                     mDelegateHelper.setDisabled(true);
+                     mBarTransitions.setContentVisible(false);
+                     break;
+@@ -230,12 +217,7 @@ public class NavigationBarView extends LinearLayout {
+                     mBarTransitions.setContentVisible(true);
+                     break;
+             }
+-            if (view.getId() == R.id.camera_button) {
+-                return KeyguardTouchDelegate.getInstance(getContext()).dispatchCameraEvent(event);
+-            } else if (view.getId() == R.id.application_widget_button) {
+-                return KeyguardTouchDelegate.getInstance(getContext()).dispatchApplicationWidgetEvent(event);
+-            }
+-            return false;
++            return KeyguardTouchDelegate.getInstance(getContext()).dispatch(event);
+         }
+     };
+ 
+@@ -296,16 +278,6 @@ public class NavigationBarView extends LinearLayout {
+         for(int i=0;i<mButtonLayouts;i++)
+             mButtonContainerStrings[i] = Settings.System.getString(cr, buttonSettings[i]);
+ 
+-        // Register the receiver for ACTION_SET_KEYGUARD_APPLICATION_WIDGET and
+-        // ACTION_UNSET_KEYGUARD_APPLICATION_WIDGET intents.
+-        IntentFilter applicationWidgetFilter = new IntentFilter();
+-        applicationWidgetFilter.addAction(Intent.ACTION_SET_KEYGUARD_APPLICATION_WIDGET);
+-        applicationWidgetFilter.addAction(Intent.ACTION_UNSET_KEYGUARD_APPLICATION_WIDGET);
+-
+-        mContext.registerReceiverAsUser(mSetApplicationWidgetReceiver, UserHandle.ALL,
+-                applicationWidgetFilter, "android.permission.SET_KEYGUARD_APPLICATION_WIDGET",
+-                null);
+-
+         if (mButtonLayouts == 1)
+             mCurrentLayout = 0; //1; -- 1 is not the first thing in "computer"
+ 
+@@ -413,49 +385,6 @@ public class NavigationBarView extends LinearLayout {
+         return mCurrentView.findViewById(R.id.show_notifs);
+     }
+ 
+-    // shown when keyguard is visible and application widget button is available
+-    public View getApplicationWidgetButton() {
+-        View v = mCurrentView.findViewById(R.id.application_widget_button);
+-        if (v == null || mApplicationWidgetPackageName == null ||
+-                mApplicationWidgetIcon == null) {
+-            return null;
+-        }
+-        // Make it the same size of the sysbar search icon if available, else
+-        // we will default to 32dp which is the dp for status bar icons.
+-        Drawable searchIcon;
+-        int width;
+-        int height;
+-        try {
+-            searchIcon = getResources().getDrawable(R.drawable.search_light);
+-            width =  searchIcon.getIntrinsicWidth();
+-            height = searchIcon.getIntrinsicWidth();
+-        } catch (Resources.NotFoundException e) {
+-            // Action bar icons are 32dp
+-            // http://developer.android.com/design/style/iconography.html
+-            width = 32;
+-            height = 32;
+-        }
+-        Bitmap bMap = BitmapFactory.decodeByteArray(mApplicationWidgetIcon, 0,
+-                mApplicationWidgetIcon.length);
+-        Bitmap bMapScaled = Bitmap.createScaledBitmap(bMap, width, height, true);
+-        ((ImageView)v).setImageDrawable(new BitmapDrawable(getResources(), bMapScaled));
+-        v.setContentDescription(getApplicationWidgetLabel());
+-        return v;
+-    }
+-
+-    public CharSequence getApplicationWidgetLabel() {
+-        PackageInfo packageInfo;
+-        try {
+-            packageInfo = mContext.getPackageManager().getPackageInfo(
+-                    mApplicationWidgetPackageName, 0);
+-        } catch (PackageManager.NameNotFoundException e) {
+-            // should never happen
+-            return null;
+-        }
+-        CharSequence seq = packageInfo.applicationInfo.loadLabel(mContext.getPackageManager());
+-        return seq;
+-    }
+-
+     public void updateResources(Resources res) {
+         mThemedResources = res;
+         for (int i = 0; i < mRotatedViews.length; i++) {
+@@ -642,14 +571,10 @@ public class NavigationBarView extends LinearLayout {
+         final boolean showSearch = disableHome && !disableSearch && mPrefNavring;
+         final boolean showCamera = disableHome && !disableSearch && !mCameraDisabledByDpm && mLockPatternUtils.getCameraEnabled();
+         final boolean showNotifs = disableHome && !disableSearch && mPrefLockscreen;
+-        // TODO(): Ideally we should integrate with DevicePolicyManager for application widget too.
+-        final boolean showApplicationWidget = showSearch &&
+-                mApplicationWidgetPackageName != null && mLockPatternUtils.getApplicationWidgetEnabled();
+ 
+         setVisibleOrGone(getSearchLight(), showSearch);
+         setVisibleOrGone(getCameraButton(), showCamera);
+         setVisibleOrGone(getNotifsButton(), showNotifs && mWasNotifsButtonVisible);
+-        setVisibleOrGone(getApplicationWidgetButton(), showApplicationWidget);
+ 
+         if (mButtonLayouts > 1) {
+             final boolean allowLayoutArrows = !disableHome && !showingIME;
+@@ -1036,16 +961,13 @@ public class NavigationBarView extends LinearLayout {
+ 
+         // Add a touch handler or accessibility click listener for camera and search buttons
+         // for all view orientations.
+-        final OnTouchListener onTouchListener = touchEnabled ? null : mTouchListener;
+         final OnClickListener onClickListener = touchEnabled ? mAccessibilityClickListener : null;
++        final OnTouchListener onTouchListener = touchEnabled ? null : mCameraTouchListener;
+         boolean hasCamera = false;
+-        boolean hasApplicationWidget = false;
+         for (int i = 0; i < mRotatedViews.length; i++) {
+             final View cameraButton = mRotatedViews[i].findViewById(R.id.camera_button);
+             final View notifsButton = mRotatedViews[i].findViewById(R.id.show_notifs);
+             final View searchLight = mRotatedViews[i].findViewById(R.id.search_light);
+-            final View applicationWidgetButton =
+-                    mRotatedViews[i].findViewById(R.id.application_widget_button);
+             if (cameraButton != null) {
+                 hasCamera = true;
+                 cameraButton.setOnTouchListener(onTouchListener);
+@@ -1057,13 +979,8 @@ public class NavigationBarView extends LinearLayout {
+             if (searchLight != null) {
+                 searchLight.setOnClickListener(onClickListener);
+             }
+-            if (applicationWidgetButton != null) {
+-                hasApplicationWidget = true;
+-                applicationWidgetButton.setOnTouchListener(onTouchListener);
+-                applicationWidgetButton.setOnClickListener(onClickListener);
+-            }
+         }
+-        if (hasCamera || hasApplicationWidget) {
++        if (hasCamera) {
+             // Warm up KeyguardTouchDelegate so it's ready by the time the camera button is touched.
+             // This will connect to KeyguardService so that touch events are processed.
+             KeyguardTouchDelegate.getInstance(mContext);
+@@ -1163,26 +1080,6 @@ public class NavigationBarView extends LinearLayout {
+     }
+     */
+ 
+-    private BroadcastReceiver mSetApplicationWidgetReceiver =
+-            new BroadcastReceiver() {
+-                @Override
+-                public void onReceive(Context context, Intent intent) {
+-                    if (Intent.ACTION_SET_KEYGUARD_APPLICATION_WIDGET.equals(intent.getAction())) {
+-                        mApplicationWidgetPackageName = intent.getStringExtra(
+-                                Intent.EXTRA_KEYGUARD_APPLICATION_WIDGET_PACKAGE_NAME);
+-                        mApplicationWidgetIcon = intent.getByteArrayExtra(
+-                                Intent.EXTRA_KEYGUARD_APPLICATION_WIDGET_ICON);
+-                        // Force update the buttons.
+-                        setDisabledFlags(mDisabledFlags, true);
+-                    } else if (Intent.ACTION_UNSET_KEYGUARD_APPLICATION_WIDGET.equals(
+-                            intent.getAction())) {
+-                        mApplicationWidgetPackageName = null;
+-                        mApplicationWidgetIcon = null;
+-                        // Force update the buttons.
+-                        setDisabledFlags(mDisabledFlags, true);
+-                    }
+-                }
+-            };
+ 
+     private String getResourceName(int resId) {
+         if (resId != 0) {
+diff --git a/policy/src/com/android/internal/policy/impl/keyguard/KeyguardServiceWrapper.java b/policy/src/com/android/internal/policy/impl/keyguard/KeyguardServiceWrapper.java
+index aca38b9..59b69b9 100644
+--- a/policy/src/com/android/internal/policy/impl/keyguard/KeyguardServiceWrapper.java
++++ b/policy/src/com/android/internal/policy/impl/keyguard/KeyguardServiceWrapper.java
+@@ -200,11 +200,7 @@ public class KeyguardServiceWrapper implements IKeyguardService {
+         // Not used by PhoneWindowManager
+     }
+ 
+-    public void dispatchCameraEvent(MotionEvent event) {
+-        // Not used by PhoneWindowManager.  See code in {@link NavigationBarView}
+-    }
+-
+-    public void dispatchApplicationWidgetEvent(MotionEvent event) {
++    public void dispatch(MotionEvent event) {
+         // Not used by PhoneWindowManager.  See code in {@link NavigationBarView}
+     }
+ 
+@@ -216,10 +212,6 @@ public class KeyguardServiceWrapper implements IKeyguardService {
+         // Not used by PhoneWindowManager.  See code in {@link NavigationBarView}
+     }
+ 
+-    public void launchApplicationWidget() {
+-        // Not used by PhoneWindowManager.  See code in {@link NavigationBarView}
+-    }
+-
+     @Override
+     public IBinder asBinder() {
+         return mService.asBinder();
+-- 
+2.5.0
+

@@ -1,0 +1,144 @@
+From 1f47da6883c79fb63126685ebba32dc9e24ec1c4 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Mon, 25 Jan 2016 01:02:05 +0700
+Subject: [PATCH 07/64] Revert "NBV: pass string[] to keybuttoninfo instead of
+ overloading constructors"
+
+This reverts commit 2179f1231beacae16d3af0a554533364d24c0c6f.
+---
+ .../statusbar/phone/NavigationBarView.java         | 15 +++---
+ .../systemui/statusbar/policy/KeyButtonView.java   | 53 ++++++++++++----------
+ 2 files changed, 37 insertions(+), 31 deletions(-)
+
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/phone/NavigationBarView.java b/packages/SystemUI/src/com/android/systemui/statusbar/phone/NavigationBarView.java
+index ac6d4de..4cd93ea 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/phone/NavigationBarView.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/phone/NavigationBarView.java
+@@ -691,7 +691,7 @@ public class NavigationBarView extends LinearLayout {
+                     for(int i=0;i<mButtonLayouts;i++)
+                         mButtonContainerStrings[i] = Settings.System.getString(r, buttonSettings[i]);
+ 
+-                    loadButtonArrays();
++                    setupNavigationButtons(getCurrentButtonArray());
+                 }};
+ 
+             for(int i=0;i<5;i++)
+@@ -751,7 +751,8 @@ public class NavigationBarView extends LinearLayout {
+     }
+ 
+     private void loadButtonArrays() {
+-        // reload active navbar layouts
++
++        // load active navbar layouts
+         mAllButtonContainers.clear();
+ 
+         for (int j = 0; j < mButtonLayouts; j++) {
+@@ -769,7 +770,7 @@ public class NavigationBarView extends LinearLayout {
+             final String[] userButtons = mIMEKeyLayout.split("\\|");
+             for (String button : userButtons) {
+                 final String[] actions = button.split(",", 4);
+-                mIMEKeyArray.add(new KeyButtonInfo(actions));
++                mIMEKeyArray.add(new KeyButtonInfo(actions[0], actions[1], actions[2], actions[3]));
+             }
+         }
+         setupNavigationButtons(getCurrentButtonArray());
+@@ -777,10 +778,9 @@ public class NavigationBarView extends LinearLayout {
+ 
+     private ArrayList<KeyButtonInfo> getButtonsArray(final String[] userButtons) {
+         final ArrayList<KeyButtonInfo> mButtonsContainer = new ArrayList<KeyButtonInfo>();
+-        int infoLength = userButtons.length;
+         for (String button : userButtons) {
+-            final String[] actions = button.split(",", infoLength);
+-            mButtonsContainer.add(new KeyButtonInfo(actions));
++            final String[] actions = button.split(",", 4);
++            mButtonsContainer.add(new KeyButtonInfo(actions[0], actions[1], actions[2], actions[3]));
+         }
+         return mButtonsContainer;
+     }
+@@ -877,7 +877,8 @@ public class NavigationBarView extends LinearLayout {
+ 
+             if (mLegacyMenu && mButtonLayouts == 1) {
+                 // legacy menu button
+-                info = new KeyButtonInfo(AwesomeConstant.ACTION_MENU.value());
++                info = new KeyButtonInfo(AwesomeConstant.ACTION_MENU.value(),
++                        null, null, null);
+                 button = new KeyButtonView(mContext, null);
+                 button.setButtonActions(info);
+                 button.setImageResource(R.drawable.ic_sysbar_menu);
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/policy/KeyButtonView.java b/packages/SystemUI/src/com/android/systemui/statusbar/policy/KeyButtonView.java
+index 9f52481..95e9184 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/policy/KeyButtonView.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/policy/KeyButtonView.java
+@@ -47,7 +47,6 @@ import com.android.internal.util.aokp.NavBarHelpers;
+ import com.android.systemui.R;
+ 
+ import java.io.File;
+-import java.util.HashMap;
+ 
+ public class KeyButtonView extends ImageView {
+     private static final String TAG = "StatusBar.KeyButtonView";
+@@ -529,32 +528,38 @@ public class KeyButtonView extends ImageView {
+     public static class KeyButtonInfo {
+         String singleAction, doubleTapAction, longPressAction, iconUri;
+ 
+-        // prep for different sized delimited strings
+-        public KeyButtonInfo(String[] actions) {
+-            int actionList = actions.length - 1;
+-            String action = "";
+-            for( int i = 0; i <= actionList; i++) {
+-                action = actions[i];
+-                switch (i) {
+-                    case 0:
+-                        this.singleAction = action;
+-                        break;
+-                    case 1:
+-                        this.doubleTapAction = action;
+-                        break;
+-                    case 2:
+-                        this.longPressAction = action;
+-                        break;
+-                    case 3:
+-                        this.iconUri = action;
+-                        break;
+-                }
+-            }
++        // reserved for single purpose keys
++        public KeyButtonInfo(String singleTap) {
++            this.singleAction = singleTap;
+         }
+ 
+-        // reserved for single purpose hard coded keys (for now)
+-        public KeyButtonInfo(String singleTap) {
++        // reserved for configurable buttons
++        public KeyButtonInfo(String singleTap, String doubleTap, String longPress, String uri) {
+             this.singleAction = singleTap;
++            this.doubleTapAction = doubleTap;
++            this.longPressAction = longPress;
++            this.iconUri = uri;
++            
++            if (singleAction != null) {
++                if ((singleAction.isEmpty()
++                        || singleAction.equals(NULL_ACTION))) {
++                    singleAction = null;
++                }
++            }
++
++            if (doubleTapAction != null) {
++                if ((doubleTapAction.isEmpty()
++                        || doubleTapAction.equals(NULL_ACTION))) {
++                    doubleTapAction = null;
++                }
++            }
++
++            if (longPressAction != null) {
++                if ((longPressAction.isEmpty()
++                        || longPressAction.equals(NULL_ACTION))) {
++                    longPressAction = null;
++                }
++            }
+         }
+     }
+ }
+-- 
+2.5.0
+

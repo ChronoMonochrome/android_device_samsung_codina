@@ -1,0 +1,42 @@
+From c98acc3092ffa2b5e9e19f64fa035f2316945f60 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Mon, 25 Jan 2016 02:32:53 +0700
+Subject: [PATCH 46/64] Revert "fix hardcoded navbar spacing on tablets"
+
+This reverts commit e71d48e1ed95f359fcbca2dbd8930211bedd2507.
+---
+ .../systemui/statusbar/phone/NavigationBarView.java    | 18 +++++++++++++++++-
+ 1 file changed, 17 insertions(+), 1 deletion(-)
+
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/phone/NavigationBarView.java b/packages/SystemUI/src/com/android/systemui/statusbar/phone/NavigationBarView.java
+index af947fe..2eba775 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/phone/NavigationBarView.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/phone/NavigationBarView.java
+@@ -684,7 +684,23 @@ public class NavigationBarView extends LinearLayout {
+                 KeyButtonView button = new KeyButtonView(mContext, null);
+                 button.setButtonActions(info);
+                 if (mTablet) {
+-                    button.setLayoutParams(getLayoutParams(landscape, mButtonWidth, 1f));
++                    if (mNavButtons.size() <= 4) {
++                        // use stock tablet button spacing, even with 4 buttons it seems to work
++                        int padding = getResources().getDimensionPixelSize(landscape
++                                ? R.dimen.navigation_tablet_key_padding_land
++                                : R.dimen.navigation_tablet_key_padding
++                        );
++                        int width = getResources().getDimensionPixelSize(landscape
++                                ? R.dimen.navigation_tablet_key_width_land
++                                : R.dimen.navigation_tablet_key_width
++                        );
++                        button.setLayoutParams(getLayoutParams(landscape, width, 0f));
++                        button.setPaddingRelative(padding, 0, padding, 0);
++                    } else {
++                        // 5 or more buttons don't fit in portrait, so spread them all out equally
++                        button.setLayoutParams(getLayoutParams(landscape, mButtonWidth, 1f));
++                    }
++
+                     button.setGlowBackground(R.drawable.ic_sysbar_highlight);
+                 } else {
+                     button.setLayoutParams(getLayoutParams(landscape, mButtonWidth, stockThreeButtonLayout ? 0f : 0.5f));
+-- 
+2.5.0
+

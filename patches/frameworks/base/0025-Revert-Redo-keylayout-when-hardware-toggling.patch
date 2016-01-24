@@ -1,0 +1,48 @@
+From 38bf0260a0fc90afaa740708eacdf0e921fbfac0 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Mon, 25 Jan 2016 01:10:19 +0700
+Subject: [PATCH 25/64] Revert "Redo keylayout when hardware toggling"
+
+This reverts commit 2ba4ddb3b7648472f2412088c0ee0e353fc59653.
+---
+ .../com/android/systemui/statusbar/phone/NavigationBarView.java   | 4 ++++
+ .../src/com/android/systemui/statusbar/phone/PhoneStatusBar.java  | 8 +-------
+ 2 files changed, 5 insertions(+), 7 deletions(-)
+
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/phone/NavigationBarView.java b/packages/SystemUI/src/com/android/systemui/statusbar/phone/NavigationBarView.java
+index 370d387..7623d44 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/phone/NavigationBarView.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/phone/NavigationBarView.java
+@@ -874,6 +874,10 @@ public class NavigationBarView extends LinearLayout {
+         return mVertical;
+     }
+ 
++    void setIMEState(boolean showing) {
++        showingIME = showing;
++    }
++
+     public void reorient() {
+         final int rot = mDisplay.getRotation();
+         for (int i = 0; i < 4; i++) {
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/phone/PhoneStatusBar.java b/packages/SystemUI/src/com/android/systemui/statusbar/phone/PhoneStatusBar.java
+index 3aee4bf..0ef817c 100755
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/phone/PhoneStatusBar.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/phone/PhoneStatusBar.java
+@@ -1264,13 +1264,7 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
+     }
+ 
+     private void prepareNavigationBarView() {
+-
+-        try {
+-            if (!mWindowManagerService.needsNavigationBar())
+-                mNavigationBarView.setNavigationIconHints(mNavigationIconHints);
+-        } catch(RemoteException re) {
+-        }
+-
++        mNavigationBarView.setIMEState(showingIME);
+         mNavigationBarView.reorient();
+ 
+         if (mNavigationBarView.getRecentsButton() != null) {
+-- 
+2.5.0
+

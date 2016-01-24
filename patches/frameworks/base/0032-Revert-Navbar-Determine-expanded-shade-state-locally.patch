@@ -1,0 +1,217 @@
+From c9958cdea1b80af3bd1bbd62a52516984fc0301a Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Mon, 25 Jan 2016 01:29:31 +0700
+Subject: [PATCH 32/64] Revert "Navbar: Determine expanded shade state locally
+ for ACTION_NOTIFICATIONS"
+
+This reverts commit 1cf5a3a9032b7470fee8f01ba039272b33c17b5c.
+---
+ .../com/android/internal/statusbar/IStatusBar.aidl |  1 -
+ .../internal/statusbar/IStatusBarService.aidl      |  1 -
+ .../android/internal/util/aokp/AwesomeAction.java  | 33 ++++++++++++++++---
+ .../android/systemui/statusbar/CommandQueue.java   | 12 -------
+ .../systemui/statusbar/phone/PhoneStatusBar.java   | 37 ----------------------
+ .../android/systemui/statusbar/tv/TvStatusBar.java |  4 ---
+ .../android/server/StatusBarManagerService.java    | 11 -------
+ 7 files changed, 28 insertions(+), 71 deletions(-)
+
+diff --git a/core/java/com/android/internal/statusbar/IStatusBar.aidl b/core/java/com/android/internal/statusbar/IStatusBar.aidl
+index 927b9e6..41af435 100644
+--- a/core/java/com/android/internal/statusbar/IStatusBar.aidl
++++ b/core/java/com/android/internal/statusbar/IStatusBar.aidl
+@@ -30,7 +30,6 @@ oneway interface IStatusBar
+     void disable(int state);
+     void animateExpandNotificationsPanel();
+     void animateExpandSettingsPanel();
+-    void animateNotificationsOrSettingsPanel();
+     void animateCollapsePanels();
+     void setSystemUiVisibility(int vis, int mask);
+     void topAppWindowChanged(boolean menuVisible);
+diff --git a/core/java/com/android/internal/statusbar/IStatusBarService.aidl b/core/java/com/android/internal/statusbar/IStatusBarService.aidl
+index ab8e2b0..c8f4e5f 100644
+--- a/core/java/com/android/internal/statusbar/IStatusBarService.aidl
++++ b/core/java/com/android/internal/statusbar/IStatusBarService.aidl
+@@ -33,7 +33,6 @@ interface IStatusBarService
+     void topAppWindowChanged(boolean menuVisible);
+     void setImeWindowStatus(in IBinder token, int vis, int backDisposition);
+     void expandSettingsPanel();
+-    void animateNotificationsOrSettingsPanel();
+     void setCurrentUser(int newUserId);
+     void setButtonDrawable(int buttonId, int iconId);
+ 
+diff --git a/core/java/com/android/internal/util/aokp/AwesomeAction.java b/core/java/com/android/internal/util/aokp/AwesomeAction.java
+index 9b3c882..a4e389a 100755
+--- a/core/java/com/android/internal/util/aokp/AwesomeAction.java
++++ b/core/java/com/android/internal/util/aokp/AwesomeAction.java
+@@ -143,11 +143,34 @@ public class AwesomeAction {
+                 break;
+ 
+             case ACTION_NOTIFICATIONS:
+-                try {
+-                    IStatusBarService.Stub.asInterface(
+-                        ServiceManager.getService(mContext.STATUS_BAR_SERVICE)).animateNotificationsOrSettingsPanel();
+-                } catch (RemoteException e) {
+-                    Log.e(TAG, "NOTIFICATION ACTION FAILED");
++                if (wtf) {
++                    if (!ftw) {
++                        try {
++                            IStatusBarService.Stub.asInterface(
++                                ServiceManager.getService(mContext.STATUS_BAR_SERVICE)).expandNotificationsPanel();
++                            ftw = true;
++                        } catch (RemoteException e) {
++                            // A RemoteException is like a cold
++                            // Let's hope we don't catch one!
++                        }
++                    } else {
++                        try {
++                            IStatusBarService.Stub.asInterface(
++                                ServiceManager.getService(mContext.STATUS_BAR_SERVICE)).expandSettingsPanel();
++                            ftw = false;
++                        } catch (RemoteException e) {
++                            // NO!!!
++                        }
++                        wtf = false;
++                        }
++                    } else {
++                    try {
++                        IStatusBarService.Stub.asInterface(
++                            ServiceManager.getService(mContext.STATUS_BAR_SERVICE)).collapsePanels();
++                        wtf = true;
++                    } catch (RemoteException e) {
++                        // EL CHUPACABRA!!
++                    }
+                 }
+                 break;
+ 
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/CommandQueue.java b/packages/SystemUI/src/com/android/systemui/statusbar/CommandQueue.java
+index 88591d8..4bc49e1 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/CommandQueue.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/CommandQueue.java
+@@ -57,7 +57,6 @@ public class CommandQueue extends IStatusBar.Stub {
+     private static final int MSG_CANCEL_PRELOAD_RECENT_APPS = 15 << MSG_SHIFT;
+     private static final int MSG_SET_WINDOW_STATE           = 16 << MSG_SHIFT;
+     private static final int MSG_CHANGE_BUTTON_LAYOUT       = 17 << MSG_SHIFT;
+-    private static final int MSG_ANIMATE_PANEL_FROM_NAVBAR  = 18 << MSG_SHIFT;
+ 
+     public static final int FLAG_EXCLUDE_NONE = 0;
+     public static final int FLAG_EXCLUDE_SEARCH_PANEL = 1 << 0;
+@@ -91,7 +90,6 @@ public class CommandQueue extends IStatusBar.Stub {
+         public void animateExpandNotificationsPanel();
+         public void animateCollapsePanels(int flags);
+         public void animateExpandSettingsPanel();
+-        public void animateNotificationsOrSettingsPanel();
+         public void setSystemUiVisibility(int vis, int mask);
+         public void topAppWindowChanged(boolean visible);
+         public void setImeWindowStatus(IBinder token, int vis, int backDisposition);
+@@ -182,13 +180,6 @@ public class CommandQueue extends IStatusBar.Stub {
+         }
+     }
+ 
+-    public void animateNotificationsOrSettingsPanel() {
+-        synchronized (mList) {
+-            mHandler.removeMessages(MSG_ANIMATE_PANEL_FROM_NAVBAR);
+-            mHandler.sendEmptyMessage(MSG_ANIMATE_PANEL_FROM_NAVBAR);
+-        }
+-    }
+-
+     public void setSystemUiVisibility(int vis, int mask) {
+         synchronized (mList) {
+             mHandler.removeMessages(MSG_SET_SYSTEMUI_VISIBILITY);
+@@ -316,9 +307,6 @@ public class CommandQueue extends IStatusBar.Stub {
+                 case MSG_EXPAND_SETTINGS:
+                     mCallbacks.animateExpandSettingsPanel();
+                     break;
+-                case MSG_ANIMATE_PANEL_FROM_NAVBAR:
+-                    mCallbacks.animateNotificationsOrSettingsPanel();
+-                    break;
+                 case MSG_SET_SYSTEMUI_VISIBILITY:
+                     mCallbacks.setSystemUiVisibility(msg.arg1, msg.arg2);
+                     break;
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/phone/PhoneStatusBar.java b/packages/SystemUI/src/com/android/systemui/statusbar/phone/PhoneStatusBar.java
+index dc7c72c..d1c23fa 100755
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/phone/PhoneStatusBar.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/phone/PhoneStatusBar.java
+@@ -2229,43 +2229,6 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
+     }
+ 
+     @Override
+-    public void animateNotificationsOrSettingsPanel() {
+-        if (!panelsEnabled()) return;
+-        int state = getExpandedNotificationState();
+-        switch (state) {
+-            case 0:
+-                animateExpandNotificationsPanel();
+-                break;
+-            case 1:
+-                animateCollapsePanels();
+-                break;
+-            case 2:
+-                animateExpandSettingsPanel();
+-                break;
+-        }
+-    }
+-
+-    /**
+-     * State of the expanded shade:
+-     * 0 = collapsed/expanding
+-     * 1 = quicksettings side
+-     * 2 = notifications side
+-     * @hide
+-     */
+-    private int getExpandedNotificationState() {
+-        if (mExpandedVisible) {
+-            // Notification button is on quick settings side
+-            if (mNotificationButton.getVisibility() == View.VISIBLE) {
+-                return 1;
+-            // Settings button is on notification side
+-            } else if (mSettingsButton.getVisibility() == View.VISIBLE) {
+-                return 2;
+-            }
+-        }
+-        return 0;
+-    }
+-
+-    @Override
+     public void animateExpandSettingsPanel() {
+         if (SPEW) Log.d(TAG, "animateExpand: mExpandedVisible=" + mExpandedVisible);
+         if (!panelsEnabled()) {
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/tv/TvStatusBar.java b/packages/SystemUI/src/com/android/systemui/statusbar/tv/TvStatusBar.java
+index d2fb837..c59dbee 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/tv/TvStatusBar.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/tv/TvStatusBar.java
+@@ -65,10 +65,6 @@ public class TvStatusBar extends BaseStatusBar {
+     }
+ 
+     @Override
+-    public void animateNotificationsOrSettingsPanel() {
+-    }
+-
+-    @Override
+     public void animateCollapsePanels(int flags) {
+     }
+ 
+diff --git a/services/java/com/android/server/StatusBarManagerService.java b/services/java/com/android/server/StatusBarManagerService.java
+index e710e42..75a7095 100644
+--- a/services/java/com/android/server/StatusBarManagerService.java
++++ b/services/java/com/android/server/StatusBarManagerService.java
+@@ -152,17 +152,6 @@ public class StatusBarManagerService extends IStatusBarService.Stub
+         }
+     }
+ 
+-    public void animateNotificationsOrSettingsPanel() {
+-        enforceExpandStatusBar();
+-
+-        if (mBar != null) {
+-            try {
+-                mBar.animateNotificationsOrSettingsPanel();
+-            } catch (RemoteException WTF) {
+-            }
+-        }
+-    }
+-
+     public void disable(int what, IBinder token, String pkg) {
+         disableInternal(mCurrentUserId, what, token, pkg);
+     }
+-- 
+2.5.0
+

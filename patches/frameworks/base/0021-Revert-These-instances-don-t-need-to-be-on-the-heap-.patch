@@ -1,0 +1,221 @@
+From c1797e0c8996aa4641ca2beb020e87d3e9d70c8d Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Mon, 25 Jan 2016 01:09:31 +0700
+Subject: [PATCH 21/64] Revert "These instances don't need to be on the heap
+ all the time."
+
+This reverts commit ea18bbf8d23586034801b49d42c85e6982830b36.
+---
+ .../android/internal/util/aokp/AwesomeAction.java  | 76 ++++++++++------------
+ .../systemui/statusbar/policy/KeyButtonView.java   |  8 +--
+ 2 files changed, 37 insertions(+), 47 deletions(-)
+
+diff --git a/core/java/com/android/internal/util/aokp/AwesomeAction.java b/core/java/com/android/internal/util/aokp/AwesomeAction.java
+index 8a57eee..8554f0f 100755
+--- a/core/java/com/android/internal/util/aokp/AwesomeAction.java
++++ b/core/java/com/android/internal/util/aokp/AwesomeAction.java
+@@ -60,7 +60,6 @@ import com.android.internal.util.cm.ActionUtils;
+ public class AwesomeAction {
+ 
+     public static final String TAG = "AwesomeAction";
+-    public static final String NULL_ACTION = AwesomeConstant.ACTION_NULL.value();
+ 
+     private static final int LAYOUT_LEFT = -1;
+     private static final int LAYOUT_RIGHT = 1;
+@@ -80,12 +79,12 @@ public class AwesomeAction {
+         mCurrentUserId = newUserId;
+     }
+ 
++    private static InputManager im = InputManager.getInstance();
++    private static Handler mHandler = new Handler();
++
+     public static boolean launchAction(final Context mContext, final String action) {
+-        if (TextUtils.isEmpty(action) || action.equals(NULL_ACTION)) {
+-            return false;
+-        }
+         AwesomeConstant AwesomeEnum = fromString(action);
+-        AudioManager am;
++
+         switch (AwesomeEnum) {
+             case ACTION_HOME:
+                 IWindowManager mWindowManagerService = WindowManagerGlobal.getWindowManagerService();
+@@ -125,6 +124,7 @@ public class AwesomeAction {
+                 if (isIntentAvailable(mContext, intent))
+                     mContext.startActivity(intent);
+                 break;
++
+             case ACTION_VOICEASSIST:
+                 Intent intentVoice = new Intent(RecognizerIntent.ACTION_WEB_SEARCH);
+                 intentVoice.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+@@ -175,9 +175,6 @@ public class AwesomeAction {
+                 mContext.sendBroadcast(appWindow);
+                 break;
+ 
+-            case ACTION_BLANK:
+-                break;
+-
+             case ACTION_ARROW_LEFT:
+                 triggerVirtualKeypress(KeyEvent.KEYCODE_DPAD_LEFT, CURSOR_FLAGS);
+                 break;
+@@ -194,18 +191,27 @@ public class AwesomeAction {
+                 triggerVirtualKeypress(KeyEvent.KEYCODE_DPAD_DOWN, CURSOR_FLAGS);
+                 break;
+ 
++            case ACTION_GESTURE_ACTIONS:
++                mContext.sendBroadcast(new Intent(Intent.TOGGLE_GESTURE_ACTIONS));
++                break;
++
++            case ACTION_IME:
++                mContext.sendBroadcast(new Intent(
++                        "android.settings.SHOW_INPUT_METHOD_PICKER"));
++                break;
++
+             case ACTION_RING_VIB:
+-                am = (AudioManager) mContext.getSystemService(Context.AUDIO_SERVICE);
+-                if (am != null) {
+-                    if (am.getRingerMode() != AudioManager.RINGER_MODE_VIBRATE) {
+-                        am.setRingerMode(AudioManager.RINGER_MODE_VIBRATE);
++                final AudioManager rv = (AudioManager) mContext.getSystemService(Context.AUDIO_SERVICE);
++                if (rv != null) {
++                    if (rv.getRingerMode() != AudioManager.RINGER_MODE_VIBRATE) {
++                        rv.setRingerMode(AudioManager.RINGER_MODE_VIBRATE);
+                         Vibrator vib = (Vibrator) mContext
+                                 .getSystemService(Context.VIBRATOR_SERVICE);
+                         if (vib != null) {
+                             vib.vibrate(50);
+                         }
+                     } else {
+-                        am.setRingerMode(AudioManager.RINGER_MODE_NORMAL);
++                        rv.setRingerMode(AudioManager.RINGER_MODE_NORMAL);
+                         ToneGenerator tg = new ToneGenerator(
+                                 AudioManager.STREAM_NOTIFICATION,
+                                 (int) (ToneGenerator.MAX_VOLUME * 0.85));
+@@ -232,18 +238,13 @@ public class AwesomeAction {
+                 }
+                 break;
+ 
+-            case ACTION_IME:
+-                mContext.sendBroadcast(new Intent(
+-                        "android.settings.SHOW_INPUT_METHOD_PICKER"));
+-                break;
+-
+             case ACTION_RING_SILENT:
+-                am = (AudioManager) mContext.getSystemService(Context.AUDIO_SERVICE);
+-                if (am != null) {
+-                    if (am.getRingerMode() != AudioManager.RINGER_MODE_SILENT) {
+-                        am.setRingerMode(AudioManager.RINGER_MODE_SILENT);
++                final AudioManager rs = (AudioManager) mContext.getSystemService(Context.AUDIO_SERVICE);
++                if (rs != null) {
++                    if (rs.getRingerMode() != AudioManager.RINGER_MODE_SILENT) {
++                        rs.setRingerMode(AudioManager.RINGER_MODE_SILENT);
+                     } else {
+-                        am.setRingerMode(AudioManager.RINGER_MODE_NORMAL);
++                        rs.setRingerMode(AudioManager.RINGER_MODE_NORMAL);
+                         ToneGenerator tg = new ToneGenerator(
+                                 AudioManager.STREAM_NOTIFICATION,
+                                 (int) (ToneGenerator.MAX_VOLUME * 0.85));
+@@ -255,19 +256,19 @@ public class AwesomeAction {
+                 break;
+ 
+             case ACTION_RING_VIB_SILENT:
+-                am = (AudioManager) mContext.getSystemService(Context.AUDIO_SERVICE);
+-                if (am != null) {
+-                    if (am.getRingerMode() == AudioManager.RINGER_MODE_NORMAL) {
+-                        am.setRingerMode(AudioManager.RINGER_MODE_VIBRATE);
++                final AudioManager rvs = (AudioManager) mContext.getSystemService(Context.AUDIO_SERVICE);
++                if (rvs != null) {
++                    if (rvs.getRingerMode() == AudioManager.RINGER_MODE_NORMAL) {
++                        rvs.setRingerMode(AudioManager.RINGER_MODE_VIBRATE);
+                         Vibrator vib = (Vibrator) mContext
+                                 .getSystemService(Context.VIBRATOR_SERVICE);
+                         if (vib != null) {
+                             vib.vibrate(50);
+                         }
+-                    } else if (am.getRingerMode() == AudioManager.RINGER_MODE_VIBRATE) {
+-                        am.setRingerMode(AudioManager.RINGER_MODE_SILENT);
++                    } else if (rvs.getRingerMode() == AudioManager.RINGER_MODE_VIBRATE) {
++                        rvs.setRingerMode(AudioManager.RINGER_MODE_SILENT);
+                     } else {
+-                        am.setRingerMode(AudioManager.RINGER_MODE_NORMAL);
++                        rvs.setRingerMode(AudioManager.RINGER_MODE_NORMAL);
+                         ToneGenerator tg = new ToneGenerator(
+                                 AudioManager.STREAM_NOTIFICATION,
+                                 (int) (ToneGenerator.MAX_VOLUME * 0.85));
+@@ -278,9 +279,9 @@ public class AwesomeAction {
+                 }
+                 break;
+ 
+-            case ACTION_GESTURE_ACTIONS:
+-                mContext.sendBroadcast(new Intent(Intent.TOGGLE_GESTURE_ACTIONS));
+-                break;
++            case ACTION_NULL:
++            case ACTION_BLANK:
++                return false;
+         }
+         return true;
+     }
+@@ -293,9 +294,7 @@ public class AwesomeAction {
+     }
+ 
+     private static void triggerVirtualKeypress(final int keyCode, int flags) {
+-        InputManager im = InputManager.getInstance();
+         long now = SystemClock.uptimeMillis();
+-
+         final KeyEvent downEvent = new KeyEvent(now, now, KeyEvent.ACTION_DOWN,
+                 keyCode, 0, 0, KeyCharacterMap.VIRTUAL_KEYBOARD, 0,
+                 flags, InputDevice.SOURCE_KEYBOARD);
+@@ -304,11 +303,4 @@ public class AwesomeAction {
+         im.injectInputEvent(downEvent, InputManager.INJECT_INPUT_EVENT_MODE_ASYNC);
+         im.injectInputEvent(upEvent, InputManager.INJECT_INPUT_EVENT_MODE_ASYNC);
+     }
+-
+-    private static Handler mHandler = new Handler();
+-
+-    public static void wtfHelper() {
+-        wtf = true;
+-        ftw = false;
+-    }
+ }
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/policy/KeyButtonView.java b/packages/SystemUI/src/com/android/systemui/statusbar/policy/KeyButtonView.java
+index 868983f..f8b7b14 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/policy/KeyButtonView.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/policy/KeyButtonView.java
+@@ -108,7 +108,7 @@ public class KeyButtonView extends ImageView {
+             }
+         }
+     };
+-    private Runnable mSingleTap = new Runnable() {
++    Runnable mSingleTap = new Runnable() {
+         @Override
+         public void run() {
+             if (!isPressed()) {
+@@ -329,7 +329,6 @@ public class KeyButtonView extends ImageView {
+         if (mHasBlankSingleAction) return true;
+ 
+         final int action = ev.getAction();
+-        int x, y;
+ 
+         switch (action) {
+             case MotionEvent.ACTION_DOWN:
+@@ -362,8 +361,8 @@ public class KeyButtonView extends ImageView {
+                 }
+                 break;
+             case MotionEvent.ACTION_MOVE:
+-                x = (int) ev.getX();
+-                y = (int) ev.getY();
++                int x = (int) ev.getX();
++                int y = (int) ev.getY();
+                 setPressed(x >= -mTouchSlop
+                         && x < getWidth() + mTouchSlop
+                         && y >= -mTouchSlop
+@@ -414,7 +413,6 @@ public class KeyButtonView extends ImageView {
+ 
+     private void doSinglePress() {
+         if (callOnClick()) {
+-            // cool
+             sendAccessibilityEvent(AccessibilityEvent.TYPE_VIEW_CLICKED);
+         } else if (mIsRecentsSingleAction) {
+             try {
+-- 
+2.5.0
+

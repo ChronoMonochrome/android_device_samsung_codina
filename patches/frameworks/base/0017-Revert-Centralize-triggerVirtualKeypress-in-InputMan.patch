@@ -1,0 +1,274 @@
+From 287a993b05a78d5ebcfb413b4674c211beaddb8e Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Mon, 25 Jan 2016 01:09:26 +0700
+Subject: [PATCH 17/64] Revert "Centralize triggerVirtualKeypress in
+ InputManager, and separate down and up events by 10ms"
+
+This reverts commit 8e3ef9156ac8b3f4b640eaf9f89713f2b4f53698.
+---
+ core/java/android/hardware/input/InputManager.java | 32 -------------
+ .../android/hardware/input/KeypressRunnable.java   | 54 ----------------------
+ .../android/internal/util/aokp/AwesomeAction.java  | 35 ++++++++++----
+ .../internal/policy/impl/PhoneWindowManager.java   | 19 ++++++--
+ 4 files changed, 41 insertions(+), 99 deletions(-)
+ delete mode 100644 core/java/android/hardware/input/KeypressRunnable.java
+
+diff --git a/core/java/android/hardware/input/InputManager.java b/core/java/android/hardware/input/InputManager.java
+index d2a0bc3..30e69a6 100644
+--- a/core/java/android/hardware/input/InputManager.java
++++ b/core/java/android/hardware/input/InputManager.java
+@@ -57,9 +57,6 @@ public final class InputManager {
+ 
+     private static InputManager sInstance;
+ 
+-    private static Handler mHandler;
+-    private static Thread mHandlerThread;
+-
+     private final IInputManager mIm;
+ 
+     // Guarded by mInputDevicesLock
+@@ -178,35 +175,6 @@ public final class InputManager {
+     }
+ 
+     /**
+-     * @hide
+-     */
+-    public static void triggerVirtualKeypress(int keyCode) {
+-        triggerVirtualKeypress(keyCode, INJECT_INPUT_EVENT_MODE_ASYNC);
+-    }
+-
+-    /**
+-     * @hide
+-     */
+-    public static void triggerVirtualKeypress(int keyCode, int flags) {
+-        final KeypressRunnable kr = new KeypressRunnable(keyCode, flags);
+-        if (mHandlerThread == null) {
+-            mHandlerThread = new Thread() {
+-                public void run() {
+-                    Looper.prepare();
+-                    mHandler = new Handler();
+-                    mHandler.post(kr);
+-                    mHandler.postDelayed(kr, 10);
+-                    Looper.loop();
+-                }
+-            };
+-            mHandlerThread.start();
+-        } else {
+-            mHandler.post(kr);
+-            mHandler.postDelayed(kr, 10);
+-        }
+-    }
+-
+-    /**
+      * Gets an instance of the input manager.
+      *
+      * @return The input manager instance.
+diff --git a/core/java/android/hardware/input/KeypressRunnable.java b/core/java/android/hardware/input/KeypressRunnable.java
+deleted file mode 100644
+index ccc7619..0000000
+--- a/core/java/android/hardware/input/KeypressRunnable.java
++++ /dev/null
+@@ -1,54 +0,0 @@
+-/*
+- * Copyright (C) 2014 VanirAOSP
+- *
+- * Licensed under the Apache License, Version 2.0 (the "License");
+- * you may not use this file except in compliance with the License.
+- * You may obtain a copy of the License at
+- *
+- *      http://www.apache.org/licenses/LICENSE-2.0
+- *
+- * Unless required by applicable law or agreed to in writing, software
+- * distributed under the License is distributed on an "AS IS" BASIS,
+- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- * See the License for the specific language governing permissions and
+- * limitations under the License.
+- */
+-
+-package android.hardware.input;
+-
+-import android.os.Handler;
+-import android.os.SystemClock;
+-import android.view.InputDevice;
+-import android.view.KeyCharacterMap;
+-import android.view.KeyEvent;
+-
+-import java.util.ArrayList;
+-
+-
+-/**
+- * used internally by InputManager
+- * @hide
+- */
+-public final class KeypressRunnable implements Runnable
+-{
+-    private final int keyCode;
+-    private final int keyFlags;
+-    private int keyAction = KeyEvent.ACTION_DOWN;
+-    public KeypressRunnable(final int code, final int flags) {
+-        keyCode = code;
+-        keyFlags = flags;
+-    }
+-
+-    public void run() {
+-        long now = SystemClock.uptimeMillis();
+-
+-        final KeyEvent event = new KeyEvent(now, now, keyAction,
+-                keyCode, 0, 0, KeyCharacterMap.VIRTUAL_KEYBOARD, 0,
+-                keyFlags, InputDevice.SOURCE_KEYBOARD);
+-
+-        InputManager.getInstance().injectInputEvent(event, InputManager.INJECT_INPUT_EVENT_MODE_ASYNC);
+-
+-        if (keyAction == KeyEvent.ACTION_DOWN)
+-            keyAction = KeyEvent.ACTION_UP;
+-    }
+-}
+diff --git a/core/java/com/android/internal/util/aokp/AwesomeAction.java b/core/java/com/android/internal/util/aokp/AwesomeAction.java
+index cdd4ef3..a0f48dc 100755
+--- a/core/java/com/android/internal/util/aokp/AwesomeAction.java
++++ b/core/java/com/android/internal/util/aokp/AwesomeAction.java
+@@ -31,6 +31,7 @@ import android.os.Handler;
+ import android.os.Message;
+ import android.os.RemoteException;
+ import android.os.ServiceManager;
++import android.os.SystemClock;
+ import android.os.Vibrator;
+ import android.provider.AlarmClock;
+ import android.provider.CalendarContract;
+@@ -40,6 +41,7 @@ import android.text.TextUtils;
+ import android.util.Log;
+ import android.view.InputDevice;
+ import android.view.IWindowManager;
++import android.view.KeyCharacterMap;
+ import android.view.KeyEvent;
+ import android.view.WindowManagerGlobal;
+ import android.widget.Toast;
+@@ -67,8 +69,6 @@ public class AwesomeAction {
+ 
+     private static int mCurrentUserId = 0;
+ 
+-    private static Handler mHandler = new Handler();
+-
+     private AwesomeAction() {
+     }
+ 
+@@ -89,15 +89,15 @@ public class AwesomeAction {
+                 break;
+ 
+             case ACTION_BACK:
+-                InputManager.triggerVirtualKeypress(KeyEvent.KEYCODE_BACK, STANDARD_FLAGS);
++                triggerVirtualKeypress(KeyEvent.KEYCODE_BACK, STANDARD_FLAGS);
+                 break;
+ 
+             case ACTION_MENU:
+-                InputManager.triggerVirtualKeypress(KeyEvent.KEYCODE_MENU, STANDARD_FLAGS);
++                triggerVirtualKeypress(KeyEvent.KEYCODE_MENU, STANDARD_FLAGS);
+                 break;
+ 
+             case ACTION_SEARCH:
+-                InputManager.triggerVirtualKeypress(KeyEvent.KEYCODE_SEARCH, STANDARD_FLAGS);
++                triggerVirtualKeypress(KeyEvent.KEYCODE_SEARCH, STANDARD_FLAGS);
+                 break;
+ 
+             case ACTION_KILL:
+@@ -125,7 +125,7 @@ public class AwesomeAction {
+                 break;
+ 
+             case ACTION_POWER:
+-                InputManager.triggerVirtualKeypress(KeyEvent.KEYCODE_POWER, STANDARD_FLAGS);
++                triggerVirtualKeypress(KeyEvent.KEYCODE_POWER, STANDARD_FLAGS);
+                 break;
+ 
+             case ACTION_TORCH:
+@@ -169,19 +169,19 @@ public class AwesomeAction {
+                 break;
+ 
+             case ACTION_ARROW_LEFT:
+-                InputManager.triggerVirtualKeypress(KeyEvent.KEYCODE_DPAD_LEFT, CURSOR_FLAGS);
++                triggerVirtualKeypress(KeyEvent.KEYCODE_DPAD_LEFT, CURSOR_FLAGS);
+                 break;
+ 
+             case ACTION_ARROW_RIGHT:
+-                InputManager.triggerVirtualKeypress(KeyEvent.KEYCODE_DPAD_RIGHT, CURSOR_FLAGS);
++                triggerVirtualKeypress(KeyEvent.KEYCODE_DPAD_RIGHT, CURSOR_FLAGS);
+                 break;
+ 
+             case ACTION_ARROW_UP:
+-                InputManager.triggerVirtualKeypress(KeyEvent.KEYCODE_DPAD_UP, CURSOR_FLAGS);
++                triggerVirtualKeypress(KeyEvent.KEYCODE_DPAD_UP, CURSOR_FLAGS);
+                 break;
+ 
+             case ACTION_ARROW_DOWN:
+-                InputManager.triggerVirtualKeypress(KeyEvent.KEYCODE_DPAD_DOWN, CURSOR_FLAGS);
++                triggerVirtualKeypress(KeyEvent.KEYCODE_DPAD_DOWN, CURSOR_FLAGS);
+                 break;
+ 
+             case ACTION_RING_VIB:
+@@ -285,4 +285,19 @@ public class AwesomeAction {
+                 PackageManager.MATCH_DEFAULT_ONLY);
+         return list.size() > 0;
+     }
++
++    private static void triggerVirtualKeypress(final int keyCode, int flags) {
++        InputManager im = InputManager.getInstance();
++        long now = SystemClock.uptimeMillis();
++
++        final KeyEvent downEvent = new KeyEvent(now, now, KeyEvent.ACTION_DOWN,
++                keyCode, 0, 0, KeyCharacterMap.VIRTUAL_KEYBOARD, 0,
++                flags, InputDevice.SOURCE_KEYBOARD);
++        final KeyEvent upEvent = KeyEvent.changeAction(downEvent, KeyEvent.ACTION_UP);
++
++        im.injectInputEvent(downEvent, InputManager.INJECT_INPUT_EVENT_MODE_ASYNC);
++        im.injectInputEvent(upEvent, InputManager.INJECT_INPUT_EVENT_MODE_ASYNC);
++    }
++
++    private static Handler mHandler = new Handler();
+ }
+diff --git a/policy/src/com/android/internal/policy/impl/PhoneWindowManager.java b/policy/src/com/android/internal/policy/impl/PhoneWindowManager.java
+index 11b3074..761f987 100755
+--- a/policy/src/com/android/internal/policy/impl/PhoneWindowManager.java
++++ b/policy/src/com/android/internal/policy/impl/PhoneWindowManager.java
+@@ -1207,16 +1207,29 @@ public class PhoneWindowManager implements WindowManagerPolicy {
+                 mContext.getContentResolver(), Settings.Global.DEVICE_PROVISIONED, 0) != 0;
+     }
+ 
++    private void triggerVirtualKeypress(final int keyCode) {
++        InputManager im = InputManager.getInstance();
++        long now = SystemClock.uptimeMillis();
++
++        final KeyEvent downEvent = new KeyEvent(now, now, KeyEvent.ACTION_DOWN,
++                keyCode, 0, 0, KeyCharacterMap.VIRTUAL_KEYBOARD, 0,
++                KeyEvent.FLAG_FROM_SYSTEM, InputDevice.SOURCE_KEYBOARD);
++        final KeyEvent upEvent = KeyEvent.changeAction(downEvent, KeyEvent.ACTION_UP);
++
++        im.injectInputEvent(downEvent, InputManager.INJECT_INPUT_EVENT_MODE_ASYNC);
++        im.injectInputEvent(upEvent, InputManager.INJECT_INPUT_EVENT_MODE_ASYNC);
++    }
++
+     private void performKeyAction(int behavior) {
+ 
+         switch (behavior) {
+             case KEY_ACTION_NOTHING:
+                 break;
+             case KEY_ACTION_MENU:
+-                InputManager.triggerVirtualKeypress(KeyEvent.KEYCODE_MENU);
++                triggerVirtualKeypress(KeyEvent.KEYCODE_MENU);
+                 break;
+             case KEY_ACTION_BACK:
+-                InputManager.triggerVirtualKeypress(KeyEvent.KEYCODE_BACK);
++                triggerVirtualKeypress(KeyEvent.KEYCODE_BACK);
+                 break;
+             case KEY_ACTION_HOME:
+                 launchHomeFromHotKey();
+@@ -1231,7 +1244,7 @@ public class PhoneWindowManager implements WindowManagerPolicy {
+                 launchAssistLongPressAction();
+                 break;
+             case KEY_ACTION_IN_APP_SEARCH:
+-                InputManager.triggerVirtualKeypress(KeyEvent.KEYCODE_SEARCH);
++                triggerVirtualKeypress(KeyEvent.KEYCODE_SEARCH);
+                 break;
+             case KEY_ACTION_KILL:
+                 mHandler.removeCallbacks(mKillTask);
+-- 
+2.5.0
+
