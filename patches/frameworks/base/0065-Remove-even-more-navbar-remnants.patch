@@ -1,0 +1,3111 @@
+From 528a21fa71dee6dcca68aa49b4d9ff45866f8bed Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Mon, 25 Jan 2016 09:59:44 +0700
+Subject: [PATCH 2/2] Remove even more navbar remnants
+
+Change-Id: I76e1ed673940379092757b4d92cb0ffa92979a9b
+---
+ core/java/android/content/pm/ThemeUtils.java       |   1 -
+ core/java/android/provider/Settings.java           |  32 --
+ core/java/android/provider/ThemesContract.java     |  42 +-
+ core/java/android/view/IWindowManager.aidl         |  15 -
+ core/java/android/view/ViewConfiguration.java      |   8 +-
+ core/java/android/view/WindowManagerPolicy.java    |  15 -
+ .../android/internal/util/aokp/NavRingHelpers.java | 261 ---------
+ core/res/res/values-sw600dp/dimens.xml             |   4 -
+ core/res/res/values-sw720dp/dimens.xml             |   4 -
+ core/res/res/values/config.xml                     |   4 -
+ core/res/res/values/dimens.xml                     |   9 -
+ core/res/res/values/symbols.xml                    |   5 -
+ .../android/providers/settings/DatabaseHelper.java |   3 -
+ packages/SystemUI/res/values-land/dimens.xml       |   3 -
+ packages/SystemUI/res/values/cm_colors.xml         |   2 -
+ packages/SystemUI/res/values/config.xml            |   4 -
+ packages/SystemUI/res/values/dimens.xml            |   3 -
+ .../com/android/systemui/AOKPSearchPanelView.java  | 588 ---------------------
+ .../systemui/aokp/SearchPanelSwipeView.java        | 120 -----
+ .../android/systemui/quicksettings/NavbarTile.java |  86 ---
+ .../android/systemui/statusbar/BaseStatusBar.java  |  72 +--
+ .../android/systemui/statusbar/CommandQueue.java   |   2 -
+ .../systemui/statusbar/DelegateViewHelper.java     |   9 +-
+ .../systemui/statusbar/phone/PhoneStatusBar.java   |  90 ----
+ .../statusbar/phone/QuickSettingsController.java   |   2 -
+ .../systemui/statusbar/policy/KeyButtonView.java   |   1 -
+ .../android/systemui/statusbar/tv/TvStatusBar.java |  11 -
+ .../internal/policy/impl/PhoneWindowManager.java   | 509 +-----------------
+ services/java/com/android/server/ThemeService.java |   1 -
+ .../com/android/server/wm/DisplayMagnifier.java    |   1 -
+ .../android/server/wm/WindowManagerService.java    |  15 -
+ .../src/android/view/IWindowManagerImpl.java       |   7 -
+ .../layoutlib/bridge/impl/RenderSessionImpl.java   | 153 +-----
+ 33 files changed, 27 insertions(+), 2055 deletions(-)
+ delete mode 100644 core/java/com/android/internal/util/aokp/NavRingHelpers.java
+ delete mode 100644 packages/SystemUI/src/com/android/systemui/AOKPSearchPanelView.java
+ delete mode 100644 packages/SystemUI/src/com/android/systemui/aokp/SearchPanelSwipeView.java
+ delete mode 100644 packages/SystemUI/src/com/android/systemui/quicksettings/NavbarTile.java
+
+diff --git a/core/java/android/content/pm/ThemeUtils.java b/core/java/android/content/pm/ThemeUtils.java
+index 49c727e..015866a 100644
+--- a/core/java/android/content/pm/ThemeUtils.java
++++ b/core/java/android/content/pm/ThemeUtils.java
+@@ -601,7 +601,6 @@ public class ThemeUtils {
+         components.add(ThemesColumns.MODIFIES_OVERLAYS);
+         components.add(ThemesColumns.MODIFIES_RINGTONES);
+         components.add(ThemesColumns.MODIFIES_STATUS_BAR);
+-        components.add(ThemesColumns.MODIFIES_NAVIGATION_BAR);
+         return components;
+     }
+ 
+diff --git a/core/java/android/provider/Settings.java b/core/java/android/provider/Settings.java
+index f395410..2dd6839 100755
+--- a/core/java/android/provider/Settings.java
++++ b/core/java/android/provider/Settings.java
+@@ -3318,18 +3318,6 @@ public final class Settings {
+         public static final String NAV_BUTTONS = "nav_buttons";
+ 
+         /**
+-         * Whether to enable the navbar for hw key devices
+-         * @hide
+-         */
+-        public static final String ENABLE_NAVIGATION_BAR = "enable_navigation_bar";
+-
+-        /**
+-         * Whether or not to enable the navring
+-         * @hide
+-         */
+-        public static final String ENABLE_NAVIGATION_RING = "enable_navigation_ring";
+-
+-        /**
+         * Notification Power Widget - Custom Brightness Mode
+         * @hide
+         */
+@@ -4568,26 +4556,6 @@ public final class Settings {
+         public static final String CLEAR_RECENTS_BUTTON_LOCATION = "clear_recents_button_location";
+ 
+         /**
+-         *
+-         * @hide
+-         */
+-        public static final String NAVIGATION_BAR_BUTTONS = "navigation_bar_buttons";
+-
+-        /**
+-         * @hide
+-         */
+-        public static final String NAVIGATION_BAR_HEIGHT_LANDSCAPE = "navigation_bar_height_landscape";
+-        /**
+-         * @hide
+-         */
+-        public static final String NAVIGATION_BAR_HEIGHT = "navigation_bar_height";
+-
+-        /**
+-         * @hide
+-         */
+-        public static final String NAVIGATION_BAR_WIDTH = "navigation_bar_width";
+-
+-        /**
+          * Whether to enable voice wakeup.  The value is boolean (1 or 0).
+          * @hide
+          */
+diff --git a/core/java/android/provider/ThemesContract.java b/core/java/android/provider/ThemesContract.java
+index 2c26ff4..d128688 100644
+--- a/core/java/android/provider/ThemesContract.java
++++ b/core/java/android/provider/ThemesContract.java
+@@ -176,13 +176,6 @@ public class ThemesContract {
+         public static final String MODIFIES_STATUS_BAR = "mods_status_bar";
+ 
+         /**
+-         * 1 if theme has an overlay for SystemUI/NavBar
+-         * <P>Type: INTEGER</P>
+-         * <P>Default: 0</P>
+-         */
+-        public static final String MODIFIES_NAVIGATION_BAR = "mods_navigation_bar";
+-
+-        /**
+          * URI to the theme's wallpaper. We should support multiple wallpaper
+          * but for now we will just have 1.
+          * <P>Type: TEXT</P>
+@@ -269,7 +262,6 @@ public class ThemesContract {
+         public static final String KEY_NOTIFICATIONS = "mixnmatch_notifications";
+         public static final String KEY_RINGTONE = "mixnmatch_ringtone";
+         public static final String KEY_OVERLAYS = "mixnmatch_overlays";
+-        public static final String KEY_NAVIGATION_BAR = "mixnmatch_navigation_bar";
+ 
+         public static final String[] ROWS = { KEY_HOMESCREEN,
+             KEY_LOCKSCREEN,
+@@ -281,7 +273,6 @@ public class ThemesContract {
+             KEY_RINGTONE,
+             KEY_ALARM,
+             KEY_OVERLAYS,
+-            KEY_NAVIGATION_BAR
+         };
+ 
+         /**
+@@ -312,9 +303,6 @@ public class ThemesContract {
+             } else if (component.equals(MixnMatchColumns.KEY_STATUS_BAR)) {
+                 throw new IllegalArgumentException(
+                         "Status bar mixnmatch component does not have a related column");
+-            } else if (component.equals(MixnMatchColumns.KEY_NAVIGATION_BAR)) {
+-                throw new IllegalArgumentException(
+-                        "Navigation bar mixnmatch component does not have a related column");
+             }
+             return null;
+         }
+@@ -344,9 +332,7 @@ public class ThemesContract {
+                 return MixnMatchColumns.KEY_OVERLAYS;
+             } else if (component.equals(ThemesColumns.MODIFIES_STATUS_BAR)) {
+                 return MixnMatchColumns.KEY_STATUS_BAR;
+-            } else if (component.equals(ThemesColumns.MODIFIES_NAVIGATION_BAR)) {
+-                return MixnMatchColumns.KEY_NAVIGATION_BAR;
+-            }
++            } 
+             return null;
+         }
+ 
+@@ -375,8 +361,6 @@ public class ThemesContract {
+                 return ThemesColumns.MODIFIES_OVERLAYS;
+             } else if (mixnmatchKey.equals(MixnMatchColumns.KEY_STATUS_BAR)) {
+                 return ThemesColumns.MODIFIES_STATUS_BAR;
+-            } else if (mixnmatchKey.equals(MixnMatchColumns.KEY_NAVIGATION_BAR)) {
+-                return ThemesColumns.MODIFIES_NAVIGATION_BAR;
+             }
+             return null;
+         }
+@@ -463,30 +447,6 @@ public class ThemesContract {
+         public static final String STATUSBAR_CLOCK_TEXT_COLOR = "statusbar_clock_text_color";
+ 
+         /**
+-         * Cached image of the themed navigation bar background.
+-         * <P>Type: BLOB (bitmap)</P>
+-         */
+-        public static final String NAVBAR_BACKGROUND = "navbar_background";
+-
+-        /**
+-         * Cached image of the themed back button.
+-         * <P>Type: BLOB (bitmap)</P>
+-         */
+-        public static final String NAVBAR_BACK_BUTTON = "navbar_back_button";
+-
+-        /**
+-         * Cached image of the themed home button.
+-         * <P>Type: BLOB (bitmap)</P>
+-         */
+-        public static final String NAVBAR_HOME_BUTTON = "navbar_home_button";
+-
+-        /**
+-         * Cached image of the themed recents button.
+-         * <P>Type: BLOB (bitmap)</P>
+-         */
+-        public static final String NAVBAR_RECENT_BUTTON = "navbar_recent_button";
+-
+-        /**
+          * Cached image of the 1/4 icons
+          * <P>Type: BLOB (bitmap)</P>
+          */
+diff --git a/core/java/android/view/IWindowManager.aidl b/core/java/android/view/IWindowManager.aidl
+index 02d035c..a841614 100755
+--- a/core/java/android/view/IWindowManager.aidl
++++ b/core/java/android/view/IWindowManager.aidl
+@@ -231,11 +231,6 @@ interface IWindowManager
+     boolean waitForWindowDrawn(IBinder token, in IRemoteCallback callback);
+ 
+     /**
+-     * Device has a software navigation bar (separate from the status bar).
+-     */
+-    boolean hasNavigationBar();
+-
+-    /**
+      * Updates the rotation state if Immersive is set to be orientation dependent.
+      * @hide
+      */
+@@ -248,16 +243,6 @@ interface IWindowManager
+     void sendHomeAction();
+ 
+     /**
+-     * Device needs a software navigation bar (because it has no hardware keys).
+-     */
+-    boolean needsNavigationBar();
+-
+-    /**
+-     * Device wants a navigation bar (becuase it has hardware keys)
+-     */
+-    boolean wantsNavigationBar();
+-
+-    /**
+      * Device can generate KEY_ACTION_MENU keypress
+      */
+     boolean hasMenuKeyEnabled();
+diff --git a/core/java/android/view/ViewConfiguration.java b/core/java/android/view/ViewConfiguration.java
+index 1351244..8252192 100755
+--- a/core/java/android/view/ViewConfiguration.java
++++ b/core/java/android/view/ViewConfiguration.java
+@@ -421,12 +421,8 @@ public class ViewConfiguration {
+                 default:
+                 case HAS_PERMANENT_MENU_KEY_AUTODETECT: {
+                     IWindowManager wm = WindowManagerGlobal.getWindowManagerService();
+-                    try {
+-                        sHasPermanentMenuKey = !wm.hasNavigationBar();
+-                        sHasPermanentMenuKeySet = true;
+-                    } catch (RemoteException ex) {
+-                        sHasPermanentMenuKey = false;
+-                    }
++                    sHasPermanentMenuKey = true;
++                    sHasPermanentMenuKeySet = true;
+                 }
+                 break;
+ 
+diff --git a/core/java/android/view/WindowManagerPolicy.java b/core/java/android/view/WindowManagerPolicy.java
+index 6eb4045..f876716 100755
+--- a/core/java/android/view/WindowManagerPolicy.java
++++ b/core/java/android/view/WindowManagerPolicy.java
+@@ -1150,21 +1150,6 @@ public interface WindowManagerPolicy {
+     public int adjustSystemUiVisibilityLw(int visibility);
+ 
+     /**
+-     * Specifies whether there is an on-screen navigation bar separate from the status bar.
+-     */
+-    public boolean hasNavigationBar();
+-
+-    /**
+-     * Specifies whether the device needs a navigation bar (because it has no hardware buttons)
+-     */
+-    public boolean needsNavigationBar();
+-
+-    /**
+-     * Specifies whether the device wants an on-screen navigation bar(because it has hardware keys)
+-     */
+-    public boolean wantsNavigationBar();
+-
+-    /**
+      * Updates the rotation state if Immersive is set to be orientation dependent.
+      * @hide
+      */
+diff --git a/core/java/com/android/internal/util/aokp/NavRingHelpers.java b/core/java/com/android/internal/util/aokp/NavRingHelpers.java
+deleted file mode 100644
+index 703dbf7..0000000
+--- a/core/java/com/android/internal/util/aokp/NavRingHelpers.java
++++ /dev/null
+@@ -1,261 +0,0 @@
+-/*
+- * Copyright (C) 2013 The CyanogenMod Project
+- *
+- * Licensed under the Apache License, Version 2.0 (the "License");
+- * you may not use this file except in compliance with the License.
+- * You may obtain a copy of the License at
+- *
+- *      http://www.apache.org/licenses/LICENSE-2.0
+- *
+- * Unless required by applicable law or agreed to in writing, software
+- * distributed under the License is distributed on an "AS IS" BASIS,
+- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- * See the License for the specific language governing permissions and
+- * limitations under the License.
+- */
+-
+-package com.android.internal.util.aokp;
+-
+-import android.app.SearchManager;
+-import android.content.ComponentName;
+-import android.content.ContentResolver;
+-import android.content.Context;
+-import android.content.Intent;
+-import android.content.pm.ActivityInfo;
+-import android.content.pm.PackageManager;
+-import android.content.res.Resources;
+-import android.graphics.Bitmap;
+-import android.graphics.BitmapFactory;
+-import android.graphics.Bitmap.Config;
+-import android.graphics.Canvas;
+-import android.graphics.Paint;
+-import android.graphics.PorterDuffXfermode;
+-import android.graphics.PorterDuff.Mode;
+-import android.graphics.Rect;
+-import android.graphics.RectF;
+-import android.graphics.Xfermode;
+-import android.graphics.drawable.BitmapDrawable;
+-import android.graphics.drawable.Drawable;
+-import android.graphics.drawable.LayerDrawable;
+-import android.graphics.drawable.StateListDrawable;
+-import android.net.Uri;
+-import android.media.AudioManager;
+-import android.os.UserHandle;
+-import android.provider.Settings;
+-import android.text.TextUtils;
+-import android.util.DisplayMetrics;
+-import android.util.Log;
+-import android.view.WindowManager;
+-
+-import static com.android.internal.util.aokp.AwesomeConstants.*;
+-import com.android.internal.widget.multiwaveview.GlowPadView;
+-import com.android.internal.widget.multiwaveview.TargetDrawable;
+-
+-import java.io.File;
+-import java.net.URISyntaxException;
+-import java.util.ArrayList;
+-import java.util.Arrays;
+-
+-public class NavRingHelpers {
+-
+-    // These items will be subtracted from NavRing Actions when RC requests list of
+-    // Available Actions
+-    private static final AwesomeConstant[] EXCLUDED_FROM_NAVRING = {
+-            // these can be removed as the features are added back
+-            AwesomeConstant.ACTION_WIDGETS,
+-            AwesomeConstant.ACTION_APP_WINDOW,
+-            AwesomeConstant.ACTION_BLANK,
+-            AwesomeConstant.ACTION_NULL,
+-            AwesomeConstant.ACTION_ARROW_LEFT,
+-            AwesomeConstant.ACTION_ARROW_RIGHT,
+-            AwesomeConstant.ACTION_ARROW_UP,
+-            AwesomeConstant.ACTION_ARROW_DOWN
+-    };
+-
+-    private NavRingHelpers() {
+-    }
+-
+-    public static String[] getNavRingActions() {
+-        boolean itemFound;
+-        String[] mActions;
+-        ArrayList<String> mActionList = new ArrayList<String>();
+-        String[] mActionStart = AwesomeConstants.AwesomeActions();
+-        int startLength = mActionStart.length;
+-        int excludeLength = EXCLUDED_FROM_NAVRING.length;
+-        for (int i = 0; i < startLength; i++) {
+-            itemFound = false;
+-            for (int j = 0; j < excludeLength; j++) {
+-                if (mActionStart[i].equals(EXCLUDED_FROM_NAVRING[j].value())) {
+-                    itemFound = true;
+-                }
+-            }
+-            if (!itemFound) {
+-                mActionList.add(mActionStart[i]);
+-            }
+-        }
+-        int actionSize = mActionList.size();
+-        mActions = new String[actionSize];
+-        for (int i = 0; i < actionSize; i++) {
+-            mActions[i] = mActionList.get(i);
+-        }
+-        return mActions;
+-    }
+-
+-    public static TargetDrawable getTargetDrawable(Context context, String action) {
+-        int resourceId = -1;
+-        final Resources res = context.getResources();
+-        Drawable activityIcon;
+-        DisplayMetrics metrics = new DisplayMetrics();
+-        WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+-        wm.getDefaultDisplay().getMetrics(metrics);
+-
+-        if (TextUtils.isEmpty(action)) {
+-            TargetDrawable drawable = new TargetDrawable(res,
+-                    com.android.internal.R.drawable.ic_action_empty);
+-            drawable.setEnabled(false);
+-            return drawable;
+-        }
+-
+-        AwesomeConstant IconEnum = fromString(action);
+-        if (IconEnum.equals(AwesomeConstant.ACTION_NULL)) {
+-            TargetDrawable drawable = new TargetDrawable(res,
+-                    com.android.internal.R.drawable.ic_action_empty);
+-            drawable.setEnabled(false);
+-            return drawable;
+-        } else if (IconEnum.equals(AwesomeConstant.ACTION_ASSIST)) {
+-            TargetDrawable drawable = new TargetDrawable(res,
+-                    com.android.internal.R.drawable.ic_action_assist_generic);
+-            return drawable;
+-        } else if (IconEnum.equals(AwesomeConstant.ACTION_APP)) {
+-            // no pre-defined action, try to resolve URI
+-            try {
+-                Intent intent = Intent.parseUri(action, 0);
+-                PackageManager pm = context.getPackageManager();
+-                ActivityInfo info = intent.resolveActivityInfo(pm, PackageManager.GET_ACTIVITIES);
+-
+-                if (info == null) {
+-                    TargetDrawable drawable = new TargetDrawable(res,
+-                            com.android.internal.R.drawable.ic_action_empty);
+-                    drawable.setEnabled(false);
+-                    return drawable;
+-                }
+-
+-                activityIcon = info.loadIcon(pm);
+-
+-                int desiredSize = (int) (48 * metrics.density);
+-                int width = activityIcon.getIntrinsicWidth();
+-
+-                if (width > desiredSize)
+-                {
+-                    Bitmap bm = ((BitmapDrawable) activityIcon).getBitmap();
+-                    if (bm != null) {
+-                        Bitmap bitmapOrig = Bitmap.createScaledBitmap(bm, desiredSize, desiredSize,
+-                                false);
+-                        activityIcon = new BitmapDrawable(res, bitmapOrig);
+-                    }
+-                }
+-
+-            } catch (URISyntaxException e) {
+-                TargetDrawable drawable = new TargetDrawable(res,
+-                        com.android.internal.R.drawable.ic_action_empty);
+-                drawable.setEnabled(false);
+-                return drawable;
+-            }
+-        } else {
+-            activityIcon = AwesomeConstants.getActionIcon(context, action);
+-        }
+-
+-        Drawable iconBg = res.getDrawable(com.android.internal.R.drawable.ic_navbar_blank);
+-        Drawable iconBgActivated = res
+-                .getDrawable(com.android.internal.R.drawable.ic_navbar_blank_activated);
+-        int margin = (int) (iconBg.getIntrinsicHeight() / 3);
+-        LayerDrawable icon = new LayerDrawable(new Drawable[] {
+-                iconBg, activityIcon
+-        });
+-        LayerDrawable iconActivated = new LayerDrawable(new Drawable[] {
+-                iconBgActivated, activityIcon
+-        });
+-
+-        icon.setLayerInset(1, margin, margin, margin, margin);
+-        iconActivated.setLayerInset(1, margin, margin, margin, margin);
+-
+-        StateListDrawable selector = new StateListDrawable();
+-        selector.addState(new int[] {
+-                android.R.attr.state_enabled,
+-                -android.R.attr.state_active,
+-                -android.R.attr.state_focused
+-        }, icon);
+-        selector.addState(new int[] {
+-                android.R.attr.state_enabled,
+-                android.R.attr.state_active,
+-                -android.R.attr.state_focused
+-        }, iconActivated);
+-        selector.addState(new int[] {
+-                android.R.attr.state_enabled,
+-                -android.R.attr.state_active,
+-                android.R.attr.state_focused
+-        }, iconActivated);
+-        return new TargetDrawable(res, selector);
+-    }
+-
+-    public static TargetDrawable getCustomDrawable(Context context, String action) {
+-        final Resources res = context.getResources();
+-
+-        File f = new File(Uri.parse(action).getPath());
+-        Drawable activityIcon = new BitmapDrawable(res,
+-                getRoundedCornerBitmap(BitmapFactory.decodeFile(f.getAbsolutePath())));
+-
+-        Drawable iconBg = res.getDrawable(
+-                com.android.internal.R.drawable.ic_navbar_blank);
+-        Drawable iconBgActivated = res.getDrawable(
+-                com.android.internal.R.drawable.ic_navbar_blank_activated);
+-
+-        int margin = (int) (iconBg.getIntrinsicHeight() / 3);
+-        LayerDrawable icon = new LayerDrawable(new Drawable[] {
+-                iconBg, activityIcon
+-        });
+-        LayerDrawable iconActivated = new LayerDrawable(new Drawable[] {
+-                iconBgActivated, activityIcon
+-        });
+-
+-        icon.setLayerInset(1, margin, margin, margin, margin);
+-        iconActivated.setLayerInset(1, margin, margin, margin, margin);
+-
+-        StateListDrawable selector = new StateListDrawable();
+-        selector.addState(new int[] {
+-                android.R.attr.state_enabled,
+-                -android.R.attr.state_active,
+-                -android.R.attr.state_focused
+-        }, icon);
+-        selector.addState(new int[] {
+-                android.R.attr.state_enabled,
+-                android.R.attr.state_active,
+-                -android.R.attr.state_focused
+-        }, iconActivated);
+-        selector.addState(new int[] {
+-                android.R.attr.state_enabled,
+-                -android.R.attr.state_active,
+-                android.R.attr.state_focused
+-        }, iconActivated);
+-        return new TargetDrawable(res, selector);
+-    }
+-
+-    public static Bitmap getRoundedCornerBitmap(Bitmap bitmap) {
+-        Bitmap output = Bitmap.createBitmap(bitmap.getWidth(),
+-                bitmap.getHeight(), Config.ARGB_8888);
+-        Canvas canvas = new Canvas(output);
+-
+-        final int color = 0xff424242;
+-        final Paint paint = new Paint();
+-        final Rect rect = new Rect(0, 0, bitmap.getWidth(), bitmap.getHeight());
+-        final RectF rectF = new RectF(rect);
+-        final float roundPx = 24;
+-        paint.setAntiAlias(true);
+-        canvas.drawARGB(0, 0, 0, 0);
+-        paint.setColor(color);
+-        canvas.drawRoundRect(rectF, roundPx, roundPx, paint);
+-        paint.setXfermode(new PorterDuffXfermode(Mode.SRC_IN));
+-        canvas.drawBitmap(bitmap, rect, rect, paint);
+-        return output;
+-    }
+-}
+diff --git a/core/res/res/values-sw600dp/dimens.xml b/core/res/res/values-sw600dp/dimens.xml
+index d21f9b7..82c1c69 100644
+--- a/core/res/res/values-sw600dp/dimens.xml
++++ b/core/res/res/values-sw600dp/dimens.xml
+@@ -70,10 +70,6 @@
+          (the screen is in landscape). This may be either a fraction or a dimension.-->
+     <item type="dimen" name="dialog_fixed_height_minor">90%</item>
+ 
+-    <!-- Height of the bottom navigation bar in portrait; on sw600dp devices
+-         this is a bit taller -->
+-    <dimen name="navigation_bar_height_portrait">56dp</dimen>
+-
+     <!-- Preference fragment padding, sides -->
+     <dimen name="preference_fragment_padding_side">24dp</dimen>
+     <dimen name="preference_screen_header_padding_side">24dip</dimen>
+diff --git a/core/res/res/values-sw720dp/dimens.xml b/core/res/res/values-sw720dp/dimens.xml
+index 654fdd5..7da1c3b 100644
+--- a/core/res/res/values-sw720dp/dimens.xml
++++ b/core/res/res/values-sw720dp/dimens.xml
+@@ -17,10 +17,6 @@
+ */
+ -->
+ <resources>
+-    <!-- Height of the bottom navigation bar in portrait; on sw720dp devices
+-         this is the same as the height in landscape -->
+-    <dimen name="navigation_bar_height_portrait">@dimen/navigation_bar_height</dimen>
+-
+     <!-- The platform's desired fixed width for a dialog along the major axis
+          (the screen is in landscape). This may be either a fraction or a dimension.-->
+     <item type="dimen" name="dialog_fixed_width_major">50%</item>
+diff --git a/core/res/res/values/config.xml b/core/res/res/values/config.xml
+index c1eebdd..d078bf4 100755
+--- a/core/res/res/values/config.xml
++++ b/core/res/res/values/config.xml
+@@ -1116,10 +1116,6 @@
+          This is intended to allow packaging drivers or tools for installation on a PC. -->
+     <string translatable="false" name="config_isoImagePath"></string>
+ 
+-    <!-- Whether a software navigation bar should be shown. NOTE: in the future this may be
+-         autodetected from the Configuration. -->
+-    <bool name="config_showNavigationBar">false</bool>
+-
+     <!-- Whether action menu items should be displayed in ALLCAPS or not.
+          Defaults to true. If this is not appropriate for specific locales
+          it should be disabled in that locale's resources. -->
+diff --git a/core/res/res/values/dimens.xml b/core/res/res/values/dimens.xml
+index aeb83a8..91877a0 100644
+--- a/core/res/res/values/dimens.xml
++++ b/core/res/res/values/dimens.xml
+@@ -32,19 +32,10 @@
+     <dimen name="toast_y_offset">64dip</dimen>
+     <!-- Height of the status bar -->
+     <dimen name="status_bar_height">25dip</dimen>
+-    <!-- Height of the bottom navigation / system bar. -->
+-    <dimen name="navigation_bar_height">48dp</dimen>
+-    <!-- Height of the bottom navigation bar in portrait; often the same as @dimen/navigation_bar_height -->
+-    <dimen name="navigation_bar_height_landscape">48dp</dimen>
+-    <!-- Width of the navigation bar when it is placed vertically on the screen -->
+-    <dimen name="navigation_bar_width">42dp</dimen>
+     <!-- Height of notification icons in the status bar -->
+     <dimen name="status_bar_icon_size">24dip</dimen>
+     <!-- Size of the giant number (unread count) in the notifications -->
+     <dimen name="status_bar_content_number_size">48sp</dimen>
+-    <!-- Height of the system bar (combined status & navigation); used by
+-         SystemUI internally, not respected by the window manager. -->
+-    <dimen name="system_bar_height">@dimen/navigation_bar_height</dimen>
+     <!-- Height of notification icons in the system bar -->
+     <dimen name="system_bar_icon_size">32dip</dimen>
+     <!-- Margin at the edge of the screen to ignore touch events for in the windowshade. -->
+diff --git a/core/res/res/values/symbols.xml b/core/res/res/values/symbols.xml
+index a4ab1ed..95e8b7b 100644
+--- a/core/res/res/values/symbols.xml
++++ b/core/res/res/values/symbols.xml
+@@ -1342,13 +1342,8 @@
+   <java-symbol type="bool" name="config_forceAnalogDeskDock" />
+   <java-symbol type="bool" name="config_lidControlsSleep" />
+   <java-symbol type="bool" name="config_reverseDefaultRotation" />
+-  <java-symbol type="bool" name="config_showNavigationBar" />
+   <java-symbol type="bool" name="target_honeycomb_needs_options_menu" />
+-  <java-symbol type="dimen" name="navigation_bar_height" />
+-  <java-symbol type="dimen" name="navigation_bar_height_landscape" />
+-  <java-symbol type="dimen" name="navigation_bar_width" />
+   <java-symbol type="dimen" name="status_bar_height" />
+-  <java-symbol type="dimen" name="system_bar_height" />
+   <java-symbol type="dimen" name="kg_widget_pager_horizontal_padding" />
+   <java-symbol type="dimen" name="kg_widget_pager_top_padding" />
+   <java-symbol type="dimen" name="kg_widget_pager_bottom_padding" />
+diff --git a/packages/SettingsProvider/src/com/android/providers/settings/DatabaseHelper.java b/packages/SettingsProvider/src/com/android/providers/settings/DatabaseHelper.java
+index c8d8c22..0ce2822 100644
+--- a/packages/SettingsProvider/src/com/android/providers/settings/DatabaseHelper.java
++++ b/packages/SettingsProvider/src/com/android/providers/settings/DatabaseHelper.java
+@@ -2155,9 +2155,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
+                         R.string.def_lockscreen_targets_no_telephony);
+             }
+ 
+-            loadIntegerSetting(stmt, Settings.System.ENABLE_NAVIGATION_BAR,
+-                    R.integer.def_force_disable_navkeys);
+-
+             loadIntegerSetting(stmt, Settings.System.DOUBLE_TAP_SLEEP_GESTURE,
+                     R.integer.def_double_tap_sleep_gesture);
+ 
+diff --git a/packages/SystemUI/res/values-land/dimens.xml b/packages/SystemUI/res/values-land/dimens.xml
+index ac0b795..8b9a951 100644
+--- a/packages/SystemUI/res/values-land/dimens.xml
++++ b/packages/SystemUI/res/values-land/dimens.xml
+@@ -16,9 +16,6 @@
+ */
+ -->
+ <resources>
+-    <!-- thickness (width) of the navigation bar on phones that require it -->
+-    <dimen name="navigation_bar_size">@*android:dimen/navigation_bar_width</dimen>
+-
+     <!-- Recent Applications parameters -->
+     <!-- How far the thumbnail for a recent app appears from left edge -->
+     <dimen name="status_bar_recents_thumbnail_left_margin">0dp</dimen>
+diff --git a/packages/SystemUI/res/values/cm_colors.xml b/packages/SystemUI/res/values/cm_colors.xml
+index 23fa385..61bfe2b 100644
+--- a/packages/SystemUI/res/values/cm_colors.xml
++++ b/packages/SystemUI/res/values/cm_colors.xml
+@@ -21,7 +21,5 @@
+     <!-- Colors for the system bars -->
+     <color name="status_bar_background_opaque">@color/system_bar_background_opaque</color>
+     <color name="status_bar_background_semi_transparent">@color/system_bar_background_semi_transparent</color>
+-    <color name="navigation_bar_background_opaque">@color/system_bar_background_opaque</color>
+-    <color name="navigation_bar_background_semi_transparent">@color/system_bar_background_semi_transparent</color>
+ 
+ </resources>
+diff --git a/packages/SystemUI/res/values/config.xml b/packages/SystemUI/res/values/config.xml
+index c67dd24..58cf7df 100644
+--- a/packages/SystemUI/res/values/config.xml
++++ b/packages/SystemUI/res/values/config.xml
+@@ -69,10 +69,6 @@
+      value at runtime for some things) -->
+     <integer name="status_bar_recents_bg_gradient_degrees">90</integer>
+ 
+-    <!-- decay duration (from size_max -> size), in ms -->
+-    <integer name="navigation_bar_deadzone_hold">333</integer>
+-    <integer name="navigation_bar_deadzone_decay">333</integer>
+-
+     <bool name="config_dead_zone_flash">false</bool>
+ 
+     <!-- Min alpha % that recent items will fade to while being dismissed -->
+diff --git a/packages/SystemUI/res/values/dimens.xml b/packages/SystemUI/res/values/dimens.xml
+index cf29f1e..dfbcaba 100644
+--- a/packages/SystemUI/res/values/dimens.xml
++++ b/packages/SystemUI/res/values/dimens.xml
+@@ -65,9 +65,6 @@
+     <!-- Amount to offset bottom of notification peek window from top of status bar. -->
+     <dimen name="peek_window_y_offset">-12dp</dimen>
+ 
+-    <!-- thickness (height) of the navigation bar on phones that require it -->
+-    <dimen name="navigation_bar_size">1dp</dimen>
+-
+     <!-- Height of notification icons in the status bar -->
+     <dimen name="status_bar_icon_size">@*android:dimen/status_bar_icon_size</dimen>
+ 
+diff --git a/packages/SystemUI/src/com/android/systemui/AOKPSearchPanelView.java b/packages/SystemUI/src/com/android/systemui/AOKPSearchPanelView.java
+deleted file mode 100644
+index 6aba2df..0000000
+--- a/packages/SystemUI/src/com/android/systemui/AOKPSearchPanelView.java
++++ /dev/null
+@@ -1,588 +0,0 @@
+-/*
+- * Copyright (C) 2012 The Android Open Source Project
+- *
+- * Licensed under the Apache License, Version 2.0 (the "License");
+- * you may not use this file except in compliance with the License.
+- * You may obtain a copy of the License at
+- *
+- *      http://www.apache.org/licenses/LICENSE-2.0
+- *
+- * Unless required by applicable law or agreed to in writing, software
+- * distributed under the License is distributed on an "AS IS" BASIS,
+- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- * See the License for the specific language governing permissions and
+- * limitations under the License.
+- */
+-
+-package com.android.systemui;
+-
+-import android.animation.LayoutTransition;
+-import android.app.ActivityOptions;
+-import android.app.SearchManager;
+-import android.app.ActivityManagerNative;
+-import android.content.ActivityNotFoundException;
+-import android.content.ComponentName;
+-import android.content.res.Configuration;
+-import android.content.Context;
+-import android.content.ContentResolver;
+-import android.content.Intent;
+-import android.content.res.Resources;
+-import android.database.ContentObserver;
+-import android.os.Vibrator;
+-import android.os.Handler;
+-import android.os.ServiceManager;
+-import android.os.Message;
+-import android.os.RemoteException;
+-import android.os.UserHandle;
+-import android.provider.Settings;
+-import android.text.TextUtils;
+-import android.util.AttributeSet;
+-import android.util.EventLog;
+-import android.util.Slog;
+-import android.util.Log;
+-import android.view.IWindowManager;
+-import android.view.MotionEvent;
+-import android.view.View;
+-import android.view.ViewConfiguration;
+-import android.view.ViewGroup;
+-import android.view.ViewTreeObserver;
+-import android.view.ViewTreeObserver.OnPreDrawListener;
+-import android.widget.FrameLayout;
+-
+-import static com.android.internal.util.aokp.AwesomeConstants.*;
+-
+-import com.android.internal.util.aokp.AwesomeAction;
+-import com.android.internal.util.aokp.NavRingHelpers;
+-import com.android.internal.widget.multiwaveview.GlowPadView;
+-import com.android.internal.widget.multiwaveview.GlowPadView.OnTriggerListener;
+-import com.android.internal.widget.multiwaveview.TargetDrawable;
+-import com.android.systemui.statusbar.phone.KeyguardTouchDelegate;
+-
+-import com.android.systemui.EventLogTags;
+-import com.android.systemui.R;
+-import com.android.systemui.statusbar.BaseStatusBar;
+-import com.android.systemui.statusbar.CommandQueue;
+-import com.android.systemui.statusbar.phone.PhoneStatusBar;
+-import com.android.systemui.statusbar.StatusBarPanel;
+-
+-import java.util.ArrayList;
+-
+-public class AOKPSearchPanelView extends FrameLayout implements
+-        StatusBarPanel, ActivityOptions.OnAnimationStartedListener {
+-    private static final int SEARCH_PANEL_HOLD_DURATION = 0;
+-    static final String TAG = "SearchPanelView";
+-    static final boolean DEBUG = PhoneStatusBar.DEBUG || false;
+-    public static final boolean DEBUG_GESTURES = false;
+-
+-    private final Context mContext;
+-    private BaseStatusBar mBar;
+-
+-    private boolean mShowing;
+-    private View mSearchTargetsContainer;
+-    private GlowPadView mGlowPadView;
+-    private IWindowManager mWm;
+-    private Resources mResources;
+-    private SettingsObserver mSettingsObserver;
+-    private ContentResolver mContentResolver;
+-    private String[] targetActivities = new String[5];
+-    private String[] longActivities = new String[5];
+-    private String[] customIcons = new String[5];
+-    private int startPosOffset;
+-
+-    private int mNavRingAmount;
+-    private boolean mBoolLongPress;
+-    private boolean mSearchPanelLock;
+-    private int mTarget;
+-    private boolean mLongPress = false;
+-
+-    //need to make an intent list and an intent counter
+-    String[] intent;
+-    ArrayList<String> intentList = new ArrayList<String>();
+-    ArrayList<String> longList = new ArrayList<String>();
+-
+-    public AOKPSearchPanelView(Context context, AttributeSet attrs) {
+-        this(context, attrs, 0);
+-    }
+-
+-    public AOKPSearchPanelView(Context context, AttributeSet attrs, int defStyle) {
+-        super(context, attrs, defStyle);
+-        mContext = context;
+-        mWm = IWindowManager.Stub.asInterface(ServiceManager.getService("window"));
+-        mResources = mContext.getResources();
+-        mContentResolver = mContext.getContentResolver();
+-        mSettingsObserver = new SettingsObserver(new Handler());
+-        updateSettings();
+-    }
+-
+-    @Override
+-    protected void onAttachedToWindow() {
+-        super.onAttachedToWindow();
+-        mSettingsObserver.observe();
+-        updateSettings();
+-    }
+-
+-    @Override
+-    protected void onDetachedFromWindow() {
+-        mContentResolver.unregisterContentObserver(mSettingsObserver);
+-        super.onDetachedFromWindow();
+-    }
+-
+-    private void startAssistActivity() {
+-        if (!mBar.isDeviceProvisioned()) return;
+-
+-        // Close Recent Apps if needed
+-        mBar.animateCollapsePanels(CommandQueue.FLAG_EXCLUDE_SEARCH_PANEL);
+-        boolean isKeyguardShowing = false;
+-        try {
+-            isKeyguardShowing = mWm.isKeyguardLocked();
+-        } catch (RemoteException e) {
+-
+-        }
+-
+-        if (isKeyguardShowing) {
+-            // Have keyguard show the bouncer and launch the activity if the user succeeds.
+-            KeyguardTouchDelegate.getInstance(getContext()).showAssistant();
+-            onAnimationStarted();
+-        } else {
+-            // Otherwise, keyguard isn't showing so launch it from here.
+-            Intent intent = ((SearchManager) mContext.getSystemService(Context.SEARCH_SERVICE))
+-                    .getAssistIntent(mContext, true, UserHandle.USER_CURRENT);
+-            if (intent == null) return;
+-
+-            try {
+-                ActivityManagerNative.getDefault().dismissKeyguardOnNextActivity();
+-            } catch (RemoteException e) {
+-                // too bad, so sad...
+-            }
+-
+-            try {
+-                ActivityOptions opts = ActivityOptions.makeCustomAnimation(mContext,
+-                        R.anim.search_launch_enter, R.anim.search_launch_exit,
+-                        getHandler(), this);
+-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+-                mContext.startActivityAsUser(intent, opts.toBundle(),
+-                        new UserHandle(UserHandle.USER_CURRENT));
+-            } catch (ActivityNotFoundException e) {
+-                Log.w(TAG, "Activity not found for " + intent.getAction());
+-                onAnimationStarted();
+-            }
+-        }
+-    }
+-
+-    private class H extends Handler {
+-        public void handleMessage(Message m) {
+-            switch (m.what) {
+-            }
+-        }
+-    }
+-
+-    private H mHandler = new H();
+-
+-    class GlowPadTriggerListener implements GlowPadView.OnTriggerListener {
+-        boolean mWaitingForLaunch;
+-
+-       final Runnable SetLongPress = new Runnable () {
+-            public void run() {
+-                if (!mLongPress) {
+-                    vibrate();
+-                    mLongPress = true;
+-                }
+-            }
+-        };
+-
+-        public void onGrabbed(View v, int handle) {
+-            mSearchPanelLock = false;
+-        }
+-
+-        public void onReleased(View v, int handle) {
+-            if (!mSearchPanelLock && mLongPress) {
+-                mSearchPanelLock = true;
+-                if (shouldUnlock(longList.get(mTarget))) {
+-                    maybeSkipKeyguard();
+-                }
+-                AwesomeAction.launchAction(mContext, longList.get(mTarget));
+-                mBar.hideSearchPanel();
+-            }
+-        }
+-
+-        public void onTargetChange(View v, final int target) {
+-            if (target == -1) {
+-                mHandler.removeCallbacks(SetLongPress);
+-                mLongPress = false;
+-            } else {
+-                if (mBoolLongPress && !TextUtils.isEmpty(longList.get(target)) && !longList.get(target).equals(AwesomeConstant.ACTION_NULL.value())) {
+-                    mTarget = target;
+-                    mHandler.postDelayed(SetLongPress, ViewConfiguration.getLongPressTimeout());
+-                }
+-            }
+-        }
+-
+-        public void onGrabbedStateChange(View v, int handle) {
+-            if (!mWaitingForLaunch && OnTriggerListener.NO_HANDLE == handle) {
+-                mBar.hideSearchPanel();
+-                mHandler.removeCallbacks(SetLongPress);
+-                mLongPress = false;
+-            }
+-        }
+-
+-        public void onTrigger(View v, final int target) {
+-            mTarget = target;
+-            if (!mLongPress) {
+-                if (AwesomeConstant.ACTION_ASSIST.equals(intentList.get(target))) {
+-                    startAssistActivity();
+-                } else {
+-                    if (shouldUnlock(intentList.get(target))) {
+-                        maybeSkipKeyguard();
+-                    }
+-                    AwesomeAction.launchAction(mContext, intentList.get(target));
+-                }
+-                mHandler.removeCallbacks(SetLongPress);
+-            }
+-        }
+-
+-        public void onFinishFinalAnimation() {
+-        }
+-    }
+-    final GlowPadTriggerListener mGlowPadViewListener = new GlowPadTriggerListener();
+-
+-    @Override
+-    public void onAnimationStarted() {
+-        postDelayed(new Runnable() {
+-            public void run() {
+-                mGlowPadViewListener.mWaitingForLaunch = false;
+-                mBar.hideSearchPanel();
+-            }
+-        }, SEARCH_PANEL_HOLD_DURATION);
+-    }
+-
+-    @Override
+-    protected void onFinishInflate() {
+-        super.onFinishInflate();
+-        mContext.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+-        mSearchTargetsContainer = findViewById(R.id.search_panel_container);
+-        mGlowPadView = (GlowPadView) findViewById(R.id.glow_pad_view);
+-        mGlowPadView.setOnTriggerListener(mGlowPadViewListener);
+-
+-        updateSettings();
+-        setDrawables();
+-    }
+-
+-
+-    private boolean shouldUnlock(String action) {
+-        if (TextUtils.isEmpty(action))
+-            return false;
+-
+-        if (action.equals(AwesomeConstant.ACTION_SILENT_VIB.value()) ||
+-            action.equals(AwesomeConstant.ACTION_VIB.value()) ||
+-            action.equals(AwesomeConstant.ACTION_POWER.value()) ||
+-            action.equals(AwesomeConstant.ACTION_TORCH.value()) ||
+-            action.equals(AwesomeConstant.ACTION_NOTIFICATIONS.value()) ||
+-            action.equals(AwesomeConstant.ACTION_SILENT.value())) {
+-            return false;
+-        }
+-
+-        return true;
+-    }
+-
+-    private void maybeSkipKeyguard() {
+-        Intent u = new Intent();
+-        u.setAction("com.android.keyguard.action.DISMISS_KEYGUARD_SECURELY");
+-        mContext.sendBroadcastAsUser(u, UserHandle.ALL);
+-    }
+-
+-    private void setDrawables() {
+-        mLongPress = false;
+-        mSearchPanelLock = false;
+-
+-        String tgtCenter = Settings.System.getString(mContentResolver, Settings.System.SYSTEMUI_NAVRING[0]);
+-        if (TextUtils.isEmpty(tgtCenter)) {
+-            Settings.System.putString(mContentResolver, Settings.System.SYSTEMUI_NAVRING[0], AwesomeConstant.ACTION_ASSIST.value());
+-        }
+-
+-        // Custom Targets
+-        ArrayList<TargetDrawable> storedDraw = new ArrayList<TargetDrawable>();
+-
+-        int endPosOffset = 0;
+-        int middleBlanks = 0;
+-
+-        if (isScreenPortrait()) { // NavRing on Bottom
+-            startPosOffset =  1;
+-            endPosOffset =  (mNavRingAmount) + 1;
+-        } else {
+-            startPosOffset =  (Math.min(1,mNavRingAmount / 2)) + 2;
+-            endPosOffset =  startPosOffset - 1;
+-        }
+-
+-        intentList.clear();
+-        longList.clear();
+-
+-         int middleStart = mNavRingAmount;
+-         int tqty = middleStart;
+-         int middleFinish = 0;
+-
+-         if (middleBlanks > 0) {
+-             middleStart = (tqty/2) + (tqty%2);
+-             middleFinish = (tqty/2);
+-         }
+-
+-         // Add Initial Place Holder Targets
+-        for (int i = 0; i < startPosOffset; i++) {
+-            storedDraw.add(NavRingHelpers.getTargetDrawable(mContext, null));
+-            intentList.add(AwesomeConstant.ACTION_NULL.value());
+-            longList.add(AwesomeConstant.ACTION_NULL.value());
+-        }
+-        // Add User Targets
+-        for (int i = 0; i < middleStart; i++) {
+-            intentList.add(targetActivities[i]);
+-            longList.add(longActivities[i]);
+-            if (!TextUtils.isEmpty(customIcons[i])) {
+-                storedDraw.add(NavRingHelpers.getCustomDrawable(mContext, customIcons[i]));
+-            } else {
+-                storedDraw.add(NavRingHelpers.getTargetDrawable(mContext, targetActivities[i]));
+-            }
+-        }
+-
+-        // Add middle Place Holder Targets
+-        for (int j = 0; j < middleBlanks; j++) {
+-            storedDraw.add(NavRingHelpers.getTargetDrawable(mContext, null));
+-            intentList.add(AwesomeConstant.ACTION_NULL.value());
+-            longList.add(AwesomeConstant.ACTION_NULL.value());
+-        }
+-
+-        // Add Rest of User Targets for leftys
+-        for (int j = 0; j < middleFinish; j++) {
+-            int i = j + middleStart;
+-            intentList.add(targetActivities[i]);
+-            longList.add(longActivities[i]);
+-            if (!TextUtils.isEmpty(customIcons[i])) {
+-                storedDraw.add(NavRingHelpers.getCustomDrawable(mContext, customIcons[i]));
+-            } else {
+-                storedDraw.add(NavRingHelpers.getTargetDrawable(mContext, targetActivities[i]));
+-            }
+-        }
+-
+-        // Add End Place Holder Targets
+-        for (int i = 0; i < endPosOffset; i++) {
+-            storedDraw.add(NavRingHelpers.getTargetDrawable(mContext, null));
+-            intentList.add(AwesomeConstant.ACTION_NULL.value());
+-            longList.add(AwesomeConstant.ACTION_NULL.value());
+-        }
+-
+-        mGlowPadView.setTargetResources(storedDraw);
+-    }
+-
+-    private void maybeSwapSearchIcon() {
+-        Intent intent = ((SearchManager) mContext.getSystemService(Context.SEARCH_SERVICE))
+-                .getAssistIntent(mContext, false, UserHandle.USER_CURRENT);
+-        if (intent != null) {
+-            ComponentName component = intent.getComponent();
+-            if (component == null || !mGlowPadView.replaceTargetDrawablesIfPresent(component,
+-                    ASSIST_ICON_METADATA_NAME,
+-                    com.android.internal.R.drawable.ic_action_assist_generic)) {
+-                if (DEBUG) Slog.v(TAG, "Couldn't grab icon for component " + component);
+-            }
+-        }
+-    }
+-
+-    private boolean pointInside(int x, int y, View v) {
+-        final int l = v.getLeft();
+-        final int r = v.getRight();
+-        final int t = v.getTop();
+-        final int b = v.getBottom();
+-        return x >= l && x < r && y >= t && y < b;
+-    }
+-
+-    public boolean isInContentArea(int x, int y) {
+-        return pointInside(x, y, mSearchTargetsContainer);
+-    }
+-
+-    private final OnPreDrawListener mPreDrawListener = new ViewTreeObserver.OnPreDrawListener() {
+-        public boolean onPreDraw() {
+-            getViewTreeObserver().removeOnPreDrawListener(this);
+-            mGlowPadView.resumeAnimations();
+-            return false;
+-        }
+-    };
+-
+-    private void vibrate() {
+-
+-        if (Settings.System.getIntForUser(mContentResolver,
+-                Settings.System.HAPTIC_FEEDBACK_ENABLED, 1, UserHandle.USER_CURRENT) != 0) {
+-            Resources res = mContext.getResources();
+-            Vibrator vibrator = (Vibrator) mContext.getSystemService(Context.VIBRATOR_SERVICE);
+-            vibrator.vibrate(res.getInteger(R.integer.config_search_panel_view_vibration_duration));
+-        }
+-    }
+-
+-    private boolean hasValidTargets() {
+-        for (String target : targetActivities) {
+-            if (!TextUtils.isEmpty(target) && !target.equals(AwesomeConstant.ACTION_NULL.value())) {
+-                return true;
+-            }
+-        }
+-        return false;
+-    }
+-
+-    public void show(final boolean show, boolean animate) {
+-        if (!show) {
+-            final LayoutTransition transitioner = animate ? createLayoutTransitioner() : null;
+-            ((ViewGroup) mSearchTargetsContainer).setLayoutTransition(transitioner);
+-        }
+-        mShowing = show;
+-        if (show && hasValidTargets()) {
+-            maybeSwapSearchIcon();
+-            if (getVisibility() != View.VISIBLE) {
+-                setVisibility(View.VISIBLE);
+-                // Don't start the animation until we've created the layer, which is done
+-                // right before we are drawn
+-                mGlowPadView.suspendAnimations();
+-                mGlowPadView.ping();
+-                getViewTreeObserver().addOnPreDrawListener(mPreDrawListener);
+-                vibrate();
+-            }
+-            setFocusable(true);
+-            setFocusableInTouchMode(true);
+-            requestFocus();
+-        } else {
+-            setVisibility(View.INVISIBLE);
+-        }
+-    }
+-
+-    public void hide(boolean animate) {
+-        if (mBar != null) {
+-            // This will indirectly cause show(false, ...) to get called
+-            mBar.animateCollapsePanels(CommandQueue.FLAG_EXCLUDE_NONE);
+-        } else {
+-            setVisibility(View.INVISIBLE);
+-        }
+-    }
+-
+-    /**
+-     * We need to be aligned at the bottom.  LinearLayout can't do this, so instead,
+-     * let LinearLayout do all the hard work, and then shift everything down to the bottom.
+-     */
+-    @Override
+-    protected void onLayout(boolean changed, int l, int t, int r, int b) {
+-        super.onLayout(changed, l, t, r, b);
+-        // setPanelHeight(mSearchTargetsContainer.getHeight());
+-    }
+-
+-    @Override
+-    public boolean dispatchHoverEvent(MotionEvent event) {
+-        // Ignore hover events outside of this panel bounds since such events
+-        // generate spurious accessibility events with the panel content when
+-        // tapping outside of it, thus confusing the user.
+-        final int x = (int) event.getX();
+-        final int y = (int) event.getY();
+-        if (x >= 0 && x < getWidth() && y >= 0 && y < getHeight()) {
+-            return super.dispatchHoverEvent(event);
+-        }
+-        return true;
+-    }
+-
+-    /**
+-     * Whether the panel is showing, or, if it's animating, whether it will be
+-     * when the animation is done.
+-     */
+-    public boolean isShowing() {
+-        return mShowing;
+-    }
+-
+-    public void setBar(BaseStatusBar bar) {
+-        mBar = bar;
+-    }
+-
+-
+-    @Override
+-    public boolean onTouchEvent(MotionEvent event) {
+-        if (DEBUG_GESTURES) {
+-            if (event.getActionMasked() != MotionEvent.ACTION_MOVE) {
+-                EventLog.writeEvent(EventLogTags.SYSUI_SEARCHPANEL_TOUCH,
+-                        event.getActionMasked(), (int) event.getX(), (int) event.getY());
+-            }
+-        }
+-        return super.onTouchEvent(event);
+-    }
+-
+-    private LayoutTransition createLayoutTransitioner() {
+-        LayoutTransition transitioner = new LayoutTransition();
+-        transitioner.setDuration(200);
+-        transitioner.setStartDelay(LayoutTransition.CHANGE_DISAPPEARING, 0);
+-        transitioner.setAnimator(LayoutTransition.DISAPPEARING, null);
+-        return transitioner;
+-    }
+-
+-    public boolean isAssistantAvailable() {
+-        return ((SearchManager) mContext.getSystemService(Context.SEARCH_SERVICE))
+-                .getAssistIntent(mContext, false, UserHandle.USER_CURRENT) != null;
+-    }
+-
+-    public boolean isScreenPortrait() {
+-        return mResources.getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT;
+-    }
+-
+-    public class TargetObserver extends ContentObserver {
+-        public TargetObserver(Handler handler) {
+-            super(handler);
+-        }
+-
+-        @Override
+-        public boolean deliverSelfNotifications() {
+-            return super.deliverSelfNotifications();
+-        }
+-
+-        @Override
+-        public void onChange(boolean selfChange) {
+-            super.onChange(selfChange);
+-            setDrawables();
+-            updateSettings();
+-        }
+-    }
+-
+-    class SettingsObserver extends ContentObserver {
+-        SettingsObserver(Handler handler) {
+-            super(handler);
+-        }
+-
+-        void observe() {
+-            mContentResolver.registerContentObserver(Settings.System.getUriFor(
+-                    Settings.System.SYSTEMUI_NAVRING_AMOUNT), false, this);
+-            mContentResolver.registerContentObserver(Settings.System.getUriFor(
+-                    Settings.System.SYSTEMUI_NAVRING_LONG_ENABLE), false, this);
+-
+-            for (int i = 0; i < 5; i++) {
+-	            mContentResolver.registerContentObserver(
+-                    Settings.System.getUriFor(Settings.System.SYSTEMUI_NAVRING[i]), false, this);
+-                mContentResolver.registerContentObserver(
+-                    Settings.System.getUriFor(Settings.System.SYSTEMUI_NAVRING_LONG[i]), false, this);
+-                mContentResolver.registerContentObserver(
+-                    Settings.System.getUriFor(Settings.System.SYSTEMUI_NAVRING_ICON[i]), false, this);
+-            }
+-        }
+-
+-        @Override
+-        public void onChange(boolean selfChange) {
+-            updateSettings();
+-            setDrawables();
+-        }
+-    }
+-
+-    public void updateSettings() {
+-
+-        for (int i = 0; i < 5; i++) {
+-            targetActivities[i] = Settings.System.getString(
+-                    mContentResolver, Settings.System.SYSTEMUI_NAVRING[i]);
+-            longActivities[i] = Settings.System.getString(
+-                    mContentResolver, Settings.System.SYSTEMUI_NAVRING_LONG[i]);
+-            customIcons[i] = Settings.System.getString(
+-                    mContentResolver, Settings.System.SYSTEMUI_NAVRING_ICON[i]);
+-        }
+-
+-        mBoolLongPress = (Settings.System.getBoolean(mContentResolver,
+-                Settings.System.SYSTEMUI_NAVRING_LONG_ENABLE, false));
+-
+-        mNavRingAmount = Settings.System.getInt(mContentResolver,
+-                         Settings.System.SYSTEMUI_NAVRING_AMOUNT, 1);
+-
+-    }
+-}
+diff --git a/packages/SystemUI/src/com/android/systemui/aokp/SearchPanelSwipeView.java b/packages/SystemUI/src/com/android/systemui/aokp/SearchPanelSwipeView.java
+deleted file mode 100644
+index 8ca5969..0000000
+--- a/packages/SystemUI/src/com/android/systemui/aokp/SearchPanelSwipeView.java
++++ /dev/null
+@@ -1,120 +0,0 @@
+-package com.android.systemui.aokp;
+-
+-import com.android.systemui.AOKPSearchPanelView;
+-import com.android.systemui.R;
+-import com.android.systemui.statusbar.BaseStatusBar;
+-import com.android.systemui.statusbar.DelegateViewHelper;
+-
+-import android.content.Context;
+-import android.content.res.Configuration;
+-import android.content.res.Resources;
+-import android.graphics.Color;
+-import android.graphics.PixelFormat;
+-import android.view.Gravity;
+-import android.view.MotionEvent;
+-import android.view.View;
+-import android.view.WindowManager;
+-import android.widget.ImageView;
+-import android.widget.LinearLayout;
+-
+-public class SearchPanelSwipeView extends LinearLayout{
+-
+-    private Context mContext;
+-    private Resources res;
+-    private int mButtonHeight = 50;
+-    private int mGestureHeight;
+-    private ImageView mDragButton;
+-    private DelegateViewHelper mDelegateHelper;
+-
+-    public SearchPanelSwipeView(Context context, BaseStatusBar bar) {
+-        super(context);
+-        mContext = context;
+-        mDelegateHelper = new DelegateViewHelper(this);
+-        setBar(bar);
+-        mDragButton = new ImageView(mContext);
+-        res = mContext.getResources();
+-        mGestureHeight = res.getDimensionPixelSize(R.dimen.ribbon_drag_handle_height);
+-        updateLayout();
+-    }
+-
+-    @Override
+-    public boolean onTouchEvent(MotionEvent event) {
+-        setIntialTouchArea();
+-        if (mDelegateHelper != null) {
+-            boolean ret = mDelegateHelper.onInterceptTouchEvent(event);
+-            if (ret) return true;
+-        }
+-        return super.onTouchEvent(event);
+-    }
+-
+-    @Override
+-    public boolean onInterceptTouchEvent(MotionEvent event) {
+-        setIntialTouchArea();
+-        return mDelegateHelper.onInterceptTouchEvent(event);
+-    }
+-
+-    public void setIntialTouchArea() {
+-        mDelegateHelper.setInitialTouchRegion(this);
+-    }
+-
+-    public void setDelegateView(AOKPSearchPanelView searchPanelView) {
+-        mDelegateHelper.setDelegateView(searchPanelView);
+-    }
+-
+-    public void setBar(BaseStatusBar bar) {
+-        mDelegateHelper.setBar(bar);
+-    }
+-
+-    private int getGravity() {
+-        if (isScreenPortrait()) {
+-            return Gravity.CENTER_HORIZONTAL | Gravity.BOTTOM;
+-        } else {
+-            return Gravity.CENTER_VERTICAL | Gravity.RIGHT;
+-        }
+-    }
+-
+-    public WindowManager.LayoutParams getGesturePanelLayoutParams() {
+-        WindowManager.LayoutParams lp;
+-        if (isScreenPortrait()) {
+-            lp  = new WindowManager.LayoutParams(
+-                    WindowManager.LayoutParams.MATCH_PARENT,WindowManager.LayoutParams.WRAP_CONTENT,
+-                    WindowManager.LayoutParams.TYPE_SYSTEM_ALERT,
+-                    WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
+-                    | WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
+-                    | WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH,
+-                    PixelFormat.TRANSLUCENT);
+-        } else {
+-            lp  = new WindowManager.LayoutParams(
+-                    WindowManager.LayoutParams.WRAP_CONTENT,WindowManager.LayoutParams.MATCH_PARENT,
+-                    WindowManager.LayoutParams.TYPE_SYSTEM_ALERT,
+-                    WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
+-                    | WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
+-                    | WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH,
+-                    PixelFormat.TRANSLUCENT);
+-        }
+-        lp.gravity = getGravity();
+-        lp.setTitle("SwipePanelSwipeView");
+-        return lp;
+-    }
+-
+-    public void updateLayout() {
+-        LinearLayout.LayoutParams dragParams;
+-        float dragHeight = (mGestureHeight * (mButtonHeight * 0.01f));
+-        removeAllViews();
+-        mDragButton.setBackgroundColor(Color.BLACK);
+-        if (isScreenPortrait()) {
+-            mDelegateHelper.setSwapXY(false);
+-            dragParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, (int) dragHeight);
+-        } else {
+-            mDelegateHelper.setSwapXY(true);
+-            dragParams = new LinearLayout.LayoutParams((int) dragHeight, LinearLayout.LayoutParams.MATCH_PARENT);
+-        }
+-        mDragButton.setVisibility(View.INVISIBLE);
+-        addView(mDragButton,dragParams);
+-        invalidate();
+-    }
+-
+-    public boolean isScreenPortrait() {
+-        return res.getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT;
+-    }
+-}
+\ No newline at end of file
+diff --git a/packages/SystemUI/src/com/android/systemui/quicksettings/NavbarTile.java b/packages/SystemUI/src/com/android/systemui/quicksettings/NavbarTile.java
+deleted file mode 100644
+index 90408d4..0000000
+--- a/packages/SystemUI/src/com/android/systemui/quicksettings/NavbarTile.java
++++ /dev/null
+@@ -1,86 +0,0 @@
+-package com.android.systemui.quicksettings;
+-
+-import android.content.ContentResolver;
+-import android.content.Context;
+-import android.content.Intent;
+-import android.net.Uri;
+-import android.os.Handler;
+-import android.os.RemoteException;
+-import android.provider.Settings;
+-import android.view.LayoutInflater;
+-import android.view.View;
+-import android.view.View.OnClickListener;
+-import android.view.View.OnLongClickListener;
+-
+-import android.view.IWindowManager;
+-import android.view.WindowManagerGlobal;
+-
+-import com.android.systemui.R;
+-import com.android.systemui.statusbar.phone.QuickSettingsController;
+-import com.android.systemui.statusbar.phone.QuickSettingsContainerView;
+-
+-public class NavbarTile extends QuickSettingsTile {
+-
+-    public NavbarTile(Context context, QuickSettingsController qsc) {
+-        super(context, qsc);
+-
+-        mOnClick = new OnClickListener() {
+-            @Override
+-            public void onClick(View v) {
+-                boolean next = !getWantsNavbar();
+-                Settings.System.putInt(mContext.getContentResolver(),
+-                    Settings.System.ENABLE_NAVIGATION_BAR, next ? 1 : 0);
+-            }
+-        };
+-
+-        mOnLongClick = new OnLongClickListener() {
+-            @Override
+-            public boolean onLongClick(View v) {
+-                Intent intent = new Intent();
+-                intent.setClassName("com.android.settings",
+-                        "com.android.settings.Settings$NavbarSettingsActivity");
+-                startSettingsActivity(intent);
+-                return true;
+-            }
+-        };
+-
+-        qsc.registerObservedContent(Settings.System.getUriFor(Settings.System.ENABLE_NAVIGATION_BAR)
+-                , this);
+-    }
+-
+-    @Override
+-    public void updateResources() {
+-        updateTile();
+-        updateQuickSettings();
+-    }
+-
+-    private synchronized void updateTile() {
+-        if(!getWantsNavbar()){
+-            mDrawable = R.drawable.ic_qs_navbar_off;
+-            mLabel = mContext.getString(R.string.quick_settings_navbar_off);
+-        }else{
+-            mDrawable = R.drawable.ic_qs_navbar_on;
+-            mLabel = mContext.getString(R.string.quick_settings_navbar_on);
+-        }
+-    }
+-
+-    @Override
+-    void onPostCreate() {
+-        updateTile();
+-        super.onPostCreate();
+-    }
+-
+-    private boolean getWantsNavbar() {
+-        try {
+-            final IWindowManager wm = WindowManagerGlobal.getWindowManagerService();
+-            return wm.wantsNavigationBar();
+-        } catch (RemoteException e) {
+-        }
+-        return false;
+-    }
+-
+-    @Override
+-    public void onChangeUri(ContentResolver resolver, Uri uri) {
+-        updateResources();
+-    }
+-}
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/BaseStatusBar.java b/packages/SystemUI/src/com/android/systemui/statusbar/BaseStatusBar.java
+index a1cbca4..042a546 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/BaseStatusBar.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/BaseStatusBar.java
+@@ -93,7 +93,6 @@ import com.android.internal.widget.SizeAdaptiveLayout;
+ import com.android.internal.util.omni.OmniSwitchConstants;
+ import com.android.systemui.R;
+ import com.android.systemui.RecentsComponent;
+-import com.android.systemui.AOKPSearchPanelView;
+ import com.android.systemui.SystemUI;
+ import com.android.systemui.slimrecent.RecentController;
+ import com.android.systemui.statusbar.halo.Halo;
+@@ -169,9 +168,6 @@ public abstract class BaseStatusBar extends SystemUI implements
+     // used to notify status bar for suppressing notification LED
+     protected boolean mPanelSlightlyVisible;
+ 
+-    // Search panel
+-    protected AOKPSearchPanelView mSearchPanelView;
+-
+     // Gesture panel
+     protected GesturePanelView mGesturePanelView = null;
+ 
+@@ -963,50 +959,8 @@ public abstract class BaseStatusBar extends SystemUI implements
+     }
+ 
+     @Override
+-    public void showSearchPanel() {
+-        int msg = MSG_OPEN_SEARCH_PANEL;
+-        mHandler.removeMessages(msg);
+-        mHandler.sendEmptyMessage(msg);
+-    }
+-
+-    @Override
+-    public void hideSearchPanel() {
+-        int msg = MSG_CLOSE_SEARCH_PANEL;
+-        mHandler.removeMessages(msg);
+-        mHandler.sendEmptyMessage(msg);
+-    }
+-
+-    @Override
+     public void setButtonDrawable(int buttonId, int iconId) {}
+ 
+-    protected abstract WindowManager.LayoutParams getSearchLayoutParams(
+-            LayoutParams layoutParams);
+-
+-    protected void updateSearchPanel() {
+-        // Search Panel
+-        boolean visible = false;
+-        if (mSearchPanelView != null) {
+-            visible = mSearchPanelView.isShowing();
+-            mWindowManager.removeView(mSearchPanelView);
+-        }
+-
+-        // Provide SearchPanel with a temporary parent to allow layout params to work.
+-        LinearLayout tmpRoot = new LinearLayout(mContext);
+-        mSearchPanelView = (AOKPSearchPanelView) LayoutInflater.from(mContext).inflate(
+-                 R.layout.status_bar_search_panel, tmpRoot, false);
+-        mSearchPanelView.setOnTouchListener(
+-                 new TouchOutsideListener(MSG_CLOSE_SEARCH_PANEL, mSearchPanelView));
+-        mSearchPanelView.setVisibility(View.GONE);
+-
+-        WindowManager.LayoutParams lp = getSearchLayoutParams(mSearchPanelView.getLayoutParams());
+-
+-        mWindowManager.addView(mSearchPanelView, lp);
+-        mSearchPanelView.setBar(this);
+-        if (visible) {
+-            mSearchPanelView.show(true, false);
+-        }
+-    }
+-
+     protected H createHandler() {
+          return new H();
+     }
+@@ -1139,21 +1093,7 @@ public abstract class BaseStatusBar extends SystemUI implements
+              case MSG_CANCEL_PRELOAD_RECENT_APPS:
+                   cancelPreloadingRecentTasksList();
+                   break;
+-             case MSG_OPEN_SEARCH_PANEL:
+-                 if (DEBUG) Log.d(TAG, "opening search panel");
+-                 if (mSearchPanelView != null && mSearchPanelView.isAssistantAvailable()) {
+-                     mSearchPanelView.show(true, true);
+-                     onShowSearchPanel();
+-                 }
+-                 break;
+-             case MSG_CLOSE_SEARCH_PANEL:
+-                 if (DEBUG) Log.d(TAG, "closing search panel");
+-                 if (mSearchPanelView != null && mSearchPanelView.isShowing()) {
+-                     mSearchPanelView.show(false, true);
+-                     onHideSearchPanel();
+-                 }
+-                 break;
+-            }
++	    }
+         }
+     }
+ 
+@@ -1182,12 +1122,6 @@ public abstract class BaseStatusBar extends SystemUI implements
+     protected void workAroundBadLayerDrawableOpacity(View v) {
+     }
+ 
+-    protected void onHideSearchPanel() {
+-    }
+-
+-    protected void onShowSearchPanel() {
+-    }
+-
+     public boolean inflateViews(NotificationData.Entry entry, ViewGroup parent) {
+         int minHeight =
+                 mContext.getResources().getDimensionPixelSize(R.dimen.notification_min_height);
+@@ -1702,7 +1636,6 @@ public abstract class BaseStatusBar extends SystemUI implements
+     protected abstract int getExpandedViewMaxHeight();
+     protected abstract boolean isNotificationPanelFullyVisible();
+     protected abstract boolean isTrackingNotificationPanel();
+-    protected abstract boolean shouldDisableNavbarGestures();
+     public abstract boolean isExpandedVisible();
+ 
+     protected boolean isTopNotification(ViewGroup parent, NotificationData.Entry entry) {
+@@ -1988,9 +1921,6 @@ public abstract class BaseStatusBar extends SystemUI implements
+     }
+ 
+     public void destroy() {
+-        if (mSearchPanelView != null) {
+-            mWindowManager.removeViewImmediate(mSearchPanelView);
+-        }
+         mContext.unregisterReceiver(mBroadcastReceiver);
+     }
+ 
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/CommandQueue.java b/packages/SystemUI/src/com/android/systemui/statusbar/CommandQueue.java
+index a00919a..ba2f37a 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/CommandQueue.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/CommandQueue.java
+@@ -95,8 +95,6 @@ public class CommandQueue extends IStatusBar.Stub {
+         public void setHardKeyboardStatus(boolean available, boolean enabled);
+         public void toggleRecentApps();
+         public void preloadRecentApps();
+-        public void showSearchPanel();
+-        public void hideSearchPanel();
+         public void cancelPreloadRecentApps();
+         public void setWindowState(int window, int state);
+         public void setButtonDrawable(int buttonId, int iconId);
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/DelegateViewHelper.java b/packages/SystemUI/src/com/android/systemui/statusbar/DelegateViewHelper.java
+index 3a82753..0173593 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/DelegateViewHelper.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/DelegateViewHelper.java
+@@ -50,7 +50,7 @@ public class DelegateViewHelper {
+     }
+ 
+     public boolean onInterceptTouchEvent(MotionEvent event) {
+-        if (mSourceView == null || mDelegateView == null || mBar.shouldDisableNavbarGestures()) {
++        if (mSourceView == null || mDelegateView == null) {
+             return false;
+         }
+ 
+@@ -79,7 +79,6 @@ public class DelegateViewHelper {
+                 float y = k < historySize ? event.getHistoricalY(k) : event.getY();
+                 final float distance = mSwapXY ? (mDownPoint[0] - x) : (mDownPoint[1] - y);
+                 if (distance > mTriggerThreshhold) {
+-                    mBar.showSearchPanel();
+                     mPanelShowing = true;
+                     break;
+                 }
+@@ -106,10 +105,6 @@ public class DelegateViewHelper {
+ 
+     public void setSourceView(View view) {
+         mSourceView = view;
+-        if (mSourceView != null) {
+-            mTriggerThreshhold = mSourceView.getContext().getResources()
+-                    .getDimension(R.dimen.navbar_search_up_threshhold);
+-        }
+     }
+ 
+     /**
+@@ -146,4 +141,4 @@ public class DelegateViewHelper {
+     public void setDisabled(boolean disabled) {
+         mDisabled = disabled;
+     }
+-}
+\ No newline at end of file
++}
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/phone/PhoneStatusBar.java b/packages/SystemUI/src/com/android/systemui/statusbar/phone/PhoneStatusBar.java
+index 4819f31..95725ad 100755
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/phone/PhoneStatusBar.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/phone/PhoneStatusBar.java
+@@ -111,7 +111,6 @@ import com.android.systemui.DockBatteryMeterView;
+ import com.android.systemui.EventLogTags;
+ import com.android.systemui.R;
+ import com.android.systemui.BatteryMeterView;
+-import com.android.systemui.aokp.SearchPanelSwipeView;
+ import com.android.systemui.statusbar.BaseStatusBar;
+ import com.android.systemui.statusbar.CommandQueue;
+ import com.android.systemui.statusbar.GestureRecorder;
+@@ -258,7 +257,6 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
+     int mSettingsPanelGravity;
+     private TilesChangedObserver mTilesChangedObserver;
+     private SettingsObserver mSettingsObserver;
+-    boolean mSearchPanelAllowed = true;
+     boolean mDoubleTapToSleep = false;
+ 
+     // Ribbon settings
+@@ -500,11 +498,8 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
+     private int mInteractingWindows;
+     private boolean mAutohideSuspended;
+     private int mStatusBarMode;
+-    private int mNavigationBarMode;
+     private Boolean mScreenOn;
+ 
+-    private SearchPanelSwipeView mSearchPanelSwipeView;
+-
+     private final Runnable mAutohide = new Runnable() {
+         @Override
+         public void run() {
+@@ -1013,61 +1008,10 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
+     }
+ 
+     @Override
+-    protected void onShowSearchPanel() {
+-    }
+-
+-    @Override
+-    protected void onHideSearchPanel() {
+-    }
+-
+-    @Override
+     protected View getStatusBarView() {
+         return mStatusBarView;
+     }
+ 
+-    @Override
+-    protected WindowManager.LayoutParams getSearchLayoutParams(LayoutParams layoutParams) {
+-        boolean opaque = false;
+-        WindowManager.LayoutParams lp = new WindowManager.LayoutParams(
+-                LayoutParams.MATCH_PARENT,
+-                LayoutParams.MATCH_PARENT,
+-                WindowManager.LayoutParams.TYPE_NAVIGATION_BAR_PANEL,
+-                WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
+-                | WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM
+-                | WindowManager.LayoutParams.FLAG_SPLIT_TOUCH,
+-                (opaque ? PixelFormat.OPAQUE : PixelFormat.TRANSLUCENT));
+-        if (ActivityManager.isHighEndGfx()) {
+-            lp.flags |= WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED;
+-        }
+-        lp.gravity = Gravity.BOTTOM | Gravity.START;
+-        lp.setTitle("SearchPanel");
+-        // TODO: Define custom animation for Search panel
+-        lp.windowAnimations = com.android.internal.R.style.Animation_RecentApplications;
+-        lp.softInputMode = WindowManager.LayoutParams.SOFT_INPUT_STATE_UNCHANGED
+-        | WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING;
+-        return lp;
+-    }
+-
+-    @Override
+-    protected void updateSearchPanel() {
+-        super.updateSearchPanel();
+-    }
+-
+-    @Override
+-    public void showSearchPanel() {
+-        super.showSearchPanel();
+-        mHandler.removeCallbacks(mShowSearchPanel);
+-
+-        // we want to freeze the sysui state wherever it is
+-        mSearchPanelView.setSystemUiVisibility(mSystemUiVisibility);
+-
+-    }
+-
+-    @Override
+-    public void hideSearchPanel() {
+-        super.hideSearchPanel();
+-    }
+-
+     protected int getStatusBarGravity() {
+         return Gravity.TOP | Gravity.FILL_HORIZONTAL;
+     }
+@@ -1090,26 +1034,14 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
+     };
+ 
+     private int mShowSearchHoldoff = 0;
+-    private Runnable mShowSearchPanel = new Runnable() {
+-        public void run() {
+-            showSearchPanel();
+-            awakenDreams();
+-        }
+-    };
+ 
+     View.OnTouchListener mHomeSearchActionListener = new View.OnTouchListener() {
+         public boolean onTouch(View v, MotionEvent event) {
+             switch(event.getAction()) {
+             case MotionEvent.ACTION_DOWN:
+-                if (!shouldDisableNavbarGestures()) {
+-                    mHandler.removeCallbacks(mShowSearchPanel);
+-                    mHandler.postDelayed(mShowSearchPanel, mShowSearchHoldoff);
+-                }
+             break;
+             case MotionEvent.ACTION_UP:
+             case MotionEvent.ACTION_CANCEL:
+-                mHandler.removeCallbacks(mShowSearchPanel);
+-                awakenDreams();
+             break;
+         }
+         return false;
+@@ -1126,13 +1058,6 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
+         }
+     }
+ 
+-    private void repositionSearchPanelSwipeView() {
+-        if (mSearchPanelSwipeView == null || !mSearchPanelSwipeView.isAttachedToWindow()) return;
+-        mSearchPanelSwipeView.updateLayout();
+-        mWindowManager.updateViewLayout(mSearchPanelSwipeView, mSearchPanelSwipeView.getGesturePanelLayoutParams());
+-        updateSearchPanel();
+-    }
+-
+     private void addHeadsUpView() {
+         if (mHeadsUpNotificationView != null && mHeadsUpNotificationView.isAttachedToWindow()) {
+             return;
+@@ -3148,7 +3073,6 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
+         updateDisplaySize(); // populates mDisplayMetrics
+ 
+         updateResources();
+-        repositionSearchPanelSwipeView();
+         updateExpandedViewPos(EXPANDED_LEAVE_ALONE);
+         updateShowSearchHoldoff();
+     }
+@@ -3225,13 +3149,6 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
+             }
+         }
+ 
+-        final boolean nextSearchEnabledState = Settings.System.getIntForUser(resolver,
+-                Settings.System.ENABLE_NAVIGATION_RING, 1,
+-                UserHandle.USER_CURRENT) == 1;
+-        if (nextSearchEnabledState != mSearchPanelAllowed) {
+-            mSearchPanelAllowed = nextSearchEnabledState;
+-        }
+-
+         mHoverExcludeForeground = Settings.System.getInt(resolver,
+                 Settings.System.HOVER_EXCLUDE_FOREGROUND, 0) == 1;
+ 
+@@ -3525,13 +3442,6 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
+         mTicker.halt();
+     }
+ 
+-    @Override
+-    protected boolean shouldDisableNavbarGestures() {
+-        if (!mSearchPanelAllowed) return true;
+-        return !isDeviceProvisioned()
+-                || mExpandedVisible
+-                || (mDisabled & StatusBarManager.DISABLE_SEARCH) != 0;
+-    }
+ 
+     private static class FastColorDrawable extends Drawable {
+         private final int mColor;
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/phone/QuickSettingsController.java b/packages/SystemUI/src/com/android/systemui/statusbar/phone/QuickSettingsController.java
+index 6f7a207..453d493 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/phone/QuickSettingsController.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/phone/QuickSettingsController.java
+@@ -259,8 +259,6 @@ public class QuickSettingsController {
+                 qs = new OnTheGoTile(mContext, this);
+             } else if (tile.equals(TILE_HEADS_UP)) {
+                 qs = new HeadsUpTile(mContext, this);
+-            } else if (tile.equals(TILE_NAVBAR)) {
+-                qs = new NavbarTile(mContext, this);
+             } else if (tile.equals(TILE_GESTUREPANEL)) {
+                 qs = new GesturePanelTile(mContext, this);
+             } else if (tile.equals(TILE_THEMES)) {
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/policy/KeyButtonView.java b/packages/SystemUI/src/com/android/systemui/statusbar/policy/KeyButtonView.java
+index 548face..a6f72e9 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/policy/KeyButtonView.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/policy/KeyButtonView.java
+@@ -42,7 +42,6 @@ import android.widget.ImageView;
+ import com.android.internal.statusbar.IStatusBarService;
+ import com.android.internal.util.aokp.AwesomeAction;
+ import com.android.internal.util.aokp.AwesomeConstants.AwesomeConstant;
+-import com.android.internal.util.aokp.NavBarHelpers;
+ import com.android.systemui.R;
+ 
+ import java.io.File;
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/tv/TvStatusBar.java b/packages/SystemUI/src/com/android/systemui/statusbar/tv/TvStatusBar.java
+index c59dbee..58a9a37 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/tv/TvStatusBar.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/tv/TvStatusBar.java
+@@ -97,12 +97,6 @@ public class TvStatusBar extends BaseStatusBar {
+     }
+ 
+     @Override
+-    protected WindowManager.LayoutParams getSearchLayoutParams(
+-            LayoutParams layoutParams) {
+-        return null;
+-    }
+-
+-    @Override
+     protected void haltTicker() {
+     }
+ 
+@@ -138,11 +132,6 @@ public class TvStatusBar extends BaseStatusBar {
+     }
+ 
+     @Override
+-    protected boolean shouldDisableNavbarGestures() {
+-        return true;
+-    }
+-
+-    @Override
+     public boolean isExpandedVisible() {
+         return false;
+     }
+diff --git a/policy/src/com/android/internal/policy/impl/PhoneWindowManager.java b/policy/src/com/android/internal/policy/impl/PhoneWindowManager.java
+index d7a7a41..4a67284 100755
+--- a/policy/src/com/android/internal/policy/impl/PhoneWindowManager.java
++++ b/policy/src/com/android/internal/policy/impl/PhoneWindowManager.java
+@@ -198,7 +198,6 @@ public class PhoneWindowManager implements WindowManagerPolicy {
+     private static final int KEY_ACTION_KILL = 7;
+     private static final int KEY_ACTION_IME = 8;
+     private static final int KEY_ACTION_POWERMENU = 9;
+-    private static final int KEY_ACTION_NAVBAR = 10;
+     private static final int KEY_ACTION_HOME = 11;
+     private static final int KEY_ACTION_BACK = 12;
+     private static final int KEY_ACTION_LASTAPP = 13;
+@@ -221,8 +220,7 @@ public class PhoneWindowManager implements WindowManagerPolicy {
+     static final int SYSTEM_UI_CHANGING_LAYOUT =
+               View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+             | View.SYSTEM_UI_FLAG_FULLSCREEN
+-            | View.STATUS_BAR_TRANSLUCENT
+-            | View.NAVIGATION_BAR_TRANSLUCENT;
++            | View.STATUS_BAR_TRANSLUCENT;
+ 
+     /**
+      * Keyguard stuff
+@@ -295,20 +293,6 @@ public class PhoneWindowManager implements WindowManagerPolicy {
+     boolean mSafeMode;
+     WindowState mStatusBar = null;
+     int mStatusBarHeight;
+-    WindowState mNavigationBar = null;
+-    boolean mHasNavigationBar = false;
+-    boolean mWantsNavigationBar = false;
+-    boolean mCanHideNavigationBar = false;
+-    boolean mNavigationBarCanMove = false; // can the navigation bar ever move to the side?
+-    boolean mNavigationBarOnBottom = true; // is the navigation bar on the bottom *right now*?
+-    int[] mNavigationBarHeightForRotation = new int[4];
+-    int[] mNavigationBarWidthForRotation = new int[4];
+-    private int mUserNavBarHeight;
+-    private int mUserNavBarHeightLand;
+-    private int mUserNavBarWidth;
+-    int mNavigationBarHeight;
+-    int mNavigationBarHeightLandscape;
+-    int mNavigationBarWidth;
+ 
+     private boolean mClearedBecauseOfForceShow;
+ 
+@@ -496,8 +480,6 @@ public class PhoneWindowManager implements WindowManagerPolicy {
+     boolean mForceStatusBar;
+     boolean mForceStatusBarFromKeyguard;
+     boolean mHideLockScreen;
+-    boolean mForcingShowNavBar;
+-    int mForcingShowNavBarLayer;
+ 
+     // States of keyguard dismiss.
+     private static final int DISMISS_KEYGUARD_NONE = 0; // Keyguard not being dismissed.
+@@ -594,54 +576,12 @@ public class PhoneWindowManager implements WindowManagerPolicy {
+     private static final int BRIGHTNESS_STEPS = 10;
+ 
+     private SettingsObserver mSettingsObserver;
+-    private NavbarActionReceiver mNavbarActionReceiver;
+ 
+     ShortcutManager mShortcutManager;
+     PowerManager.WakeLock mBroadcastWakeLock;
+     PowerManager.WakeLock mQuickBootWakeLock;
+     boolean mHavePendingMediaKeyRepeatWithWakeLock;
+ 
+-    // Navbar action receiver
+-    private final class NavbarActionReceiver extends BroadcastReceiver {
+-        private boolean mIsRegistered = false;
+-
+-        public NavbarActionReceiver(Context context) {
+-        }
+-
+-        @Override
+-        public void onReceive(Context context, Intent intent) {
+-            final String action = intent.getAction();
+-            if (action.equals(Intent.ACTION_SCREENSHOT)) {
+-                mHandler.removeCallbacks(mScreenshotRunnable);
+-                mHandler.post(mScreenshotRunnable);
+-            } else if (action.equals(Intent.ACTION_REBOOTMENU)) {
+-				showGlobalActionsDialog();
+-			} else if (action.equals(Intent.ACTION_SCREENRECORD)) {
+-                mHandler.removeCallbacks(mScreenrecordRunnable);
+-                mHandler.post(mScreenrecordRunnable);
+-            }
+-        }
+-
+-        protected void register() {
+-            if (!mIsRegistered) {
+-                mIsRegistered = true;
+-
+-                IntentFilter filter = new IntentFilter();
+-                filter.addAction(Intent.ACTION_SCREENSHOT);
+-                filter.addAction(Intent.ACTION_REBOOTMENU);
+-                filter.addAction(Intent.ACTION_SCREENRECORD);
+-                mContext.registerReceiver(mNavbarActionReceiver, filter);
+-            }
+-        }
+-
+-        protected void unregister() {
+-            if (mIsRegistered) {
+-                mContext.unregisterReceiver(this);
+-                mIsRegistered = false;
+-            }
+-        }
+-    }
+-
+     private int mCurrentUserId;
+ 
+     // Maps global key codes to the components that will handle them.
+@@ -769,20 +709,8 @@ public class PhoneWindowManager implements WindowManagerPolicy {
+                     Settings.System.ENABLE_FAST_TORCH), false, this,
+                     UserHandle.USER_ALL);
+             resolver.registerContentObserver(Settings.System.getUriFor(
+-                    Settings.System.NAVIGATION_BAR_HEIGHT), false, this,
+-                    UserHandle.USER_ALL);
+-            resolver.registerContentObserver(Settings.System.getUriFor(
+-                    Settings.System.NAVIGATION_BAR_HEIGHT_LANDSCAPE), false, this,
+-                    UserHandle.USER_ALL);
+-            resolver.registerContentObserver(Settings.System.getUriFor(
+-                    Settings.System.NAVIGATION_BAR_WIDTH), false, this,
+-                    UserHandle.USER_ALL);
+-            resolver.registerContentObserver(Settings.System.getUriFor(
+                     Settings.System.USE_EDGE_SERVICE_FOR_GESTURES), false, this,
+                     UserHandle.USER_ALL);
+-            resolver.registerContentObserver(Settings.System.getUriFor(
+-                    Settings.System.ENABLE_NAVIGATION_BAR), false, this,
+-                    UserHandle.USER_ALL);
+ 
+             updateSettings();
+         }
+@@ -814,13 +742,6 @@ public class PhoneWindowManager implements WindowManagerPolicy {
+             StatusBarManager.WINDOW_STATUS_BAR,
+             WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+ 
+-    private final BarController mNavigationBarController = new BarController("NavigationBar",
+-            View.NAVIGATION_BAR_TRANSIENT,
+-            View.NAVIGATION_BAR_UNHIDE,
+-            View.NAVIGATION_BAR_TRANSLUCENT,
+-            StatusBarManager.WINDOW_NAVIGATION_BAR,
+-            WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION);
+-
+     private ImmersiveModeConfirmation mImmersiveModeConfirmation;
+ 
+     private SystemGesturesPointerEventListener mSystemGestures;
+@@ -835,11 +756,7 @@ public class PhoneWindowManager implements WindowManagerPolicy {
+ 
+             if (position == EdgeGesturePosition.TOP) {
+                 target = mStatusBar;
+-            } else if (position == EdgeGesturePosition.BOTTOM  && mNavigationBarOnBottom) {
+-                target = mNavigationBar;
+-            } else if (position == EdgeGesturePosition.RIGHT && !mNavigationBarOnBottom) {
+-                target = mNavigationBar;
+-            }
++            } 
+ 
+             if (target != null) {
+                 requestTransientBars(target);
+@@ -862,13 +779,6 @@ public class PhoneWindowManager implements WindowManagerPolicy {
+             if (mStatusBar != null && !mStatusBar.isVisibleLw()) {
+                 flags |= EdgeGesturePosition.TOP.FLAG;
+             }
+-            if (mNavigationBar != null && !mNavigationBar.isVisibleLw()) {
+-                if (mNavigationBarOnBottom) {
+-                    flags |= EdgeGesturePosition.BOTTOM.FLAG;
+-                } else {
+-                    flags |= EdgeGesturePosition.RIGHT.FLAG;
+-                }
+-            }
+         }
+         if (mEdgeListenerActivated) {
+             mEdgeGestureActivationListener.restoreListenerState();
+@@ -1255,10 +1165,6 @@ public class PhoneWindowManager implements WindowManagerPolicy {
+             case KEY_GESTURE_PANEL:
+                 mContext.sendBroadcast(new Intent(Intent.TOGGLE_GESTURE_ACTIONS));
+                 break;
+-            case KEY_ACTION_NAVBAR:
+-                Settings.System.putInt(mContext.getContentResolver(),
+-                        Settings.System.ENABLE_NAVIGATION_BAR, wantsNavigationBar() ? 0 : 1);
+-                break;
+             case KEY_ACTION_LAUNCH_CAMERA:
+                 launchCameraAction();
+                 break;
+@@ -1423,9 +1329,6 @@ public class PhoneWindowManager implements WindowManagerPolicy {
+             updateKeyAssignments();
+         }
+ 
+-        mNavbarActionReceiver = new NavbarActionReceiver(context);
+-        mNavbarActionReceiver.register();
+-
+         // register for dock events
+         IntentFilter filter = new IntentFilter();
+         filter.addAction(UiModeManager.ACTION_ENTER_CAR_MODE);
+@@ -1463,15 +1366,9 @@ public class PhoneWindowManager implements WindowManagerPolicy {
+                     }
+                     @Override
+                     public void onSwipeFromBottom() {
+-                        if (mNavigationBar != null && mNavigationBarOnBottom) {
+-                            requestTransientBars(mNavigationBar);
+-                        }
+                     }
+                     @Override
+                     public void onSwipeFromRight() {
+-                        if (mNavigationBar != null && !mNavigationBarOnBottom) {
+-                            requestTransientBars(mNavigationBar);
+-                        }
+                     }
+                     @Override
+                     public void onDebug() {
+@@ -1695,53 +1592,11 @@ public class PhoneWindowManager implements WindowManagerPolicy {
+         mStatusBarHeight =
+                 res.getDimensionPixelSize(com.android.internal.R.dimen.status_bar_height);
+ 
+-        // Height of the navigation bar when presented horizontally at bottom
+-        mNavigationBarHeightForRotation[mPortraitRotation] =
+-        mNavigationBarHeightForRotation[mUpsideDownRotation] =
+-                Settings.System.getInt(
+-                        mContext.getContentResolver(),
+-                        Settings.System.NAVIGATION_BAR_HEIGHT,
+-                        mContext.getResources()
+-                                .getDimensionPixelSize(
+-                                        com.android.internal.R.dimen.navigation_bar_height));
+-        mNavigationBarHeightForRotation[mLandscapeRotation] =
+-        mNavigationBarHeightForRotation[mSeascapeRotation] =
+-                Settings.System.getInt(
+-                        mContext.getContentResolver(),
+-                        Settings.System.NAVIGATION_BAR_HEIGHT_LANDSCAPE,
+-                        mContext.getResources()
+-                                .getDimensionPixelSize(
+-                                        com.android.internal.R.dimen.navigation_bar_height_landscape));
+-
+-        // Width of the navigation bar when presented vertically along one side
+-        mNavigationBarWidthForRotation[mPortraitRotation] =
+-        mNavigationBarWidthForRotation[mUpsideDownRotation] =
+-        mNavigationBarWidthForRotation[mLandscapeRotation] =
+-        mNavigationBarWidthForRotation[mSeascapeRotation] =
+-                Settings.System.getInt(
+-                        mContext.getContentResolver(),
+-                        Settings.System.NAVIGATION_BAR_WIDTH,
+-                        mContext.getResources()
+-                                .getDimensionPixelSize(
+-                                        com.android.internal.R.dimen.navigation_bar_width));
+ 
+         // SystemUI (status bar) layout policy
+         int shortSizeDp = shortSize * DisplayMetrics.DENSITY_DEFAULT / density;
+         int longSizeDp = longSize * DisplayMetrics.DENSITY_DEFAULT / density;
+ 
+-        // Allow the navigation bar to move on small devices (phones).
+-        mNavigationBarCanMove = shortSizeDp < 600;
+-
+-        mHasNavigationBar = res.getBoolean(com.android.internal.R.bool.config_showNavigationBar);
+-        // Allow a system property to override this. Used by the emulator.
+-        // See also hasNavigationBar().
+-        String navBarOverride = SystemProperties.get("qemu.hw.mainkeys");
+-        if ("1".equals(navBarOverride)) {
+-            mHasNavigationBar = false;
+-        } else if ("0".equals(navBarOverride)) {
+-            mHasNavigationBar = true;
+-        }
+-
+         // For demo purposes, allow the rotation of the HDMI display to be controlled.
+         // By default, HDMI locks rotation to landscape.
+         if ("portrait".equals(SystemProperties.get("persist.demo.hdmirotation"))) {
+@@ -1761,14 +1616,6 @@ public class PhoneWindowManager implements WindowManagerPolicy {
+                 !"true".equals(SystemProperties.get("config.override_forced_orient"));
+     }
+ 
+-    /**
+-     * @return whether the navigation bar can be hidden, e.g. the device has a
+-     *         navigation bar and touch exploration is not enabled
+-     */
+-    private boolean canHideNavigationBar() {
+-        return hasNavigationBar() && !mTouchExplorationEnabled;
+-    }
+-
+     @Override
+     public boolean isDefaultOrientationForced() {
+         return mForceDefaultOrientation;
+@@ -1841,23 +1688,6 @@ public class PhoneWindowManager implements WindowManagerPolicy {
+                 mImmersiveModeConfirmation.loadSetting();
+             }
+ 
+-            final boolean currentWants = mHasNavigationBar || Settings.System.getInt(resolver, Settings.System.ENABLE_NAVIGATION_BAR, 0) != 0;
+-
+-            int NavHeight = Settings.System.getInt(resolver,
+-                    Settings.System.NAVIGATION_BAR_HEIGHT, 0);
+-            int NavHeightLand = Settings.System.getInt(resolver,
+-                    Settings.System.NAVIGATION_BAR_HEIGHT_LANDSCAPE, 0);
+-            int NavWidth = Settings.System.getInt(resolver,
+-                    Settings.System.NAVIGATION_BAR_WIDTH, 0);
+-            if (NavHeight != mUserNavBarHeight || NavHeightLand != mUserNavBarHeightLand || NavWidth != mUserNavBarWidth || currentWants != mWantsNavigationBar) {
+-                mUserNavBarHeight = NavHeight;
+-                mUserNavBarHeightLand = NavHeightLand;
+-                mUserNavBarWidth = NavWidth;
+-                mWantsNavigationBar = currentWants;
+-
+-                resetScreenHelper();
+-            }
+-
+             final boolean useEdgeService = Settings.System.getIntForUser(resolver,
+                     Settings.System.USE_EDGE_SERVICE_FOR_GESTURES, 1, UserHandle.USER_CURRENT) == 1;
+             if (useEdgeService ^ mUsingEdgeGestureServiceForGestures && mSystemReady) {
+@@ -2122,8 +1952,6 @@ public class PhoneWindowManager implements WindowManagerPolicy {
+             case TYPE_KEYGUARD_SCRIM:
+             case TYPE_KEYGUARD_DIALOG:
+             case TYPE_MAGNIFICATION_OVERLAY:
+-            case TYPE_NAVIGATION_BAR:
+-            case TYPE_NAVIGATION_BAR_PANEL:
+             case TYPE_PHONE:
+             case TYPE_POINTER:
+             case TYPE_PRIORITY_PHONE:
+@@ -2264,12 +2092,6 @@ public class PhoneWindowManager implements WindowManagerPolicy {
+             // the on-screen volume indicator and controller shown when the user
+             // changes the device volume
+             return 19;
+-        case TYPE_NAVIGATION_BAR:
+-            // the navigation bar, if available, shows atop most things
+-            return 20;
+-        case TYPE_NAVIGATION_BAR_PANEL:
+-            // some panels (e.g. search) need to show on top of the navigation bar
+-            return 21;
+         case TYPE_SYSTEM_ERROR:
+             // system-level error dialogs
+             return 22;
+@@ -2326,24 +2148,10 @@ public class PhoneWindowManager implements WindowManagerPolicy {
+     }
+ 
+     public int getNonDecorDisplayWidth(int fullWidth, int fullHeight, int rotation) {
+-        if (hasNavigationBar() && !immersiveModeHidesNavigationBar()) {
+-            // For a basic navigation bar, when we are in landscape mode we place
+-            // the navigation bar to the side.
+-            if (mNavigationBarCanMove && fullWidth > fullHeight) {
+-                return fullWidth - mNavigationBarWidthForRotation[rotation];
+-            }
+-        }
+         return fullWidth;
+     }
+ 
+     public int getNonDecorDisplayHeight(int fullWidth, int fullHeight, int rotation) {
+-        if (hasNavigationBar() && !immersiveModeHidesNavigationBar()) {
+-            // For a basic navigation bar, when we are in portrait mode we place
+-            // the navigation bar to the bottom.
+-            if (!mNavigationBarCanMove || fullWidth < fullHeight) {
+-                return fullHeight - mNavigationBarHeightForRotation[rotation];
+-            }
+-        }
+         return fullHeight;
+     }
+ 
+@@ -2368,7 +2176,6 @@ public class PhoneWindowManager implements WindowManagerPolicy {
+     public boolean canBeForceHidden(WindowState win, WindowManager.LayoutParams attrs) {
+         switch (attrs.type) {
+             case TYPE_STATUS_BAR:
+-            case TYPE_NAVIGATION_BAR:
+             case TYPE_WALLPAPER:
+             case TYPE_DREAM:
+             case TYPE_UNIVERSE_BACKGROUND:
+@@ -2544,24 +2351,6 @@ public class PhoneWindowManager implements WindowManagerPolicy {
+                 mStatusBar = win;
+                 mStatusBarController.setWindow(win);
+                 break;
+-            case TYPE_NAVIGATION_BAR:
+-                mContext.enforceCallingOrSelfPermission(
+-                        android.Manifest.permission.STATUS_BAR_SERVICE,
+-                        "PhoneWindowManager");
+-                if (mNavigationBar != null) {
+-                    if (mNavigationBar.isAlive()) {
+-                        return WindowManagerGlobal.ADD_MULTIPLE_SINGLETON;
+-                    }
+-                }
+-                mNavigationBar = win;
+-                mNavigationBarController.setWindow(win);
+-                if (DEBUG_LAYOUT) Slog.i(TAG, "NAVIGATION BAR: " + mNavigationBar);
+-                break;
+-            case TYPE_NAVIGATION_BAR_PANEL:
+-                mContext.enforceCallingOrSelfPermission(
+-                        android.Manifest.permission.STATUS_BAR_SERVICE,
+-                        "PhoneWindowManager");
+-                break;
+             case TYPE_STATUS_BAR_PANEL:
+                 mContext.enforceCallingOrSelfPermission(
+                         android.Manifest.permission.STATUS_BAR_SERVICE,
+@@ -2601,9 +2390,6 @@ public class PhoneWindowManager implements WindowManagerPolicy {
+         } else if (mKeyguardScrim == win) {
+             Log.v(TAG, "Removing keyguard scrim");
+             mKeyguardScrim = null;
+-        } if (mNavigationBar == win) {
+-            mNavigationBar = null;
+-            mNavigationBarController.setWindow(null);
+         }
+     }
+ 
+@@ -2622,25 +2408,6 @@ public class PhoneWindowManager implements WindowManagerPolicy {
+                     || transit == TRANSIT_SHOW) {
+                 return R.anim.dock_top_enter;
+             }
+-        } else if (win == mNavigationBar) {
+-            // This can be on either the bottom or the right.
+-            if (mNavigationBarOnBottom) {
+-                if (transit == TRANSIT_EXIT
+-                        || transit == TRANSIT_HIDE) {
+-                    return R.anim.dock_bottom_exit;
+-                } else if (transit == TRANSIT_ENTER
+-                        || transit == TRANSIT_SHOW) {
+-                    return R.anim.dock_bottom_enter;
+-                }
+-            } else {
+-                if (transit == TRANSIT_EXIT
+-                        || transit == TRANSIT_HIDE) {
+-                    return R.anim.dock_right_exit;
+-                } else if (transit == TRANSIT_ENTER
+-                        || transit == TRANSIT_SHOW) {
+-                    return R.anim.dock_right_enter;
+-                }
+-            }
+         }
+ 
+         if (transit == TRANSIT_PREVIEW_DONE) {
+@@ -3550,7 +3317,6 @@ public class PhoneWindowManager implements WindowManagerPolicy {
+     @Override
+     public int adjustSystemUiVisibilityLw(int visibility) {
+         mStatusBarController.adjustSystemUiVisibilityLw(mLastSystemUiFlags, visibility);
+-        mNavigationBarController.adjustSystemUiVisibilityLw(mLastSystemUiFlags, visibility);
+ 
+         updateEdgeGestureListenerState();
+ 
+@@ -3571,14 +3337,8 @@ public class PhoneWindowManager implements WindowManagerPolicy {
+         if ((fl & (FLAG_LAYOUT_IN_SCREEN | FLAG_LAYOUT_INSET_DECOR))
+                 == (FLAG_LAYOUT_IN_SCREEN | FLAG_LAYOUT_INSET_DECOR)) {
+             int availRight, availBottom;
+-            if (canHideNavigationBar() &&
+-                    (systemUiVisibility & View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION) != 0) {
+                 availRight = mUnrestrictedScreenLeft + mUnrestrictedScreenWidth;
+                 availBottom = mUnrestrictedScreenTop + mUnrestrictedScreenHeight;
+-            } else {
+-                availRight = mRestrictedScreenLeft + mRestrictedScreenWidth;
+-                availBottom = mRestrictedScreenTop + mRestrictedScreenHeight;
+-            }
+             if ((systemUiVisibility & View.SYSTEM_UI_FLAG_LAYOUT_STABLE) != 0) {
+                 if ((fl & FLAG_FULLSCREEN) != 0) {
+                     contentInset.set(mStableFullscreenLeft, mStableFullscreenTop,
+@@ -3684,115 +3444,10 @@ public class PhoneWindowManager implements WindowManagerPolicy {
+             // For purposes of putting out fake window up to steal focus, we will
+             // drive nav being hidden only by whether it is requested.
+             final int sysui = mLastSystemUiFlags;
+-            boolean navVisible = (sysui & View.SYSTEM_UI_FLAG_HIDE_NAVIGATION) == 0;
+-            boolean navTranslucent = (sysui & View.NAVIGATION_BAR_TRANSLUCENT) != 0;
+             boolean immersive = (sysui & View.SYSTEM_UI_FLAG_IMMERSIVE) != 0;
+             boolean immersiveSticky = (sysui & View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY) != 0;
+-            boolean navAllowedHidden = immersive || immersiveSticky;
+-            navTranslucent &= !immersiveSticky;  // transient trumps translucent
+-            navTranslucent &= areTranslucentBarsAllowed();
+-
+-            // When the navigation bar isn't visible, we put up a fake
+-            // input window to catch all touch events.  This way we can
+-            // detect when the user presses anywhere to bring back the nav
+-            // bar and ensure the application doesn't see the event.
+-            if (navVisible || navAllowedHidden) {
+-                if (mHideNavFakeWindow != null) {
+-                    mHideNavFakeWindow.dismiss();
+-                    mHideNavFakeWindow = null;
+-                }
+-            } else if (mHideNavFakeWindow == null) {
+-                mHideNavFakeWindow = mWindowManagerFuncs.addFakeWindow(
+-                        mHandler.getLooper(), mHideNavInputEventReceiverFactory,
+-                        "hidden nav", WindowManager.LayoutParams.TYPE_HIDDEN_NAV_CONSUMER, 0,
+-                        0, false, false, true);
+-            }
+-
+-            // For purposes of positioning and showing the nav bar, if we have
+-            // decided that it can't be hidden (because of the screen aspect ratio),
+-            // then take that into account.
+-            navVisible |= !canHideNavigationBar();
+ 
+             boolean updateSysUiVisibility = false;
+-            if (mNavigationBar != null) {
+-                boolean transientNavBarShowing = mNavigationBarController.isTransientShowing();
+-                // Force the navigation bar to its appropriate place and
+-                // size.  We need to do this directly, instead of relying on
+-                // it to bubble up from the nav bar, because this needs to
+-                // change atomically with screen rotations.
+-                mNavigationBarOnBottom = (!mNavigationBarCanMove || displayWidth < displayHeight);
+-                if (mNavigationBarOnBottom) {
+-                    // It's a system nav bar or a portrait screen; nav bar goes on bottom.
+-                    int top = displayHeight - overscanBottom
+-                            - mNavigationBarHeightForRotation[displayRotation];
+-                    mTmpNavigationFrame.set(0, top, displayWidth, displayHeight - overscanBottom);
+-                    if (immersiveModeHidesNavigationBar()) {
+-                        mStableBottom = mStableFullscreenBottom = displayHeight - overscanBottom;
+-                    } else {
+-                        mStableBottom = mStableFullscreenBottom = mTmpNavigationFrame.top;
+-                    }
+-
+-                    if (transientNavBarShowing) {
+-                        mNavigationBarController.setBarShowingLw(true);
+-                    } else if (navVisible) {
+-                        mNavigationBarController.setBarShowingLw(true);
+-                        mDockBottom = mTmpNavigationFrame.top;
+-                        mRestrictedScreenHeight = mDockBottom - mRestrictedScreenTop;
+-                        mRestrictedOverscanScreenHeight =
+-                                mDockBottom - mRestrictedOverscanScreenTop;
+-                    } else {
+-                        // We currently want to hide the navigation UI.
+-                        mNavigationBarController.setBarShowingLw(false);
+-                    }
+-                    if (navVisible && !navTranslucent && !mNavigationBar.isAnimatingLw()
+-                            && !mNavigationBarController.wasRecentlyTranslucent()) {
+-                        // If the opaque nav bar is currently requested to be visible,
+-                        // and not in the process of animating on or off, then
+-                        // we can tell the app that it is covered by it.
+-                        mSystemBottom = mTmpNavigationFrame.top;
+-                    }
+-                } else {
+-                    // Landscape screen; nav bar goes to the right.
+-
+-                    int left = displayWidth - overscanRight
+-                            - mNavigationBarWidthForRotation[displayRotation];
+-
+-                    mTmpNavigationFrame.set(left, 0, displayWidth - overscanRight, displayHeight);
+-                    mStableRight = mStableFullscreenRight = mTmpNavigationFrame.left;
+-                    if (transientNavBarShowing) {
+-                        mNavigationBarController.setBarShowingLw(true);
+-                    } else if (navVisible) {
+-                        mNavigationBarController.setBarShowingLw(true);
+-                        mDockRight = mTmpNavigationFrame.left;
+-                        mRestrictedScreenWidth = mDockRight - mRestrictedScreenLeft;
+-                        mRestrictedOverscanScreenWidth = mDockRight - mRestrictedOverscanScreenLeft;
+-                    } else {
+-                        // We currently want to hide the navigation UI.
+-                        mNavigationBarController.setBarShowingLw(false);
+-                    }
+-                    if (navVisible && !navTranslucent && !mNavigationBar.isAnimatingLw()
+-                            && !mNavigationBarController.wasRecentlyTranslucent()) {
+-                        // If the nav bar is currently requested to be visible,
+-                        // and not in the process of animating on or off, then
+-                        // we can tell the app that it is covered by it.
+-                        mSystemRight = mTmpNavigationFrame.left;
+-                    }
+-                }
+-                // Make sure the content and current rectangles are updated to
+-                // account for the restrictions from the navigation bar.
+-                mContentTop = mCurTop = mDockTop;
+-                mContentBottom = mCurBottom = mDockBottom;
+-                mContentLeft = mCurLeft = mDockLeft;
+-                mContentRight = mCurRight = mDockRight;
+-                mStatusBarLayer = mNavigationBar.getSurfaceLayer();
+-                // And compute the final frame.
+-                mNavigationBar.computeFrameLw(mTmpNavigationFrame, mTmpNavigationFrame,
+-                        mTmpNavigationFrame, mTmpNavigationFrame, mTmpNavigationFrame, dcf);
+-                if (DEBUG_LAYOUT) Slog.i(TAG, "mNavigationBar frame: " + mTmpNavigationFrame);
+-                if (mNavigationBarController.checkHiddenLw()) {
+-                    updateSysUiVisibility = true;
+-                }
+-            }
+             if (DEBUG_LAYOUT) Slog.i(TAG, String.format("mDock rect: (%d,%d - %d,%d)",
+                     mDockLeft, mDockTop, mDockRight, mDockBottom));
+ 
+@@ -3864,7 +3519,6 @@ public class PhoneWindowManager implements WindowManagerPolicy {
+     @Override
+     public int getSystemDecorLayerLw() {
+         if (mStatusBar != null) return mStatusBar.getSurfaceLayer();
+-        if (mNavigationBar != null) return mNavigationBar.getSurfaceLayer();
+         return 0;
+     }
+ 
+@@ -3945,7 +3599,7 @@ public class PhoneWindowManager implements WindowManagerPolicy {
+     public void layoutWindowLw(WindowState win, WindowManager.LayoutParams attrs,
+             WindowState attached) {
+         // we've already done the status bar
+-        if (win == mStatusBar || win == mNavigationBar) {
++        if (win == mStatusBar) {
+             return;
+         }
+         final boolean isDefaultDisplay = win.isDefaultDisplay();
+@@ -3968,9 +3622,6 @@ public class PhoneWindowManager implements WindowManagerPolicy {
+         final Rect dcf = mTmpDecorFrame;
+         dcf.setEmpty();
+ 
+-        final boolean hasNavBar = (isDefaultDisplay && hasNavigationBar()
+-                && mNavigationBar != null && mNavigationBar.isVisibleLw());
+-
+         final int adjust = sim & SOFT_INPUT_MASK_ADJUST;
+ 
+         if (!isDefaultDisplay) {
+@@ -4006,8 +3657,7 @@ public class PhoneWindowManager implements WindowManagerPolicy {
+             dcf.right = mSystemRight;
+             dcf.bottom = mSystemBottom;
+             final boolean inheritTranslucentDecor = (attrs.privateFlags
+-                    & WindowManager.LayoutParams.PRIVATE_FLAG_INHERIT_TRANSLUCENT_DECOR) != 0
+-        || immersiveModeHidesNavigationBar();
++                    & WindowManager.LayoutParams.PRIVATE_FLAG_INHERIT_TRANSLUCENT_DECOR) != 0;
+             final boolean isAppWindow =
+                     attrs.type >= WindowManager.LayoutParams.FIRST_APPLICATION_WINDOW &&
+                     attrs.type <= WindowManager.LayoutParams.LAST_APPLICATION_WINDOW;
+@@ -4045,29 +3695,7 @@ public class PhoneWindowManager implements WindowManagerPolicy {
+                     // frame is the same as the one we are attached to.
+                     setAttachedWindowFrames(win, fl, adjust, attached, true, pf, df, of, cf, vf);
+                 } else {
+-                    if (attrs.type == TYPE_STATUS_BAR_PANEL
+-                            || attrs.type == TYPE_STATUS_BAR_SUB_PANEL) {
+-                        // Status bar panels are the only windows who can go on top of
+-                        // the status bar.  They are protected by the STATUS_BAR_SERVICE
+-                        // permission, so they have the same privileges as the status
+-                        // bar itself.
+-                        //
+-                        // However, they should still dodge the navigation bar if it exists.
+-
+-                        pf.left = df.left = of.left = hasNavBar
+-                                ? mDockLeft : mUnrestrictedScreenLeft;
+-                        pf.top = df.top = of.top = mUnrestrictedScreenTop;
+-                        pf.right = df.right = of.right = hasNavBar
+-                                ? mRestrictedScreenLeft+mRestrictedScreenWidth
+-                                : mUnrestrictedScreenLeft + mUnrestrictedScreenWidth;
+-                        pf.bottom = df.bottom = of.bottom = hasNavBar
+-                                ? mRestrictedScreenTop+mRestrictedScreenHeight
+-                                : mUnrestrictedScreenTop + mUnrestrictedScreenHeight;
+-
+-                        if (DEBUG_LAYOUT) Slog.v(TAG, String.format(
+-                                        "Laying out status bar window: (%d,%d - %d,%d)",
+-                                        pf.left, pf.top, pf.right, pf.bottom));
+-                    } else if ((fl & FLAG_LAYOUT_IN_OVERSCAN) != 0
++                    if ((fl & FLAG_LAYOUT_IN_OVERSCAN) != 0
+                             && attrs.type >= WindowManager.LayoutParams.FIRST_APPLICATION_WINDOW
+                             && attrs.type <= WindowManager.LayoutParams.LAST_SUB_WINDOW) {
+                         // Asking to layout into the overscan region, so give it that pure
+@@ -4077,8 +3705,7 @@ public class PhoneWindowManager implements WindowManagerPolicy {
+                         pf.right = df.right = of.right = mOverscanScreenLeft + mOverscanScreenWidth;
+                         pf.bottom = df.bottom = of.bottom = mOverscanScreenTop
+                                 + mOverscanScreenHeight;
+-                    } else if (canHideNavigationBar()
+-                            && (sysUiFl & View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION) != 0
++                    } else if ((sysUiFl & View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION) != 0
+                             && (attrs.type == WindowManager.LayoutParams.TYPE_KEYGUARD
+                                 || attrs.type == WindowManager.LayoutParams.TYPE_RECENTS_OVERLAY
+                                 || (attrs.type >= WindowManager.LayoutParams.FIRST_APPLICATION_WINDOW
+@@ -4155,30 +3782,14 @@ public class PhoneWindowManager implements WindowManagerPolicy {
+                 // gets everything, period.
+                 if (attrs.type == TYPE_STATUS_BAR_PANEL
+                         || attrs.type == TYPE_STATUS_BAR_SUB_PANEL) {
+-                    pf.left = df.left = of.left = cf.left = hasNavBar
+-                            ? mDockLeft : mUnrestrictedScreenLeft;
++                    pf.left = df.left = of.left = cf.left = mUnrestrictedScreenLeft;
+                     pf.top = df.top = of.top = cf.top = mUnrestrictedScreenTop;
+-                    pf.right = df.right = of.right = cf.right = hasNavBar
+-                                        ? mRestrictedScreenLeft+mRestrictedScreenWidth
+-                                        : mUnrestrictedScreenLeft + mUnrestrictedScreenWidth;
+-                    pf.bottom = df.bottom = of.bottom = cf.bottom = hasNavBar
+-                                          ? mRestrictedScreenTop+mRestrictedScreenHeight
+-                                          : mUnrestrictedScreenTop + mUnrestrictedScreenHeight;
++                    pf.right = df.right = of.right = cf.right =
++                                         mUnrestrictedScreenLeft + mUnrestrictedScreenWidth;
++                    pf.bottom = df.bottom = of.bottom = cf.bottom = mUnrestrictedScreenTop + mUnrestrictedScreenHeight;
+                     if (DEBUG_LAYOUT) Slog.v(TAG, String.format(
+                                     "Laying out IN_SCREEN status bar window: (%d,%d - %d,%d)",
+                                     pf.left, pf.top, pf.right, pf.bottom));
+-                } else if (attrs.type == TYPE_NAVIGATION_BAR
+-                        || attrs.type == TYPE_NAVIGATION_BAR_PANEL) {
+-                    // The navigation bar has Real Ultimate Power.
+-                    pf.left = df.left = of.left = mUnrestrictedScreenLeft;
+-                    pf.top = df.top = of.top = mUnrestrictedScreenTop;
+-                    pf.right = df.right = of.right = mUnrestrictedScreenLeft
+-                            + mUnrestrictedScreenWidth;
+-                    pf.bottom = df.bottom = of.bottom = mUnrestrictedScreenTop
+-                            + mUnrestrictedScreenHeight;
+-                    if (DEBUG_LAYOUT) Slog.v(TAG, String.format(
+-                                    "Laying out navigation bar window: (%d,%d - %d,%d)",
+-                                    pf.left, pf.top, pf.right, pf.bottom));
+                 } else if ((attrs.type == TYPE_SECURE_SYSTEM_OVERLAY
+                                 || attrs.type == TYPE_BOOT_PROGRESS)
+                         && ((fl & FLAG_FULLSCREEN) != 0)) {
+@@ -4217,8 +3828,8 @@ public class PhoneWindowManager implements WindowManagerPolicy {
+                             = mOverscanScreenLeft + mOverscanScreenWidth;
+                     pf.bottom = df.bottom = of.bottom = cf.bottom
+                             = mOverscanScreenTop + mOverscanScreenHeight;
+-                } else if (canHideNavigationBar()
+-                        && (sysUiFl & View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION) != 0
++                } else if (
++                        (sysUiFl & View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION) != 0
+                         && (attrs.type == TYPE_TOAST
+                             || attrs.type == WindowManager.LayoutParams.TYPE_RECENTS_OVERLAY
+                             || (attrs.type >= WindowManager.LayoutParams.FIRST_APPLICATION_WINDOW
+@@ -4368,8 +3979,6 @@ public class PhoneWindowManager implements WindowManagerPolicy {
+         mAppsToBeHidden.clear();
+         mForceStatusBar = false;
+         mForceStatusBarFromKeyguard = false;
+-        mForcingShowNavBar = false;
+-        mForcingShowNavBarLayer = -1;
+         
+         mHideLockScreen = false;
+         mAllowLockscreenWhenOn = false;
+@@ -4384,11 +3993,6 @@ public class PhoneWindowManager implements WindowManagerPolicy {
+                                 WindowManager.LayoutParams attrs) {
+         if (DEBUG_LAYOUT) Slog.i(TAG, "Win " + win + ": isVisibleOrBehindKeyguardLw="
+                 + win.isVisibleOrBehindKeyguardLw());
+-        if (mTopFullscreenOpaqueWindowState == null
+-                && win.isVisibleLw() && attrs.type == TYPE_INPUT_METHOD) {
+-            mForcingShowNavBar = true;
+-            mForcingShowNavBarLayer = win.getSurfaceLayer();
+-        }
+         if (mTopFullscreenOpaqueWindowState == null &&
+                 win.isVisibleOrBehindKeyguardLw() && !win.isGoneForLayoutLw()) {
+             if ((attrs.flags & FLAG_FORCE_NOT_FULLSCREEN) != 0) {
+@@ -4797,8 +4401,6 @@ public class PhoneWindowManager implements WindowManagerPolicy {
+                         msg.arg1 = msg.arg2 = 0;
+                         if (mStatusBar != null && mStatusBar.isVisibleLw())
+                             msg.arg1 = 1;
+-                        if (mNavigationBar != null && mNavigationBar.isVisibleLw())
+-                            msg.arg2 = 1;
+                         try {
+                             messenger.send(msg);
+                         } catch (RemoteException e) {
+@@ -5533,15 +5135,13 @@ public class PhoneWindowManager implements WindowManagerPolicy {
+     private void requestTransientBars(WindowState swipeTarget) {
+         synchronized (mWindowManagerFuncs.getWindowManagerLock()) {
+             boolean sb = mStatusBarController.checkShowTransientBarLw();
+-            boolean nb = mNavigationBarController.checkShowTransientBarLw();
+-            if (sb || nb) {
+-                WindowState barTarget = sb ? mStatusBar : mNavigationBar;
+-                if (sb ^ nb && barTarget != swipeTarget) {
++            if (sb) {
++                WindowState barTarget = mStatusBar;
++                if (sb && barTarget != swipeTarget) {
+                     if (DEBUG) Slog.d(TAG, "Not showing transient bar, wrong swipe target");
+                     return;
+                 }
+                 if (sb) mStatusBarController.showTransient();
+-                if (nb) mNavigationBarController.showTransient();
+                 mImmersiveModeConfirmation.confirmCurrentPrompt();
+                 updateSystemUiVisibilityLw();
+             }
+@@ -6458,9 +6058,6 @@ public class PhoneWindowManager implements WindowManagerPolicy {
+         int tmpVisibility = win.getSystemUiVisibility()
+                 & ~mResettingSystemUiFlags
+                 & ~mForceClearedSystemUiFlags;
+-        if (mForcingShowNavBar && win.getSurfaceLayer() < mForcingShowNavBarLayer) {
+-            tmpVisibility &= ~View.SYSTEM_UI_CLEARABLE_FLAGS;
+-        }
+         final int visibility = updateSystemBarsLw(win, mLastSystemUiFlags, tmpVisibility);
+         final int diff = visibility ^ mLastSystemUiFlags;
+         final boolean needsMenu = win.getNeedsMenuLw(mTopFullscreenOpaqueWindowState);
+@@ -6496,7 +6093,6 @@ public class PhoneWindowManager implements WindowManagerPolicy {
+                 : mTopFullscreenOpaqueWindowState;
+         vis = updateImmersiveModeVisibility(vis);
+         vis = mStatusBarController.applyTranslucentFlagLw(transWin, vis, oldVis);
+-        vis = mNavigationBarController.applyTranslucentFlagLw(transWin, vis, oldVis);
+ 
+         // low profile mode
+         if (LOLprofile) {
+@@ -6510,13 +6106,12 @@ public class PhoneWindowManager implements WindowManagerPolicy {
+                     | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                     | View.SYSTEM_UI_FLAG_IMMERSIVE
+                     | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+-                    | View.STATUS_BAR_TRANSLUCENT
+-                    | View.NAVIGATION_BAR_TRANSLUCENT;
++                    | View.STATUS_BAR_TRANSLUCENT;
+             vis = (vis & ~flags) | (oldVis & flags);
+         }
+ 
+         if (!areTranslucentBarsAllowed()) {
+-            vis &= ~(View.NAVIGATION_BAR_TRANSLUCENT | View.STATUS_BAR_TRANSLUCENT);
++            vis &= ~View.STATUS_BAR_TRANSLUCENT;
+         }
+ 
+         // update status bar
+@@ -6531,9 +6126,6 @@ public class PhoneWindowManager implements WindowManagerPolicy {
+         boolean hideStatusBarSysui =
+                 (vis & View.SYSTEM_UI_FLAG_FULLSCREEN) != 0 ||
+                 immersiveModeHidesStatusBar();
+-        boolean hideNavBarSysui =
+-                (vis & View.SYSTEM_UI_FLAG_HIDE_NAVIGATION) != 0 ||
+-                immersiveModeHidesNavigationBar();
+ 
+         boolean transientStatusBarAllowed =
+                 mStatusBar != null && (
+@@ -6541,18 +6133,8 @@ public class PhoneWindowManager implements WindowManagerPolicy {
+                 || (hideStatusBarSysui && immersiveSticky)
+                 || statusBarHasFocus);
+ 
+-        boolean transientNavBarAllowed =
+-                mNavigationBar != null &&
+-                hideNavBarSysui && immersiveSticky;
+-
+         boolean denyTransientStatus = mStatusBarController.isTransientShowRequested()
+                 && !transientStatusBarAllowed && hideStatusBarSysui;
+-        boolean denyTransientNav = mNavigationBarController.isTransientShowRequested()
+-                && !transientNavBarAllowed;
+-        if (denyTransientStatus || denyTransientNav) {
+-            // clear the clearable flags instead
+-            clearClearableFlagsLw();
+-        }
+ 
+         if (expanded) transientStatusBarAllowed = false;
+         vis = mStatusBarController.updateVisibilityLw(transientStatusBarAllowed, oldVis, vis);
+@@ -6565,8 +6147,6 @@ public class PhoneWindowManager implements WindowManagerPolicy {
+             mImmersiveModeConfirmation.immersiveModeChanged(pkg, newImmersiveMode, transientStatusBarAllowed);
+         }
+ 
+-        vis = mNavigationBarController.updateVisibilityLw(transientNavBarAllowed, oldVis, vis);
+-
+         return vis;
+     }
+ 
+@@ -6580,10 +6160,9 @@ public class PhoneWindowManager implements WindowManagerPolicy {
+ 
+     public boolean isImmersiveMode(int vis) {
+         final int flags = View.SYSTEM_UI_FLAG_IMMERSIVE | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
+-        return mNavigationBar != null
++        return false
+                 && (vis & View.SYSTEM_UI_FLAG_HIDE_NAVIGATION) != 0
+-                && (vis & flags) != 0
+-                && canHideNavigationBar();
++                && (vis & flags) != 0;
+     }
+ 
+     /**
+@@ -6596,41 +6175,6 @@ public class PhoneWindowManager implements WindowManagerPolicy {
+         return mTranslucentDecorEnabled && !mTouchExplorationEnabled;
+     }
+ 
+-    // Use this instead of checking config_showNavigationBar so that it can be consistently
+-    // overridden by qemu.hw.mainkeys in the emulator.
+-    @Override
+-    public boolean hasNavigationBar() {
+-        // if device really has navbar, we don't need to worry about the runtime
+-        // navbar enable race condition
+-        if (mHasNavigationBar) {
+-            return true;
+-        }
+-
+-        synchronized (mLock) {
+-            return mHasNavigationBar || mWantsNavigationBar;
+-        }
+-    }
+-
+-    // Use this method to check if device wants a navigation bar
+-    @Override
+-    public boolean wantsNavigationBar() {
+-        // if device really has navbar, we don't need to worry about the runtime
+-        // navbar enable race condition
+-        if (mHasNavigationBar) {
+-            return true;
+-        }
+-
+-        // lock the same mutex used by input events
+-        synchronized (mLock) {
+-            return mWantsNavigationBar;
+-        }
+-    }
+-
+-    @Override
+-    public boolean needsNavigationBar() {
+-        // this is set based on resources+properties ONCE, so no mutex issues
+-        return mHasNavigationBar;
+-    }
+ 
+     @Override
+     public boolean hasMenuKeyEnabled() {
+@@ -6665,7 +6209,6 @@ public class PhoneWindowManager implements WindowManagerPolicy {
+         switch (windowType) {
+             case WindowManager.LayoutParams.TYPE_INPUT_METHOD:
+             case WindowManager.LayoutParams.TYPE_INPUT_METHOD_DIALOG:
+-            case WindowManager.LayoutParams.TYPE_NAVIGATION_BAR:
+             case WindowManager.LayoutParams.TYPE_MAGNIFICATION_OVERLAY: {
+                 return false;
+             }
+@@ -6795,10 +6338,6 @@ public class PhoneWindowManager implements WindowManagerPolicy {
+             pw.print(prefix); pw.print("mStatusBar=");
+                     pw.println(mStatusBar);
+         }
+-        if (mNavigationBar != null) {
+-            pw.print(prefix); pw.print("mNavigationBar=");
+-                    pw.println(mNavigationBar);
+-        }
+         if (mKeyguard != null) {
+             pw.print(prefix); pw.print("mKeyguard=");
+                     pw.println(mKeyguard);
+@@ -6819,11 +6358,6 @@ public class PhoneWindowManager implements WindowManagerPolicy {
+             pw.print(prefix); pw.print("mTopFullscreenOpaqueWindowState=");
+                     pw.println(mTopFullscreenOpaqueWindowState);
+         }
+-        if (mForcingShowNavBar) {
+-            pw.print(prefix); pw.print("mForcingShowNavBar=");
+-                    pw.println(mForcingShowNavBar); pw.print( "mForcingShowNavBarLayer=");
+-                    pw.println(mForcingShowNavBarLayer);
+-        }
+         pw.print(prefix); pw.print("mTopIsFullscreen="); pw.print(mTopIsFullscreen);
+                 pw.print(" mHideLockScreen="); pw.println(mHideLockScreen);
+         pw.print(prefix); pw.print("mForceStatusBar="); pw.print(mForceStatusBar);
+@@ -6848,17 +6382,12 @@ public class PhoneWindowManager implements WindowManagerPolicy {
+                 pw.print(" mDemoHdmiRotationLock="); pw.println(mDemoHdmiRotationLock);
+         pw.print(prefix); pw.print("mUndockedHdmiRotation="); pw.println(mUndockedHdmiRotation);
+         mStatusBarController.dump(pw, prefix);
+-        mNavigationBarController.dump(pw, prefix);
+     }
+ 
+     private boolean immersiveModeHidesStatusBar() {
+         return mGlobalImmersiveModeStyle >= 2;
+     }
+ 
+-    private boolean immersiveModeHidesNavigationBar() {
+-        return mGlobalImmersiveModeStyle != 3 && mGlobalImmersiveModeStyle != 0;
+-    }
+-
+     private int updateImmersiveModeVisibility(int vis) {
+         
+         switch (immersiveModeBehavior) {
+diff --git a/services/java/com/android/server/ThemeService.java b/services/java/com/android/server/ThemeService.java
+index 2d8898b..6cc9fed 100755
+--- a/services/java/com/android/server/ThemeService.java
++++ b/services/java/com/android/server/ThemeService.java
+@@ -845,7 +845,6 @@ public class ThemeService extends IThemeService.Stub {
+         synchronized (mThemesToProcessQueue) {
+             for (Object key : componentMap.keySet()) {
+                 if (ThemesColumns.MODIFIES_OVERLAYS.equals(key) ||
+-                        ThemesColumns.MODIFIES_NAVIGATION_BAR.equals(key) ||
+                         ThemesColumns.MODIFIES_STATUS_BAR.equals(key) ||
+                         ThemesColumns.MODIFIES_ICONS.equals(key)) {
+                     String pkgName = (String) componentMap.get(key);
+diff --git a/services/java/com/android/server/wm/DisplayMagnifier.java b/services/java/com/android/server/wm/DisplayMagnifier.java
+index 382d7b4..5368164 100644
+--- a/services/java/com/android/server/wm/DisplayMagnifier.java
++++ b/services/java/com/android/server/wm/DisplayMagnifier.java
+@@ -188,7 +188,6 @@ final class DisplayMagnifier {
+                     case WindowManager.LayoutParams.TYPE_KEYGUARD_DIALOG:
+                     case WindowManager.LayoutParams.TYPE_SYSTEM_ERROR:
+                     case WindowManager.LayoutParams.TYPE_VOLUME_OVERLAY:
+-                    case WindowManager.LayoutParams.TYPE_NAVIGATION_BAR_PANEL:
+                     case WindowManager.LayoutParams.TYPE_RECENTS_OVERLAY: {
+                         Rect magnifiedRegionBounds = mTempRect2;
+                         mMagnifedViewport.getMagnifiedFrameInContentCoordsLocked(
+diff --git a/services/java/com/android/server/wm/WindowManagerService.java b/services/java/com/android/server/wm/WindowManagerService.java
+index 2acb2ae..15f949b 100755
+--- a/services/java/com/android/server/wm/WindowManagerService.java
++++ b/services/java/com/android/server/wm/WindowManagerService.java
+@@ -10374,21 +10374,6 @@ public class WindowManagerService extends IWindowManager.Stub
+     }
+ 
+     @Override
+-    public boolean hasNavigationBar() {
+-        return mPolicy.hasNavigationBar();
+-    }
+-
+-    @Override
+-    public boolean needsNavigationBar() {
+-        return mPolicy.needsNavigationBar();
+-    }
+-
+-    @Override
+-    public boolean wantsNavigationBar() {
+-        return mPolicy.wantsNavigationBar();
+-    }
+-
+-    @Override
+     public boolean hasMenuKeyEnabled() {
+         return mPolicy.hasMenuKeyEnabled();
+     }
+diff --git a/tools/layoutlib/bridge/src/android/view/IWindowManagerImpl.java b/tools/layoutlib/bridge/src/android/view/IWindowManagerImpl.java
+index eeca11b..303cc3b 100644
+--- a/tools/layoutlib/bridge/src/android/view/IWindowManagerImpl.java
++++ b/tools/layoutlib/bridge/src/android/view/IWindowManagerImpl.java
+@@ -49,14 +49,12 @@ public class IWindowManagerImpl implements IWindowManager {
+     private final Configuration mConfig;
+     private final DisplayMetrics mMetrics;
+     private final int mRotation;
+-    private final boolean mHasNavigationBar;
+ 
+     public IWindowManagerImpl(Configuration config, DisplayMetrics metrics, int rotation,
+             boolean hasNavigationBar) {
+         mConfig = config;
+         mMetrics = metrics;
+         mRotation = rotation;
+-        mHasNavigationBar = hasNavigationBar;
+     }
+ 
+     // custom API.
+@@ -72,11 +70,6 @@ public class IWindowManagerImpl implements IWindowManager {
+         return mRotation;
+     }
+ 
+-    @Override
+-    public boolean hasNavigationBar() {
+-        return mHasNavigationBar;
+-    }
+-
+     // ---- unused implementation of IWindowManager ----
+ 
+     @Override
+diff --git a/tools/layoutlib/bridge/src/com/android/layoutlib/bridge/impl/RenderSessionImpl.java b/tools/layoutlib/bridge/src/com/android/layoutlib/bridge/impl/RenderSessionImpl.java
+index 377d996..d3b237d 100644
+--- a/tools/layoutlib/bridge/src/com/android/layoutlib/bridge/impl/RenderSessionImpl.java
++++ b/tools/layoutlib/bridge/src/com/android/layoutlib/bridge/impl/RenderSessionImpl.java
+@@ -44,7 +44,6 @@ import com.android.layoutlib.bridge.android.BridgeContext;
+ import com.android.layoutlib.bridge.android.BridgeLayoutParamsMapAttributes;
+ import com.android.layoutlib.bridge.android.BridgeXmlBlockParser;
+ import com.android.layoutlib.bridge.bars.FakeActionBar;
+-import com.android.layoutlib.bridge.bars.NavigationBar;
+ import com.android.layoutlib.bridge.bars.StatusBar;
+ import com.android.layoutlib.bridge.bars.TitleBar;
+ import com.android.layoutlib.bridge.impl.binding.FakeAdapter;
+@@ -125,8 +124,6 @@ public class RenderSessionImpl extends RenderAction<SessionParams> {
+     private boolean mWindowIsFloating;
+ 
+     private int mStatusBarSize;
+-    private int mNavigationBarSize;
+-    private int mNavigationBarOrientation = LinearLayout.HORIZONTAL;
+     private int mTitleBarSize;
+     private int mActionBarSize;
+ 
+@@ -189,13 +186,11 @@ public class RenderSessionImpl extends RenderAction<SessionParams> {
+         findBackground(resources);
+         findStatusBar(resources, metrics);
+         findActionBar(resources, metrics);
+-        findNavigationBar(resources, metrics);
+ 
+         // FIXME: find those out, and possibly add them to the render params
+-        boolean hasNavigationBar = true;
+         IWindowManager iwm = new IWindowManagerImpl(getContext().getConfiguration(),
+                 metrics, Surface.ROTATION_0,
+-                hasNavigationBar);
++                false);
+         WindowManagerGlobal_Delegate.setWindowManagerService(iwm);
+ 
+         // build the inflater and parser.
+@@ -234,87 +229,6 @@ public class RenderSessionImpl extends RenderAction<SessionParams> {
+                 backgroundView = mViewRoot = mContentRoot = new FrameLayout(context);
+                 mViewRoot.setLayoutDirection(direction);
+             } else {
+-                if (hasSoftwareButtons() && mNavigationBarOrientation == LinearLayout.VERTICAL) {
+-                    /*
+-                     * This is a special case where the navigation bar is on the right.
+-                       +-------------------------------------------------+---+
+-                       | Status bar (always)                             |   |
+-                       +-------------------------------------------------+   |
+-                       | (Layout with background drawable)               |   |
+-                       | +---------------------------------------------+ |   |
+-                       | | Title/Action bar (optional)                 | |   |
+-                       | +---------------------------------------------+ |   |
+-                       | | Content, vertical extending                 | |   |
+-                       | |                                             | |   |
+-                       | +---------------------------------------------+ |   |
+-                       +-------------------------------------------------+---+
+-
+-                       So we create a horizontal layout, with the nav bar on the right,
+-                       and the left part is the normal layout below without the nav bar at
+-                       the bottom
+-                     */
+-                    LinearLayout topLayout = new LinearLayout(context);
+-                    topLayout.setLayoutDirection(direction);
+-                    mViewRoot = topLayout;
+-                    topLayout.setOrientation(LinearLayout.HORIZONTAL);
+-
+-                    try {
+-                        NavigationBar navigationBar = new NavigationBar(context,
+-                                hardwareConfig.getDensity(), LinearLayout.VERTICAL, isRtl,
+-                                params.isRtlSupported());
+-                        navigationBar.setLayoutParams(
+-                                new LinearLayout.LayoutParams(
+-                                        mNavigationBarSize,
+-                                        LayoutParams.MATCH_PARENT));
+-                        topLayout.addView(navigationBar);
+-                    } catch (XmlPullParserException e) {
+-
+-                    }
+-                }
+-
+-                /*
+-                 * we're creating the following layout
+-                 *
+-                   +-------------------------------------------------+
+-                   | Status bar (always)                             |
+-                   +-------------------------------------------------+
+-                   | (Layout with background drawable)               |
+-                   | +---------------------------------------------+ |
+-                   | | Title/Action bar (optional)                 | |
+-                   | +---------------------------------------------+ |
+-                   | | Content, vertical extending                 | |
+-                   | |                                             | |
+-                   | +---------------------------------------------+ |
+-                   +-------------------------------------------------+
+-                   | Navigation bar for soft buttons, maybe see above|
+-                   +-------------------------------------------------+
+-
+-                 */
+-
+-                LinearLayout topLayout = new LinearLayout(context);
+-                topLayout.setOrientation(LinearLayout.VERTICAL);
+-                topLayout.setLayoutDirection(direction);
+-                // if we don't already have a view root this is it
+-                if (mViewRoot == null) {
+-                    mViewRoot = topLayout;
+-                } else {
+-                    LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(
+-                            LayoutParams.WRAP_CONTENT, LayoutParams.MATCH_PARENT);
+-                    layoutParams.weight = 1;
+-                    topLayout.setLayoutParams(layoutParams);
+-
+-                    // this is the case of soft buttons + vertical bar.
+-                    // this top layout is the first layout in the horizontal layout. see above)
+-                    if (isRtl && params.isRtlSupported()) {
+-                        // If RTL is enabled, layoutlib will mirror the layouts. So, add the
+-                        // topLayout to the right of Navigation Bar and layoutlib will draw it
+-                        // to the left.
+-                        mViewRoot.addView(topLayout);
+-                    } else {
+-                        // Add the top layout to the left of the Navigation Bar.
+-                        mViewRoot.addView(topLayout, 0);
+-                    }
+-                }
+ 
+                 if (mStatusBarSize > 0) {
+                     // system bar
+@@ -374,23 +288,7 @@ public class RenderSessionImpl extends RenderAction<SessionParams> {
+                 mContentRoot.setLayoutParams(layoutParams);
+                 backgroundLayout.addView(mContentRoot);
+ 
+-                if (mNavigationBarOrientation == LinearLayout.HORIZONTAL &&
+-                        mNavigationBarSize > 0) {
+-                    // system bar
+-                    try {
+-                        NavigationBar navigationBar = new NavigationBar(context,
+-                                hardwareConfig.getDensity(), LinearLayout.HORIZONTAL, isRtl,
+-                                params.isRtlSupported());
+-                        navigationBar.setLayoutParams(
+-                                new LinearLayout.LayoutParams(
+-                                        LayoutParams.MATCH_PARENT, mNavigationBarSize));
+-                        topLayout.addView(navigationBar);
+-                    } catch (XmlPullParserException e) {
+-
+-                    }
+-                }
+-            }
+-
++	    }
+ 
+             // Sets the project callback (custom view loader) to the fragment delegate so that
+             // it can instantiate the custom Fragment.
+@@ -1127,53 +1025,6 @@ public class RenderSessionImpl extends RenderAction<SessionParams> {
+         }
+     }
+ 
+-    private void findNavigationBar(RenderResources resources, DisplayMetrics metrics) {
+-        if (hasSoftwareButtons() && mWindowIsFloating == false) {
+-
+-            // default value
+-            mNavigationBarSize = 48; // ??
+-
+-            HardwareConfig hardwareConfig = getParams().getHardwareConfig();
+-
+-            boolean barOnBottom = true;
+-
+-            if (hardwareConfig.getOrientation() == ScreenOrientation.LANDSCAPE) {
+-                // compute the dp of the screen.
+-                int shortSize = hardwareConfig.getScreenHeight();
+-
+-                // compute in dp
+-                int shortSizeDp = shortSize * DisplayMetrics.DENSITY_DEFAULT / hardwareConfig.getDensity().getDpiValue();
+-
+-                if (shortSizeDp < 600) {
+-                    // 0-599dp: "phone" UI with bar on the side
+-                    barOnBottom = false;
+-                } else {
+-                    // 600+dp: "tablet" UI with bar on the bottom
+-                    barOnBottom = true;
+-                }
+-            }
+-
+-            if (barOnBottom) {
+-                mNavigationBarOrientation = LinearLayout.HORIZONTAL;
+-            } else {
+-                mNavigationBarOrientation = LinearLayout.VERTICAL;
+-            }
+-
+-            // get the real value
+-            ResourceValue value = resources.getFrameworkResource(ResourceType.DIMEN,
+-                    barOnBottom ? "navigation_bar_height" : "navigation_bar_width");
+-
+-            if (value != null) {
+-                TypedValue typedValue = ResourceHelper.getValue("navigation_bar_height",
+-                        value.getValue(), true /*requireUnit*/);
+-                if (typedValue != null) {
+-                    // compute the pixel value based on the display metrics
+-                    mNavigationBarSize = (int)typedValue.getDimension(metrics);
+-                }
+-            }
+-        }
+-    }
+-
+     /**
+      * Looks for a attribute in the current theme. The attribute is in the android
+      * namespace.
+-- 
+2.5.0
+
