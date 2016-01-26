@@ -1,7 +1,7 @@
 From fb7dae5d272ebcae158ad708a66b119b92515e91 Mon Sep 17 00:00:00 2001
 From: Shilin Victor <chrono.monochrome@gmail.com>
 Date: Mon, 25 Jan 2016 12:11:00 +0700
-Subject: [PATCH] Navbar: remove remnants
+Subject: [PATCH 3/3] Navbar: remove remnants
 
 Change-Id: Ie318cb62ecdfa2125531be832980433bc3a73d01
 ---

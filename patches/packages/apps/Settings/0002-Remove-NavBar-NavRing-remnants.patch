@@ -1,7 +1,7 @@
 From d28221c8d4a7cb85facd033d97ab269508ce43ab Mon Sep 17 00:00:00 2001
 From: Shilin Victor <chrono.monochrome@gmail.com>
 Date: Mon, 25 Jan 2016 06:55:09 +0700
-Subject: [PATCH 2/2] Remove NavBar && NavRing remnants
+Subject: [PATCH 2/3] Remove NavBar && NavRing remnants
 
 Change-Id: Ic4eb7fbfd002a80bf8dfe364a153cbed1a5b412f
 ---
