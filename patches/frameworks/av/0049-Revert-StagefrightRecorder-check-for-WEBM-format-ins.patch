@@ -1,0 +1,50 @@
+From a68654950471c01074b78a46522ee640ac75831d Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Thu, 28 Jan 2016 12:19:08 +0700
+Subject: [PATCH 49/58] Revert "StagefrightRecorder: check for WEBM format
+ instead of MP4"
+
+This reverts commit 68e97e7388bc9efa03e56c999645002cc3f38df5.
+---
+ media/libmediaplayerservice/StagefrightRecorder.cpp | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/media/libmediaplayerservice/StagefrightRecorder.cpp b/media/libmediaplayerservice/StagefrightRecorder.cpp
+index d237b58..0a0ca30 100644
+--- a/media/libmediaplayerservice/StagefrightRecorder.cpp
++++ b/media/libmediaplayerservice/StagefrightRecorder.cpp
+@@ -1540,10 +1540,10 @@ status_t StagefrightRecorder::setupMPEG4orWEBMRecording() {
+ 
+     status_t err = OK;
+     sp<MediaWriter> writer;
+-    if (mOutputFormat == OUTPUT_FORMAT_WEBM) {
+-        writer = new WebmWriter(mOutputFd);
+-    } else {
++    if (mOutputFormat == OUTPUT_FORMAT_MPEG_4) {
+         writer = new MPEG4Writer(mOutputFd);
++    } else {
++        writer = new WebmWriter(mOutputFd);
+     }
+ 
+     if (mVideoSource < VIDEO_SOURCE_LIST_END) {
+@@ -1564,7 +1564,7 @@ status_t StagefrightRecorder::setupMPEG4orWEBMRecording() {
+         mTotalBitRate += mVideoBitRate;
+     }
+ 
+-    if (mOutputFormat != OUTPUT_FORMAT_WEBM) {
++    if (mOutputFormat == OUTPUT_FORMAT_MPEG_4) {
+         // Audio source is added at the end if it exists.
+         // This help make sure that the "recoding" sound is suppressed for
+         // camcorder applications in the recorded files.
+@@ -1614,7 +1614,7 @@ void StagefrightRecorder::setupMPEG4orWEBMMetaData(sp<MetaData> *meta) {
+     if (mMovieTimeScale > 0) {
+         (*meta)->setInt32(kKeyTimeScale, mMovieTimeScale);
+     }
+-    if (mOutputFormat != OUTPUT_FORMAT_WEBM) {
++    if (mOutputFormat == OUTPUT_FORMAT_MPEG_4) {
+         (*meta)->setInt32(kKey64BitFileOffset, mUse64BitFileOffset);
+         if (mTrackEveryTimeDurationUs > 0) {
+             (*meta)->setInt64(kKeyTrackTimeStatus, mTrackEveryTimeDurationUs);
+-- 
+2.5.0
+

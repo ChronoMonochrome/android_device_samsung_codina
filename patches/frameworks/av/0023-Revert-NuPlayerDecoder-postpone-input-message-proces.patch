@@ -1,0 +1,125 @@
+From 263a7b80b7e557624bf5d4468314f3cd5361c26f Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Thu, 28 Jan 2016 12:12:45 +0700
+Subject: [PATCH 23/58] Revert "NuPlayerDecoder: postpone input message
+ processing when it's not dequeued."
+
+This reverts commit 2245fc625910e47d1ba3c339e205c21ab58a47ad.
+---
+ .../nuplayer/NuPlayerDecoder.cpp                   | 35 +++++-----------------
+ .../nuplayer/NuPlayerDecoder.h                     |  4 +--
+ 2 files changed, 8 insertions(+), 31 deletions(-)
+
+diff --git a/media/libmediaplayerservice/nuplayer/NuPlayerDecoder.cpp b/media/libmediaplayerservice/nuplayer/NuPlayerDecoder.cpp
+index f131b1f..7814bf1 100644
+--- a/media/libmediaplayerservice/nuplayer/NuPlayerDecoder.cpp
++++ b/media/libmediaplayerservice/nuplayer/NuPlayerDecoder.cpp
+@@ -189,8 +189,6 @@ void NuPlayer::Decoder::releaseAndResetMediaBuffers() {
+     for (size_t i = 0; i < mInputBufferIsDequeued.size(); i++) {
+         mInputBufferIsDequeued.editItemAt(i) = false;
+     }
+-
+-    mPendingInputMessages.clear();
+ }
+ 
+ void NuPlayer::Decoder::requestCodecNotification() {
+@@ -276,19 +274,7 @@ bool NuPlayer::Decoder::handleAnInputBuffer() {
+         ALOGI("[%s] resubmitting CSD", mComponentName.c_str());
+         reply->setBuffer("buffer", buffer);
+         mCSDsToSubmit.removeAt(0);
+-        CHECK(onInputBufferFilled(reply));
+-        return true;
+-    }
+-
+-    while (!mPendingInputMessages.empty()) {
+-        sp<AMessage> msg = *mPendingInputMessages.begin();
+-        if (!onInputBufferFilled(msg)) {
+-            break;
+-        }
+-        mPendingInputMessages.erase(mPendingInputMessages.begin());
+-    }
+-
+-    if (!mInputBufferIsDequeued.editItemAt(bufferIx)) {
++        reply->post();
+         return true;
+     }
+ 
+@@ -300,7 +286,7 @@ bool NuPlayer::Decoder::handleAnInputBuffer() {
+     return true;
+ }
+ 
+-bool android::NuPlayer::Decoder::onInputBufferFilled(const sp<AMessage> &msg) {
++void android::NuPlayer::Decoder::onInputBufferFilled(const sp<AMessage> &msg) {
+     size_t bufferIx;
+     CHECK(msg->findSize("buffer-ix", &bufferIx));
+     CHECK_LT(bufferIx, mInputBuffers.size());
+@@ -320,12 +306,9 @@ bool android::NuPlayer::Decoder::onInputBufferFilled(const sp<AMessage> &msg) {
+                 const sp<ABuffer> &buf = mInputBuffers[ix];
+                 if (buf->data() == mediaBuffer->data()) {
+                     // all input buffers are dequeued on start, hence the check
+-                    if (!mInputBufferIsDequeued[ix]) {
+-                        ALOGV("[%s] received MediaBuffer for #%zu instead of #%zu",
+-                                mComponentName.c_str(), ix, bufferIx);
+-                        mediaBuffer->release();
+-                        return false;
+-                    }
++                    CHECK(mInputBufferIsDequeued[ix]);
++                    ALOGV("[%s] received MediaBuffer for #%zu instead of #%zu",
++                            mComponentName.c_str(), ix, bufferIx);
+ 
+                     // TRICKY: need buffer for the metadata, so instead, set
+                     // codecBuffer to the same (though incorrect) buffer to
+@@ -350,7 +333,7 @@ bool android::NuPlayer::Decoder::onInputBufferFilled(const sp<AMessage> &msg) {
+ 
+         if (streamErr == OK) {
+             /* buffers are returned to hold on to */
+-            return true;
++            return;
+         }
+ 
+         // attempt to queue EOS
+@@ -415,7 +398,6 @@ bool android::NuPlayer::Decoder::onInputBufferFilled(const sp<AMessage> &msg) {
+             }
+         }
+     }
+-    return true;
+ }
+ 
+ bool NuPlayer::Decoder::handleAnOutputBuffer() {
+@@ -638,10 +620,7 @@ void NuPlayer::Decoder::onMessageReceived(const sp<AMessage> &msg) {
+         case kWhatInputBufferFilled:
+         {
+             if (!isStaleReply(msg)) {
+-                if (!mPendingInputMessages.empty()
+-                        || !onInputBufferFilled(msg)) {
+-                    mPendingInputMessages.push_back(msg);
+-                }
++                onInputBufferFilled(msg);
+             }
+ 
+             break;
+diff --git a/media/libmediaplayerservice/nuplayer/NuPlayerDecoder.h b/media/libmediaplayerservice/nuplayer/NuPlayerDecoder.h
+index dba3eee..cc1bdff 100644
+--- a/media/libmediaplayerservice/nuplayer/NuPlayerDecoder.h
++++ b/media/libmediaplayerservice/nuplayer/NuPlayerDecoder.h
+@@ -80,8 +80,6 @@ private:
+     sp<ALooper> mCodecLooper;
+     sp<ALooper> mDecoderLooper;
+ 
+-    List<sp<AMessage> > mPendingInputMessages;
+-
+     Vector<sp<ABuffer> > mInputBuffers;
+     Vector<sp<ABuffer> > mOutputBuffers;
+     Vector<sp<ABuffer> > mCSDsForCurrentFormat;
+@@ -100,7 +98,7 @@ private:
+     void onConfigure(const sp<AMessage> &format);
+     void onFlush();
+     void onResume();
+-    bool onInputBufferFilled(const sp<AMessage> &msg);
++    void onInputBufferFilled(const sp<AMessage> &msg);
+     void onRenderBuffer(const sp<AMessage> &msg);
+     void onShutdown();
+ 
+-- 
+2.5.0
+

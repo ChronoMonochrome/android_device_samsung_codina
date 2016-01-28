@@ -1,0 +1,112 @@
+From ba1755a6ab989039a400aff08f92acab5168ed96 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Thu, 28 Jan 2016 08:51:54 +0700
+Subject: [PATCH 23/25] 0025-Revert-SystemUI-Expose-values-for-themes.patch
+
+Change-Id: Ica80611de7b76eb7ae44a81a905d8fc1a27ae82a
+---
+ packages/SystemUI/res/layout/status_bar_expanded_header.xml          | 2 +-
+ packages/SystemUI/res/layout/volume_dialog.xml                       | 2 +-
+ packages/SystemUI/res/layout/zen_mode_panel.xml                      | 2 +-
+ packages/SystemUI/res/values/arrays.xml                              | 2 +-
+ .../SystemUI/src/com/android/systemui/statusbar/BaseStatusBar.java   | 3 +--
+ .../src/com/android/systemui/statusbar/policy/KeyButtonRipple.java   | 5 +----
+ 6 files changed, 6 insertions(+), 10 deletions(-)
+ mode change 100755 => 100644 packages/SystemUI/src/com/android/systemui/statusbar/BaseStatusBar.java
+
+diff --git a/packages/SystemUI/res/layout/status_bar_expanded_header.xml b/packages/SystemUI/res/layout/status_bar_expanded_header.xml
+index 67306d6..7ea9145 100644
+--- a/packages/SystemUI/res/layout/status_bar_expanded_header.xml
++++ b/packages/SystemUI/res/layout/status_bar_expanded_header.xml
+@@ -26,7 +26,7 @@
+     android:paddingStart="@dimen/notification_side_padding"
+     android:paddingEnd="@dimen/notification_side_padding"
+     android:baselineAligned="false"
+-    android:elevation="@dimen/status_bar_expanded_header_elevation"
++    android:elevation="4dp"
+     android:background="@drawable/notification_header_bg"
+     android:clickable="true"
+     android:focusable="true"
+diff --git a/packages/SystemUI/res/layout/volume_dialog.xml b/packages/SystemUI/res/layout/volume_dialog.xml
+index c313d27..3765fe8 100644
+--- a/packages/SystemUI/res/layout/volume_dialog.xml
++++ b/packages/SystemUI/res/layout/volume_dialog.xml
+@@ -19,7 +19,7 @@
+     android:layout_height="wrap_content"
+     android:layout_marginLeft="@dimen/notification_side_padding"
+     android:layout_marginRight="@dimen/notification_side_padding"
+-    android:background="@drawable/volume_dialog_background"
++    android:background="@drawable/qs_background_primary"
+     android:translationZ="@dimen/volume_panel_z"
+     android:layout_marginBottom="@dimen/volume_panel_z">
+ 
+diff --git a/packages/SystemUI/res/layout/zen_mode_panel.xml b/packages/SystemUI/res/layout/zen_mode_panel.xml
+index 0dca646..ece6979 100644
+--- a/packages/SystemUI/res/layout/zen_mode_panel.xml
++++ b/packages/SystemUI/res/layout/zen_mode_panel.xml
+@@ -27,7 +27,7 @@
+         android:layout_height="wrap_content"
+         android:minHeight="12dp"
+         android:elevation="4dp"
+-        android:background="@drawable/zen_mode_panel_background" >
++        android:background="@drawable/qs_background_secondary" >
+ 
+         <com.android.systemui.volume.SegmentedButtons
+             android:id="@+id/zen_buttons"
+diff --git a/packages/SystemUI/res/values/arrays.xml b/packages/SystemUI/res/values/arrays.xml
+index 79a4649..6102aa6 100644
+--- a/packages/SystemUI/res/values/arrays.xml
++++ b/packages/SystemUI/res/values/arrays.xml
+@@ -26,7 +26,7 @@
+     </array>
+     <array name="batterymeter_color_values">
+         <item>@*android:color/battery_saver_mode_color</item>
+-        <item>@color/batterymeter_base_color</item>
++        <item>#FFFFFFFF</item>
+     </array>
+     <array name="batterymeter_bolt_points">
+         <item>73</item> <item>0</item>
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/BaseStatusBar.java b/packages/SystemUI/src/com/android/systemui/statusbar/BaseStatusBar.java
+old mode 100755
+new mode 100644
+index 852ffb6..78bca70
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/BaseStatusBar.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/BaseStatusBar.java
+@@ -716,8 +716,7 @@ public abstract class BaseStatusBar extends SystemUI implements
+ 
+         if (entry.icon != null) {
+             if (entry.targetSdk >= Build.VERSION_CODES.LOLLIPOP) {
+-                entry.icon.setColorFilter(mContext.getResources().getColor(
+-                    R.color.notification_icon_color));
++                entry.icon.setColorFilter(mContext.getResources().getColor(android.R.color.white));
+             } else {
+                 entry.icon.setColorFilter(null);
+             }
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/policy/KeyButtonRipple.java b/packages/SystemUI/src/com/android/systemui/statusbar/policy/KeyButtonRipple.java
+index 813f6d1..844b5ef 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/policy/KeyButtonRipple.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/policy/KeyButtonRipple.java
+@@ -66,19 +66,16 @@ public class KeyButtonRipple extends Drawable {
+     private final HashSet<Animator> mRunningAnimations = new HashSet<>();
+     private final ArrayList<Animator> mTmpArray = new ArrayList<>();
+ 
+-    private int mRippleColor;
+-
+     public KeyButtonRipple(Context ctx, View targetView) {
+         mMaxWidth =  ctx.getResources().getDimensionPixelSize(R.dimen.key_button_ripple_max_width);
+         mTargetView = targetView;
+-        mRippleColor = ctx.getResources().getColor(R.color.navbutton_ripple_color);
+     }
+ 
+     private Paint getRipplePaint() {
+         if (mRipplePaint == null) {
+             mRipplePaint = new Paint();
+             mRipplePaint.setAntiAlias(true);
+-            mRipplePaint.setColor(mRippleColor);
++            mRipplePaint.setColor(0xffffffff);
+         }
+         return mRipplePaint;
+     }
+-- 
+2.5.0
+

@@ -1,0 +1,409 @@
+From 1cfd1dee741f920dc20a53eb9d7037ecca1aa650 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Thu, 28 Jan 2016 12:17:00 +0700
+Subject: [PATCH 34/58] Revert "NuPlayer: Fix flush mode decoder error
+ handling"
+
+This reverts commit 2abde2c118a94f843a7450818c925d3f0b673cd3.
+---
+ .../nuplayer/GenericSource.cpp                     | 31 -----------
+ .../libmediaplayerservice/nuplayer/GenericSource.h |  2 -
+ media/libmediaplayerservice/nuplayer/NuPlayer.cpp  | 65 +++++++---------------
+ .../nuplayer/NuPlayerDecoder.cpp                   | 10 +---
+ .../nuplayer/NuPlayerDriver.cpp                    | 19 +------
+ .../nuplayer/NuPlayerRenderer.cpp                  |  4 +-
+ 6 files changed, 28 insertions(+), 103 deletions(-)
+
+diff --git a/media/libmediaplayerservice/nuplayer/GenericSource.cpp b/media/libmediaplayerservice/nuplayer/GenericSource.cpp
+index 6859a1a..016a764 100644
+--- a/media/libmediaplayerservice/nuplayer/GenericSource.cpp
++++ b/media/libmediaplayerservice/nuplayer/GenericSource.cpp
+@@ -75,7 +75,6 @@ void NuPlayer::GenericSource::resetDataSource() {
+     mDecryptHandle = NULL;
+     mDrmManagerClient = NULL;
+     mStarted = false;
+-    mStopRead = true;
+ }
+ 
+ status_t NuPlayer::GenericSource::setDataSource(
+@@ -456,7 +455,6 @@ status_t NuPlayer::GenericSource::prefillCacheIfNecessary() {
+ void NuPlayer::GenericSource::start() {
+     ALOGI("start");
+ 
+-    mStopRead = false;
+     if (mAudioTrack.mSource != NULL) {
+         CHECK_EQ(mAudioTrack.mSource->start(), (status_t)OK);
+ 
+@@ -477,12 +475,6 @@ void NuPlayer::GenericSource::stop() {
+     // nothing to do, just account for DRM playback status
+     setDrmPlaybackStatusIfNeeded(Playback::STOP, 0);
+     mStarted = false;
+-    if (mIsWidevine) {
+-        // For a widevine source we need to prevent any further reads.
+-        sp<AMessage> msg = new AMessage(kWhatStopWidevine, id());
+-        sp<AMessage> response;
+-        (void) msg->postAndAwaitResponse(&response);
+-    }
+ }
+ 
+ void NuPlayer::GenericSource::pause() {
+@@ -701,20 +693,6 @@ void NuPlayer::GenericSource::onMessageReceived(const sp<AMessage> &msg) {
+           break;
+       }
+ 
+-      case kWhatStopWidevine:
+-      {
+-          // mStopRead is only used for Widevine to prevent the video source
+-          // from being read while the associated video decoder is shutting down.
+-          mStopRead = true;
+-          if (mVideoTrack.mSource != NULL) {
+-              mVideoTrack.mPackets->clear();
+-          }
+-          sp<AMessage> response = new AMessage;
+-          uint32_t replyID;
+-          CHECK(msg->senderAwaitsResponse(&replyID));
+-          response->postReply(replyID);
+-          break;
+-      }
+       default:
+           Source::onMessageReceived(msg);
+           break;
+@@ -1122,11 +1100,6 @@ void NuPlayer::GenericSource::onSeek(sp<AMessage> msg) {
+ }
+ 
+ status_t NuPlayer::GenericSource::doSeek(int64_t seekTimeUs) {
+-    // If the Widevine source is stopped, do not attempt to read any
+-    // more buffers.
+-    if (mStopRead) {
+-        return INVALID_OPERATION;
+-    }
+     if (mVideoTrack.mSource != NULL) {
+         int64_t actualTimeUs;
+         readBuffer(MEDIA_TRACK_TYPE_VIDEO, seekTimeUs, &actualTimeUs);
+@@ -1238,10 +1211,6 @@ void NuPlayer::GenericSource::onReadBuffer(sp<AMessage> msg) {
+ 
+ void NuPlayer::GenericSource::readBuffer(
+         media_track_type trackType, int64_t seekTimeUs, int64_t *actualTimeUs, bool formatChange) {
+-    // Do not read data if Widevine source is stopped
+-    if (mStopRead) {
+-        return;
+-    }
+     Track *track;
+     size_t maxBuffers = 1;
+     switch (trackType) {
+diff --git a/media/libmediaplayerservice/nuplayer/GenericSource.h b/media/libmediaplayerservice/nuplayer/GenericSource.h
+index f8601ea..5ed4d52 100644
+--- a/media/libmediaplayerservice/nuplayer/GenericSource.h
++++ b/media/libmediaplayerservice/nuplayer/GenericSource.h
+@@ -93,7 +93,6 @@ private:
+         kWhatSelectTrack,
+         kWhatSeek,
+         kWhatReadBuffer,
+-        kWhatStopWidevine,
+     };
+ 
+     Vector<sp<MediaSource> > mSources;
+@@ -133,7 +132,6 @@ private:
+     DrmManagerClient *mDrmManagerClient;
+     sp<DecryptHandle> mDecryptHandle;
+     bool mStarted;
+-    bool mStopRead;
+     String8 mContentType;
+     AString mSniffedMIME;
+     off64_t mMetaDataSize;
+diff --git a/media/libmediaplayerservice/nuplayer/NuPlayer.cpp b/media/libmediaplayerservice/nuplayer/NuPlayer.cpp
+index d225851..ca596fd 100644
+--- a/media/libmediaplayerservice/nuplayer/NuPlayer.cpp
++++ b/media/libmediaplayerservice/nuplayer/NuPlayer.cpp
+@@ -791,11 +791,6 @@ void NuPlayer::onMessageReceived(const sp<AMessage> &msg) {
+                     ALOGV("initiating %s decoder shutdown",
+                          audio ? "audio" : "video");
+ 
+-                    // Widevine source reads must stop before releasing the video decoder.
+-                    if (!audio && mSource != NULL && mSourceFlags & Source::FLAG_SECURE) {
+-                        mSource->stop();
+-                    }
+-
+                     getDecoder(audio)->initiateShutdown();
+ 
+                     if (audio) {
+@@ -838,50 +833,30 @@ void NuPlayer::onMessageReceived(const sp<AMessage> &msg) {
+                 finishFlushIfPossible();
+             } else if (what == Decoder::kWhatError) {
+                 status_t err;
+-                if (!msg->findInt32("err", &err) || err == OK) {
++                if (!msg->findInt32("err", &err)) {
+                     err = UNKNOWN_ERROR;
+                 }
++                ALOGE("received error from %s decoder %#x", audio ? "audio" : "video", err);
+ 
+-                // Decoder errors can be due to Source (e.g. from streaming),
+-                // or from decoding corrupted bitstreams, or from other decoder
+-                // MediaCodec operations (e.g. from an ongoing reset or seek).
+-                //
+-                // We try to gracefully shut down the affected decoder if possible,
+-                // rather than trying to force the shutdown with something
+-                // similar to performReset(). This method can lead to a hang
+-                // if MediaCodec functions block after an error, but they should
+-                // typically return INVALID_OPERATION instead of blocking.
+-
+-                FlushStatus *flushing = audio ? &mFlushingAudio : &mFlushingVideo;
+-                ALOGE("received error(%#x) from %s decoder, flushing(%d), now shutting down",
+-                        err, audio ? "audio" : "video", *flushing);
+-
+-                switch (*flushing) {
+-                    case NONE:
+-                        mDeferredActions.push_back(
+-                                new ShutdownDecoderAction(audio, !audio /* video */));
+-                        processDeferredActions();
+-                        break;
+-                    case FLUSHING_DECODER:
+-                        *flushing = FLUSHING_DECODER_SHUTDOWN; // initiate shutdown after flush.
+-                        break; // Wait for flush to complete.
+-                    case FLUSHING_DECODER_SHUTDOWN:
+-                        break; // Wait for flush to complete.
+-                    case SHUTTING_DOWN_DECODER:
+-                        break; // Wait for shutdown to complete.
+-                    case FLUSHED:
+-                        // Widevine source reads must stop before releasing the video decoder.
+-                        if (!audio && mSource != NULL && mSourceFlags & Source::FLAG_SECURE) {
+-                            mSource->stop();
+-                        }
+-                        getDecoder(audio)->initiateShutdown(); // In the middle of a seek.
+-                        *flushing = SHUTTING_DOWN_DECODER;     // Shut down.
+-                        break;
+-                    case SHUT_DOWN:
+-                        finishFlushIfPossible();  // Should not occur.
+-                        break;                    // Finish anyways.
++                ALOGI("shutting down %s", audio ? "audio" : "video");
++                if (audio && mFlushingAudio != NONE) {
++                    mRenderer->queueEOS(audio, err);
++                    mAudioDecoder.clear();
++                    ++mAudioDecoderGeneration;
++                    mFlushingAudio = SHUT_DOWN;
++                    finishFlushIfPossible();
++                } else if (!audio && mFlushingVideo != NONE) {
++                    mRenderer->queueEOS(audio, err);
++                    mVideoDecoder.clear();
++                    ++mVideoDecoderGeneration;
++                    mFlushingVideo = SHUT_DOWN;
++                    finishFlushIfPossible();
++                }  else {
++                    mDeferredActions.push_back(
++                            new ShutdownDecoderAction(audio, !audio /* video */));
++                    processDeferredActions();
++                    notifyListener(MEDIA_ERROR, MEDIA_ERROR_UNKNOWN, err);
+                 }
+-                notifyListener(MEDIA_ERROR, MEDIA_ERROR_UNKNOWN, err);
+             } else if (what == Decoder::kWhatDrainThisBuffer) {
+                 renderBuffer(audio, msg);
+             } else {
+diff --git a/media/libmediaplayerservice/nuplayer/NuPlayerDecoder.cpp b/media/libmediaplayerservice/nuplayer/NuPlayerDecoder.cpp
+index 7814bf1..1a066b7 100644
+--- a/media/libmediaplayerservice/nuplayer/NuPlayerDecoder.cpp
++++ b/media/libmediaplayerservice/nuplayer/NuPlayerDecoder.cpp
+@@ -140,8 +140,6 @@ void NuPlayer::Decoder::onConfigure(const sp<AMessage> &format) {
+             format, surface, NULL /* crypto */, 0 /* flags */);
+     if (err != OK) {
+         ALOGE("Failed to configure %s decoder (err=%d)", mComponentName.c_str(), err);
+-        mCodec->release();
+-        mCodec.clear();
+         handleError(err);
+         return;
+     }
+@@ -154,8 +152,6 @@ void NuPlayer::Decoder::onConfigure(const sp<AMessage> &format) {
+     err = mCodec->start();
+     if (err != OK) {
+         ALOGE("Failed to start %s decoder (err=%d)", mComponentName.c_str(), err);
+-        mCodec->release();
+-        mCodec.clear();
+         handleError(err);
+         return;
+     }
+@@ -515,9 +511,9 @@ void NuPlayer::Decoder::onFlush() {
+     if (err != OK) {
+         ALOGE("failed to flush %s (err=%d)", mComponentName.c_str(), err);
+         handleError(err);
+-        // finish with posting kWhatFlushCompleted.
+-        // we attempt to release the buffers even if flush fails.
++        return;
+     }
++
+     releaseAndResetMediaBuffers();
+ 
+     sp<AMessage> notify = mNotify->dup();
+@@ -555,7 +551,7 @@ void NuPlayer::Decoder::onShutdown() {
+     if (err != OK) {
+         ALOGE("failed to release %s (err=%d)", mComponentName.c_str(), err);
+         handleError(err);
+-        // finish with posting kWhatShutdownCompleted.
++        return;
+     }
+ 
+     sp<AMessage> notify = mNotify->dup();
+diff --git a/media/libmediaplayerservice/nuplayer/NuPlayerDriver.cpp b/media/libmediaplayerservice/nuplayer/NuPlayerDriver.cpp
+index 1a01d52..a9bca49 100644
+--- a/media/libmediaplayerservice/nuplayer/NuPlayerDriver.cpp
++++ b/media/libmediaplayerservice/nuplayer/NuPlayerDriver.cpp
+@@ -27,7 +27,6 @@
+ #include <media/stagefright/foundation/ADebug.h>
+ #include <media/stagefright/foundation/ALooper.h>
+ #include <media/stagefright/MetaData.h>
+-#include <media/stagefright/Utils.h>
+ 
+ namespace android {
+ 
+@@ -48,7 +47,6 @@ NuPlayerDriver::NuPlayerDriver()
+       mLooping(false),
+       mAutoLoop(false),
+       mStartupSeekTimeUs(-1) {
+-    ALOGV("NuPlayerDriver(%p)", this);
+     mLooper->setName("NuPlayerDriver Looper");
+ 
+     mLooper->start(
+@@ -63,7 +61,6 @@ NuPlayerDriver::NuPlayerDriver()
+ }
+ 
+ NuPlayerDriver::~NuPlayerDriver() {
+-    ALOGV("~NuPlayerDriver(%p)", this);
+     mLooper->stop();
+ }
+ 
+@@ -81,9 +78,9 @@ status_t NuPlayerDriver::setDataSource(
+         const sp<IMediaHTTPService> &httpService,
+         const char *url,
+         const KeyedVector<String8, String8> *headers) {
+-    ALOGV("setDataSource(%p) url(%s)", this, uriDebugString(url, false).c_str());
+     Mutex::Autolock autoLock(mLock);
+ 
++    ALOGV("setDataSource: url=%s", url);
+     if (mState != STATE_IDLE) {
+         return INVALID_OPERATION;
+     }
+@@ -100,9 +97,9 @@ status_t NuPlayerDriver::setDataSource(
+ }
+ 
+ status_t NuPlayerDriver::setDataSource(int fd, int64_t offset, int64_t length) {
+-    ALOGV("setDataSource(%p) file(%d)", this, fd);
+     Mutex::Autolock autoLock(mLock);
+ 
++    ALOGV("setDataSource: fd=%d", fd);
+     if (mState != STATE_IDLE) {
+         return INVALID_OPERATION;
+     }
+@@ -119,9 +116,9 @@ status_t NuPlayerDriver::setDataSource(int fd, int64_t offset, int64_t length) {
+ }
+ 
+ status_t NuPlayerDriver::setDataSource(const sp<IStreamSource> &source) {
+-    ALOGV("setDataSource(%p) stream source", this);
+     Mutex::Autolock autoLock(mLock);
+ 
++    ALOGV("setDataSource: stream source");
+     if (mState != STATE_IDLE) {
+         return INVALID_OPERATION;
+     }
+@@ -139,7 +136,6 @@ status_t NuPlayerDriver::setDataSource(const sp<IStreamSource> &source) {
+ 
+ status_t NuPlayerDriver::setVideoSurfaceTexture(
+         const sp<IGraphicBufferProducer> &bufferProducer) {
+-    ALOGV("setVideoSurfaceTexture(%p)", this);
+     Mutex::Autolock autoLock(mLock);
+ 
+     if (mSetSurfaceInProgress) {
+@@ -167,7 +163,6 @@ status_t NuPlayerDriver::setVideoSurfaceTexture(
+ }
+ 
+ status_t NuPlayerDriver::prepare() {
+-    ALOGV("prepare(%p)", this);
+     Mutex::Autolock autoLock(mLock);
+     return prepare_l();
+ }
+@@ -202,7 +197,6 @@ status_t NuPlayerDriver::prepare_l() {
+ }
+ 
+ status_t NuPlayerDriver::prepareAsync() {
+-    ALOGV("prepareAsync(%p)", this);
+     Mutex::Autolock autoLock(mLock);
+ 
+     switch (mState) {
+@@ -224,7 +218,6 @@ status_t NuPlayerDriver::prepareAsync() {
+ }
+ 
+ status_t NuPlayerDriver::start() {
+-    ALOGD("start(%p)", this);
+     Mutex::Autolock autoLock(mLock);
+ 
+     switch (mState) {
+@@ -299,7 +292,6 @@ status_t NuPlayerDriver::start() {
+ }
+ 
+ status_t NuPlayerDriver::stop() {
+-    ALOGD("stop(%p)", this);
+     Mutex::Autolock autoLock(mLock);
+ 
+     switch (mState) {
+@@ -354,7 +346,6 @@ bool NuPlayerDriver::isPlaying() {
+ }
+ 
+ status_t NuPlayerDriver::seekTo(int msec) {
+-    ALOGD("seekTo(%p) %d ms", this, msec);
+     Mutex::Autolock autoLock(mLock);
+ 
+     int64_t seekTimeUs = msec * 1000ll;
+@@ -439,7 +430,6 @@ status_t NuPlayerDriver::getDuration(int *msec) {
+ }
+ 
+ status_t NuPlayerDriver::reset() {
+-    ALOGD("reset(%p)", this);
+     Mutex::Autolock autoLock(mLock);
+ 
+     switch (mState) {
+@@ -582,7 +572,6 @@ status_t NuPlayerDriver::getMetadata(
+ }
+ 
+ void NuPlayerDriver::notifyResetComplete() {
+-    ALOGI("notifyResetComplete(%p)", this);
+     Mutex::Autolock autoLock(mLock);
+ 
+     CHECK_EQ(mState, STATE_RESET_IN_PROGRESS);
+@@ -591,7 +580,6 @@ void NuPlayerDriver::notifyResetComplete() {
+ }
+ 
+ void NuPlayerDriver::notifySetSurfaceComplete() {
+-    ALOGV("notifySetSurfaceComplete(%p)", this);
+     Mutex::Autolock autoLock(mLock);
+ 
+     CHECK(mSetSurfaceInProgress);
+@@ -614,7 +602,6 @@ void NuPlayerDriver::notifyPosition(int64_t positionUs) {
+ }
+ 
+ void NuPlayerDriver::notifySeekComplete() {
+-    ALOGV("notifySeekComplete(%p)", this);
+     Mutex::Autolock autoLock(mLock);
+     notifySeekComplete_l();
+ }
+diff --git a/media/libmediaplayerservice/nuplayer/NuPlayerRenderer.cpp b/media/libmediaplayerservice/nuplayer/NuPlayerRenderer.cpp
+index 7e5087f..6d10651 100644
+--- a/media/libmediaplayerservice/nuplayer/NuPlayerRenderer.cpp
++++ b/media/libmediaplayerservice/nuplayer/NuPlayerRenderer.cpp
+@@ -1051,7 +1051,7 @@ int64_t NuPlayer::Renderer::getPlayedOutAudioDurationUs(int64_t nowUs) {
+             // become stale. Assuming that the MixerThread runs 20ms, with FastMixer at 5ms,
+             // the max latency should be about 25ms with an average around 12ms (to be verified).
+             // For safety we use 100ms.
+-            ALOGV("getTimestamp: returned stale timestamp nowUs(%lld) numFramesPlayedAt(%lld)",
++            ALOGW("getTimestamp: returned stale timestamp nowUs(%lld) numFramesPlayedAt(%lld)",
+                     (long long)nowUs, (long long)numFramesPlayedAt);
+             numFramesPlayedAt = nowUs - kStaleTimestamp100ms;
+         }
+@@ -1081,7 +1081,7 @@ int64_t NuPlayer::Renderer::getPlayedOutAudioDurationUs(int64_t nowUs) {
+         //     numFramesPlayedAt, by a time amount greater than numFramesPlayed.
+         //
+         // Both of these are transitory conditions.
+-        ALOGV("getPlayedOutAudioDurationUs: negative duration %lld set to zero", (long long)durationUs);
++        ALOGW("getPlayedOutAudioDurationUs: negative timestamp %lld set to zero", (long long)durationUs);
+         durationUs = 0;
+     }
+     ALOGV("getPlayedOutAudioDurationUs(%lld) nowUs(%lld) frames(%u) framesAt(%lld)",
+-- 
+2.5.0
+

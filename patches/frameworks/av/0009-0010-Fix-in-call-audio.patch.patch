@@ -1,0 +1,29 @@
+From 040c8857ea89fbe3a5aef40d7b7c78cf32bf1fab Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Thu, 28 Jan 2016 08:51:43 +0700
+Subject: [PATCH 09/58] 0010-Fix-in-call-audio.patch
+
+Change-Id: Ibca34ec51ae0352966f22154cc123792d85c187a
+---
+ services/audioflinger/AudioFlinger.cpp | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/services/audioflinger/AudioFlinger.cpp b/services/audioflinger/AudioFlinger.cpp
+index 22c4669..814b7d2 100644
+--- a/services/audioflinger/AudioFlinger.cpp
++++ b/services/audioflinger/AudioFlinger.cpp
+@@ -1741,7 +1741,11 @@ status_t AudioFlinger::openOutput(audio_module_handle_t module,
+         thread->audioConfigChanged(AudioSystem::OUTPUT_OPENED);
+ 
+         // the first primary output opened designates the primary hw device
++#ifdef STE_HARDWARE
++        if (mPrimaryHardwareDev == NULL) {
++#else
+         if ((mPrimaryHardwareDev == NULL) && (flags & AUDIO_OUTPUT_FLAG_PRIMARY)) {
++#endif
+             ALOGI("Using module %d has the primary audio interface", module);
+             mPrimaryHardwareDev = thread->getOutput()->audioHwDev;
+ 
+-- 
+2.5.0
+

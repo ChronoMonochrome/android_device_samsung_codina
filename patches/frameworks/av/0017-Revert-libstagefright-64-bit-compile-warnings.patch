@@ -1,0 +1,1271 @@
+From 25098d10ef08570ac79556d39756e6c9a2104bd1 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Thu, 28 Jan 2016 12:05:26 +0700
+Subject: [PATCH 17/58] Revert "libstagefright: 64-bit compile warnings"
+
+This reverts commit a5750e0dad9e90f2195ce36f2c4457fa04b2b83e.
+
+Change-Id: Ic22238b2777beba639b5cf9f67a2b028e94cb7c3
+---
+ media/libstagefright/AACWriter.cpp                 | 12 ++---
+ media/libstagefright/AMRWriter.cpp                 | 12 ++---
+ media/libstagefright/AudioPlayer.cpp               | 14 +++---
+ media/libstagefright/AudioSource.cpp               | 10 ++--
+ media/libstagefright/AwesomePlayer.cpp             | 18 +++----
+ media/libstagefright/CameraSourceTimeLapse.cpp     |  6 +--
+ media/libstagefright/DataURISource.cpp             |  2 +-
+ media/libstagefright/ESDS.cpp                      |  2 +-
+ media/libstagefright/MPEG2TSWriter.cpp             |  2 +-
+ media/libstagefright/MPEG4Extractor.cpp            | 30 ++++++-----
+ media/libstagefright/MPEG4Writer.cpp               | 58 +++++++++++-----------
+ media/libstagefright/MediaCodec.cpp                |  2 +-
+ media/libstagefright/MediaCodecSource.cpp          |  7 +--
+ media/libstagefright/MediaMuxer.cpp                |  2 +-
+ media/libstagefright/NuCachedSource2.cpp           | 14 +++---
+ media/libstagefright/NuMediaExtractor.cpp          |  2 +-
+ media/libstagefright/OggExtractor.cpp              | 18 +++----
+ .../StagefrightMetadataRetriever.cpp               |  8 ++-
+ media/libstagefright/SurfaceMediaSource.cpp        | 10 ++--
+ media/libstagefright/TimedEventQueue.cpp           |  9 ++--
+ media/libstagefright/Utils.cpp                     |  4 +-
+ media/libstagefright/VBRISeeker.cpp                |  9 ++--
+ media/libstagefright/WAVExtractor.cpp              |  2 +-
+ .../codecs/on2/enc/SoftVPXEncoder.cpp              |  2 +-
+ media/libstagefright/omx/GraphicBufferSource.cpp   | 31 +++++-------
+ media/libstagefright/omx/OMXMaster.cpp             |  2 +-
+ 26 files changed, 128 insertions(+), 160 deletions(-)
+
+diff --git a/media/libstagefright/AACWriter.cpp b/media/libstagefright/AACWriter.cpp
+index 353920e..deee8e7 100644
+--- a/media/libstagefright/AACWriter.cpp
++++ b/media/libstagefright/AACWriter.cpp
+@@ -14,12 +14,6 @@
+  * limitations under the License.
+  */
+ 
+-#include <fcntl.h>
+-#include <inttypes.h>
+-#include <sys/prctl.h>
+-#include <sys/stat.h>
+-#include <sys/types.h>
+-
+ //#define LOG_NDEBUG 0
+ #define LOG_TAG "AACWriter"
+ #include <utils/Log.h>
+@@ -33,6 +27,10 @@
+ #include <media/stagefright/MediaSource.h>
+ #include <media/stagefright/MetaData.h>
+ #include <media/mediarecorder.h>
++#include <sys/prctl.h>
++#include <sys/types.h>
++#include <sys/stat.h>
++#include <fcntl.h>
+ 
+ namespace android {
+ 
+@@ -350,7 +348,7 @@ status_t AACWriter::threadFunc() {
+             mResumed = false;
+         }
+         timestampUs -= previousPausedDurationUs;
+-        ALOGV("time stamp: %" PRId64 ", previous paused duration: %" PRId64,
++        ALOGV("time stamp: %lld, previous paused duration: %lld",
+             timestampUs, previousPausedDurationUs);
+         if (timestampUs > maxTimestampUs) {
+             maxTimestampUs = timestampUs;
+diff --git a/media/libstagefright/AMRWriter.cpp b/media/libstagefright/AMRWriter.cpp
+index 9aa7d95..653ca36 100644
+--- a/media/libstagefright/AMRWriter.cpp
++++ b/media/libstagefright/AMRWriter.cpp
+@@ -14,12 +14,6 @@
+  * limitations under the License.
+  */
+ 
+-#include <fcntl.h>
+-#include <inttypes.h>
+-#include <sys/prctl.h>
+-#include <sys/stat.h>
+-#include <sys/types.h>
+-
+ #include <media/stagefright/foundation/ADebug.h>
+ #include <media/stagefright/AMRWriter.h>
+ #include <media/stagefright/MediaBuffer.h>
+@@ -28,6 +22,10 @@
+ #include <media/stagefright/MediaSource.h>
+ #include <media/stagefright/MetaData.h>
+ #include <media/mediarecorder.h>
++#include <sys/prctl.h>
++#include <sys/types.h>
++#include <sys/stat.h>
++#include <fcntl.h>
+ 
+ namespace android {
+ 
+@@ -237,7 +235,7 @@ status_t AMRWriter::threadFunc() {
+             mResumed = false;
+         }
+         timestampUs -= previousPausedDurationUs;
+-        ALOGV("time stamp: %" PRId64 ", previous paused duration: %" PRId64,
++        ALOGV("time stamp: %lld, previous paused duration: %lld",
+                 timestampUs, previousPausedDurationUs);
+         if (timestampUs > maxTimestampUs) {
+             maxTimestampUs = timestampUs;
+diff --git a/media/libstagefright/AudioPlayer.cpp b/media/libstagefright/AudioPlayer.cpp
+index e24824b..6892c26 100644
+--- a/media/libstagefright/AudioPlayer.cpp
++++ b/media/libstagefright/AudioPlayer.cpp
+@@ -14,8 +14,6 @@
+  * limitations under the License.
+  */
+ 
+-#include <inttypes.h>
+-
+ //#define LOG_NDEBUG 0
+ #define LOG_TAG "AudioPlayer"
+ #include <utils/Log.h>
+@@ -575,12 +573,12 @@ size_t AudioPlayer::fillBuffer(void *data, size_t size) {
+                             int64_t timeToCompletionUs =
+                                 (1000000ll * numFramesPendingPlayout) / mSampleRate;
+ 
+-                            ALOGV("total number of frames played: %" PRId64 " (%lld us)",
++                            ALOGV("total number of frames played: %lld (%lld us)",
+                                     (mNumFramesPlayed + numAdditionalFrames),
+                                     1000000ll * (mNumFramesPlayed + numAdditionalFrames)
+                                         / mSampleRate);
+ 
+-                            ALOGV("%d frames left to play, %" PRId64 " us (%.2f secs)",
++                            ALOGV("%d frames left to play, %lld us (%.2f secs)",
+                                  numFramesPendingPlayout,
+                                  timeToCompletionUs, timeToCompletionUs / 1E6);
+ 
+@@ -637,7 +635,7 @@ size_t AudioPlayer::fillBuffer(void *data, size_t size) {
+                 mPositionTimeRealUs =
+                     ((mNumFramesPlayed + size_done / mFrameSize) * 1000000)
+                         / mSampleRate;
+-                ALOGV("buffer->size() = %zu, "
++                ALOGV("buffer->size() = %d, "
+                      "mPositionTimeMediaUs=%.2f mPositionTimeRealUs=%.2f",
+                      mInputBuffer->range_length(),
+                      mPositionTimeMediaUs / 1E6, mPositionTimeRealUs / 1E6);
+@@ -755,7 +753,7 @@ int64_t AudioPlayer::getOutputPlayPositionUs_l()
+ 
+     // HAL position is relative to the first buffer we sent at mStartPosUs
+     const int64_t renderedDuration = mStartPosUs + playedUs;
+-    ALOGV("getOutputPlayPositionUs_l %" PRId64, renderedDuration);
++    ALOGV("getOutputPlayPositionUs_l %lld", renderedDuration);
+     return renderedDuration;
+ }
+ 
+@@ -772,7 +770,7 @@ int64_t AudioPlayer::getMediaTimeUs() {
+             return durationUs;
+         }
+         mPositionTimeRealUs = getOutputPlayPositionUs_l();
+-        ALOGV("getMediaTimeUs getOutputPlayPositionUs_l() mPositionTimeRealUs %" PRId64,
++        ALOGV("getMediaTimeUs getOutputPlayPositionUs_l() mPositionTimeRealUs %lld",
+               mPositionTimeRealUs);
+         return mPositionTimeRealUs;
+     }
+@@ -810,7 +808,7 @@ bool AudioPlayer::getMediaTimeMapping(
+ status_t AudioPlayer::seekTo(int64_t time_us) {
+     Mutex::Autolock autoLock(mLock);
+ 
+-    ALOGV("seekTo( %" PRId64 " )", time_us);
++    ALOGV("seekTo( %lld )", time_us);
+ 
+     mSeeking = true;
+     mPositionTimeRealUs = mPositionTimeMediaUs = -1;
+diff --git a/media/libstagefright/AudioSource.cpp b/media/libstagefright/AudioSource.cpp
+index 804f131..c1fac3e 100644
+--- a/media/libstagefright/AudioSource.cpp
++++ b/media/libstagefright/AudioSource.cpp
+@@ -14,9 +14,6 @@
+  * limitations under the License.
+  */
+ 
+-#include <inttypes.h>
+-#include <stdlib.h>
+-
+ //#define LOG_NDEBUG 0
+ #define LOG_TAG "AudioSource"
+ #include <utils/Log.h>
+@@ -29,6 +26,7 @@
+ #include <media/stagefright/foundation/ADebug.h>
+ #include <media/stagefright/foundation/ALooper.h>
+ #include <cutils/properties.h>
++#include <stdlib.h>
+ 
+ namespace android {
+ 
+@@ -138,7 +136,7 @@ void AudioSource::releaseQueuedFrames_l() {
+ }
+ 
+ void AudioSource::waitOutstandingEncodingFrames_l() {
+-    ALOGV("waitOutstandingEncodingFrames_l: %" PRId64, mNumClientOwnedBuffers);
++    ALOGV("waitOutstandingEncodingFrames_l: %lld", mNumClientOwnedBuffers);
+     while (mNumClientOwnedBuffers > 0) {
+         mFrameEncodingCompletionCondition.wait(mLock);
+     }
+@@ -273,7 +271,7 @@ void AudioSource::signalBufferReturned(MediaBuffer *buffer) {
+ status_t AudioSource::dataCallback(const AudioRecord::Buffer& audioBuffer) {
+     int64_t timeUs = systemTime() / 1000ll;
+ 
+-    ALOGV("dataCallbackTimestamp: %" PRId64 " us", timeUs);
++    ALOGV("dataCallbackTimestamp: %lld us", timeUs);
+     Mutex::Autolock autoLock(mLock);
+     if (!mStarted) {
+         ALOGW("Spurious callback from AudioRecord. Drop the audio data.");
+@@ -283,7 +281,7 @@ status_t AudioSource::dataCallback(const AudioRecord::Buffer& audioBuffer) {
+     // Drop retrieved and previously lost audio data.
+     if (mNumFramesReceived == 0 && timeUs < mStartTimeUs) {
+         (void) mRecord->getInputFramesLost();
+-        ALOGV("Drop audio data at %" PRId64 "/%" PRId64 " us", timeUs, mStartTimeUs);
++        ALOGV("Drop audio data at %lld/%lld us", timeUs, mStartTimeUs);
+         return OK;
+     }
+ 
+diff --git a/media/libstagefright/AwesomePlayer.cpp b/media/libstagefright/AwesomePlayer.cpp
+index ab8ac79..99720a9 100644
+--- a/media/libstagefright/AwesomePlayer.cpp
++++ b/media/libstagefright/AwesomePlayer.cpp
+@@ -19,9 +19,7 @@
+ //#define LOG_NDEBUG 0
+ #define LOG_TAG "AwesomePlayer"
+ #define ATRACE_TAG ATRACE_TAG_VIDEO
+-
+ #include <inttypes.h>
+-
+ #include <utils/Log.h>
+ #include <utils/Trace.h>
+ 
+@@ -1721,7 +1719,7 @@ void AwesomePlayer::finishSeekIfNecessary(int64_t videoTimeUs) {
+     }
+ 
+     if (mAudioPlayer != NULL) {
+-        ALOGV("seeking audio to %" PRId64 " us (%.2f secs).", videoTimeUs, videoTimeUs / 1E6);
++        ALOGV("seeking audio to %lld us (%.2f secs).", videoTimeUs, videoTimeUs / 1E6);
+ 
+         // If we don't have a video time, seek audio to the originally
+         // requested seek time instead.
+@@ -1785,7 +1783,7 @@ void AwesomePlayer::onVideoEvent() {
+     if (!mVideoBuffer) {
+         MediaSource::ReadOptions options;
+         if (mSeeking != NO_SEEK) {
+-            ALOGV("seeking to %" PRId64 " us (%.2f secs)", mSeekTimeUs, mSeekTimeUs / 1E6);
++            ALOGV("seeking to %lld us (%.2f secs)", mSeekTimeUs, mSeekTimeUs / 1E6);
+ 
+             options.setSeekTo(
+                     mSeekTimeUs,
+@@ -1855,7 +1853,7 @@ void AwesomePlayer::onVideoEvent() {
+ 
+     if (mSeeking == SEEK_VIDEO_ONLY) {
+         if (mSeekTimeUs > timeUs) {
+-            ALOGI("XXX mSeekTimeUs = %" PRId64 " us, timeUs = %" PRId64 " us",
++            ALOGI("XXX mSeekTimeUs = %lld us, timeUs = %lld us",
+                  mSeekTimeUs, timeUs);
+         }
+     }
+@@ -1953,13 +1951,13 @@ void AwesomePlayer::onVideoEvent() {
+ 
+         if (latenessUs > 40000) {
+             // We're more than 40ms late.
+-            ALOGV("we're late by %" PRId64 " us (%.2f secs)",
++            ALOGV("we're late by %lld us (%.2f secs)",
+                  latenessUs, latenessUs / 1E6);
+ 
+             if (!(mFlags & SLOW_DECODER_HACK)
+                     || mSinceLastDropped > FRAME_DROP_FREQ)
+             {
+-                ALOGV("we're late by %" PRId64 " us (%.2f secs) dropping "
++                ALOGV("we're late by %lld us (%.2f secs) dropping "
+                      "one after %d frames",
+                      latenessUs, latenessUs / 1E6, mSinceLastDropped);
+ 
+@@ -2321,12 +2319,12 @@ status_t AwesomePlayer::finishSetDataSource_l() {
+ 
+                     if (finalStatus != OK
+                             || (metaDataSize >= 0
+-                                && (off64_t)cachedDataRemaining >= metaDataSize)
++                                && cachedDataRemaining >= metaDataSize)
+                             || (mFlags & PREPARE_CANCELLED)) {
+                         break;
+                     }
+ 
+-                    ALOGV("now cached %zu bytes of data", cachedDataRemaining);
++                    ALOGV("now cached %d bytes of data", cachedDataRemaining);
+ 
+                     if (metaDataSize < 0
+                             && cachedDataRemaining >= kMinBytesForSniffing) {
+@@ -2705,7 +2703,7 @@ status_t AwesomePlayer::selectAudioTrack_l(
+ 
+ status_t AwesomePlayer::selectTrack(size_t trackIndex, bool select) {
+     ATRACE_CALL();
+-    ALOGV("selectTrack: trackIndex = %zu and select=%d", trackIndex, select);
++    ALOGV("selectTrack: trackIndex = %d and select=%d", trackIndex, select);
+     Mutex::Autolock autoLock(mLock);
+     size_t trackCount = mExtractor->countTracks();
+     if (mTextDriver != NULL) {
+diff --git a/media/libstagefright/CameraSourceTimeLapse.cpp b/media/libstagefright/CameraSourceTimeLapse.cpp
+index 0acd9d0..15ba967 100644
+--- a/media/libstagefright/CameraSourceTimeLapse.cpp
++++ b/media/libstagefright/CameraSourceTimeLapse.cpp
+@@ -14,8 +14,6 @@
+  * limitations under the License.
+  */
+ 
+-#include <inttypes.h>
+-
+ //#define LOG_NDEBUG 0
+ #define LOG_TAG "CameraSourceTimeLapse"
+ 
+@@ -81,7 +79,7 @@ CameraSourceTimeLapse::CameraSourceTimeLapse(
+       mSkipCurrentFrame(false) {
+ 
+     mTimeBetweenFrameCaptureUs = timeBetweenFrameCaptureUs;
+-    ALOGD("starting time lapse mode: %" PRId64 " us",
++    ALOGD("starting time lapse mode: %lld us",
+         mTimeBetweenFrameCaptureUs);
+ 
+     mVideoWidth = videoSize.width;
+@@ -268,7 +266,7 @@ bool CameraSourceTimeLapse::skipFrameAndModifyTimeStamp(int64_t *timestampUs) {
+ 
+             // Really make sure that this video recording frame will not be dropped.
+             if (*timestampUs < mStartTimeUs) {
+-                ALOGI("set timestampUs to start time stamp %" PRId64 " us", mStartTimeUs);
++                ALOGI("set timestampUs to start time stamp %lld us", mStartTimeUs);
+                 *timestampUs = mStartTimeUs;
+             }
+             return false;
+diff --git a/media/libstagefright/DataURISource.cpp b/media/libstagefright/DataURISource.cpp
+index 2c39314..377bc85 100644
+--- a/media/libstagefright/DataURISource.cpp
++++ b/media/libstagefright/DataURISource.cpp
+@@ -85,7 +85,7 @@ status_t DataURISource::initCheck() const {
+ }
+ 
+ ssize_t DataURISource::readAt(off64_t offset, void *data, size_t size) {
+-    if ((offset < 0) || (offset >= (off64_t)mBuffer->size())) {
++    if (offset >= mBuffer->size()) {
+         return 0;
+     }
+ 
+diff --git a/media/libstagefright/ESDS.cpp b/media/libstagefright/ESDS.cpp
+index 427bf7b..4a0c35c 100644
+--- a/media/libstagefright/ESDS.cpp
++++ b/media/libstagefright/ESDS.cpp
+@@ -91,7 +91,7 @@ status_t ESDS::skipDescriptorHeader(
+     }
+     while (more);
+ 
+-    ALOGV("tag=0x%02x data_size=%zu", *tag, *data_size);
++    ALOGV("tag=0x%02x data_size=%d", *tag, *data_size);
+ 
+     if (*data_size > size) {
+         return ERROR_MALFORMED;
+diff --git a/media/libstagefright/MPEG2TSWriter.cpp b/media/libstagefright/MPEG2TSWriter.cpp
+index 9856f92..78c12e1 100644
+--- a/media/libstagefright/MPEG2TSWriter.cpp
++++ b/media/libstagefright/MPEG2TSWriter.cpp
+@@ -682,7 +682,7 @@ void MPEG2TSWriter::onMessageReceived(const sp<AMessage> &msg) {
+                     break;
+                 }
+ 
+-                ALOGV("writing access unit at time %.2f secs (index %zu)",
++                ALOGV("writing access unit at time %.2f secs (index %d)",
+                      minTimeUs / 1E6, minIndex);
+ 
+                 source = mSources.editItemAt(minIndex);
+diff --git a/media/libstagefright/MPEG4Extractor.cpp b/media/libstagefright/MPEG4Extractor.cpp
+index d922dc0..de9ef73 100644
+--- a/media/libstagefright/MPEG4Extractor.cpp
++++ b/media/libstagefright/MPEG4Extractor.cpp
+@@ -16,19 +16,17 @@
+ 
+ //#define LOG_NDEBUG 0
+ #define LOG_TAG "MPEG4Extractor"
+-
+-#include <ctype.h>
+-#include <inttypes.h>
+-#include <stdint.h>
+-#include <stdlib.h>
+-#include <string.h>
+-
+ #include <utils/Log.h>
+ 
+ #include "include/MPEG4Extractor.h"
+ #include "include/SampleTable.h"
+ #include "include/ESDS.h"
+ 
++#include <ctype.h>
++#include <stdint.h>
++#include <stdlib.h>
++#include <string.h>
++
+ #include <media/stagefright/foundation/ABitReader.h>
+ #include <media/stagefright/foundation/ABuffer.h>
+ #include <media/stagefright/foundation/ADebug.h>
+@@ -416,7 +414,7 @@ size_t MPEG4Extractor::countTracks() {
+         track = track->next;
+     }
+ 
+-    ALOGV("MPEG4Extractor::countTracks: %zu tracks", n);
++    ALOGV("MPEG4Extractor::countTracks: %d tracks", n);
+     return n;
+ }
+ 
+@@ -798,7 +796,7 @@ status_t MPEG4Extractor::parseChunk(off64_t *offset, int depth) {
+         }
+     } else if (chunk_size < 8) {
+         // The smallest valid chunk is 8 bytes long.
+-        ALOGE("invalid chunk size: %" PRIu64, chunk_size);
++        ALOGE("invalid chunk size: %d", int(chunk_size));
+         return ERROR_MALFORMED;
+     }
+ 
+@@ -809,7 +807,7 @@ status_t MPEG4Extractor::parseChunk(off64_t *offset, int depth) {
+ #if 0
+     static const char kWhitespace[] = "                                        ";
+     const char *indent = &kWhitespace[sizeof(kWhitespace) - 1 - 2 * depth];
+-    printf("%sfound chunk '%s' of size %" PRIu64 "\n", indent, chunk, chunk_size);
++    printf("%sfound chunk '%s' of size %lld\n", indent, chunk, chunk_size);
+ 
+     char buffer[256];
+     size_t n = chunk_size;
+@@ -865,7 +863,7 @@ status_t MPEG4Extractor::parseChunk(off64_t *offset, int depth) {
+         case FOURCC('e', 'd', 't', 's'):
+         {
+             if (chunk_type == FOURCC('s', 't', 'b', 'l')) {
+-                ALOGV("sampleTable chunk is %" PRIu64 " bytes long.", chunk_size);
++                ALOGV("sampleTable chunk is %d bytes long.", (size_t)chunk_size);
+ 
+                 if (mDataSource->flags()
+                         & (DataSource::kWantsPrefetching
+@@ -2058,7 +2056,7 @@ status_t MPEG4Extractor::parseSegmentIndex(off64_t offset, size_t size) {
+         offset += 16;
+         size -= 16;
+     }
+-    ALOGV("sidx pres/off: %" PRIu64 "/%" PRIu64, earliestPresentationTime, firstOffset);
++    ALOGV("sidx pres/off: %Ld/%Ld", earliestPresentationTime, firstOffset);
+ 
+     if (size < 4) {
+         return -EINVAL;
+@@ -2594,7 +2592,7 @@ sp<MediaSource> MPEG4Extractor::getTrack(size_t index) {
+         }
+     }
+ 
+-    ALOGV("getTrack called, pssh: %zu", mPssh.size());
++    ALOGV("getTrack called, pssh: %d", mPssh.size());
+ 
+     return new MPEG4Source(this,
+             track->meta, mDataSource, track->timescale, track->sampleTable,
+@@ -3577,7 +3575,7 @@ status_t MPEG4Source::parseTrackFragmentRun(off64_t offset, off64_t size) {
+         sampleCtsOffset = 0;
+     }
+ 
+-    if (size < (off64_t)sampleCount * bytesPerSample) {
++    if (size < sampleCount * bytesPerSample) {
+         return -EINVAL;
+     }
+ 
+@@ -3611,7 +3609,7 @@ status_t MPEG4Source::parseTrackFragmentRun(off64_t offset, off64_t size) {
+             offset += 4;
+         }
+ 
+-        ALOGV("adding sample %d at offset 0x%08" PRIx64 ", size %u, duration %u, "
++        ALOGV("adding sample %d at offset 0x%08llx, size %u, duration %u, "
+               " flags 0x%08x", i + 1,
+                 dataOffset, sampleSize, sampleDuration,
+                 (flags & kFirstSampleFlagsPresent) && i == 0
+@@ -4329,7 +4327,7 @@ static bool BetterSniffMPEG4(
+ 
+         char chunkstring[5];
+         MakeFourCCString(chunkType, chunkstring);
+-        ALOGV("saw chunk type %s, size %" PRIu64 " @ %lld", chunkstring, chunkSize, offset);
++        ALOGV("saw chunk type %s, size %lld @ %lld", chunkstring, chunkSize, offset);
+         switch (chunkType) {
+             case FOURCC('f', 't', 'y', 'p'):
+             {
+diff --git a/media/libstagefright/MPEG4Writer.cpp b/media/libstagefright/MPEG4Writer.cpp
+index 4b8440b..24e53b3 100644
+--- a/media/libstagefright/MPEG4Writer.cpp
++++ b/media/libstagefright/MPEG4Writer.cpp
+@@ -16,17 +16,13 @@
+ 
+ //#define LOG_NDEBUG 0
+ #define LOG_TAG "MPEG4Writer"
++#include <inttypes.h>
++#include <utils/Log.h>
+ 
+ #include <arpa/inet.h>
+-#include <fcntl.h>
+-#include <inttypes.h>
++
+ #include <pthread.h>
+ #include <sys/prctl.h>
+-#include <sys/stat.h>
+-#include <sys/types.h>
+-#include <unistd.h>
+-
+-#include <utils/Log.h>
+ 
+ #include <media/stagefright/foundation/ADebug.h>
+ #include <media/stagefright/MPEG4Writer.h>
+@@ -38,6 +34,10 @@
+ #include <media/stagefright/Utils.h>
+ #include <media/mediarecorder.h>
+ #include <cutils/properties.h>
++#include <sys/types.h>
++#include <sys/stat.h>
++#include <fcntl.h>
++#include <unistd.h>
+ 
+ #include "include/ESDS.h"
+ 
+@@ -441,7 +441,7 @@ status_t MPEG4Writer::addSource(const sp<MediaSource> &source) {
+ 
+     // At most 2 tracks can be supported.
+     if (mTracks.size() >= 2) {
+-        ALOGE("Too many tracks (%zu) to add", mTracks.size());
++        ALOGE("Too many tracks (%d) to add", mTracks.size());
+         return ERROR_UNSUPPORTED;
+     }
+ 
+@@ -555,8 +555,8 @@ int64_t MPEG4Writer::estimateMoovBoxSize(int32_t bitRate) {
+         size = MAX_MOOV_BOX_SIZE;
+     }
+ 
+-    ALOGI("limits: %" PRId64 "/%" PRId64 " bytes/us, bit rate: %d bps and the"
+-         " estimated moov size %" PRId64 " bytes",
++    ALOGI("limits: %lld/%lld bytes/us, bit rate: %d bps and the estimated"
++         " moov size %lld bytes",
+          mMaxFileSizeLimitBytes, mMaxFileDurationLimitUs, bitRate, size);
+     return factor * size;
+ }
+@@ -592,8 +592,8 @@ status_t MPEG4Writer::start(MetaData *param) {
+         // If file size is set to be larger than the 32 bit file
+         // size limit, treat it as an error.
+         if (mMaxFileSizeLimitBytes > kMax32BitFileSize) {
+-            ALOGW("32-bit file size limit (%" PRId64 " bytes) too big. "
+-                 "It is changed to %" PRId64 " bytes",
++            ALOGW("32-bit file size limit (%lld bytes) too big. "
++                 "It is changed to %lld bytes",
+                 mMaxFileSizeLimitBytes, kMax32BitFileSize);
+             mMaxFileSizeLimitBytes = kMax32BitFileSize;
+         }
+@@ -854,7 +854,7 @@ status_t MPEG4Writer::reset() {
+     }
+ 
+     if (mTracks.size() > 1) {
+-        ALOGD("Duration from tracks range is [%" PRId64 ", %" PRId64 "] us",
++        ALOGD("Duration from tracks range is [%lld, %lld] us",
+             minDurationUs, maxDurationUs);
+     }
+ 
+@@ -1321,12 +1321,12 @@ bool MPEG4Writer::reachedEOS() {
+ }
+ 
+ void MPEG4Writer::setStartTimestampUs(int64_t timeUs) {
+-    ALOGI("setStartTimestampUs: %" PRId64, timeUs);
++    ALOGI("setStartTimestampUs: %lld", timeUs);
+     CHECK_GE(timeUs, 0ll);
+     Mutex::Autolock autoLock(mLock);
+     if (mStartTimestampUs < 0 || mStartTimestampUs > timeUs) {
+         mStartTimestampUs = timeUs;
+-        ALOGI("Earliest track starting time: %" PRId64, mStartTimestampUs);
++        ALOGI("Earliest track starting time: %lld", mStartTimestampUs);
+     }
+ }
+ 
+@@ -1527,7 +1527,7 @@ void MPEG4Writer::Track::initTrackingProgressStatus(MetaData *params) {
+     {
+         int64_t timeUs;
+         if (params && params->findInt64(kKeyTrackTimeStatus, &timeUs)) {
+-            ALOGV("Receive request to track progress status for every %" PRId64 " us", timeUs);
++            ALOGV("Receive request to track progress status for every %lld us", timeUs);
+             mTrackEveryTimeDurationUs = timeUs;
+             mTrackingProgressStatus = true;
+         }
+@@ -1561,7 +1561,7 @@ void MPEG4Writer::bufferChunk(const Chunk& chunk) {
+ }
+ 
+ void MPEG4Writer::writeChunkToFile(Chunk* chunk) {
+-    ALOGV("writeChunkToFile: %" PRId64 " from %s track",
++    ALOGV("writeChunkToFile: %lld from %s track",
+         chunk->mTimeStampUs, chunk->mTrack->isAudio()? "audio": "video");
+ 
+     int32_t isFirstSample = true;
+@@ -1737,7 +1737,7 @@ status_t MPEG4Writer::Track::start(MetaData *params) {
+             startTimeOffsetUs = kInitialDelayTimeUs;
+         }
+         startTimeUs += startTimeOffsetUs;
+-        ALOGI("Start time offset: %" PRId64 " us", startTimeOffsetUs);
++        ALOGI("Start time offset: %lld us", startTimeOffsetUs);
+     }
+ 
+     meta->setInt64(kKeyTime, startTimeUs);
+@@ -1817,7 +1817,7 @@ static void getNalUnitType(uint8_t byte, uint8_t* type) {
+ static const uint8_t *findNextStartCode(
+         const uint8_t *data, size_t length) {
+ 
+-    ALOGV("findNextStartCode: %p %zu", data, length);
++    ALOGV("findNextStartCode: %p %d", data, length);
+ 
+     size_t bytesLeft = length;
+     while (bytesLeft > 4  &&
+@@ -2238,7 +2238,7 @@ status_t MPEG4Writer::Track::threadEntry() {
+             }
+ 
+             timestampUs = decodingTimeUs;
+-            ALOGV("decoding time: %" PRId64 " and ctts offset time: %" PRId64,
++            ALOGV("decoding time: %lld and ctts offset time: %lld",
+                 timestampUs, cttsOffsetTimeUs);
+ 
+             // Update ctts box table if necessary
+@@ -2291,7 +2291,7 @@ status_t MPEG4Writer::Track::threadEntry() {
+             return ERROR_MALFORMED;
+         }
+ 
+-        ALOGV("%s media time stamp: %" PRId64 " and previous paused duration %" PRId64,
++        ALOGV("%s media time stamp: %lld and previous paused duration %lld",
+                 trackName, timestampUs, previousPausedDurationUs);
+         if (timestampUs > mTrackDurationUs) {
+             mTrackDurationUs = timestampUs;
+@@ -2306,7 +2306,7 @@ status_t MPEG4Writer::Track::threadEntry() {
+             ((timestampUs * mTimeScale + 500000LL) / 1000000LL -
+                 (lastTimestampUs * mTimeScale + 500000LL) / 1000000LL);
+         if (currDurationTicks < 0ll) {
+-            ALOGE("timestampUs %" PRId64 " < lastTimestampUs %" PRId64 " for %s track",
++            ALOGE("timestampUs %lld < lastTimestampUs %lld for %s track",
+                 timestampUs, lastTimestampUs, trackName);
+             copy->release();
+             return UNKNOWN_ERROR;
+@@ -2347,7 +2347,7 @@ status_t MPEG4Writer::Track::threadEntry() {
+             }
+             previousSampleSize = sampleSize;
+         }
+-        ALOGV("%s timestampUs/lastTimestampUs: %" PRId64 "/%" PRId64,
++        ALOGV("%s timestampUs/lastTimestampUs: %lld/%lld",
+                 trackName, timestampUs, lastTimestampUs);
+         lastDurationUs = timestampUs - lastTimestampUs;
+         lastDurationTicks = currDurationTicks;
+@@ -2455,7 +2455,7 @@ status_t MPEG4Writer::Track::threadEntry() {
+     ALOGI("Received total/0-length (%d/%d) buffers and encoded %d frames. - %s",
+             count, nZeroLengthFrames, mStszTableEntries->count(), trackName);
+     if (mIsAudio) {
+-        ALOGI("Audio track drift time: %" PRId64 " us", mOwner->getDriftTimeUs());
++        ALOGI("Audio track drift time: %lld us", mOwner->getDriftTimeUs());
+     }
+ 
+     if (err == ERROR_END_OF_STREAM) {
+@@ -2538,11 +2538,11 @@ void MPEG4Writer::Track::sendTrackSummary(bool hasMultipleTracks) {
+ }
+ 
+ void MPEG4Writer::Track::trackProgressStatus(int64_t timeUs, status_t err) {
+-    ALOGV("trackProgressStatus: %" PRId64 " us", timeUs);
++    ALOGV("trackProgressStatus: %lld us", timeUs);
+ 
+     if (mTrackEveryTimeDurationUs > 0 &&
+         timeUs - mPreviousTrackTimeUs >= mTrackEveryTimeDurationUs) {
+-        ALOGV("Fire time tracking progress status at %" PRId64 " us", timeUs);
++        ALOGV("Fire time tracking progress status at %lld us", timeUs);
+         mOwner->trackProgressStatus(mTrackId, timeUs - mPreviousTrackTimeUs, err);
+         mPreviousTrackTimeUs = timeUs;
+     }
+@@ -2576,13 +2576,13 @@ void MPEG4Writer::trackProgressStatus(
+ }
+ 
+ void MPEG4Writer::setDriftTimeUs(int64_t driftTimeUs) {
+-    ALOGV("setDriftTimeUs: %" PRId64 " us", driftTimeUs);
++    ALOGV("setDriftTimeUs: %lld us", driftTimeUs);
+     Mutex::Autolock autolock(mLock);
+     mDriftTimeUs = driftTimeUs;
+ }
+ 
+ int64_t MPEG4Writer::getDriftTimeUs() {
+-    ALOGV("getDriftTimeUs: %" PRId64 " us", mDriftTimeUs);
++    ALOGV("getDriftTimeUs: %lld us", mDriftTimeUs);
+     Mutex::Autolock autolock(mLock);
+     return mDriftTimeUs;
+ }
+@@ -3038,7 +3038,7 @@ void MPEG4Writer::Track::writeCttsBox() {
+         return;
+     }
+ 
+-    ALOGV("ctts box has %d entries with range [%" PRId64 ", %" PRId64 "]",
++    ALOGV("ctts box has %d entries with range [%lld, %lld]",
+             mCttsTableEntries->count(), mMinCttsOffsetTimeUs, mMaxCttsOffsetTimeUs);
+ 
+     mOwner->beginBox("ctts");
+diff --git a/media/libstagefright/MediaCodec.cpp b/media/libstagefright/MediaCodec.cpp
+index df47bd5..fddc4d5 100644
+--- a/media/libstagefright/MediaCodec.cpp
++++ b/media/libstagefright/MediaCodec.cpp
+@@ -1697,7 +1697,7 @@ void MediaCodec::extractCSD(const sp<AMessage> &format) {
+         ++i;
+     }
+ 
+-    ALOGV("Found %zu pieces of codec specific data.", mCSD.size());
++    ALOGV("Found %u pieces of codec specific data.", mCSD.size());
+ }
+ 
+ status_t MediaCodec::queueCSDInputBuffer(size_t bufferIndex) {
+diff --git a/media/libstagefright/MediaCodecSource.cpp b/media/libstagefright/MediaCodecSource.cpp
+index 0fecda8..327d3ad 100644
+--- a/media/libstagefright/MediaCodecSource.cpp
++++ b/media/libstagefright/MediaCodecSource.cpp
+@@ -17,9 +17,6 @@
+ //#define LOG_NDEBUG 0
+ #define LOG_TAG "MediaCodecSource"
+ #define DEBUG_DRIFT_TIME 0
+-
+-#include <inttypes.h>
+-
+ #include <gui/IGraphicBufferProducer.h>
+ #include <gui/Surface.h>
+ #include <media/ICrypto.h>
+@@ -681,7 +678,7 @@ status_t MediaCodecSource::doMoreWork(int32_t numInput, int32_t numOutput) {
+                     }
+                     mbuf->meta_data()->setInt64(kKeyDecodingTime, decodingTimeUs);
+ 
+-                    ALOGV("[video] time %" PRId64 " us (%.2f secs), dts/pts diff %" PRId64,
++                    ALOGV("[video] time %lld us (%.2f secs), dts/pts diff %lld",
+                             timeUs, timeUs / 1E6, decodingTimeUs - timeUs);
+                 } else {
+                     int64_t driftTimeUs = 0;
+@@ -691,7 +688,7 @@ status_t MediaCodecSource::doMoreWork(int32_t numInput, int32_t numOutput) {
+                     mDriftTimeQueue.erase(mDriftTimeQueue.begin());
+                     mbuf->meta_data()->setInt64(kKeyDriftTime, driftTimeUs);
+ #endif // DEBUG_DRIFT_TIME
+-                    ALOGV("[audio] time %" PRId64 " us (%.2f secs), drift %" PRId64,
++                    ALOGV("[audio] time %lld us (%.2f secs), drift %lld",
+                             timeUs, timeUs / 1E6, driftTimeUs);
+                 }
+                 mbuf->meta_data()->setInt64(kKeyTime, timeUs);
+diff --git a/media/libstagefright/MediaMuxer.cpp b/media/libstagefright/MediaMuxer.cpp
+index c7c6f34..90335ee 100644
+--- a/media/libstagefright/MediaMuxer.cpp
++++ b/media/libstagefright/MediaMuxer.cpp
+@@ -176,7 +176,7 @@ status_t MediaMuxer::writeSampleData(const sp<ABuffer> &buffer, size_t trackInde
+     }
+ 
+     if (trackIndex >= mTrackList.size()) {
+-        ALOGE("WriteSampleData() get an invalid index %zu", trackIndex);
++        ALOGE("WriteSampleData() get an invalid index %d", trackIndex);
+         return -EINVAL;
+     }
+ 
+diff --git a/media/libstagefright/NuCachedSource2.cpp b/media/libstagefright/NuCachedSource2.cpp
+index bd0a41d..6fb9aba 100644
+--- a/media/libstagefright/NuCachedSource2.cpp
++++ b/media/libstagefright/NuCachedSource2.cpp
+@@ -14,8 +14,6 @@
+  * limitations under the License.
+  */
+ 
+-#include <inttypes.h>
+-
+ //#define LOG_NDEBUG 0
+ #define LOG_TAG "NuCachedSource2"
+ #include <utils/Log.h>
+@@ -137,7 +135,7 @@ size_t PageCache::releaseFromStart(size_t maxBytes) {
+ }
+ 
+ void PageCache::copy(size_t from, void *data, size_t size) {
+-    ALOGV("copy from %zu size %zu", from, size);
++    ALOGV("copy from %d size %d", from, size);
+ 
+     if (size == 0) {
+         return;
+@@ -368,7 +366,7 @@ void NuCachedSource2::fetchInternal() {
+             mNumRetriesLeft = 0;
+         }
+ 
+-        ALOGE("source returned error %zd, %d retries left", n, mNumRetriesLeft);
++        ALOGE("source returned error %d, %d retries left", n, mNumRetriesLeft);
+         mCache->releasePage(page);
+     } else {
+         if (mFinalStatus != OK) {
+@@ -496,14 +494,14 @@ void NuCachedSource2::restartPrefetcherIfNecessary_l(
+     size_t actualBytes = mCache->releaseFromStart(maxBytes);
+     mCacheOffset += actualBytes;
+ 
+-    ALOGI("restarting prefetcher, totalSize = %zu", mCache->totalSize());
++    ALOGI("restarting prefetcher, totalSize = %d", mCache->totalSize());
+     mFetching = true;
+ }
+ 
+ ssize_t NuCachedSource2::readAt(off64_t offset, void *data, size_t size) {
+     Mutex::Autolock autoSerializer(mSerializer);
+ 
+-    ALOGV("readAt offset %lld, size %zu", offset, size);
++    ALOGV("readAt offset %lld, size %d", offset, size);
+ 
+     Mutex::Autolock autoLock(mLock);
+     if (mDisconnecting) {
+@@ -579,7 +577,7 @@ size_t NuCachedSource2::approxDataRemaining_l(status_t *finalStatus) const {
+ ssize_t NuCachedSource2::readInternal(off64_t offset, void *data, size_t size) {
+     CHECK_LE(size, (size_t)mHighwaterThresholdBytes);
+ 
+-    ALOGV("readInternal offset %lld size %zu", offset, size);
++    ALOGV("readInternal offset %lld size %d", offset, size);
+ 
+     Mutex::Autolock autoLock(mLock);
+ 
+@@ -719,7 +717,7 @@ void NuCachedSource2::updateCacheParamsFromString(const char *s) {
+         mKeepAliveIntervalUs = kDefaultKeepAliveIntervalUs;
+     }
+ 
+-    ALOGV("lowwater = %zu bytes, highwater = %zu bytes, keepalive = %" PRId64 " us",
++    ALOGV("lowwater = %d bytes, highwater = %d bytes, keepalive = %lld us",
+          mLowwaterThresholdBytes,
+          mHighwaterThresholdBytes,
+          mKeepAliveIntervalUs);
+diff --git a/media/libstagefright/NuMediaExtractor.cpp b/media/libstagefright/NuMediaExtractor.cpp
+index f24cf3a..64f56e9 100644
+--- a/media/libstagefright/NuMediaExtractor.cpp
++++ b/media/libstagefright/NuMediaExtractor.cpp
+@@ -389,7 +389,7 @@ ssize_t NuMediaExtractor::fetchTrackSamples(
+                 info->mFinalResult = err;
+ 
+                 if (info->mFinalResult != ERROR_END_OF_STREAM) {
+-                    ALOGW("read on track %zu failed with error %d",
++                    ALOGW("read on track %d failed with error %d",
+                           info->mTrackIndex, err);
+                 }
+ 
+diff --git a/media/libstagefright/OggExtractor.cpp b/media/libstagefright/OggExtractor.cpp
+index 821bd81..1965ef9 100644
+--- a/media/libstagefright/OggExtractor.cpp
++++ b/media/libstagefright/OggExtractor.cpp
+@@ -342,7 +342,7 @@ status_t MyVorbisExtractor::seekToTime(int64_t timeUs) {
+ 
+     const TOCEntry &entry = mTableOfContents.itemAt(left);
+ 
+-    ALOGV("seeking to entry %zu / %zu at offset %lld",
++    ALOGV("seeking to entry %d / %d at offset %lld",
+          left, mTableOfContents.size(), entry.mPageOffset);
+ 
+     return seekToOffset(entry.mPageOffset);
+@@ -385,7 +385,7 @@ ssize_t MyVorbisExtractor::readPage(off64_t offset, Page *page) {
+     ssize_t n;
+     if ((n = mSource->readAt(offset, header, sizeof(header)))
+             < (ssize_t)sizeof(header)) {
+-        ALOGV("failed to read %zu bytes at offset 0x%016llx, got %zd bytes",
++        ALOGV("failed to read %zu bytes at offset 0x%016llx, got %d bytes",
+              sizeof(header), offset, n);
+ 
+         if (n < 0) {
+@@ -509,7 +509,7 @@ status_t MyVorbisExtractor::readNextPacket(MediaBuffer **out) {
+                     packetSize);
+ 
+             if (n < (ssize_t)packetSize) {
+-                ALOGV("failed to read %zu bytes at 0x%016llx, got %zd bytes",
++                ALOGV("failed to read %zu bytes at 0x%016llx, got %d bytes",
+                      packetSize, dataOffset, n);
+                 return ERROR_IO;
+             }
+@@ -550,7 +550,7 @@ status_t MyVorbisExtractor::readNextPacket(MediaBuffer **out) {
+                 buffer = NULL;
+             }
+ 
+-            ALOGV("readPage returned %zd", n);
++            ALOGV("readPage returned %d", n);
+ 
+             return n < 0 ? n : (status_t)ERROR_END_OF_STREAM;
+         }
+@@ -594,7 +594,7 @@ status_t MyVorbisExtractor::init() {
+     if ((err = readNextPacket(&packet)) != OK) {
+         return err;
+     }
+-    ALOGV("read packet of size %zu\n", packet->range_length());
++    ALOGV("read packet of size %d\n", packet->range_length());
+     err = verifyHeader(packet, 1);
+     packet->release();
+     packet = NULL;
+@@ -605,7 +605,7 @@ status_t MyVorbisExtractor::init() {
+     if ((err = readNextPacket(&packet)) != OK) {
+         return err;
+     }
+-    ALOGV("read packet of size %zu\n", packet->range_length());
++    ALOGV("read packet of size %d\n", packet->range_length());
+     err = verifyHeader(packet, 3);
+     packet->release();
+     packet = NULL;
+@@ -616,7 +616,7 @@ status_t MyVorbisExtractor::init() {
+     if ((err = readNextPacket(&packet)) != OK) {
+         return err;
+     }
+-    ALOGV("read packet of size %zu\n", packet->range_length());
++    ALOGV("read packet of size %d\n", packet->range_length());
+     err = verifyHeader(packet, 5);
+     packet->release();
+     packet = NULL;
+@@ -907,7 +907,7 @@ static void extractAlbumArt(
+         return;
+     }
+ 
+-    ALOGV("got flac of size %zu", flacSize);
++    ALOGV("got flac of size %d", flacSize);
+ 
+     uint32_t picType;
+     uint32_t typeLen;
+@@ -957,7 +957,7 @@ static void extractAlbumArt(
+         goto exit;
+     }
+ 
+-    ALOGV("got image data, %zu trailing bytes",
++    ALOGV("got image data, %d trailing bytes",
+          flacSize - 32 - typeLen - descLen - dataLen);
+ 
+     fileMeta->setData(
+diff --git a/media/libstagefright/StagefrightMetadataRetriever.cpp b/media/libstagefright/StagefrightMetadataRetriever.cpp
+index 101fc8a..13a3c21 100644
+--- a/media/libstagefright/StagefrightMetadataRetriever.cpp
++++ b/media/libstagefright/StagefrightMetadataRetriever.cpp
+@@ -16,9 +16,7 @@
+ 
+ //#define LOG_NDEBUG 0
+ #define LOG_TAG "StagefrightMetadataRetriever"
+-
+ #include <inttypes.h>
+-
+ #include <utils/Log.h>
+ 
+ #include "include/StagefrightMetadataRetriever.h"
+@@ -90,7 +88,7 @@ status_t StagefrightMetadataRetriever::setDataSource(
+         int fd, int64_t offset, int64_t length) {
+     fd = dup(fd);
+ 
+-    ALOGV("setDataSource(%d, %" PRId64 ", %" PRId64 ")", fd, offset, length);
++    ALOGV("setDataSource(%d, %lld, %lld)", fd, offset, length);
+ 
+     mParsedMetaData = false;
+     mMetaData.clear();
+@@ -245,7 +243,7 @@ static VideoFrame *extractVideoFrameWithCodecFlags(
+             const char *mime;
+             CHECK(trackMeta->findCString(kKeyMIMEType, &mime));
+ 
+-            ALOGV("thumbNailTime = %" PRId64 " us, timeUs = %" PRId64 " us, mime = %s",
++            ALOGV("thumbNailTime = %lld us, timeUs = %lld us, mime = %s",
+                  thumbNailTime, timeUs, mime);
+         }
+     }
+@@ -328,7 +326,7 @@ static VideoFrame *extractVideoFrameWithCodecFlags(
+ VideoFrame *StagefrightMetadataRetriever::getFrameAtTime(
+         int64_t timeUs, int option) {
+ 
+-    ALOGV("getFrameAtTime: %" PRId64 " us option: %d", timeUs, option);
++    ALOGV("getFrameAtTime: %lld us option: %d", timeUs, option);
+ 
+     if (mExtractor.get() == NULL) {
+         ALOGV("no extractor.");
+diff --git a/media/libstagefright/SurfaceMediaSource.cpp b/media/libstagefright/SurfaceMediaSource.cpp
+index 4e1c65c..62aea36 100644
+--- a/media/libstagefright/SurfaceMediaSource.cpp
++++ b/media/libstagefright/SurfaceMediaSource.cpp
+@@ -16,8 +16,6 @@
+ //#define LOG_NDEBUG 0
+ #define LOG_TAG "SurfaceMediaSource"
+ 
+-#include <inttypes.h>
+-
+ #include <media/stagefright/foundation/ADebug.h>
+ #include <media/stagefright/SurfaceMediaSource.h>
+ #include <media/stagefright/MediaDefs.h>
+@@ -181,7 +179,7 @@ status_t SurfaceMediaSource::start(MetaData *params)
+ }
+ 
+ status_t SurfaceMediaSource::setMaxAcquiredBufferCount(size_t count) {
+-    ALOGV("setMaxAcquiredBufferCount(%zu)", count);
++    ALOGV("setMaxAcquiredBufferCount(%d)", count);
+     Mutex::Autolock lock(mMutex);
+ 
+     CHECK_GT(count, 1);
+@@ -211,7 +209,7 @@ status_t SurfaceMediaSource::stop()
+     mFrameAvailableCondition.signal();
+ 
+     while (mNumPendingBuffers > 0) {
+-        ALOGI("Still waiting for %zu buffers to be returned.",
++        ALOGI("Still waiting for %d buffers to be returned.",
+                 mNumPendingBuffers);
+ 
+ #if DEBUG_PENDING_BUFFERS
+@@ -271,7 +269,7 @@ static void passMetadataBuffer(MediaBuffer **buffer,
+     memcpy(data, &type, 4);
+     memcpy(data + 4, &bufferHandle, sizeof(buffer_handle_t));
+ 
+-    ALOGV("handle = %p, , offset = %zu, length = %zu",
++    ALOGV("handle = %p, , offset = %d, length = %d",
+             bufferHandle, (*buffer)->range_length(), (*buffer)->range_offset());
+ }
+ 
+@@ -365,7 +363,7 @@ status_t SurfaceMediaSource::read(
+     (*buffer)->setObserver(this);
+     (*buffer)->add_ref();
+     (*buffer)->meta_data()->setInt64(kKeyTime, mCurrentTimestamp / 1000);
+-    ALOGV("Frames encoded = %d, timestamp = %" PRId64 ", time diff = %" PRId64,
++    ALOGV("Frames encoded = %d, timestamp = %lld, time diff = %lld",
+             mNumFramesEncoded, mCurrentTimestamp / 1000,
+             mCurrentTimestamp / 1000 - prevTimeStamp / 1000);
+ 
+diff --git a/media/libstagefright/TimedEventQueue.cpp b/media/libstagefright/TimedEventQueue.cpp
+index 1fdb244..f9658aa 100644
+--- a/media/libstagefright/TimedEventQueue.cpp
++++ b/media/libstagefright/TimedEventQueue.cpp
+@@ -17,11 +17,7 @@
+ #undef __STRICT_ANSI__
+ #define __STDINT_LIMITS
+ #define __STDC_LIMIT_MACROS
+-
+-#include <inttypes.h>
+ #include <stdint.h>
+-#include <sys/prctl.h>
+-#include <sys/time.h>
+ 
+ //#define LOG_NDEBUG 0
+ #define LOG_TAG "TimedEventQueue"
+@@ -30,6 +26,9 @@
+ 
+ #include "include/TimedEventQueue.h"
+ 
++#include <sys/prctl.h>
++#include <sys/time.h>
++
+ #include <media/stagefright/foundation/ADebug.h>
+ #include <media/stagefright/foundation/ALooper.h>
+ #include <binder/IServiceManager.h>
+@@ -259,7 +258,7 @@ void TimedEventQueue::threadEntry() {
+                 static int64_t kMaxTimeoutUs = 10000000ll;  // 10 secs
+                 bool timeoutCapped = false;
+                 if (delay_us > kMaxTimeoutUs) {
+-                    ALOGW("delay_us exceeds max timeout: %" PRId64 " us", delay_us);
++                    ALOGW("delay_us exceeds max timeout: %lld us", delay_us);
+ 
+                     // We'll never block for more than 10 secs, instead
+                     // we will split up the full timeout into chunks of
+diff --git a/media/libstagefright/Utils.cpp b/media/libstagefright/Utils.cpp
+index 25afc5b..4a2ee23 100644
+--- a/media/libstagefright/Utils.cpp
++++ b/media/libstagefright/Utils.cpp
+@@ -370,7 +370,7 @@ static size_t reassembleAVCC(const sp<ABuffer> &csd0, const sp<ABuffer> csd1, ch
+                 // there can't be another param here, so use all the rest
+                 i = csd0->size();
+             }
+-            ALOGV("block at %zu, last was %d", i, lastparamoffset);
++            ALOGV("block at %d, last was %d", i, lastparamoffset);
+             if (lastparamoffset > 0) {
+                 int size = i - lastparamoffset;
+                 avcc[avccidx++] = size >> 8;
+@@ -401,7 +401,7 @@ static size_t reassembleAVCC(const sp<ABuffer> &csd0, const sp<ABuffer> csd1, ch
+                 // there can't be another param here, so use all the rest
+                 i = csd1->size();
+             }
+-            ALOGV("block at %zu, last was %d", i, lastparamoffset);
++            ALOGV("block at %d, last was %d", i, lastparamoffset);
+             if (lastparamoffset > 0) {
+                 int size = i - lastparamoffset;
+                 avcc[avccidx++] = size >> 8;
+diff --git a/media/libstagefright/VBRISeeker.cpp b/media/libstagefright/VBRISeeker.cpp
+index e988f6d..af858b9 100644
+--- a/media/libstagefright/VBRISeeker.cpp
++++ b/media/libstagefright/VBRISeeker.cpp
+@@ -16,9 +16,6 @@
+ 
+ //#define LOG_NDEBUG 0
+ #define LOG_TAG "VBRISeeker"
+-
+-#include <inttypes.h>
+-
+ #include <utils/Log.h>
+ 
+ #include "include/VBRISeeker.h"
+@@ -78,7 +75,7 @@ sp<VBRISeeker> VBRISeeker::CreateFromSource(
+     size_t entrySize = U16_AT(&vbriHeader[22]);
+     size_t scale = U16_AT(&vbriHeader[20]);
+ 
+-    ALOGV("%zu entries, scale=%zu, size_per_entry=%zu",
++    ALOGV("%d entries, scale=%d, size_per_entry=%d",
+          numEntries,
+          scale,
+          entrySize);
+@@ -122,7 +119,7 @@ sp<VBRISeeker> VBRISeeker::CreateFromSource(
+ 
+         seeker->mSegments.push(numBytes);
+ 
+-        ALOGV("entry #%zu: %u offset 0x%016llx", i, numBytes, offset);
++        ALOGV("entry #%d: %u offset 0x%016llx", i, numBytes, offset);
+         offset += numBytes;
+     }
+ 
+@@ -163,7 +160,7 @@ bool VBRISeeker::getOffsetForTime(int64_t *timeUs, off64_t *pos) {
+         *pos += mSegments.itemAt(segmentIndex++);
+     }
+ 
+-    ALOGV("getOffsetForTime %" PRId64 " us => 0x%016llx", *timeUs, *pos);
++    ALOGV("getOffsetForTime %lld us => 0x%016llx", *timeUs, *pos);
+ 
+     *timeUs = nowUs;
+ 
+diff --git a/media/libstagefright/WAVExtractor.cpp b/media/libstagefright/WAVExtractor.cpp
+index a4a651d..2cc8ef3 100644
+--- a/media/libstagefright/WAVExtractor.cpp
++++ b/media/libstagefright/WAVExtractor.cpp
+@@ -414,7 +414,7 @@ status_t WAVSource::read(
+         } else {
+             pos = (seekTimeUs * mSampleRate) / 1000000 * mNumChannels * (mBitsPerSample >> 3);
+         }
+-        if (pos > (off64_t)mSize) {
++        if (pos > mSize) {
+             pos = mSize;
+         }
+         mCurrentPos = pos + mOffset;
+diff --git a/media/libstagefright/codecs/on2/enc/SoftVPXEncoder.cpp b/media/libstagefright/codecs/on2/enc/SoftVPXEncoder.cpp
+index eb621d5..9cb1b73 100644
+--- a/media/libstagefright/codecs/on2/enc/SoftVPXEncoder.cpp
++++ b/media/libstagefright/codecs/on2/enc/SoftVPXEncoder.cpp
+@@ -299,7 +299,7 @@ status_t SoftVPXEncoder::initEncoder() {
+         }
+         default:
+         {
+-            ALOGE("Wrong number of temporal layers %zu", mTemporalLayers);
++            ALOGE("Wrong number of temporal layers %u", mTemporalLayers);
+             return UNKNOWN_ERROR;
+         }
+     }
+diff --git a/media/libstagefright/omx/GraphicBufferSource.cpp b/media/libstagefright/omx/GraphicBufferSource.cpp
+index 3e70956..e925a30 100644
+--- a/media/libstagefright/omx/GraphicBufferSource.cpp
++++ b/media/libstagefright/omx/GraphicBufferSource.cpp
+@@ -115,7 +115,7 @@ GraphicBufferSource::~GraphicBufferSource() {
+ 
+ void GraphicBufferSource::omxExecuting() {
+     Mutex::Autolock autoLock(mMutex);
+-    ALOGV("--> executing; avail=%zu, codec vec size=%zd",
++    ALOGV("--> executing; avail=%d, codec vec size=%zd",
+             mNumFramesAvailable, mCodecBuffers.size());
+     CHECK(!mExecuting);
+     mExecuting = true;
+@@ -137,7 +137,7 @@ void GraphicBufferSource::omxExecuting() {
+         }
+     }
+ 
+-    ALOGV("done loading initial frames, avail=%zu", mNumFramesAvailable);
++    ALOGV("done loading initial frames, avail=%d", mNumFramesAvailable);
+ 
+     // If EOS has already been signaled, and there are no more frames to
+     // submit, try to send EOS now as well.
+@@ -189,7 +189,7 @@ void GraphicBufferSource::omxLoaded(){
+         mLooper.clear();
+     }
+ 
+-    ALOGV("--> loaded; avail=%zu eos=%d eosSent=%d",
++    ALOGV("--> loaded; avail=%d eos=%d eosSent=%d",
+             mNumFramesAvailable, mEndOfStream, mEndOfStreamSent);
+ 
+     // Codec is no longer executing.  Discard all codec-related state.
+@@ -304,7 +304,7 @@ void GraphicBufferSource::codecBufferEmptied(OMX_BUFFERHEADERTYPE* header) {
+     if (mNumFramesAvailable) {
+         // Fill this codec buffer.
+         CHECK(!mEndOfStreamSent);
+-        ALOGV("buffer freed, %zu frames avail (eos=%d)",
++        ALOGV("buffer freed, %d frames avail (eos=%d)",
+                 mNumFramesAvailable, mEndOfStream);
+         fillCodecBuffer_l();
+     } else if (mEndOfStream) {
+@@ -333,8 +333,7 @@ void GraphicBufferSource::codecBufferFilled(OMX_BUFFERHEADERTYPE* header) {
+         ssize_t index = mOriginalTimeUs.indexOfKey(header->nTimeStamp);
+         if (index >= 0) {
+             ALOGV("OUT timestamp: %lld -> %lld",
+-                    static_cast<long long>(header->nTimeStamp),
+-                    static_cast<long long>(mOriginalTimeUs[index]));
++                    header->nTimeStamp, mOriginalTimeUs[index]);
+             header->nTimeStamp = mOriginalTimeUs[index];
+             mOriginalTimeUs.removeItemsAt(index);
+         } else {
+@@ -345,7 +344,7 @@ void GraphicBufferSource::codecBufferFilled(OMX_BUFFERHEADERTYPE* header) {
+         }
+         if (mOriginalTimeUs.size() > BufferQueue::NUM_BUFFER_SLOTS) {
+             // something terribly wrong must have happened, giving up...
+-            ALOGE("mOriginalTimeUs has too many entries (%zu)",
++            ALOGE("mOriginalTimeUs has too many entries (%d)",
+                     mOriginalTimeUs.size());
+             mMaxTimestampGapUs = -1ll;
+         }
+@@ -402,12 +401,12 @@ bool GraphicBufferSource::fillCodecBuffer_l() {
+     int cbi = findAvailableCodecBuffer_l();
+     if (cbi < 0) {
+         // No buffers available, bail.
+-        ALOGV("fillCodecBuffer_l: no codec buffers, avail now %zu",
++        ALOGV("fillCodecBuffer_l: no codec buffers, avail now %d",
+                 mNumFramesAvailable);
+         return false;
+     }
+ 
+-    ALOGV("fillCodecBuffer_l: acquiring buffer, avail=%zu",
++    ALOGV("fillCodecBuffer_l: acquiring buffer, avail=%d",
+             mNumFramesAvailable);
+     BufferQueue::BufferItem item;
+     status_t err = mConsumer->acquireBuffer(&item, 0);
+@@ -554,7 +553,7 @@ void GraphicBufferSource::setLatestSubmittedBuffer_l(
+ 
+ status_t GraphicBufferSource::signalEndOfInputStream() {
+     Mutex::Autolock autoLock(mMutex);
+-    ALOGV("signalEndOfInputStream: exec=%d avail=%zu eos=%d",
++    ALOGV("signalEndOfInputStream: exec=%d avail=%d eos=%d",
+             mExecuting, mNumFramesAvailable, mEndOfStream);
+ 
+     if (mEndOfStream) {
+@@ -594,7 +593,7 @@ int64_t GraphicBufferSource::getTimestamp(const BufferQueue::BufferItem &item) {
+                     / mTimePerCaptureUs;
+             if (nFrames <= 0) {
+                 // skip this frame as it's too close to previous capture
+-                ALOGV("skipping frame, timeUs %lld", static_cast<long long>(timeUs));
++                ALOGV("skipping frame, timeUs %lld", timeUs);
+                 return -1;
+             }
+             mPrevCaptureUs = mPrevCaptureUs + nFrames * mTimePerCaptureUs;
+@@ -602,9 +601,7 @@ int64_t GraphicBufferSource::getTimestamp(const BufferQueue::BufferItem &item) {
+         }
+ 
+         ALOGV("timeUs %lld, captureUs %lld, frameUs %lld",
+-                static_cast<long long>(timeUs),
+-                static_cast<long long>(mPrevCaptureUs),
+-                static_cast<long long>(mPrevFrameUs));
++                timeUs, mPrevCaptureUs, mPrevFrameUs);
+ 
+         return mPrevFrameUs;
+     } else if (mMaxTimestampGapUs > 0ll) {
+@@ -631,9 +628,7 @@ int64_t GraphicBufferSource::getTimestamp(const BufferQueue::BufferItem &item) {
+         mPrevOriginalTimeUs = originalTimeUs;
+         mPrevModifiedTimeUs = timeUs;
+         mOriginalTimeUs.add(timeUs, originalTimeUs);
+-        ALOGV("IN  timestamp: %lld -> %lld",
+-            static_cast<long long>(originalTimeUs),
+-            static_cast<long long>(timeUs));
++        ALOGV("IN  timestamp: %lld -> %lld", originalTimeUs, timeUs);
+     }
+ 
+     return timeUs;
+@@ -753,7 +748,7 @@ int GraphicBufferSource::findMatchingCodecBuffer_l(
+ void GraphicBufferSource::onFrameAvailable() {
+     Mutex::Autolock autoLock(mMutex);
+ 
+-    ALOGV("onFrameAvailable exec=%d avail=%zu",
++    ALOGV("onFrameAvailable exec=%d avail=%d",
+             mExecuting, mNumFramesAvailable);
+ 
+     if (mEndOfStream || mSuspended) {
+diff --git a/media/libstagefright/omx/OMXMaster.cpp b/media/libstagefright/omx/OMXMaster.cpp
+index ae3cb33..6b6d0ab 100644
+--- a/media/libstagefright/omx/OMXMaster.cpp
++++ b/media/libstagefright/omx/OMXMaster.cpp
+@@ -91,7 +91,7 @@ void OMXMaster::addPlugin(OMXPluginBase *plugin) {
+     }
+ 
+     if (err != OMX_ErrorNoMore) {
+-        ALOGE("OMX plugin failed w/ error 0x%08x after registering %zu "
++        ALOGE("OMX plugin failed w/ error 0x%08x after registering %d "
+              "components", err, mPluginByComponentName.size());
+     }
+ }
+-- 
+2.5.0
+

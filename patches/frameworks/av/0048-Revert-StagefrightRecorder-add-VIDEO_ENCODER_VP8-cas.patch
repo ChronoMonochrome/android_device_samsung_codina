@@ -1,0 +1,29 @@
+From e486a751bc428e6730c62adc1f3d068d7214e0b9 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Thu, 28 Jan 2016 12:19:02 +0700
+Subject: [PATCH 48/58] Revert "StagefrightRecorder: add VIDEO_ENCODER_VP8 case
+ in setupVideoEncoder"
+
+This reverts commit 76dc9c5052741bf0910a23a20c9df6018c4979d8.
+---
+ media/libmediaplayerservice/StagefrightRecorder.cpp | 4 ----
+ 1 file changed, 4 deletions(-)
+
+diff --git a/media/libmediaplayerservice/StagefrightRecorder.cpp b/media/libmediaplayerservice/StagefrightRecorder.cpp
+index 0635416..d237b58 100644
+--- a/media/libmediaplayerservice/StagefrightRecorder.cpp
++++ b/media/libmediaplayerservice/StagefrightRecorder.cpp
+@@ -1433,10 +1433,6 @@ status_t StagefrightRecorder::setupVideoEncoder(
+             format->setString("mime", MEDIA_MIMETYPE_VIDEO_AVC);
+             break;
+ 
+-        case VIDEO_ENCODER_VP8:
+-            format->setString("mime", MEDIA_MIMETYPE_VIDEO_VP8);
+-            break;
+-
+         default:
+             CHECK(!"Should not be here, unsupported video encoding.");
+             break;
+-- 
+2.5.0
+

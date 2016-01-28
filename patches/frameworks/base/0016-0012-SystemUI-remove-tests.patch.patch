@@ -1,0 +1,52 @@
+From a943e7365ecadb7059ef866b6c3f6ea3875bbcfc Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Thu, 28 Jan 2016 08:51:49 +0700
+Subject: [PATCH 16/25] 0012-SystemUI-remove-tests.patch
+
+Change-Id: I5664dc458a2b78e3ac29358c5445ca423401e4d5
+---
+ packages/SystemUI/tests/res/layout/main.xml | 32 -----------------------------
+ 1 file changed, 32 deletions(-)
+ delete mode 100644 packages/SystemUI/tests/res/layout/main.xml
+
+diff --git a/packages/SystemUI/tests/res/layout/main.xml b/packages/SystemUI/tests/res/layout/main.xml
+deleted file mode 100644
+index 56dffe6..0000000
+--- a/packages/SystemUI/tests/res/layout/main.xml
++++ /dev/null
+@@ -1,32 +0,0 @@
+-<?xml version="1.0" encoding="utf-8"?>
+-<!-- Copyright (C) 2011 The Android Open Source Project
+-
+-    Licensed under the Apache License, Version 2.0 (the "License");
+-    you may not use this file except in compliance with the License.
+-    You may obtain a copy of the License at
+-
+-         http://www.apache.org/licenses/LICENSE-2.0
+-
+-    Unless required by applicable law or agreed to in writing, software
+-    distributed under the License is distributed on an "AS IS" BASIS,
+-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-    See the License for the specific language governing permissions and
+-    limitations under the License.
+--->
+-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+-    android:orientation="vertical"
+-    android:layout_width="fill_parent"
+-    android:layout_height="fill_parent"
+-    >
+-    <TextView
+-        android:layout_width="fill_parent"
+-        android:layout_height="wrap_content"
+-        android:text="this is a test activity"
+-    />
+-    <EditText
+-        android:layout_height="wrap_content"
+-        android:id="@+id/editText1"
+-        android:layout_width="match_parent">
+-        <requestFocus></requestFocus>
+-    </EditText>
+-</LinearLayout>
+-- 
+2.5.0
+

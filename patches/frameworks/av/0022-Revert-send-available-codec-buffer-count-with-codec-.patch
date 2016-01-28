@@ -1,0 +1,76 @@
+From f08f054a9b5df02ccba0d52b3c38c6506211e9e9 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Thu, 28 Jan 2016 12:12:44 +0700
+Subject: [PATCH 22/58] Revert "send available codec buffer count with codec
+ notification"
+
+This reverts commit e47d44486f0a9f9b828b01d0fbaf84f5573f0aa2.
+---
+ .../libmediaplayerservice/nuplayer/NuPlayerDecoder.cpp  | 16 ++++------------
+ media/libstagefright/MediaCodec.cpp                     | 17 ++---------------
+ 2 files changed, 6 insertions(+), 27 deletions(-)
+
+diff --git a/media/libmediaplayerservice/nuplayer/NuPlayerDecoder.cpp b/media/libmediaplayerservice/nuplayer/NuPlayerDecoder.cpp
+index 27f6131..f131b1f 100644
+--- a/media/libmediaplayerservice/nuplayer/NuPlayerDecoder.cpp
++++ b/media/libmediaplayerservice/nuplayer/NuPlayerDecoder.cpp
+@@ -622,21 +622,13 @@ void NuPlayer::Decoder::onMessageReceived(const sp<AMessage> &msg) {
+         case kWhatCodecNotify:
+         {
+             if (!isStaleReply(msg)) {
+-                int32_t numInput, numOutput;
+-
+-                if (!msg->findInt32("input-buffers", &numInput)) {
+-                    numInput = INT32_MAX;
+-                }
+-
+-                if (!msg->findInt32("output-buffers", &numOutput)) {
+-                    numOutput = INT32_MAX;
+-                }
+-
+                 if (!mPaused) {
+-                    while (numInput-- > 0 && handleAnInputBuffer()) {}
++                    while (handleAnInputBuffer()) {
++                    }
+                 }
+ 
+-                while (numOutput-- > 0 && handleAnOutputBuffer()) {}
++                while (handleAnOutputBuffer()) {
++                }
+             }
+ 
+             requestCodecNotification();
+diff --git a/media/libstagefright/MediaCodec.cpp b/media/libstagefright/MediaCodec.cpp
+index fddc4d5..bf87bf7 100644
+--- a/media/libstagefright/MediaCodec.cpp
++++ b/media/libstagefright/MediaCodec.cpp
+@@ -2151,24 +2151,11 @@ void MediaCodec::postActivityNotificationIfPossible() {
+         return;
+     }
+ 
+-    bool isErrorOrOutputChanged =
+-            (mFlags & (kFlagStickyError
++    if ((mFlags & (kFlagStickyError
+                     | kFlagOutputBuffersChanged
+-                    | kFlagOutputFormatChanged));
+-
+-    if (isErrorOrOutputChanged
++                    | kFlagOutputFormatChanged))
+             || !mAvailPortBuffers[kPortIndexInput].empty()
+             || !mAvailPortBuffers[kPortIndexOutput].empty()) {
+-        mActivityNotify->setInt32("input-buffers",
+-                mAvailPortBuffers[kPortIndexInput].size());
+-
+-        if (isErrorOrOutputChanged) {
+-            // we want consumer to dequeue as many times as it can
+-            mActivityNotify->setInt32("output-buffers", INT32_MAX);
+-        } else {
+-            mActivityNotify->setInt32("output-buffers",
+-                    mAvailPortBuffers[kPortIndexOutput].size());
+-        }
+         mActivityNotify->post();
+         mActivityNotify.clear();
+     }
+-- 
+2.5.0
+

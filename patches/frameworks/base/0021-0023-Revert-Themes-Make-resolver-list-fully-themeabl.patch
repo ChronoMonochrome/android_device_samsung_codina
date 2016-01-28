@@ -1,0 +1,50 @@
+From 4b0d928952ce87ced988c654605f6a6af32869c1 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Thu, 28 Jan 2016 08:51:54 +0700
+Subject: [PATCH 21/25] 
+ 0023-Revert-Themes-Make-resolver-list-fully-themeable.patch
+
+Change-Id: I3739bc6c1cc80400724f242cec233b4316ea961d
+---
+ core/res/res/layout/resolver_list.xml              | 2 +-
+ core/res/res/layout/resolver_list_with_default.xml | 4 ++--
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/core/res/res/layout/resolver_list.xml b/core/res/res/layout/resolver_list.xml
+index ad9f5e8..79d5f3c 100644
+--- a/core/res/res/layout/resolver_list.xml
++++ b/core/res/res/layout/resolver_list.xml
+@@ -47,7 +47,7 @@
+         android:id="@+id/resolver_list"
+         android:clipToPadding="false"
+         android:scrollbarStyle="outsideOverlay"
+-        android:background="@color/resolver_list_bg"
++        android:background="@color/white"
+         android:elevation="8dp"
+         android:nestedScrollingEnabled="true"
+         android:divider="@null"
+diff --git a/core/res/res/layout/resolver_list_with_default.xml b/core/res/res/layout/resolver_list_with_default.xml
+index af0b3ac..fe21b96 100644
+--- a/core/res/res/layout/resolver_list_with_default.xml
++++ b/core/res/res/layout/resolver_list_with_default.xml
+@@ -74,7 +74,7 @@
+             android:paddingBottom="8dp"
+             android:paddingStart="12dp"
+             android:paddingEnd="12dp"
+-            android:background="@color/resolver_list_bg"
++            android:background="@color/white"
+             android:elevation="8dp">
+             <Button android:id="@+id/button_once"
+                     android:layout_width="wrap_content"
+@@ -108,7 +108,7 @@
+         android:id="@+id/resolver_list"
+         android:clipToPadding="false"
+         android:scrollbarStyle="outsideOverlay"
+-        android:background="@color/resolver_list_bg"
++        android:background="@color/white"
+         android:elevation="8dp"
+         android:nestedScrollingEnabled="true"
+         android:divider="@null"
+-- 
+2.5.0
+

@@ -1,0 +1,44 @@
+From 9f0eaea8333913f0526ba5154c2dc951232ad81a Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Thu, 28 Jan 2016 08:51:49 +0700
+Subject: [PATCH 15/25] 0011-Speed-Up-Windows-Orientation.patch
+
+Change-Id: I49fc9dd09d1d7c6890a1dc43cf68a44435b11489
+---
+ .../android/internal/policy/impl/WindowOrientationListener.java   | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/policy/src/com/android/internal/policy/impl/WindowOrientationListener.java b/policy/src/com/android/internal/policy/impl/WindowOrientationListener.java
+index 44e99da..e028b01 100644
+--- a/policy/src/com/android/internal/policy/impl/WindowOrientationListener.java
++++ b/policy/src/com/android/internal/policy/impl/WindowOrientationListener.java
+@@ -254,22 +254,22 @@ public abstract class WindowOrientationListener {
+         // the low-pass filter already suppresses most of the noise so we're really just
+         // looking for quick confirmation that the last few samples are in agreement as to
+         // the desired orientation.
+-        private static final long PROPOSAL_SETTLE_TIME_NANOS = 30 * NANOS_PER_MS;
++        private static final long PROPOSAL_SETTLE_TIME_NANOS = 20 * NANOS_PER_MS;
+ 
+         // The minimum amount of time that must have elapsed since the device last exited
+         // the flat state (time since it was picked up) before the proposed rotation
+         // can change.
+-        private static final long PROPOSAL_MIN_TIME_SINCE_FLAT_ENDED_NANOS = 450 * NANOS_PER_MS;
++        private static final long PROPOSAL_MIN_TIME_SINCE_FLAT_ENDED_NANOS = 250 * NANOS_PER_MS;
+ 
+         // The minimum amount of time that must have elapsed since the device stopped
+         // swinging (time since device appeared to be in the process of being put down
+         // or put away into a pocket) before the proposed rotation can change.
+-        private static final long PROPOSAL_MIN_TIME_SINCE_SWING_ENDED_NANOS = 250 * NANOS_PER_MS;
++        private static final long PROPOSAL_MIN_TIME_SINCE_SWING_ENDED_NANOS = 150 * NANOS_PER_MS;
+ 
+         // The minimum amount of time that must have elapsed since the device stopped
+         // undergoing external acceleration before the proposed rotation can change.
+         private static final long PROPOSAL_MIN_TIME_SINCE_ACCELERATION_ENDED_NANOS =
+-                450 * NANOS_PER_MS;
++                250 * NANOS_PER_MS;
+ 
+         // If the tilt angle remains greater than the specified angle for a minimum of
+         // the specified time, then the device is deemed to be lying flat
+-- 
+2.5.0
+

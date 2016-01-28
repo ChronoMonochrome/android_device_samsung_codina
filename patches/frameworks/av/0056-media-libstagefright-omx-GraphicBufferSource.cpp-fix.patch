@@ -1,0 +1,27 @@
+From 073f26952e032c91e608f0be5a4de15570c96466 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Thu, 28 Jan 2016 22:38:49 +0700
+Subject: [PATCH 56/58] media/libstagefright/omx/GraphicBufferSource.cpp: fix
+ incorrect conflict resolution
+
+Change-Id: I8450fbac4590d9eda93a5ff034329279dc71f608
+---
+ media/libstagefright/omx/GraphicBufferSource.cpp | 2 --
+ 1 file changed, 2 deletions(-)
+
+diff --git a/media/libstagefright/omx/GraphicBufferSource.cpp b/media/libstagefright/omx/GraphicBufferSource.cpp
+index ca5fb6e..9acf210 100644
+--- a/media/libstagefright/omx/GraphicBufferSource.cpp
++++ b/media/libstagefright/omx/GraphicBufferSource.cpp
+@@ -55,8 +55,6 @@ GraphicBufferSource::GraphicBufferSource(OMXNodeInstance* nodeInstance,
+     mLatestSubmittedBufferFrameNum(0),
+     mLatestSubmittedBufferUseCount(0),
+     mRepeatBufferDeferred(false),
+-    mPrevCaptureUs(-1ll),
+-    mPrevFrameUs(-1ll),
+     mUseGraphicBufferInMeta(useGraphicBufferInMeta) {
+ 
+     ALOGV("GraphicBufferSource w=%u h=%u c=%u",
+-- 
+2.5.0
+

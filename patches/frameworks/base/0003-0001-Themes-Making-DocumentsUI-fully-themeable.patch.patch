@@ -1,0 +1,58 @@
+From d8983dc00c1bb1ea04d7adbba7803ba99b4f1901 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Thu, 28 Jan 2016 08:51:44 +0700
+Subject: [PATCH 03/25] 0001-Themes-Making-DocumentsUI-fully-themeable.patch
+
+Change-Id: I4c15ce920078ab8d40d09f012361e1fabd904056
+---
+ packages/DocumentsUI/res/layout/activity.xml      | 2 +-
+ packages/DocumentsUI/res/layout/item_doc_grid.xml | 6 +++---
+ 2 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/packages/DocumentsUI/res/layout/activity.xml b/packages/DocumentsUI/res/layout/activity.xml
+index 120168e..6fec8b2 100644
+--- a/packages/DocumentsUI/res/layout/activity.xml
++++ b/packages/DocumentsUI/res/layout/activity.xml
+@@ -63,7 +63,7 @@
+         android:layout_gravity="start"
+         android:orientation="vertical"
+         android:elevation="16dp"
+-        android:background="@*android:color/white">
++        android:background="@color/drawer_background_color">
+ 
+         <Toolbar
+             android:id="@+id/roots_toolbar"
+diff --git a/packages/DocumentsUI/res/layout/item_doc_grid.xml b/packages/DocumentsUI/res/layout/item_doc_grid.xml
+index d62d050..90938ae 100644
+--- a/packages/DocumentsUI/res/layout/item_doc_grid.xml
++++ b/packages/DocumentsUI/res/layout/item_doc_grid.xml
+@@ -66,7 +66,7 @@
+                     android:ellipsize="middle"
+                     android:textAlignment="viewStart"
+                     android:textAppearance="@android:style/TextAppearance.Material.Subhead"
+-                    android:textColor="@*android:color/primary_text_default_material_dark" />
++                    android:textColor="@color/font_color_doc_grid" />
+ 
+                 <ImageView
+                     android:id="@android:id/icon1"
+@@ -95,7 +95,7 @@
+                     android:ellipsize="end"
+                     android:textAlignment="viewStart"
+                     android:textAppearance="@android:style/TextAppearance.Material.Caption"
+-                    android:textColor="@*android:color/primary_text_default_material_dark" />
++                    android:textColor="@color/font_color_doc_grid" />
+ 
+                 <TextView
+                     android:id="@+id/size"
+@@ -107,7 +107,7 @@
+                     android:ellipsize="end"
+                     android:textAlignment="viewStart"
+                     android:textAppearance="@android:style/TextAppearance.Material.Caption"
+-                    android:textColor="@*android:color/primary_text_default_material_dark" />
++                    android:textColor="@color/font_color_doc_grid" />
+ 
+                 <ImageView
+                     android:id="@android:id/icon2"
+-- 
+2.5.0
+

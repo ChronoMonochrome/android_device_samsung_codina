@@ -1,0 +1,27 @@
+From 99c6b7083753755080024b7fdd6071db1f209065 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Thu, 28 Jan 2016 12:17:02 +0700
+Subject: [PATCH 36/58] Revert "NuPlayer: use format obtained from source to
+ tell if video exists."
+
+This reverts commit 36f389888e4b2905f0b457f451187fd8d3ed5153.
+---
+ media/libmediaplayerservice/nuplayer/NuPlayer.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/media/libmediaplayerservice/nuplayer/NuPlayer.cpp b/media/libmediaplayerservice/nuplayer/NuPlayer.cpp
+index ca596fd..ef4abd4 100644
+--- a/media/libmediaplayerservice/nuplayer/NuPlayer.cpp
++++ b/media/libmediaplayerservice/nuplayer/NuPlayer.cpp
+@@ -559,7 +559,7 @@ void NuPlayer::onMessageReceived(const sp<AMessage> &msg) {
+                         static_cast<NativeWindowWrapper *>(obj.get())));
+ 
+             if (obj != NULL) {
+-                if (mStarted && mSource->getFormat(false /* audio */) != NULL) {
++                if (mStarted && mVideoDecoder != NULL) {
+                     // Issue a seek to refresh the video screen only if started otherwise
+                     // the extractor may not yet be started and will assert.
+                     // If the video decoder is not set (perhaps audio only in this case)
+-- 
+2.5.0
+

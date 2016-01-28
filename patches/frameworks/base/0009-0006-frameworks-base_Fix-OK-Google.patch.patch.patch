@@ -1,0 +1,28 @@
+From f4cca235b241a4c3706a49739cb71e3c8d50cc04 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Thu, 28 Jan 2016 08:51:46 +0700
+Subject: [PATCH 09/25] 0006-frameworks-base_Fix-OK-Google.patch.patch
+
+Change-Id: If082b9496144a4c4a367111eb60727a019504766
+---
+ core/jni/android_media_AudioRecord.cpp | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/core/jni/android_media_AudioRecord.cpp b/core/jni/android_media_AudioRecord.cpp
+index e38f3d4..29c873b 100644
+--- a/core/jni/android_media_AudioRecord.cpp
++++ b/core/jni/android_media_AudioRecord.cpp
+@@ -214,6 +214,10 @@ android_media_AudioRecord_setup(JNIEnv *env, jobject thiz, jobject weak_this,
+     env->ReleaseStringUTFChars(jtags, tags);
+     paa->source = (audio_source_t) env->GetIntField(jaa, javaAudioAttrFields.fieldRecSource);
+     paa->flags = (audio_flags_mask_t)env->GetIntField(jaa, javaAudioAttrFields.fieldFlags);
++
++   if (paa->source == 1999)
++      paa->source == (audio_source_t)1;
++
+     ALOGV("AudioRecord_setup for source=%d tags=%s flags=%08x", paa->source, paa->tags, paa->flags);
+ 
+     audio_input_flags_t flags = AUDIO_INPUT_FLAG_NONE;
+-- 
+2.5.0
+

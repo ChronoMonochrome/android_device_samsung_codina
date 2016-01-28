@@ -1,0 +1,29 @@
+From 2c825e8fad067920e190d6336d66b7ab08cf07ed Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Thu, 28 Jan 2016 08:51:55 +0700
+Subject: [PATCH 02/10] 0002-patch-for-binder.patch
+
+Change-Id: I2511db5ba48af115f997fea3807086125ca67117
+---
+ libs/binder/MemoryBase.cpp | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/libs/binder/MemoryBase.cpp b/libs/binder/MemoryBase.cpp
+index 033066b..6604757 100644
+--- a/libs/binder/MemoryBase.cpp
++++ b/libs/binder/MemoryBase.cpp
+@@ -44,3 +44,11 @@ MemoryBase::~MemoryBase()
+ 
+ // ---------------------------------------------------------------------------
+ }; // namespace android
++
++#ifndef __LP64__
++// Backwards compatibility for libdatabase_sqlcipher (http://b/8253769).
++extern "C" void _ZN7android10MemoryBaseC1ERKNS_2spINS_11IMemoryHeapEEEij(void*, void*, ssize_t, size_t);
++extern "C" void _ZN7android10MemoryBaseC1ERKNS_2spINS_11IMemoryHeapEEElj(void* obj, void* h, long o, unsigned int size) {
++    _ZN7android10MemoryBaseC1ERKNS_2spINS_11IMemoryHeapEEEij(obj, h, o, size);
++}
++#endif
+-- 
+2.5.0
+

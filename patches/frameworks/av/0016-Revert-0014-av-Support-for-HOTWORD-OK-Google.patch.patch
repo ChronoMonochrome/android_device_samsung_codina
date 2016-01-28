@@ -1,0 +1,30 @@
+From 03e2813c404d2ace42c3d6fc4e662ebf6ae83cd0 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Thu, 28 Jan 2016 10:21:58 +0700
+Subject: [PATCH 16/58] Revert "0014-av-Support-for-HOTWORD-OK-Google.patch"
+
+This reverts commit 265d82c5a00b97e1dd81c52490c13b2354d07be2.
+---
+ services/audiopolicy/AudioPolicyInterfaceImplLegacy.cpp | 6 ------
+ 1 file changed, 6 deletions(-)
+
+diff --git a/services/audiopolicy/AudioPolicyInterfaceImplLegacy.cpp b/services/audiopolicy/AudioPolicyInterfaceImplLegacy.cpp
+index 35287b2..5ea90bf 100644
+--- a/services/audiopolicy/AudioPolicyInterfaceImplLegacy.cpp
++++ b/services/audiopolicy/AudioPolicyInterfaceImplLegacy.cpp
+@@ -288,12 +288,6 @@ void AudioPolicyService::releaseInput(audio_io_handle_t input,
+         return;
+     }
+ 
+-#ifdef HAVE_PRE_KITKAT_AUDIO_BLOB
+-    if (inputSource == AUDIO_SOURCE_HOTWORD) {
+-        inputSource = AUDIO_SOURCE_VOICE_RECOGNITION;
+-    }
+-#endif
+-
+     sp<AudioPolicyEffects>audioPolicyEffects;
+     {
+         Mutex::Autolock _l(mLock);
+-- 
+2.5.0
+

@@ -1,0 +1,39 @@
+From f859fa52e7a1beae82365df51e9075ffc8530cf3 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Thu, 28 Jan 2016 08:51:42 +0700
+Subject: [PATCH 06/58] 
+ 0007-camera-Fix-inclusion-of-CameraParametersExtra.h.patch
+
+Change-Id: I1228d31532db2cf1f33b389f9643ff6faa33cdd1
+---
+ camera/CameraParameters.cpp       | 1 +
+ include/camera/CameraParameters.h | 1 +
+ 2 files changed, 2 insertions(+)
+
+diff --git a/camera/CameraParameters.cpp b/camera/CameraParameters.cpp
+index 66ceffc..d114b94 100644
+--- a/camera/CameraParameters.cpp
++++ b/camera/CameraParameters.cpp
+@@ -21,6 +21,7 @@
+ #include <string.h>
+ #include <stdlib.h>
+ #include <camera/CameraParameters.h>
++#include "camera/CameraParametersExtra.h"
+ #include <system/graphics.h>
+ 
+ namespace android {
+diff --git a/include/camera/CameraParameters.h b/include/camera/CameraParameters.h
+index 635ae52..07e0434 100644
+--- a/include/camera/CameraParameters.h
++++ b/include/camera/CameraParameters.h
+@@ -19,6 +19,7 @@
+ 
+ #include <utils/KeyedVector.h>
+ #include <utils/String8.h>
++#include "camera/CameraParametersExtra.h"
+ 
+ namespace android {
+ 
+-- 
+2.5.0
+

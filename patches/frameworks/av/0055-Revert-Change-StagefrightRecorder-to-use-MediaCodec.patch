@@ -1,0 +1,2064 @@
+From 9dbb967c2169b907fb026d06ea07850b24144412 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Thu, 28 Jan 2016 12:31:34 +0700
+Subject: [PATCH 55/58] Revert "Change StagefrightRecorder to use MediaCodec"
+
+This reverts commit 72cecca17d735db6532c45f0a7e10c47ee6f065a.
+
+Change-Id: Ie59474ee64e7650d0292c073835d83fc3fde72ff
+---
+ include/media/IOMX.h                               |   1 -
+ include/media/mediarecorder.h                      |   2 +-
+ include/media/stagefright/ACodec.h                 |   2 -
+ include/media/stagefright/MediaCodecSource.h       | 134 ----
+ .../libmediaplayerservice/StagefrightRecorder.cpp  | 330 ++++----
+ media/libmediaplayerservice/StagefrightRecorder.h  |  26 +-
+ media/libstagefright/ACodec.cpp                    |  41 -
+ media/libstagefright/Android.mk                    |   1 -
+ media/libstagefright/MPEG4Writer.cpp               |  15 +-
+ media/libstagefright/MediaCodecSource.cpp          | 881 ---------------------
+ media/libstagefright/omx/GraphicBufferSource.cpp   |  23 +-
+ media/libstagefright/omx/GraphicBufferSource.h     |   9 +-
+ media/libstagefright/omx/OMXNodeInstance.cpp       |  12 +-
+ .../tests/SurfaceMediaSource_test.cpp              |   9 +-
+ 14 files changed, 196 insertions(+), 1290 deletions(-)
+ delete mode 100644 include/media/stagefright/MediaCodecSource.h
+ delete mode 100644 media/libstagefright/MediaCodecSource.cpp
+
+diff --git a/include/media/IOMX.h b/include/media/IOMX.h
+index bd1d0e3..1d8885d 100644
+--- a/include/media/IOMX.h
++++ b/include/media/IOMX.h
+@@ -147,7 +147,6 @@ public:
+         INTERNAL_OPTION_SUSPEND,  // data is a bool
+         INTERNAL_OPTION_REPEAT_PREVIOUS_FRAME_DELAY,  // data is an int64_t
+         INTERNAL_OPTION_MAX_TIMESTAMP_GAP, // data is int64_t
+-        INTERNAL_OPTION_START_TIME, // data is an int64_t
+     };
+     virtual status_t setInternalOption(
+             node_id node,
+diff --git a/include/media/mediarecorder.h b/include/media/mediarecorder.h
+index 5f88fa9..a111638 100644
+--- a/include/media/mediarecorder.h
++++ b/include/media/mediarecorder.h
+@@ -39,7 +39,7 @@ typedef void (*media_completion_f)(status_t status, void *cookie);
+ enum video_source {
+     VIDEO_SOURCE_DEFAULT = 0,
+     VIDEO_SOURCE_CAMERA = 1,
+-    VIDEO_SOURCE_SURFACE = 2,
++    VIDEO_SOURCE_GRALLOC_BUFFER = 2,
+ 
+     VIDEO_SOURCE_LIST_END  // must be last - used to validate audio source type
+ };
+diff --git a/include/media/stagefright/ACodec.h b/include/media/stagefright/ACodec.h
+index 4625548..e989ef7 100644
+--- a/include/media/stagefright/ACodec.h
++++ b/include/media/stagefright/ACodec.h
+@@ -207,8 +207,6 @@ private:
+     int64_t mRepeatFrameDelayUs;
+     int64_t mMaxPtsGapUs;
+ 
+-    bool mCreateInputBuffersSuspended;
+-
+     bool mTunneled;
+ 
+     status_t setCyclicIntraMacroblockRefresh(const sp<AMessage> &msg, int32_t mode);
+diff --git a/include/media/stagefright/MediaCodecSource.h b/include/media/stagefright/MediaCodecSource.h
+deleted file mode 100644
+index 4b18a0b..0000000
+--- a/include/media/stagefright/MediaCodecSource.h
++++ /dev/null
+@@ -1,134 +0,0 @@
+-/*
+- * Copyright (C) 2014 The Android Open Source Project
+- *
+- * Licensed under the Apache License, Version 2.0 (the "License");
+- * you may not use this file except in compliance with the License.
+- * You may obtain a copy of the License at
+- *
+- *      http://www.apache.org/licenses/LICENSE-2.0
+- *
+- * Unless required by applicable law or agreed to in writing, software
+- * distributed under the License is distributed on an "AS IS" BASIS,
+- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- * See the License for the specific language governing permissions and
+- * limitations under the License.
+- */
+-
+-#ifndef MediaCodecSource_H_
+-#define MediaCodecSource_H_
+-
+-#include <media/stagefright/foundation/ABase.h>
+-#include <media/stagefright/foundation/AHandlerReflector.h>
+-#include <media/stagefright/MediaSource.h>
+-
+-namespace android {
+-
+-class ALooper;
+-class AMessage;
+-class IGraphicBufferProducer;
+-class MediaCodec;
+-class MetaData;
+-
+-struct MediaCodecSource : public MediaSource,
+-                          public MediaBufferObserver {
+-    enum FlagBits {
+-        FLAG_USE_SURFACE_INPUT      = 1,
+-        FLAG_USE_METADATA_INPUT     = 2,
+-    };
+-
+-    static sp<MediaCodecSource> Create(
+-            const sp<ALooper> &looper,
+-            const sp<AMessage> &format,
+-            const sp<MediaSource> &source,
+-            uint32_t flags = 0);
+-
+-    bool isVideo() const { return mIsVideo; }
+-    sp<IGraphicBufferProducer> getGraphicBufferProducer();
+-
+-    // MediaSource
+-    virtual status_t start(MetaData *params = NULL);
+-    virtual status_t stop();
+-    virtual status_t pause();
+-    virtual sp<MetaData> getFormat() { return mMeta; }
+-    virtual status_t read(
+-            MediaBuffer **buffer,
+-            const ReadOptions *options = NULL);
+-
+-    // MediaBufferObserver
+-    virtual void signalBufferReturned(MediaBuffer *buffer);
+-
+-    // for AHandlerReflector
+-    void onMessageReceived(const sp<AMessage> &msg);
+-
+-protected:
+-    virtual ~MediaCodecSource();
+-
+-private:
+-    struct Puller;
+-
+-    enum {
+-        kWhatPullerNotify,
+-        kWhatEncoderActivity,
+-        kWhatStart,
+-        kWhatStop,
+-        kWhatPause,
+-    };
+-
+-    MediaCodecSource(
+-            const sp<ALooper> &looper,
+-            const sp<AMessage> &outputFormat,
+-            const sp<MediaSource> &source,
+-            uint32_t flags = 0);
+-
+-    status_t onStart(MetaData *params);
+-    status_t init();
+-    status_t initEncoder();
+-    void releaseEncoder();
+-    status_t feedEncoderInputBuffers();
+-    void scheduleDoMoreWork();
+-    status_t doMoreWork();
+-    void suspend();
+-    void resume(int64_t skipFramesBeforeUs = -1ll);
+-    void signalEOS(status_t err = ERROR_END_OF_STREAM);
+-    bool reachedEOS();
+-    status_t postSynchronouslyAndReturnError(const sp<AMessage> &msg);
+-
+-    sp<ALooper> mLooper;
+-    sp<ALooper> mCodecLooper;
+-    sp<AHandlerReflector<MediaCodecSource> > mReflector;
+-    sp<AMessage> mOutputFormat;
+-    sp<MetaData> mMeta;
+-    sp<Puller> mPuller;
+-    sp<MediaCodec> mEncoder;
+-    uint32_t mFlags;
+-    List<uint32_t> mStopReplyIDQueue;
+-    bool mIsVideo;
+-    bool mStarted;
+-    bool mStopping;
+-    bool mDoMoreWorkPending;
+-    bool mPullerReachedEOS;
+-    sp<AMessage> mEncoderActivityNotify;
+-    sp<IGraphicBufferProducer> mGraphicBufferProducer;
+-    Vector<sp<ABuffer> > mEncoderInputBuffers;
+-    Vector<sp<ABuffer> > mEncoderOutputBuffers;
+-    List<MediaBuffer *> mInputBufferQueue;
+-    List<size_t> mAvailEncoderInputIndices;
+-    List<int64_t> mDecodingTimeQueue; // decoding time (us) for video
+-
+-    // audio drift time
+-    int64_t mFirstSampleTimeUs;
+-    List<int64_t> mDriftTimeQueue;
+-
+-    // following variables are protected by mOutputBufferLock
+-    Mutex mOutputBufferLock;
+-    Condition mOutputBufferCond;
+-    List<MediaBuffer*> mOutputBufferQueue;
+-    bool mEncodedReachedEOS;
+-    status_t mErrorCode;
+-
+-    DISALLOW_EVIL_CONSTRUCTORS(MediaCodecSource);
+-};
+-
+-} // namespace android
+-
+-#endif /* MediaCodecSource_H_ */
+diff --git a/media/libmediaplayerservice/StagefrightRecorder.cpp b/media/libmediaplayerservice/StagefrightRecorder.cpp
+index d377acd..068a10e 100644
+--- a/media/libmediaplayerservice/StagefrightRecorder.cpp
++++ b/media/libmediaplayerservice/StagefrightRecorder.cpp
+@@ -25,10 +25,8 @@
+ #include <binder/IServiceManager.h>
+ 
+ #include <media/IMediaPlayerService.h>
+-#include <media/stagefright/foundation/ABuffer.h>
++#include <media/openmax/OMX_Audio.h>
+ #include <media/stagefright/foundation/ADebug.h>
+-#include <media/stagefright/foundation/AMessage.h>
+-#include <media/stagefright/foundation/ALooper.h>
+ #include <media/stagefright/AudioSource.h>
+ #include <media/stagefright/AMRWriter.h>
+ #include <media/stagefright/AACWriter.h>
+@@ -38,12 +36,13 @@
+ #include <media/stagefright/MPEG4Writer.h>
+ #include <media/stagefright/MediaDefs.h>
+ #include <media/stagefright/MetaData.h>
+-#include <media/stagefright/MediaCodecSource.h>
+ #include <media/stagefright/OMXClient.h>
+ #include <media/stagefright/OMXCodec.h>
++#include <media/stagefright/SurfaceMediaSource.h>
+ #include <media/MediaProfiles.h>
+ #include <camera/ICamera.h>
+ #include <camera/CameraParameters.h>
++#include <gui/Surface.h>
+ 
+ #include <utils/Errors.h>
+ #include <sys/types.h>
+@@ -73,7 +72,8 @@ StagefrightRecorder::StagefrightRecorder()
+       mAudioSource(AUDIO_SOURCE_CNT),
+       mVideoSource(VIDEO_SOURCE_LIST_END),
+       mCaptureTimeLapse(false),
+-      mStarted(false) {
++      mStarted(false),
++      mSurfaceMediaSource(NULL) {
+ 
+     ALOGV("Constructor");
+     reset();
+@@ -82,19 +82,10 @@ StagefrightRecorder::StagefrightRecorder()
+ StagefrightRecorder::~StagefrightRecorder() {
+     ALOGV("Destructor");
+     stop();
+-
+-    if (mLooper != NULL) {
+-        mLooper->stop();
+-    }
+ }
+ 
+ status_t StagefrightRecorder::init() {
+     ALOGV("init");
+-
+-    mLooper = new ALooper;
+-    mLooper->setName("recorder_looper");
+-    mLooper->start();
+-
+     return OK;
+ }
+ 
+@@ -103,7 +94,7 @@ status_t StagefrightRecorder::init() {
+ // while encoding GL Frames
+ sp<IGraphicBufferProducer> StagefrightRecorder::querySurfaceMediaSource() const {
+     ALOGV("Get SurfaceMediaSource");
+-    return mGraphicBufferProducer;
++    return mSurfaceMediaSource->getBufferQueue();
+ }
+ 
+ status_t StagefrightRecorder::setAudioSource(audio_source_t as) {
+@@ -749,61 +740,15 @@ status_t StagefrightRecorder::setClientName(const String16& clientName) {
+ }
+ 
+ status_t StagefrightRecorder::prepare() {
+-    ALOGV("prepare");
+-    if (mOutputFd < 0) {
+-        ALOGE("Output file descriptor is invalid");
+-        return INVALID_OPERATION;
+-    }
+-
+-    // Get UID here for permission checking
+-    mClientUid = IPCThreadState::self()->getCallingUid();
+-
+-    status_t status = OK;
+-
+-    switch (mOutputFormat) {
+-        case OUTPUT_FORMAT_DEFAULT:
+-        case OUTPUT_FORMAT_THREE_GPP:
+-        case OUTPUT_FORMAT_MPEG_4:
+-            status = setupMPEG4Recording();
+-            break;
+-
+-        case OUTPUT_FORMAT_AMR_NB:
+-        case OUTPUT_FORMAT_AMR_WB:
+-            status = setupAMRRecording();
+-            break;
+-
+-        case OUTPUT_FORMAT_AAC_ADIF:
+-        case OUTPUT_FORMAT_AAC_ADTS:
+-            status = setupAACRecording();
+-            break;
+-
+-        case OUTPUT_FORMAT_RTP_AVP:
+-            status = setupRTPRecording();
+-            break;
+-
+-        case OUTPUT_FORMAT_MPEG2TS:
+-            status = setupMPEG2TSRecording();
+-            break;
+-
+-        default:
+-            ALOGE("Unsupported output file format: %d", mOutputFormat);
+-            status = UNKNOWN_ERROR;
+-            break;
+-    }
+-
+-    return status;
++    return OK;
+ }
+ 
+ status_t StagefrightRecorder::start() {
+-    ALOGV("start");
+-    if (mOutputFd < 0) {
+-        ALOGE("Output file descriptor is invalid");
+-        return INVALID_OPERATION;
+-    }
++    CHECK_GE(mOutputFd, 0);
+ 
+     // Get UID here for permission checking
+     mClientUid = IPCThreadState::self()->getCallingUid();
+-    if (mWriter == NULL) {
++    if (mWriter != NULL) {
+         ALOGE("File writer is not avaialble");
+         return UNKNOWN_ERROR;
+     }
+@@ -814,35 +759,31 @@ status_t StagefrightRecorder::start() {
+         case OUTPUT_FORMAT_DEFAULT:
+         case OUTPUT_FORMAT_THREE_GPP:
+         case OUTPUT_FORMAT_MPEG_4:
+-        {
+-            sp<MetaData> meta = new MetaData;
+-            setupMPEG4MetaData(&meta);
+-            status = mWriter->start(meta.get());
++            status = startMPEG4Recording();
+             break;
+-        }
+ 
+         case OUTPUT_FORMAT_AMR_NB:
+         case OUTPUT_FORMAT_AMR_WB:
++            status = startAMRRecording();
++            break;
++
+         case OUTPUT_FORMAT_AAC_ADIF:
+         case OUTPUT_FORMAT_AAC_ADTS:
++            status = startAACRecording();
++            break;
++
+         case OUTPUT_FORMAT_RTP_AVP:
++            status = startRTPRecording();
++            break;
++
+         case OUTPUT_FORMAT_MPEG2TS:
+-        {
+-            status = mWriter->start();
++            status = startMPEG2TSRecording();
+             break;
+-        }
+ 
+         default:
+-        {
+             ALOGE("Unsupported output file format: %d", mOutputFormat);
+             status = UNKNOWN_ERROR;
+             break;
+-        }
+-    }
+-
+-    if (status != OK) {
+-        mWriter.clear();
+-        mWriter = NULL;
+     }
+ 
+     if ((status == OK) && (!mStarted)) {
+@@ -876,54 +817,58 @@ sp<MediaSource> StagefrightRecorder::createAudioSource() {
+         return NULL;
+     }
+ 
+-    sp<AMessage> format = new AMessage;
++    sp<MetaData> encMeta = new MetaData;
+     const char *mime;
+     switch (mAudioEncoder) {
+         case AUDIO_ENCODER_AMR_NB:
+         case AUDIO_ENCODER_DEFAULT:
+-            format->setString("mime", MEDIA_MIMETYPE_AUDIO_AMR_NB);
++            mime = MEDIA_MIMETYPE_AUDIO_AMR_NB;
+             break;
+         case AUDIO_ENCODER_AMR_WB:
+-            format->setString("mime", MEDIA_MIMETYPE_AUDIO_AMR_WB);
++            mime = MEDIA_MIMETYPE_AUDIO_AMR_WB;
+             break;
+         case AUDIO_ENCODER_AAC:
+-            format->setString("mime", MEDIA_MIMETYPE_AUDIO_AAC);
+-            format->setInt32("aac-profile", OMX_AUDIO_AACObjectLC);
++            mime = MEDIA_MIMETYPE_AUDIO_AAC;
++            encMeta->setInt32(kKeyAACProfile, OMX_AUDIO_AACObjectLC);
+             break;
+         case AUDIO_ENCODER_HE_AAC:
+-            format->setString("mime", MEDIA_MIMETYPE_AUDIO_AAC);
+-            format->setInt32("aac-profile", OMX_AUDIO_AACObjectHE);
++            mime = MEDIA_MIMETYPE_AUDIO_AAC;
++            encMeta->setInt32(kKeyAACProfile, OMX_AUDIO_AACObjectHE);
+             break;
+         case AUDIO_ENCODER_AAC_ELD:
+-            format->setString("mime", MEDIA_MIMETYPE_AUDIO_AAC);
+-            format->setInt32("aac-profile", OMX_AUDIO_AACObjectELD);
++            mime = MEDIA_MIMETYPE_AUDIO_AAC;
++            encMeta->setInt32(kKeyAACProfile, OMX_AUDIO_AACObjectELD);
+             break;
+ 
+         default:
+             ALOGE("Unknown audio encoder: %d", mAudioEncoder);
+             return NULL;
+     }
++    encMeta->setCString(kKeyMIMEType, mime);
+ 
+     int32_t maxInputSize;
+     CHECK(audioSource->getFormat()->findInt32(
+                 kKeyMaxInputSize, &maxInputSize));
+ 
+-    format->setInt32("max-input-size", maxInputSize);
+-    format->setInt32("channel-count", mAudioChannels);
+-    format->setInt32("sample-rate", mSampleRate);
+-    format->setInt32("bitrate", mAudioBitRate);
++    encMeta->setInt32(kKeyMaxInputSize, maxInputSize);
++    encMeta->setInt32(kKeyChannelCount, mAudioChannels);
++    encMeta->setInt32(kKeySampleRate, mSampleRate);
++    encMeta->setInt32(kKeyBitRate, mAudioBitRate);
+     if (mAudioTimeScale > 0) {
+-        format->setInt32("time-scale", mAudioTimeScale);
++        encMeta->setInt32(kKeyTimeScale, mAudioTimeScale);
+     }
+ 
++    OMXClient client;
++    CHECK_EQ(client.connect(), (status_t)OK);
+     sp<MediaSource> audioEncoder =
+-            MediaCodecSource::Create(mLooper, format, audioSource);
++        OMXCodec::Create(client.interface(), encMeta,
++                         true /* createEncoder */, audioSource);
+     mAudioSourceNode = audioSource;
+ 
+     return audioEncoder;
+ }
+ 
+-status_t StagefrightRecorder::setupAACRecording() {
++status_t StagefrightRecorder::startAACRecording() {
+     // FIXME:
+     // Add support for OUTPUT_FORMAT_AAC_ADIF
+     CHECK_EQ(mOutputFormat, OUTPUT_FORMAT_AAC_ADTS);
+@@ -934,10 +879,16 @@ status_t StagefrightRecorder::setupAACRecording() {
+     CHECK(mAudioSource != AUDIO_SOURCE_CNT);
+ 
+     mWriter = new AACWriter(mOutputFd);
+-    return setupRawAudioRecording();
++    status_t status = startRawAudioRecording();
++    if (status != OK) {
++        mWriter.clear();
++        mWriter = NULL;
++    }
++
++    return status;
+ }
+ 
+-status_t StagefrightRecorder::setupAMRRecording() {
++status_t StagefrightRecorder::startAMRRecording() {
+     CHECK(mOutputFormat == OUTPUT_FORMAT_AMR_NB ||
+           mOutputFormat == OUTPUT_FORMAT_AMR_WB);
+ 
+@@ -957,10 +908,15 @@ status_t StagefrightRecorder::setupAMRRecording() {
+     }
+ 
+     mWriter = new AMRWriter(mOutputFd);
+-    return setupRawAudioRecording();
++    status_t status = startRawAudioRecording();
++    if (status != OK) {
++        mWriter.clear();
++        mWriter = NULL;
++    }
++    return status;
+ }
+ 
+-status_t StagefrightRecorder::setupRawAudioRecording() {
++status_t StagefrightRecorder::startRawAudioRecording() {
+     if (mAudioSource >= AUDIO_SOURCE_CNT) {
+         ALOGE("Invalid audio source: %d", mAudioSource);
+         return BAD_VALUE;
+@@ -986,11 +942,12 @@ status_t StagefrightRecorder::setupRawAudioRecording() {
+         mWriter->setMaxFileSize(mMaxFileSizeBytes);
+     }
+     mWriter->setListener(mListener);
++    mWriter->start();
+ 
+     return OK;
+ }
+ 
+-status_t StagefrightRecorder::setupRTPRecording() {
++status_t StagefrightRecorder::startRTPRecording() {
+     CHECK_EQ(mOutputFormat, OUTPUT_FORMAT_RTP_AVP);
+ 
+     if ((mAudioSource != AUDIO_SOURCE_CNT
+@@ -1027,10 +984,10 @@ status_t StagefrightRecorder::setupRTPRecording() {
+     mWriter->addSource(source);
+     mWriter->setListener(mListener);
+ 
+-    return OK;
++    return mWriter->start();
+ }
+ 
+-status_t StagefrightRecorder::setupMPEG2TSRecording() {
++status_t StagefrightRecorder::startMPEG2TSRecording() {
+     CHECK_EQ(mOutputFormat, OUTPUT_FORMAT_MPEG2TS);
+ 
+     sp<MediaWriter> writer = new MPEG2TSWriter(mOutputFd);
+@@ -1080,7 +1037,7 @@ status_t StagefrightRecorder::setupMPEG2TSRecording() {
+ 
+     mWriter = writer;
+ 
+-    return OK;
++    return mWriter->start();
+ }
+ 
+ void StagefrightRecorder::clipVideoFrameRate() {
+@@ -1321,14 +1278,49 @@ status_t StagefrightRecorder::setupMediaSource(
+             return err;
+         }
+         *mediaSource = cameraSource;
+-    } else if (mVideoSource == VIDEO_SOURCE_SURFACE) {
+-        *mediaSource = NULL;
++    } else if (mVideoSource == VIDEO_SOURCE_GRALLOC_BUFFER) {
++        // If using GRAlloc buffers, setup surfacemediasource.
++        // Later a handle to that will be passed
++        // to the client side when queried
++        status_t err = setupSurfaceMediaSource();
++        if (err != OK) {
++            return err;
++        }
++        *mediaSource = mSurfaceMediaSource;
+     } else {
+         return INVALID_OPERATION;
+     }
+     return OK;
+ }
+ 
++// setupSurfaceMediaSource creates a source with the given
++// width and height and framerate.
++// TODO: This could go in a static function inside SurfaceMediaSource
++// similar to that in CameraSource
++status_t StagefrightRecorder::setupSurfaceMediaSource() {
++    status_t err = OK;
++    mSurfaceMediaSource = new SurfaceMediaSource(mVideoWidth, mVideoHeight);
++    if (mSurfaceMediaSource == NULL) {
++        return NO_INIT;
++    }
++
++    if (mFrameRate == -1) {
++        int32_t frameRate = 0;
++        CHECK (mSurfaceMediaSource->getFormat()->findInt32(
++                                        kKeyFrameRate, &frameRate));
++        ALOGI("Frame rate is not explicitly set. Use the current frame "
++             "rate (%d fps)", frameRate);
++        mFrameRate = frameRate;
++    } else {
++        err = mSurfaceMediaSource->setFrameRate(mFrameRate);
++    }
++    CHECK(mFrameRate != -1);
++
++    mIsMetaDataStoredInVideoBuffers =
++        mSurfaceMediaSource->isMetaDataStoredInVideoBuffers();
++    return err;
++}
++
+ status_t StagefrightRecorder::setupCameraSource(
+         sp<CameraSource> *cameraSource) {
+     status_t err = OK;
+@@ -1395,19 +1387,21 @@ status_t StagefrightRecorder::setupVideoEncoder(
+         sp<MediaSource> *source) {
+     source->clear();
+ 
+-    sp<AMessage> format = new AMessage();
++    sp<MetaData> enc_meta = new MetaData;
++    enc_meta->setInt32(kKeyBitRate, mVideoBitRate);
++    enc_meta->setInt32(kKeyFrameRate, mFrameRate);
+ 
+     switch (mVideoEncoder) {
+         case VIDEO_ENCODER_H263:
+-            format->setString("mime", MEDIA_MIMETYPE_VIDEO_H263);
++            enc_meta->setCString(kKeyMIMEType, MEDIA_MIMETYPE_VIDEO_H263);
+             break;
+ 
+         case VIDEO_ENCODER_MPEG_4_SP:
+-            format->setString("mime", MEDIA_MIMETYPE_VIDEO_MPEG4);
++            enc_meta->setCString(kKeyMIMEType, MEDIA_MIMETYPE_VIDEO_MPEG4);
+             break;
+ 
+         case VIDEO_ENCODER_H264:
+-            format->setString("mime", MEDIA_MIMETYPE_VIDEO_AVC);
++            enc_meta->setCString(kKeyMIMEType, MEDIA_MIMETYPE_VIDEO_AVC);
+             break;
+ 
+         default:
+@@ -1415,69 +1409,59 @@ status_t StagefrightRecorder::setupVideoEncoder(
+             break;
+     }
+ 
+-    if (cameraSource != NULL) {
+-        sp<MetaData> meta = cameraSource->getFormat();
++    sp<MetaData> meta = cameraSource->getFormat();
+ 
+-        int32_t width, height, stride, sliceHeight, colorFormat;
+-        CHECK(meta->findInt32(kKeyWidth, &width));
+-        CHECK(meta->findInt32(kKeyHeight, &height));
+-        CHECK(meta->findInt32(kKeyStride, &stride));
+-        CHECK(meta->findInt32(kKeySliceHeight, &sliceHeight));
+-        CHECK(meta->findInt32(kKeyColorFormat, &colorFormat));
+-
+-        format->setInt32("width", width);
+-        format->setInt32("height", height);
+-        format->setInt32("stride", stride);
+-        format->setInt32("slice-height", sliceHeight);
+-        format->setInt32("color-format", colorFormat);
+-    } else {
+-        format->setInt32("width", mVideoWidth);
+-        format->setInt32("height", mVideoHeight);
+-        format->setInt32("stride", mVideoWidth);
+-        format->setInt32("slice-height", mVideoWidth);
+-        format->setInt32("color-format", OMX_COLOR_FormatAndroidOpaque);
+-    }
+-
+-    format->setInt32("bitrate", mVideoBitRate);
+-    format->setInt32("frame-rate", mFrameRate);
+-    format->setInt32("i-frame-interval", mIFramesIntervalSec);
++    int32_t width, height, stride, sliceHeight, colorFormat;
++    CHECK(meta->findInt32(kKeyWidth, &width));
++    CHECK(meta->findInt32(kKeyHeight, &height));
++    CHECK(meta->findInt32(kKeyStride, &stride));
++    CHECK(meta->findInt32(kKeySliceHeight, &sliceHeight));
++    CHECK(meta->findInt32(kKeyColorFormat, &colorFormat));
+ 
++    enc_meta->setInt32(kKeyWidth, width);
++    enc_meta->setInt32(kKeyHeight, height);
++    enc_meta->setInt32(kKeyIFramesInterval, mIFramesIntervalSec);
++    enc_meta->setInt32(kKeyStride, stride);
++    enc_meta->setInt32(kKeySliceHeight, sliceHeight);
++    enc_meta->setInt32(kKeyColorFormat, colorFormat);
+     if (mVideoTimeScale > 0) {
+-        format->setInt32("time-scale", mVideoTimeScale);
++        enc_meta->setInt32(kKeyTimeScale, mVideoTimeScale);
+     }
+     if (mVideoEncoderProfile != -1) {
+-        format->setInt32("profile", mVideoEncoderProfile);
++        enc_meta->setInt32(kKeyVideoProfile, mVideoEncoderProfile);
+     }
+     if (mVideoEncoderLevel != -1) {
+-        format->setInt32("level", mVideoEncoderLevel);
++        enc_meta->setInt32(kKeyVideoLevel, mVideoEncoderLevel);
+     }
+ 
+-    uint32_t flags = 0;
++    OMXClient client;
++    CHECK_EQ(client.connect(), (status_t)OK);
++
++    uint32_t encoder_flags = 0;
+     if (mIsMetaDataStoredInVideoBuffers) {
+-        flags |= MediaCodecSource::FLAG_USE_METADATA_INPUT;
++        encoder_flags |= OMXCodec::kStoreMetaDataInVideoBuffers;
+     }
+ 
+-    if (cameraSource == NULL) {
+-        flags |= MediaCodecSource::FLAG_USE_SURFACE_INPUT;
++    // Do not wait for all the input buffers to become available.
++    // This give timelapse video recording faster response in
++    // receiving output from video encoder component.
++    if (mCaptureTimeLapse) {
++        encoder_flags |= OMXCodec::kOnlySubmitOneInputBufferAtOneTime;
+     }
+ 
+-    sp<MediaCodecSource> encoder =
+-            MediaCodecSource::Create(mLooper, format, cameraSource, flags);
++    sp<MediaSource> encoder = OMXCodec::Create(
++            client.interface(), enc_meta,
++            true /* createEncoder */, cameraSource,
++            NULL, encoder_flags);
+     if (encoder == NULL) {
+         ALOGW("Failed to create the encoder");
+         // When the encoder fails to be created, we need
+         // release the camera source due to the camera's lock
+         // and unlock mechanism.
+-        if (cameraSource != NULL) {
+-            cameraSource->stop();
+-        }
++        cameraSource->stop();
+         return UNKNOWN_ERROR;
+     }
+ 
+-    if (cameraSource == NULL) {
+-        mGraphicBufferProducer = encoder->getGraphicBufferProducer();
+-    }
+-
+     *source = encoder;
+ 
+     return OK;
+@@ -1511,10 +1495,9 @@ status_t StagefrightRecorder::setupAudioEncoder(const sp<MediaWriter>& writer) {
+     return OK;
+ }
+ 
+-status_t StagefrightRecorder::setupMPEG4Recording() {
++status_t StagefrightRecorder::setupMPEG4Recording(int32_t *totalBitRate) {
+     mWriter.clear();
+-    mTotalBitRate = 0;
+-
++    *totalBitRate = 0;
+     status_t err = OK;
+     sp<MediaWriter> writer = new MPEG4Writer(mOutputFd);
+ 
+@@ -1533,7 +1516,7 @@ status_t StagefrightRecorder::setupMPEG4Recording() {
+         }
+ 
+         writer->addSource(encoder);
+-        mTotalBitRate += mVideoBitRate;
++        *totalBitRate += mVideoBitRate;
+     }
+ 
+     // Audio source is added at the end if it exists.
+@@ -1542,7 +1525,7 @@ status_t StagefrightRecorder::setupMPEG4Recording() {
+     if (!mCaptureTimeLapse && (mAudioSource != AUDIO_SOURCE_CNT)) {
+         err = setupAudioEncoder(writer);
+         if (err != OK) return err;
+-        mTotalBitRate += mAudioBitRate;
++        *totalBitRate += mAudioBitRate;
+     }
+ 
+     if (mInterleaveDurationUs > 0) {
+@@ -1560,13 +1543,7 @@ status_t StagefrightRecorder::setupMPEG4Recording() {
+         writer->setMaxFileSize(mMaxFileSizeBytes);
+     }
+ 
+-    if (mVideoSource == VIDEO_SOURCE_DEFAULT
+-            || mVideoSource == VIDEO_SOURCE_CAMERA) {
+-        mStartTimeOffsetMs = mEncoderProfiles->getStartTimeOffsetMs(mCameraId);
+-    } else if (mVideoSource == VIDEO_SOURCE_SURFACE) {
+-        // surface source doesn't need large initial delay
+-        mStartTimeOffsetMs = 200;
+-    }
++    mStartTimeOffsetMs = mEncoderProfiles->getStartTimeOffsetMs(mCameraId);
+     if (mStartTimeOffsetMs > 0) {
+         reinterpret_cast<MPEG4Writer *>(writer.get())->
+             setStartTimeOffsetMs(mStartTimeOffsetMs);
+@@ -1577,11 +1554,11 @@ status_t StagefrightRecorder::setupMPEG4Recording() {
+     return OK;
+ }
+ 
+-void StagefrightRecorder::setupMPEG4MetaData(sp<MetaData> *meta) {
+-    int64_t startTimeUs = systemTime() / 1000;
++void StagefrightRecorder::setupMPEG4MetaData(int64_t startTimeUs, int32_t totalBitRate,
++        sp<MetaData> *meta) {
+     (*meta)->setInt64(kKeyTime, startTimeUs);
+     (*meta)->setInt32(kKeyFileType, mOutputFormat);
+-    (*meta)->setInt32(kKeyBitRate, mTotalBitRate);
++    (*meta)->setInt32(kKeyBitRate, totalBitRate);
+     (*meta)->setInt32(kKey64BitFileOffset, mUse64BitFileOffset);
+     if (mMovieTimeScale > 0) {
+         (*meta)->setInt32(kKeyTimeScale, mMovieTimeScale);
+@@ -1594,6 +1571,25 @@ void StagefrightRecorder::setupMPEG4MetaData(sp<MetaData> *meta) {
+     }
+ }
+ 
++status_t StagefrightRecorder::startMPEG4Recording() {
++    int32_t totalBitRate;
++    status_t err = setupMPEG4Recording(&totalBitRate);
++    if (err != OK) {
++        return err;
++    }
++
++    int64_t startTimeUs = systemTime() / 1000;
++    sp<MetaData> meta = new MetaData;
++    setupMPEG4MetaData(startTimeUs, totalBitRate, &meta);
++
++    err = mWriter->start(meta.get());
++    if (err != OK) {
++        return err;
++    }
++
++    return OK;
++}
++
+ status_t StagefrightRecorder::pause() {
+     ALOGV("pause");
+     if (mWriter == NULL) {
+@@ -1633,8 +1629,6 @@ status_t StagefrightRecorder::stop() {
+         mWriter.clear();
+     }
+ 
+-    mGraphicBufferProducer.clear();
+-
+     if (mOutputFd >= 0) {
+         ::close(mOutputFd);
+         mOutputFd = -1;
+@@ -1654,6 +1648,7 @@ status_t StagefrightRecorder::stop() {
+         addBatteryData(params);
+     }
+ 
++
+     return err;
+ }
+ 
+@@ -1705,7 +1700,6 @@ status_t StagefrightRecorder::reset() {
+     mRotationDegrees = 0;
+     mLatitudex10000 = -3600000;
+     mLongitudex10000 = -3600000;
+-    mTotalBitRate = 0;
+ 
+     mOutputFd = -1;
+ 
+diff --git a/media/libmediaplayerservice/StagefrightRecorder.h b/media/libmediaplayerservice/StagefrightRecorder.h
+index 7d6abd3..bc43488 100644
+--- a/media/libmediaplayerservice/StagefrightRecorder.h
++++ b/media/libmediaplayerservice/StagefrightRecorder.h
+@@ -37,7 +37,6 @@ struct AudioSource;
+ class MediaProfiles;
+ class IGraphicBufferProducer;
+ class SurfaceMediaSource;
+-class ALooper;
+ 
+ struct StagefrightRecorder : public MediaRecorderBase {
+     StagefrightRecorder();
+@@ -107,7 +106,6 @@ private:
+     int32_t mLatitudex10000;
+     int32_t mLongitudex10000;
+     int32_t mStartTimeOffsetMs;
+-    int32_t mTotalBitRate;
+ 
+     bool mCaptureTimeLapse;
+     int64_t mTimeBetweenTimeLapseFrameCaptureUs;
+@@ -124,16 +122,17 @@ private:
+     // An <IGraphicBufferProducer> pointer
+     // will be sent to the client side using which the
+     // frame buffers will be queued and dequeued
+-    sp<IGraphicBufferProducer> mGraphicBufferProducer;
+-    sp<ALooper> mLooper;
+-
+-    status_t setupMPEG4Recording();
+-    void setupMPEG4MetaData(sp<MetaData> *meta);
+-    status_t setupAMRRecording();
+-    status_t setupAACRecording();
+-    status_t setupRawAudioRecording();
+-    status_t setupRTPRecording();
+-    status_t setupMPEG2TSRecording();
++    sp<SurfaceMediaSource> mSurfaceMediaSource;
++
++    status_t setupMPEG4Recording(int32_t *totalBitRate);
++    void setupMPEG4MetaData(int64_t startTimeUs, int32_t totalBitRate,
++        sp<MetaData> *meta);
++    status_t startMPEG4Recording();
++    status_t startAMRRecording();
++    status_t startAACRecording();
++    status_t startRawAudioRecording();
++    status_t startRTPRecording();
++    status_t startMPEG2TSRecording();
+     sp<MediaSource> createAudioSource();
+     status_t checkVideoEncoderCapabilities(
+             bool *supportsCameraSourceMetaDataMode);
+@@ -143,6 +142,9 @@ private:
+     // depending on the videosource type
+     status_t setupMediaSource(sp<MediaSource> *mediaSource);
+     status_t setupCameraSource(sp<CameraSource> *cameraSource);
++    // setup the surfacemediasource for the encoder
++    status_t setupSurfaceMediaSource();
++
+     status_t setupAudioEncoder(const sp<MediaWriter>& writer);
+     status_t setupVideoEncoder(sp<MediaSource> cameraSource, sp<MediaSource> *source);
+ 
+diff --git a/media/libstagefright/ACodec.cpp b/media/libstagefright/ACodec.cpp
+index 2141a1d..25c3737 100644
+--- a/media/libstagefright/ACodec.cpp
++++ b/media/libstagefright/ACodec.cpp
+@@ -419,7 +419,6 @@ ACodec::ACodec()
+       mMetaDataBuffersToSubmit(0),
+       mRepeatFrameDelayUs(-1ll),
+       mMaxPtsGapUs(-1ll),
+-      mCreateInputBuffersSuspended(false),
+       mTunneled(false) {
+     mUninitializedState = new UninitializedState(this);
+     mLoadedState = new LoadedState(this);
+@@ -1267,12 +1266,6 @@ status_t ACodec::configureCodec(
+         if (!msg->findInt64("max-pts-gap-to-encoder", &mMaxPtsGapUs)) {
+             mMaxPtsGapUs = -1l;
+         }
+-
+-        if (!msg->findInt32(
+-                    "create-input-buffers-suspended",
+-                    (int32_t*)&mCreateInputBuffersSuspended)) {
+-            mCreateInputBuffersSuspended = false;
+-        }
+     }
+ 
+     sp<RefBase> obj;
+@@ -4783,22 +4776,6 @@ void ACodec::LoadedState::onCreateInputSurface(
+ 
+         if (err != OK) {
+             ALOGE("[%s] Unable to configure max timestamp gap (err %d)",
+-                    mCodec->mComponentName.c_str(),
+-                    err);
+-          }
+-      }
+-
+-    if (err == OK && mCodec->mCreateInputBuffersSuspended) {
+-        bool suspend = true;
+-        err = mCodec->mOMX->setInternalOption(
+-                mCodec->mNode,
+-                kPortIndexInput,
+-                IOMX::INTERNAL_OPTION_SUSPEND,
+-                &suspend,
+-                sizeof(suspend));
+-
+-        if (err != OK) {
+-            ALOGE("[%s] Unable to configure option to suspend (err %d)",
+                   mCodec->mComponentName.c_str(),
+                   err);
+         }
+@@ -4861,7 +4838,6 @@ status_t ACodec::LoadedToIdleState::allocateBuffers() {
+ 
+ bool ACodec::LoadedToIdleState::onMessageReceived(const sp<AMessage> &msg) {
+     switch (msg->what()) {
+-        case kWhatSetParameters:
+         case kWhatShutdown:
+         {
+             mCodec->deferMessage(msg);
+@@ -4928,7 +4904,6 @@ void ACodec::IdleToExecutingState::stateEntered() {
+ 
+ bool ACodec::IdleToExecutingState::onMessageReceived(const sp<AMessage> &msg) {
+     switch (msg->what()) {
+-        case kWhatSetParameters:
+         case kWhatShutdown:
+         {
+             mCodec->deferMessage(msg);
+@@ -5202,22 +5177,6 @@ status_t ACodec::setParameters(const sp<AMessage> &params) {
+         }
+     }
+ 
+-    int64_t skipFramesBeforeUs;
+-    if (params->findInt64("skip-frames-before", &skipFramesBeforeUs)) {
+-        status_t err =
+-            mOMX->setInternalOption(
+-                     mNode,
+-                     kPortIndexInput,
+-                     IOMX::INTERNAL_OPTION_START_TIME,
+-                     &skipFramesBeforeUs,
+-                     sizeof(skipFramesBeforeUs));
+-
+-        if (err != OK) {
+-            ALOGE("Failed to set parameter 'skip-frames-before' (err %d)", err);
+-            return err;
+-        }
+-    }
+-
+     int32_t dropInputFrames;
+     if (params->findInt32("drop-input-frames", &dropInputFrames)) {
+         bool suspend = dropInputFrames != 0;
+diff --git a/media/libstagefright/Android.mk b/media/libstagefright/Android.mk
+index 0493a12..bb9069a 100644
+--- a/media/libstagefright/Android.mk
++++ b/media/libstagefright/Android.mk
+@@ -33,7 +33,6 @@ LOCAL_SRC_FILES:=                         \
+         MediaBufferGroup.cpp              \
+         MediaCodec.cpp                    \
+         MediaCodecList.cpp                \
+-        MediaCodecSource.cpp              \
+         MediaDefs.cpp                     \
+         MediaExtractor.cpp                \
+         http/MediaHTTP.cpp                \
+diff --git a/media/libstagefright/MPEG4Writer.cpp b/media/libstagefright/MPEG4Writer.cpp
+index 763e19d..542ec48 100644
+--- a/media/libstagefright/MPEG4Writer.cpp
++++ b/media/libstagefright/MPEG4Writer.cpp
+@@ -1765,7 +1765,7 @@ status_t MPEG4Writer::Track::pause() {
+ }
+ 
+ status_t MPEG4Writer::Track::stop() {
+-    ALOGD("%s track stopping", mIsAudio? "Audio": "Video");
++    ALOGD("Stopping %s track", mIsAudio? "Audio": "Video");
+     if (!mStarted) {
+         ALOGE("Stop() called but track is not started");
+         return ERROR_END_OF_STREAM;
+@@ -1776,14 +1776,19 @@ status_t MPEG4Writer::Track::stop() {
+     }
+     mDone = true;
+ 
+-    ALOGD("%s track source stopping", mIsAudio? "Audio": "Video");
+-    mSource->stop();
+-    ALOGD("%s track source stopped", mIsAudio? "Audio": "Video");
+-
+     void *dummy;
+     pthread_join(mThread, &dummy);
++
+     status_t err = (status_t) dummy;
+ 
++    ALOGD("Stopping %s track source", mIsAudio? "Audio": "Video");
++    {
++        status_t status = mSource->stop();
++        if (err == OK && status != OK && status != ERROR_END_OF_STREAM) {
++            err = status;
++        }
++    }
++
+     ALOGD("%s track stopped", mIsAudio? "Audio": "Video");
+     return err;
+ }
+diff --git a/media/libstagefright/MediaCodecSource.cpp b/media/libstagefright/MediaCodecSource.cpp
+deleted file mode 100644
+index 2c20d62..0000000
+--- a/media/libstagefright/MediaCodecSource.cpp
++++ /dev/null
+@@ -1,881 +0,0 @@
+-/*
+- * Copyright 2014, The Android Open Source Project
+- *
+- * Licensed under the Apache License, Version 2.0 (the "License");
+- * you may not use this file except in compliance with the License.
+- * You may obtain a copy of the License at
+- *
+- *     http://www.apache.org/licenses/LICENSE-2.0
+- *
+- * Unless required by applicable law or agreed to in writing, software
+- * distributed under the License is distributed on an "AS IS" BASIS,
+- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- * See the License for the specific language governing permissions and
+- * limitations under the License.
+- */
+-
+-//#define LOG_NDEBUG 0
+-#define LOG_TAG "MediaCodecSource"
+-#define DEBUG_DRIFT_TIME 0
+-#include <gui/IGraphicBufferProducer.h>
+-#include <gui/Surface.h>
+-#include <media/ICrypto.h>
+-#include <media/stagefright/foundation/ABuffer.h>
+-#include <media/stagefright/foundation/ADebug.h>
+-#include <media/stagefright/foundation/ALooper.h>
+-#include <media/stagefright/foundation/AMessage.h>
+-#include <media/stagefright/MediaBuffer.h>
+-#include <media/stagefright/MediaCodec.h>
+-#include <media/stagefright/MetaData.h>
+-#include <media/stagefright/MediaErrors.h>
+-#include <media/stagefright/MediaSource.h>
+-#include <media/stagefright/MediaCodecSource.h>
+-#include <media/stagefright/Utils.h>
+-
+-namespace android {
+-
+-static void ReleaseMediaBufferReference(const sp<ABuffer> &accessUnit) {
+-    void *mbuf;
+-    if (accessUnit->meta()->findPointer("mediaBuffer", &mbuf)
+-            && mbuf != NULL) {
+-        ALOGV("releasing mbuf %p", mbuf);
+-
+-        accessUnit->meta()->setPointer("mediaBuffer", NULL);
+-
+-        static_cast<MediaBuffer *>(mbuf)->release();
+-        mbuf = NULL;
+-    }
+-}
+-
+-struct MediaCodecSource::Puller : public AHandler {
+-    Puller(const sp<MediaSource> &source);
+-
+-    status_t start(const sp<MetaData> &meta, const sp<AMessage> &notify);
+-    void stopAsync();
+-
+-    void pause();
+-    void resume();
+-
+-protected:
+-    virtual void onMessageReceived(const sp<AMessage> &msg);
+-    virtual ~Puller();
+-
+-private:
+-    enum {
+-        kWhatStart = 'msta',
+-        kWhatStop,
+-        kWhatPull,
+-        kWhatPause,
+-        kWhatResume,
+-    };
+-
+-    sp<MediaSource> mSource;
+-    sp<AMessage> mNotify;
+-    sp<ALooper> mLooper;
+-    int32_t mPullGeneration;
+-    bool mIsAudio;
+-    bool mPaused;
+-    bool mReachedEOS;
+-
+-    status_t postSynchronouslyAndReturnError(const sp<AMessage> &msg);
+-    void schedulePull();
+-    void handleEOS();
+-
+-    DISALLOW_EVIL_CONSTRUCTORS(Puller);
+-};
+-
+-MediaCodecSource::Puller::Puller(const sp<MediaSource> &source)
+-    : mSource(source),
+-      mLooper(new ALooper()),
+-      mPullGeneration(0),
+-      mIsAudio(false),
+-      mPaused(false),
+-      mReachedEOS(false) {
+-    sp<MetaData> meta = source->getFormat();
+-    const char *mime;
+-    CHECK(meta->findCString(kKeyMIMEType, &mime));
+-
+-    mIsAudio = !strncasecmp(mime, "audio/", 6);
+-
+-    mLooper->setName("pull_looper");
+-}
+-
+-MediaCodecSource::Puller::~Puller() {
+-    mLooper->unregisterHandler(id());
+-    mLooper->stop();
+-}
+-
+-status_t MediaCodecSource::Puller::postSynchronouslyAndReturnError(
+-        const sp<AMessage> &msg) {
+-    sp<AMessage> response;
+-    status_t err = msg->postAndAwaitResponse(&response);
+-
+-    if (err != OK) {
+-        return err;
+-    }
+-
+-    if (!response->findInt32("err", &err)) {
+-        err = OK;
+-    }
+-
+-    return err;
+-}
+-
+-status_t MediaCodecSource::Puller::start(const sp<MetaData> &meta,
+-        const sp<AMessage> &notify) {
+-    ALOGV("puller (%s) start", mIsAudio ? "audio" : "video");
+-    mLooper->start(
+-            false /* runOnCallingThread */,
+-            false /* canCallJava */,
+-            PRIORITY_AUDIO);
+-    mLooper->registerHandler(this);
+-    mNotify = notify;
+-
+-    sp<AMessage> msg = new AMessage(kWhatStart, id());
+-    msg->setObject("meta", meta);
+-    return postSynchronouslyAndReturnError(msg);
+-}
+-
+-void MediaCodecSource::Puller::stopAsync() {
+-    ALOGV("puller (%s) stopAsync", mIsAudio ? "audio" : "video");
+-    (new AMessage(kWhatStop, id()))->post();
+-}
+-
+-void MediaCodecSource::Puller::pause() {
+-    (new AMessage(kWhatPause, id()))->post();
+-}
+-
+-void MediaCodecSource::Puller::resume() {
+-    (new AMessage(kWhatResume, id()))->post();
+-}
+-
+-void MediaCodecSource::Puller::schedulePull() {
+-    sp<AMessage> msg = new AMessage(kWhatPull, id());
+-    msg->setInt32("generation", mPullGeneration);
+-    msg->post();
+-}
+-
+-void MediaCodecSource::Puller::handleEOS() {
+-    if (!mReachedEOS) {
+-        ALOGV("puller (%s) posting EOS", mIsAudio ? "audio" : "video");
+-        mReachedEOS = true;
+-        sp<AMessage> notify = mNotify->dup();
+-        notify->setPointer("accessUnit", NULL);
+-        notify->post();
+-    }
+-}
+-
+-void MediaCodecSource::Puller::onMessageReceived(const sp<AMessage> &msg) {
+-    switch (msg->what()) {
+-        case kWhatStart:
+-        {
+-            sp<RefBase> obj;
+-            CHECK(msg->findObject("meta", &obj));
+-
+-            mReachedEOS = false;
+-
+-            status_t err = mSource->start(static_cast<MetaData *>(obj.get()));
+-
+-            if (err == OK) {
+-                schedulePull();
+-            }
+-
+-            sp<AMessage> response = new AMessage;
+-            response->setInt32("err", err);
+-
+-            uint32_t replyID;
+-            CHECK(msg->senderAwaitsResponse(&replyID));
+-            response->postReply(replyID);
+-            break;
+-        }
+-
+-        case kWhatStop:
+-        {
+-            ALOGV("source (%s) stopping", mIsAudio ? "audio" : "video");
+-            mSource->stop();
+-            ALOGV("source (%s) stopped", mIsAudio ? "audio" : "video");
+-            ++mPullGeneration;
+-
+-            handleEOS();
+-            break;
+-        }
+-
+-        case kWhatPull:
+-        {
+-            int32_t generation;
+-            CHECK(msg->findInt32("generation", &generation));
+-
+-            if (generation != mPullGeneration) {
+-                break;
+-            }
+-
+-            MediaBuffer *mbuf;
+-            status_t err = mSource->read(&mbuf);
+-
+-            if (mPaused) {
+-                if (err == OK) {
+-                    mbuf->release();
+-                    mbuf = NULL;
+-                }
+-
+-                msg->post();
+-                break;
+-            }
+-
+-            if (err != OK) {
+-                if (err == ERROR_END_OF_STREAM) {
+-                    ALOGV("stream ended, mbuf %p", mbuf);
+-                } else {
+-                    ALOGE("error %d reading stream.", err);
+-                }
+-                handleEOS();
+-            } else {
+-                sp<AMessage> notify = mNotify->dup();
+-
+-                notify->setPointer("accessUnit", mbuf);
+-                notify->post();
+-
+-                msg->post();
+-            }
+-            break;
+-        }
+-
+-        case kWhatPause:
+-        {
+-            mPaused = true;
+-            break;
+-        }
+-
+-        case kWhatResume:
+-        {
+-            mPaused = false;
+-            break;
+-        }
+-
+-        default:
+-            TRESPASS();
+-    }
+-}
+-
+-// static
+-sp<MediaCodecSource> MediaCodecSource::Create(
+-        const sp<ALooper> &looper,
+-        const sp<AMessage> &format,
+-        const sp<MediaSource> &source,
+-        uint32_t flags) {
+-    sp<MediaCodecSource> mediaSource =
+-            new MediaCodecSource(looper, format, source, flags);
+-
+-    if (mediaSource->init() == OK) {
+-        return mediaSource;
+-    }
+-    return NULL;
+-}
+-
+-status_t MediaCodecSource::start(MetaData* params) {
+-    sp<AMessage> msg = new AMessage(kWhatStart, mReflector->id());
+-    msg->setObject("meta", params);
+-    return postSynchronouslyAndReturnError(msg);
+-}
+-
+-status_t MediaCodecSource::stop() {
+-    sp<AMessage> msg = new AMessage(kWhatStop, mReflector->id());
+-    return postSynchronouslyAndReturnError(msg);
+-}
+-
+-status_t MediaCodecSource::pause() {
+-    (new AMessage(kWhatPause, mReflector->id()))->post();
+-    return OK;
+-}
+-
+-sp<IGraphicBufferProducer> MediaCodecSource::getGraphicBufferProducer() {
+-    CHECK(mFlags & FLAG_USE_SURFACE_INPUT);
+-    return mGraphicBufferProducer;
+-}
+-
+-status_t MediaCodecSource::read(MediaBuffer** buffer,
+-        const ReadOptions* options) {
+-    Mutex::Autolock autolock(mOutputBufferLock);
+-
+-    *buffer = NULL;
+-    while (mOutputBufferQueue.size() == 0 && !mEncodedReachedEOS) {
+-        mOutputBufferCond.wait(mOutputBufferLock);
+-    }
+-    if (!mEncodedReachedEOS) {
+-        *buffer = *mOutputBufferQueue.begin();
+-        mOutputBufferQueue.erase(mOutputBufferQueue.begin());
+-        return OK;
+-    }
+-    return mErrorCode;
+-}
+-
+-void MediaCodecSource::signalBufferReturned(MediaBuffer *buffer) {
+-    buffer->setObserver(0);
+-    buffer->release();
+-}
+-
+-MediaCodecSource::MediaCodecSource(
+-        const sp<ALooper> &looper,
+-        const sp<AMessage> &outputFormat,
+-        const sp<MediaSource> &source,
+-        uint32_t flags)
+-    : mLooper(looper),
+-      mOutputFormat(outputFormat),
+-      mMeta(new MetaData),
+-      mFlags(flags),
+-      mIsVideo(false),
+-      mStarted(false),
+-      mStopping(false),
+-      mDoMoreWorkPending(false),
+-      mPullerReachedEOS(false),
+-      mFirstSampleTimeUs(-1ll),
+-      mEncodedReachedEOS(false),
+-      mErrorCode(OK) {
+-    CHECK(mLooper != NULL);
+-
+-    AString mime;
+-    CHECK(mOutputFormat->findString("mime", &mime));
+-
+-    if (!strncasecmp("video/", mime.c_str(), 6)) {
+-        mIsVideo = true;
+-    }
+-
+-    if (!(mFlags & FLAG_USE_SURFACE_INPUT)) {
+-        mPuller = new Puller(source);
+-    }
+-}
+-
+-MediaCodecSource::~MediaCodecSource() {
+-    releaseEncoder();
+-
+-    mCodecLooper->stop();
+-    mLooper->unregisterHandler(mReflector->id());
+-}
+-
+-status_t MediaCodecSource::init() {
+-    status_t err = initEncoder();
+-
+-    if (err != OK) {
+-        releaseEncoder();
+-    }
+-
+-    return err;
+-}
+-
+-status_t MediaCodecSource::initEncoder() {
+-    mReflector = new AHandlerReflector<MediaCodecSource>(this);
+-    mLooper->registerHandler(mReflector);
+-
+-    mCodecLooper = new ALooper;
+-    mCodecLooper->setName("codec_looper");
+-    mCodecLooper->start();
+-
+-    if (mFlags & FLAG_USE_METADATA_INPUT) {
+-        mOutputFormat->setInt32("store-metadata-in-buffers", 1);
+-    }
+-
+-    if (mFlags & FLAG_USE_SURFACE_INPUT) {
+-        mOutputFormat->setInt32("create-input-buffers-suspended", 1);
+-    }
+-
+-    AString outputMIME;
+-    CHECK(mOutputFormat->findString("mime", &outputMIME));
+-
+-    mEncoder = MediaCodec::CreateByType(
+-            mCodecLooper, outputMIME.c_str(), true /* encoder */);
+-
+-    if (mEncoder == NULL) {
+-        return NO_INIT;
+-    }
+-
+-    ALOGV("output format is '%s'", mOutputFormat->debugString(0).c_str());
+-
+-    status_t err = mEncoder->configure(
+-                mOutputFormat,
+-                NULL /* nativeWindow */,
+-                NULL /* crypto */,
+-                MediaCodec::CONFIGURE_FLAG_ENCODE);
+-
+-    if (err != OK) {
+-        return err;
+-    }
+-
+-    mEncoder->getOutputFormat(&mOutputFormat);
+-    convertMessageToMetaData(mOutputFormat, mMeta);
+-
+-    if (mFlags & FLAG_USE_SURFACE_INPUT) {
+-        CHECK(mIsVideo);
+-
+-        err = mEncoder->createInputSurface(&mGraphicBufferProducer);
+-
+-        if (err != OK) {
+-            return err;
+-        }
+-    }
+-
+-    err = mEncoder->start();
+-
+-    if (err != OK) {
+-        return err;
+-    }
+-
+-    err = mEncoder->getInputBuffers(&mEncoderInputBuffers);
+-
+-    if (err != OK) {
+-        return err;
+-    }
+-
+-    err = mEncoder->getOutputBuffers(&mEncoderOutputBuffers);
+-
+-    if (err != OK) {
+-        return err;
+-    }
+-
+-    mEncodedReachedEOS = false;
+-    mErrorCode = OK;
+-
+-    return OK;
+-}
+-
+-void MediaCodecSource::releaseEncoder() {
+-    if (mEncoder == NULL) {
+-        return;
+-    }
+-
+-    mEncoder->release();
+-    mEncoder.clear();
+-
+-    while (!mInputBufferQueue.empty()) {
+-        MediaBuffer *mbuf = *mInputBufferQueue.begin();
+-        mInputBufferQueue.erase(mInputBufferQueue.begin());
+-        if (mbuf != NULL) {
+-            mbuf->release();
+-        }
+-    }
+-
+-    for (size_t i = 0; i < mEncoderInputBuffers.size(); ++i) {
+-        sp<ABuffer> accessUnit = mEncoderInputBuffers.itemAt(i);
+-        ReleaseMediaBufferReference(accessUnit);
+-    }
+-
+-    mEncoderInputBuffers.clear();
+-    mEncoderOutputBuffers.clear();
+-}
+-
+-bool MediaCodecSource::reachedEOS() {
+-    return mEncodedReachedEOS && ((mPuller == NULL) || mPullerReachedEOS);
+-}
+-
+-status_t MediaCodecSource::postSynchronouslyAndReturnError(
+-        const sp<AMessage> &msg) {
+-    sp<AMessage> response;
+-    status_t err = msg->postAndAwaitResponse(&response);
+-
+-    if (err != OK) {
+-        return err;
+-    }
+-
+-    if (!response->findInt32("err", &err)) {
+-        err = OK;
+-    }
+-
+-    return err;
+-}
+-
+-void MediaCodecSource::signalEOS(status_t err) {
+-    if (!mEncodedReachedEOS) {
+-        ALOGI("encoder (%s) reached EOS", mIsVideo ? "video" : "audio");
+-        {
+-            Mutex::Autolock autoLock(mOutputBufferLock);
+-            // release all unread media buffers
+-            for (List<MediaBuffer*>::iterator it = mOutputBufferQueue.begin();
+-                    it != mOutputBufferQueue.end(); it++) {
+-                (*it)->release();
+-            }
+-            mOutputBufferQueue.clear();
+-            mEncodedReachedEOS = true;
+-            mErrorCode = err;
+-            mOutputBufferCond.signal();
+-        }
+-
+-        releaseEncoder();
+-    }
+-    if (mStopping && reachedEOS()) {
+-        ALOGI("MediaCodecSource (%s) fully stopped",
+-                mIsVideo ? "video" : "audio");
+-        // posting reply to everyone that's waiting
+-        List<uint32_t>::iterator it;
+-        for (it = mStopReplyIDQueue.begin();
+-                it != mStopReplyIDQueue.end(); it++) {
+-            (new AMessage)->postReply(*it);
+-        }
+-        mStopReplyIDQueue.clear();
+-        mStopping = false;
+-    }
+-}
+-
+-void MediaCodecSource::suspend() {
+-    CHECK(mFlags & FLAG_USE_SURFACE_INPUT);
+-    if (mEncoder != NULL) {
+-        sp<AMessage> params = new AMessage;
+-        params->setInt32("drop-input-frames", true);
+-        mEncoder->setParameters(params);
+-    }
+-}
+-
+-void MediaCodecSource::resume(int64_t skipFramesBeforeUs) {
+-    CHECK(mFlags & FLAG_USE_SURFACE_INPUT);
+-    if (mEncoder != NULL) {
+-        sp<AMessage> params = new AMessage;
+-        params->setInt32("drop-input-frames", false);
+-        if (skipFramesBeforeUs > 0) {
+-            params->setInt64("skip-frames-before", skipFramesBeforeUs);
+-        }
+-        mEncoder->setParameters(params);
+-    }
+-}
+-
+-void MediaCodecSource::scheduleDoMoreWork() {
+-    if (mDoMoreWorkPending) {
+-        return;
+-    }
+-
+-    mDoMoreWorkPending = true;
+-
+-    if (mEncoderActivityNotify == NULL) {
+-        mEncoderActivityNotify = new AMessage(
+-                kWhatEncoderActivity, mReflector->id());
+-    }
+-    mEncoder->requestActivityNotification(mEncoderActivityNotify);
+-}
+-
+-status_t MediaCodecSource::feedEncoderInputBuffers() {
+-    while (!mInputBufferQueue.empty()
+-            && !mAvailEncoderInputIndices.empty()) {
+-        MediaBuffer* mbuf = *mInputBufferQueue.begin();
+-        mInputBufferQueue.erase(mInputBufferQueue.begin());
+-
+-        size_t bufferIndex = *mAvailEncoderInputIndices.begin();
+-        mAvailEncoderInputIndices.erase(mAvailEncoderInputIndices.begin());
+-
+-        int64_t timeUs = 0ll;
+-        uint32_t flags = 0;
+-        size_t size = 0;
+-
+-        if (mbuf != NULL) {
+-            CHECK(mbuf->meta_data()->findInt64(kKeyTime, &timeUs));
+-
+-            // push decoding time for video, or drift time for audio
+-            if (mIsVideo) {
+-                mDecodingTimeQueue.push_back(timeUs);
+-            } else {
+-#if DEBUG_DRIFT_TIME
+-                if (mFirstSampleTimeUs < 0ll) {
+-                    mFirstSampleTimeUs = timeUs;
+-                }
+-
+-                int64_t driftTimeUs = 0;
+-                if (mbuf->meta_data()->findInt64(kKeyDriftTime, &driftTimeUs)
+-                        && driftTimeUs) {
+-                    driftTimeUs = timeUs - mFirstSampleTimeUs - driftTimeUs;
+-                }
+-                mDriftTimeQueue.push_back(driftTimeUs);
+-#endif // DEBUG_DRIFT_TIME
+-            }
+-
+-            size = mbuf->size();
+-
+-            memcpy(mEncoderInputBuffers.itemAt(bufferIndex)->data(),
+-                   mbuf->data(), size);
+-
+-            if (mIsVideo) {
+-                // video encoder will release MediaBuffer when done
+-                // with underlying data.
+-                mEncoderInputBuffers.itemAt(bufferIndex)->meta()
+-                        ->setPointer("mediaBuffer", mbuf);
+-            } else {
+-                mbuf->release();
+-            }
+-        } else {
+-            flags = MediaCodec::BUFFER_FLAG_EOS;
+-        }
+-
+-        status_t err = mEncoder->queueInputBuffer(
+-                bufferIndex, 0, size, timeUs, flags);
+-
+-        if (err != OK) {
+-            return err;
+-        }
+-    }
+-
+-    return OK;
+-}
+-
+-status_t MediaCodecSource::doMoreWork() {
+-    status_t err;
+-
+-    if (!(mFlags & FLAG_USE_SURFACE_INPUT)) {
+-        for (;;) {
+-            size_t bufferIndex;
+-            err = mEncoder->dequeueInputBuffer(&bufferIndex);
+-
+-            if (err != OK) {
+-                break;
+-            }
+-
+-            mAvailEncoderInputIndices.push_back(bufferIndex);
+-        }
+-
+-        feedEncoderInputBuffers();
+-    }
+-
+-    for (;;) {
+-        size_t bufferIndex;
+-        size_t offset;
+-        size_t size;
+-        int64_t timeUs;
+-        uint32_t flags;
+-        native_handle_t* handle = NULL;
+-        err = mEncoder->dequeueOutputBuffer(
+-                &bufferIndex, &offset, &size, &timeUs, &flags);
+-
+-        if (err != OK) {
+-            if (err == INFO_FORMAT_CHANGED) {
+-                continue;
+-            } else if (err == INFO_OUTPUT_BUFFERS_CHANGED) {
+-                mEncoder->getOutputBuffers(&mEncoderOutputBuffers);
+-                continue;
+-            }
+-
+-            if (err == -EAGAIN) {
+-                err = OK;
+-            }
+-            break;
+-        }
+-        if (!(flags & MediaCodec::BUFFER_FLAG_EOS)) {
+-            sp<ABuffer> outbuf = mEncoderOutputBuffers.itemAt(bufferIndex);
+-
+-            MediaBuffer *mbuf = new MediaBuffer(outbuf->size());
+-            memcpy(mbuf->data(), outbuf->data(), outbuf->size());
+-
+-            if (!(flags & MediaCodec::BUFFER_FLAG_CODECCONFIG)) {
+-                if (mIsVideo) {
+-                    int64_t decodingTimeUs;
+-                    if (mFlags & FLAG_USE_SURFACE_INPUT) {
+-                        // GraphicBufferSource is supposed to discard samples
+-                        // queued before start, and offset timeUs by start time
+-                        CHECK_GE(timeUs, 0ll);
+-                        // TODO:
+-                        // Decoding time for surface source is unavailable,
+-                        // use presentation time for now. May need to move
+-                        // this logic into MediaCodec.
+-                        decodingTimeUs = timeUs;
+-                    } else {
+-                        CHECK(!mDecodingTimeQueue.empty());
+-                        decodingTimeUs = *(mDecodingTimeQueue.begin());
+-                        mDecodingTimeQueue.erase(mDecodingTimeQueue.begin());
+-                    }
+-                    mbuf->meta_data()->setInt64(kKeyDecodingTime, decodingTimeUs);
+-
+-                    ALOGV("[video] time %lld us (%.2f secs), dts/pts diff %lld",
+-                            timeUs, timeUs / 1E6, decodingTimeUs - timeUs);
+-                } else {
+-                    int64_t driftTimeUs = 0;
+-#if DEBUG_DRIFT_TIME
+-                    CHECK(!mDriftTimeQueue.empty());
+-                    driftTimeUs = *(mDriftTimeQueue.begin());
+-                    mDriftTimeQueue.erase(mDriftTimeQueue.begin());
+-                    mbuf->meta_data()->setInt64(kKeyDriftTime, driftTimeUs);
+-#endif // DEBUG_DRIFT_TIME
+-                    ALOGV("[audio] time %lld us (%.2f secs), drift %lld",
+-                            timeUs, timeUs / 1E6, driftTimeUs);
+-                }
+-                mbuf->meta_data()->setInt64(kKeyTime, timeUs);
+-            } else {
+-                mbuf->meta_data()->setInt32(kKeyIsCodecConfig, true);
+-            }
+-            if (flags & MediaCodec::BUFFER_FLAG_SYNCFRAME) {
+-                mbuf->meta_data()->setInt32(kKeyIsSyncFrame, true);
+-            }
+-            mbuf->setObserver(this);
+-            mbuf->add_ref();
+-
+-            {
+-                Mutex::Autolock autoLock(mOutputBufferLock);
+-                mOutputBufferQueue.push_back(mbuf);
+-                mOutputBufferCond.signal();
+-            }
+-        }
+-
+-        mEncoder->releaseOutputBuffer(bufferIndex);
+-
+-        if (flags & MediaCodec::BUFFER_FLAG_EOS) {
+-            err = ERROR_END_OF_STREAM;
+-            break;
+-        }
+-    }
+-
+-    return err;
+-}
+-
+-status_t MediaCodecSource::onStart(MetaData *params) {
+-    if (mStopping) {
+-        ALOGE("Failed to start while we're stopping");
+-        return INVALID_OPERATION;
+-    }
+-
+-    if (mStarted) {
+-        ALOGI("MediaCodecSource (%s) resuming", mIsVideo ? "video" : "audio");
+-        if (mFlags & FLAG_USE_SURFACE_INPUT) {
+-            resume();
+-        } else {
+-            CHECK(mPuller != NULL);
+-            mPuller->resume();
+-        }
+-        return OK;
+-    }
+-
+-    ALOGI("MediaCodecSource (%s) starting", mIsVideo ? "video" : "audio");
+-
+-    status_t err = OK;
+-
+-    if (mFlags & FLAG_USE_SURFACE_INPUT) {
+-        int64_t startTimeUs;
+-        if (!params || !params->findInt64(kKeyTime, &startTimeUs)) {
+-            startTimeUs = -1ll;
+-        }
+-        resume(startTimeUs);
+-        scheduleDoMoreWork();
+-    } else {
+-        CHECK(mPuller != NULL);
+-        sp<AMessage> notify = new AMessage(
+-                kWhatPullerNotify, mReflector->id());
+-        err = mPuller->start(params, notify);
+-        if (err != OK) {
+-            mPullerReachedEOS = true;
+-            return err;
+-        }
+-    }
+-
+-    ALOGI("MediaCodecSource (%s) started", mIsVideo ? "video" : "audio");
+-
+-    mStarted = true;
+-    return OK;
+-}
+-
+-void MediaCodecSource::onMessageReceived(const sp<AMessage> &msg) {
+-    switch (msg->what()) {
+-    case kWhatPullerNotify:
+-    {
+-        MediaBuffer *mbuf;
+-        CHECK(msg->findPointer("accessUnit", (void**)&mbuf));
+-
+-        if (mbuf == NULL) {
+-            ALOGI("puller (%s) reached EOS",
+-                    mIsVideo ? "video" : "audio");
+-            mPullerReachedEOS = true;
+-        }
+-
+-        if (mEncoder == NULL) {
+-            ALOGV("got msg '%s' after encoder shutdown.",
+-                  msg->debugString().c_str());
+-
+-            if (mbuf != NULL) {
+-                mbuf->release();
+-            } else {
+-                signalEOS();
+-            }
+-            break;
+-        }
+-
+-        mInputBufferQueue.push_back(mbuf);
+-
+-        feedEncoderInputBuffers();
+-        scheduleDoMoreWork();
+-
+-        break;
+-    }
+-    case kWhatEncoderActivity:
+-    {
+-        mDoMoreWorkPending = false;
+-
+-        if (mEncoder == NULL) {
+-            break;
+-        }
+-
+-        status_t err = doMoreWork();
+-
+-        if (err == OK) {
+-            scheduleDoMoreWork();
+-        } else {
+-            // reached EOS, or error
+-            signalEOS(err);
+-        }
+-
+-        break;
+-    }
+-    case kWhatStart:
+-    {
+-        uint32_t replyID;
+-        CHECK(msg->senderAwaitsResponse(&replyID));
+-
+-        sp<RefBase> obj;
+-        CHECK(msg->findObject("meta", &obj));
+-        MetaData *params = static_cast<MetaData *>(obj.get());
+-
+-        sp<AMessage> response = new AMessage;
+-        response->setInt32("err", onStart(params));
+-        response->postReply(replyID);
+-        break;
+-    }
+-    case kWhatStop:
+-    {
+-        ALOGI("MediaCodecSource (%s) stopping", mIsVideo ? "video" : "audio");
+-
+-        uint32_t replyID;
+-        CHECK(msg->senderAwaitsResponse(&replyID));
+-
+-        if (reachedEOS()) {
+-            // if we already reached EOS, reply and return now
+-            ALOGI("MediaCodecSource (%s) already stopped",
+-                    mIsVideo ? "video" : "audio");
+-            (new AMessage)->postReply(replyID);
+-            break;
+-        }
+-
+-        mStopReplyIDQueue.push_back(replyID);
+-        if (mStopping) {
+-            // nothing to do if we're already stopping, reply will be posted
+-            // to all when we're stopped.
+-            break;
+-        }
+-
+-        mStopping = true;
+-
+-        // if using surface, signal source EOS and wait for EOS to come back.
+-        // otherwise, release encoder and post EOS if haven't done already
+-        if (mFlags & FLAG_USE_SURFACE_INPUT) {
+-            mEncoder->signalEndOfInputStream();
+-        } else {
+-            CHECK(mPuller != NULL);
+-            mPuller->stopAsync();
+-            signalEOS();
+-        }
+-        break;
+-    }
+-    case kWhatPause:
+-    {
+-        if (mFlags && FLAG_USE_SURFACE_INPUT) {
+-            suspend();
+-        } else {
+-            CHECK(mPuller != NULL);
+-            mPuller->pause();
+-        }
+-        break;
+-    }
+-    default:
+-        TRESPASS();
+-    }
+-}
+-
+-} // namespace android
+diff --git a/media/libstagefright/omx/GraphicBufferSource.cpp b/media/libstagefright/omx/GraphicBufferSource.cpp
+index 34149c5..ca5fb6e 100644
+--- a/media/libstagefright/omx/GraphicBufferSource.cpp
++++ b/media/libstagefright/omx/GraphicBufferSource.cpp
+@@ -49,8 +49,6 @@ GraphicBufferSource::GraphicBufferSource(OMXNodeInstance* nodeInstance,
+     mMaxTimestampGapUs(-1ll),
+     mPrevOriginalTimeUs(-1ll),
+     mPrevModifiedTimeUs(-1ll),
+-    mSkipFramesBeforeNs(-1ll),
+-    mRepeatAfterUs(-1ll),
+     mRepeatLastFrameGeneration(0),
+     mRepeatLastFrameTimestamp(-1ll),
+     mLatestSubmittedBufferId(-1),
+@@ -434,18 +432,7 @@ bool GraphicBufferSource::fillCodecBuffer_l() {
+         mBufferSlot[item.mBuf] = item.mGraphicBuffer;
+     }
+ 
+-    err = UNKNOWN_ERROR;
+-
+-    // only submit sample if start time is unspecified, or sample
+-    // is queued after the specified start time
+-    if (mSkipFramesBeforeNs < 0ll || item.mTimestamp >= mSkipFramesBeforeNs) {
+-        // if start time is set, offset time stamp by start time
+-        if (mSkipFramesBeforeNs > 0) {
+-            item.mTimestamp -= mSkipFramesBeforeNs;
+-        }
+-        err = submitBuffer_l(item, cbi);
+-    }
+-
++    err = submitBuffer_l(item, cbi);
+     if (err != OK) {
+         ALOGV("submitBuffer_l failed, releasing bq buf %d", item.mBuf);
+         mConsumer->releaseBuffer(item.mBuf, item.mFrameNumber,
+@@ -810,14 +797,6 @@ status_t GraphicBufferSource::setMaxTimestampGapUs(int64_t maxGapUs) {
+ 
+     return OK;
+ }
+-
+-void GraphicBufferSource::setSkipFramesBeforeUs(int64_t skipFramesBeforeUs) {
+-    Mutex::Autolock autoLock(mMutex);
+-
+-    mSkipFramesBeforeNs =
+-            (skipFramesBeforeUs > 0) ? (skipFramesBeforeUs * 1000) : -1ll;
+-}
+-
+ void GraphicBufferSource::onMessageReceived(const sp<AMessage> &msg) {
+     switch (msg->what()) {
+         case kWhatRepeatLastFrame:
+diff --git a/media/libstagefright/omx/GraphicBufferSource.h b/media/libstagefright/omx/GraphicBufferSource.h
+index 7509a80..e567e39 100644
+--- a/media/libstagefright/omx/GraphicBufferSource.h
++++ b/media/libstagefright/omx/GraphicBufferSource.h
+@@ -119,10 +119,6 @@ public:
+     // of suspension on input.
+     status_t setMaxTimestampGapUs(int64_t maxGapUs);
+ 
+-    // Sets the start time us (in system time), samples before which should
+-    // be dropped and not submitted to encoder
+-    void setSkipFramesBeforeUs(int64_t startTimeUs);
+-
+ protected:
+     // BufferQueue::ConsumerListener interface, called when a new frame of
+     // data is available.  If we're executing and a codec buffer is
+@@ -236,17 +232,16 @@ private:
+     enum {
+         kRepeatLastFrameCount = 10,
+     };
++    int64_t mRepeatAfterUs;
++    int64_t mMaxTimestampGapUs;
+ 
+     KeyedVector<int64_t, int64_t> mOriginalTimeUs;
+-    int64_t mMaxTimestampGapUs;
+     int64_t mPrevOriginalTimeUs;
+     int64_t mPrevModifiedTimeUs;
+-    int64_t mSkipFramesBeforeNs;
+ 
+     sp<ALooper> mLooper;
+     sp<AHandlerReflector<GraphicBufferSource> > mReflector;
+ 
+-    int64_t mRepeatAfterUs;
+     int32_t mRepeatLastFrameGeneration;
+     int64_t mRepeatLastFrameTimestamp;
+     int32_t mRepeatLastFrameCount;
+diff --git a/media/libstagefright/omx/OMXNodeInstance.cpp b/media/libstagefright/omx/OMXNodeInstance.cpp
+index 34bb1a9..c121d89 100644
+--- a/media/libstagefright/omx/OMXNodeInstance.cpp
++++ b/media/libstagefright/omx/OMXNodeInstance.cpp
+@@ -933,7 +933,6 @@ status_t OMXNodeInstance::setInternalOption(
+         case IOMX::INTERNAL_OPTION_SUSPEND:
+         case IOMX::INTERNAL_OPTION_REPEAT_PREVIOUS_FRAME_DELAY:
+         case IOMX::INTERNAL_OPTION_MAX_TIMESTAMP_GAP:
+-        case IOMX::INTERNAL_OPTION_START_TIME:
+         {
+             const sp<GraphicBufferSource> &bufferSource =
+                 getGraphicBufferSource();
+@@ -958,8 +957,7 @@ status_t OMXNodeInstance::setInternalOption(
+                 int64_t delayUs = *(int64_t *)data;
+ 
+                 return bufferSource->setRepeatPreviousFrameDelayUs(delayUs);
+-            } else if (type ==
+-                    IOMX::INTERNAL_OPTION_MAX_TIMESTAMP_GAP){
++            } else {
+                 if (size != sizeof(int64_t)) {
+                     return INVALID_OPERATION;
+                 }
+@@ -967,14 +965,6 @@ status_t OMXNodeInstance::setInternalOption(
+                 int64_t maxGapUs = *(int64_t *)data;
+ 
+                 return bufferSource->setMaxTimestampGapUs(maxGapUs);
+-            } else { // IOMX::INTERNAL_OPTION_START_TIME
+-                if (size != sizeof(int64_t)) {
+-                    return INVALID_OPERATION;
+-                }
+-
+-                int64_t skipFramesBeforeUs = *(int64_t *)data;
+-
+-                bufferSource->setSkipFramesBeforeUs(skipFramesBeforeUs);
+             }
+ 
+             return OK;
+diff --git a/media/libstagefright/tests/SurfaceMediaSource_test.cpp b/media/libstagefright/tests/SurfaceMediaSource_test.cpp
+index fd889f9..6778a47 100644
+--- a/media/libstagefright/tests/SurfaceMediaSource_test.cpp
++++ b/media/libstagefright/tests/SurfaceMediaSource_test.cpp
+@@ -744,8 +744,9 @@ TEST_F(SurfaceMediaSourceTest, DISABLED_EncodingFromCpuYV12BufferNpotWriteMediaS
+     CHECK(fd >= 0);
+ 
+     sp<MediaRecorder> mr = SurfaceMediaSourceGLTest::setUpMediaRecorder(fd,
+-            VIDEO_SOURCE_SURFACE, OUTPUT_FORMAT_MPEG_4, VIDEO_ENCODER_H264,
+-            mYuvTexWidth, mYuvTexHeight, 30);
++            VIDEO_SOURCE_GRALLOC_BUFFER,
++            OUTPUT_FORMAT_MPEG_4, VIDEO_ENCODER_H264, mYuvTexWidth,
++            mYuvTexHeight, 30);
+     // get the reference to the surfacemediasource living in
+     // mediaserver that is created by stagefrightrecorder
+     sp<IGraphicBufferProducer> iST = mr->querySurfaceMediaSourceFromMediaServer();
+@@ -877,7 +878,7 @@ TEST_F(SurfaceMediaSourceGLTest, EncodingFromGLRgbaSameImageEachBufNpotWrite) {
+     }
+     CHECK(fd >= 0);
+ 
+-    sp<MediaRecorder> mr = setUpMediaRecorder(fd, VIDEO_SOURCE_SURFACE,
++    sp<MediaRecorder> mr = setUpMediaRecorder(fd, VIDEO_SOURCE_GRALLOC_BUFFER,
+             OUTPUT_FORMAT_MPEG_4, VIDEO_ENCODER_H264, mYuvTexWidth, mYuvTexHeight, 30);
+ 
+     // get the reference to the surfacemediasource living in
+@@ -920,7 +921,7 @@ TEST_F(SurfaceMediaSourceGLTest, EncodingFromGLRgbaDiffImageEachBufNpotWrite) {
+     }
+     CHECK(fd >= 0);
+ 
+-    sp<MediaRecorder> mr = setUpMediaRecorder(fd, VIDEO_SOURCE_SURFACE,
++    sp<MediaRecorder> mr = setUpMediaRecorder(fd, VIDEO_SOURCE_GRALLOC_BUFFER,
+             OUTPUT_FORMAT_MPEG_4, VIDEO_ENCODER_H264, mYuvTexWidth, mYuvTexHeight, 30);
+ 
+     // get the reference to the surfacemediasource living in
+-- 
+2.5.0
+

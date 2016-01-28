@@ -1,0 +1,29 @@
+From 38e107157e8420e71c9eb292b077a002b25a6f9a Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Thu, 28 Jan 2016 08:51:48 +0700
+Subject: [PATCH 14/25] 0010-aapt-silence-these-warnings.patch
+
+Change-Id: I5f2888dc0a031b2aef5abc67fb4f06fe2d0d9392
+---
+ tools/aapt/Resource.cpp | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/tools/aapt/Resource.cpp b/tools/aapt/Resource.cpp
+index a4c9dab..e842e0b 100644
+--- a/tools/aapt/Resource.cpp
++++ b/tools/aapt/Resource.cpp
+@@ -704,9 +704,11 @@ bool addTagAttribute(const sp<XMLNode>& node, const char* ns8,
+             return false;
+         }
+ 
++#ifdef SHOW_MANIFEST_WARNING
+         fprintf(stderr, "Warning: AndroidManifest.xml already defines %s (in %s);"
+                         " using existing value in manifest.\n",
+                 String8(attr).string(), String8(ns).string());
++#endif
+ 
+         // don't stop the build.
+         return true;
+-- 
+2.5.0
+

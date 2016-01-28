@@ -1,0 +1,31 @@
+From a8ba70b76e22939826f2f9ce5c8bf7e5e7fb32ea Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Thu, 28 Jan 2016 08:51:45 +0700
+Subject: [PATCH 06/25] 
+ 0003-libhwui-Set-fall-back-layer-size-for-zero-size-reque.patch
+
+Change-Id: I9245a61041b693d270849d8b7fee0d3afcb64757
+---
+ libs/hwui/LayerRenderer.cpp | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/libs/hwui/LayerRenderer.cpp b/libs/hwui/LayerRenderer.cpp
+index 103c843..3d4c76f 100644
+--- a/libs/hwui/LayerRenderer.cpp
++++ b/libs/hwui/LayerRenderer.cpp
+@@ -195,6 +195,12 @@ Layer* LayerRenderer::createRenderLayer(RenderState& renderState, uint32_t width
+         return NULL;
+     }
+ 
++    if (width == 0 && height == 0) {
++        ALOGW("Trying to obtain a zero-size layer, setting fall-back size 512x768");
++        width = 512;
++        height = 768;
++    }
++
+     caches.activeTexture(0);
+     Layer* layer = caches.layerCache.get(renderState, width, height);
+     if (!layer) {
+-- 
+2.5.0
+

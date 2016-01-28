@@ -1,0 +1,29 @@
+From c4785d602f7bb214a1d82fda15ed0572b5d57686 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Thu, 28 Jan 2016 12:17:04 +0700
+Subject: [PATCH 38/58] Revert "NuPlayerDecoder: release MediaBuffers when
+ decoder is deleted."
+
+This reverts commit 4923cee4fb3b29538d8f46bceeea7d5128242a71.
+---
+ media/libmediaplayerservice/nuplayer/NuPlayerDecoder.cpp | 4 ----
+ 1 file changed, 4 deletions(-)
+
+diff --git a/media/libmediaplayerservice/nuplayer/NuPlayerDecoder.cpp b/media/libmediaplayerservice/nuplayer/NuPlayerDecoder.cpp
+index 1b1b1c8..cdb860c 100644
+--- a/media/libmediaplayerservice/nuplayer/NuPlayerDecoder.cpp
++++ b/media/libmediaplayerservice/nuplayer/NuPlayerDecoder.cpp
+@@ -53,10 +53,6 @@ NuPlayer::Decoder::Decoder(
+ }
+ 
+ NuPlayer::Decoder::~Decoder() {
+-    mDecoderLooper->unregisterHandler(id());
+-    mDecoderLooper->stop();
+-
+-    releaseAndResetMediaBuffers();
+ }
+ 
+ static
+-- 
+2.5.0
+

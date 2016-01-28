@@ -1,0 +1,123 @@
+From 9db3e7836fa0899772147d01ef97850903a75181 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Thu, 28 Jan 2016 12:14:09 +0700
+Subject: [PATCH 25/58] Revert "mediaplayer: limit scheduling video frames into
+ the future"
+
+This reverts commit d5923409bbcbb22954a92c2b497ef4492d7cb6a5.
+---
+ .../nuplayer/NuPlayerRenderer.cpp                  | 39 +---------------------
+ .../nuplayer/NuPlayerRenderer.h                    |  5 ---
+ 2 files changed, 1 insertion(+), 43 deletions(-)
+
+diff --git a/media/libmediaplayerservice/nuplayer/NuPlayerRenderer.cpp b/media/libmediaplayerservice/nuplayer/NuPlayerRenderer.cpp
+index 638d9bc..46a2590 100644
+--- a/media/libmediaplayerservice/nuplayer/NuPlayerRenderer.cpp
++++ b/media/libmediaplayerservice/nuplayer/NuPlayerRenderer.cpp
+@@ -82,9 +82,7 @@ NuPlayer::Renderer::Renderer(
+       mAudioRenderingStartGeneration(0),
+       mAudioOffloadPauseTimeoutGeneration(0),
+       mAudioOffloadTornDown(false),
+-      mCurrentOffloadInfo(AUDIO_INFO_INITIALIZER),
+-      mTotalBuffersQueued(0),
+-      mLastAudioBufferDrained(0) {
++      mCurrentOffloadInfo(AUDIO_INFO_INITIALIZER) {
+     readProperties();
+ }
+ 
+@@ -363,19 +361,6 @@ void NuPlayer::Renderer::onMessageReceived(const sp<AMessage> &msg) {
+             break;
+         }
+ 
+-        case kWhatPostDrainVideoQueue:
+-        {
+-            int32_t generation;
+-            CHECK(msg->findInt32("generation", &generation));
+-            if (generation != mVideoQueueGeneration) {
+-                break;
+-            }
+-
+-            mDrainVideoQueuePending = false;
+-            postDrainVideoQueue();
+-            break;
+-        }
+-
+         case kWhatQueueBuffer:
+         {
+             onQueueBuffer(msg);
+@@ -595,8 +580,6 @@ bool NuPlayer::Renderer::onDrainAudioQueue() {
+     while (numBytesAvailableToWrite > 0 && !mAudioQueue.empty()) {
+         QueueEntry *entry = &*mAudioQueue.begin();
+ 
+-        mLastAudioBufferDrained = entry->mBufferOrdinal;
+-
+         if (entry->mBuffer == NULL) {
+             // EOS
+             int64_t postEOSDelayUs = 0;
+@@ -733,25 +716,6 @@ void NuPlayer::Renderer::postDrainVideoQueue() {
+         } else {
+             realTimeUs = getRealTimeUs(mediaTimeUs, nowUs);
+         }
+-
+-        // Heuristics to handle situation when media time changed without a
+-        // discontinuity. If we have not drained an audio buffer that was
+-        // received after this buffer, repost in 10 msec. Otherwise repost
+-        // in 500 msec.
+-        delayUs = realTimeUs - nowUs;
+-        if (delayUs > 500000) {
+-            int64_t postDelayUs = 500000;
+-            if (mHasAudio && (mLastAudioBufferDrained - entry.mBufferOrdinal) <= 0) {
+-                postDelayUs = 10000;
+-            }
+-            msg->setWhat(kWhatPostDrainVideoQueue);
+-            msg->post(postDelayUs);
+-            mVideoScheduler->restart();
+-            ALOGI("possible video time jump of %dms, retrying in %dms",
+-                    (int)(delayUs / 1000), (int)(postDelayUs / 1000));
+-            mDrainVideoQueuePending = true;
+-            return;
+-        }
+     }
+ 
+     realTimeUs = mVideoScheduler->schedule(realTimeUs * 1000) / 1000;
+@@ -891,7 +855,6 @@ void NuPlayer::Renderer::onQueueBuffer(const sp<AMessage> &msg) {
+     entry.mNotifyConsumed = notifyConsumed;
+     entry.mOffset = 0;
+     entry.mFinalResult = OK;
+-    entry.mBufferOrdinal = ++mTotalBuffersQueued;
+ 
+     if (audio) {
+         Mutex::Autolock autoLock(mLock);
+diff --git a/media/libmediaplayerservice/nuplayer/NuPlayerRenderer.h b/media/libmediaplayerservice/nuplayer/NuPlayerRenderer.h
+index b15a266..7079f85 100644
+--- a/media/libmediaplayerservice/nuplayer/NuPlayerRenderer.h
++++ b/media/libmediaplayerservice/nuplayer/NuPlayerRenderer.h
+@@ -101,7 +101,6 @@ private:
+     enum {
+         kWhatDrainAudioQueue     = 'draA',
+         kWhatDrainVideoQueue     = 'draV',
+-        kWhatPostDrainVideoQueue = 'pDVQ',
+         kWhatQueueBuffer         = 'queB',
+         kWhatQueueEOS            = 'qEOS',
+         kWhatFlush               = 'flus',
+@@ -120,7 +119,6 @@ private:
+         sp<AMessage> mNotifyConsumed;
+         size_t mOffset;
+         status_t mFinalResult;
+-        int32_t mBufferOrdinal;
+     };
+ 
+     static const int64_t kMinPositionUpdateDelayUs;
+@@ -171,9 +169,6 @@ private:
+     bool mAudioOffloadTornDown;
+     audio_offload_info_t mCurrentOffloadInfo;
+ 
+-    int32_t mTotalBuffersQueued;
+-    int32_t mLastAudioBufferDrained;
+-
+     size_t fillAudioBuffer(void *buffer, size_t size);
+ 
+     bool onDrainAudioQueue();
+-- 
+2.5.0
+

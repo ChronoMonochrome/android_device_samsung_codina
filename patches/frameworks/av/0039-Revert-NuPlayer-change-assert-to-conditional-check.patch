@@ -1,0 +1,55 @@
+From 16b533b435c48c73be15b8bb07030f12e8bf5d3e Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Thu, 28 Jan 2016 12:17:05 +0700
+Subject: [PATCH 39/58] Revert "NuPlayer: change assert to conditional check."
+
+This reverts commit 7e9f7f7a9fb6c5d93fc9163e32936f3ea284caad.
+---
+ media/libmediaplayerservice/nuplayer/NuPlayer.cpp | 26 ++++++-----------------
+ 1 file changed, 6 insertions(+), 20 deletions(-)
+
+diff --git a/media/libmediaplayerservice/nuplayer/NuPlayer.cpp b/media/libmediaplayerservice/nuplayer/NuPlayer.cpp
+index ceedb40..e9cbd5d 100644
+--- a/media/libmediaplayerservice/nuplayer/NuPlayer.cpp
++++ b/media/libmediaplayerservice/nuplayer/NuPlayer.cpp
+@@ -992,31 +992,17 @@ void NuPlayer::onMessageReceived(const sp<AMessage> &msg) {
+ 
+         case kWhatPause:
+         {
+-            if (mSource != NULL) {
+-                mSource->pause();
+-            } else {
+-                ALOGW("pause called when source is gone or not set");
+-            }
+-            if (mRenderer != NULL) {
+-                mRenderer->pause();
+-            } else {
+-                ALOGW("pause called when renderer is gone or not set");
+-            }
++            CHECK(mRenderer != NULL);
++            mSource->pause();
++            mRenderer->pause();
+             break;
+         }
+ 
+         case kWhatResume:
+         {
+-            if (mSource != NULL) {
+-                mSource->resume();
+-            } else {
+-                ALOGW("resume called when source is gone or not set");
+-            }
+-            if (mRenderer != NULL) {
+-                mRenderer->resume();
+-            } else {
+-                ALOGW("resume called when renderer is gone or not set");
+-            }
++            CHECK(mRenderer != NULL);
++            mSource->resume();
++            mRenderer->resume();
+             break;
+         }
+ 
+-- 
+2.5.0
+

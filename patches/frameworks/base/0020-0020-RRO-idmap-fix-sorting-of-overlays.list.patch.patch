@@ -1,0 +1,27 @@
+From b0bd3d4d544606fbe08a23afa31735aca93c7582 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Thu, 28 Jan 2016 08:51:53 +0700
+Subject: [PATCH 20/25] 0020-RRO-idmap-fix-sorting-of-overlays.list.patch
+
+Change-Id: I8eec29e95877173522fcbb685c433d11a12dc25e
+---
+ cmds/idmap/scan.cpp | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/cmds/idmap/scan.cpp b/cmds/idmap/scan.cpp
+index 1153f38..2deb922 100644
+--- a/cmds/idmap/scan.cpp
++++ b/cmds/idmap/scan.cpp
+@@ -23,8 +23,7 @@ namespace {
+ 
+         bool operator<(Overlay const& rhs) const
+         {
+-            // Note: order is reversed by design
+-            return rhs.priority < priority;
++            return rhs.priority > priority;
+         }
+ 
+         String8 apk_path;
+-- 
+2.5.0
+

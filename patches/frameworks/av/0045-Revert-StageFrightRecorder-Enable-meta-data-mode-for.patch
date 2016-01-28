@@ -1,0 +1,26 @@
+From 048787dbb321e97efdac3a7a1bf7441a6d8f6896 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Thu, 28 Jan 2016 12:18:34 +0700
+Subject: [PATCH 45/58] Revert "StageFrightRecorder: Enable meta-data mode for
+ VP8 hardware encoder."
+
+This reverts commit bc78bd02f0b823b18e3a4f8b8f862780b51994c0.
+---
+ media/libmediaplayerservice/StagefrightRecorder.cpp | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/media/libmediaplayerservice/StagefrightRecorder.cpp b/media/libmediaplayerservice/StagefrightRecorder.cpp
+index 4634b8f..98d234c 100644
+--- a/media/libmediaplayerservice/StagefrightRecorder.cpp
++++ b/media/libmediaplayerservice/StagefrightRecorder.cpp
+@@ -1172,7 +1172,6 @@ status_t StagefrightRecorder::checkVideoEncoderCapabilities(
+             client.interface(),
+             (mVideoEncoder == VIDEO_ENCODER_H263 ? MEDIA_MIMETYPE_VIDEO_H263 :
+              mVideoEncoder == VIDEO_ENCODER_MPEG_4_SP ? MEDIA_MIMETYPE_VIDEO_MPEG4 :
+-             mVideoEncoder == VIDEO_ENCODER_VP8 ? MEDIA_MIMETYPE_VIDEO_VP8 :
+              mVideoEncoder == VIDEO_ENCODER_H264 ? MEDIA_MIMETYPE_VIDEO_AVC : ""),
+             false /* decoder */, true /* hwCodec */, &codecs);
+     *supportsCameraSourceMetaDataMode = codecs.size() > 0;
+-- 
+2.5.0
+

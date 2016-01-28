@@ -1,0 +1,32 @@
+From 7ef8fff5e56e7ac1aec491933e51d9e5442422f0 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Thu, 28 Jan 2016 08:51:43 +0700
+Subject: [PATCH 12/58] 0013-av-Skip-S-W-codec-configuration.patch
+
+Change-Id: I2966ee5919b67421ba60fa0463f3e43ed36f673e
+---
+ media/libstagefright/ACodec.cpp | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/media/libstagefright/ACodec.cpp b/media/libstagefright/ACodec.cpp
+index 5206ab5..5790c93 100644
+--- a/media/libstagefright/ACodec.cpp
++++ b/media/libstagefright/ACodec.cpp
+@@ -1178,6 +1178,14 @@ status_t ACodec::configureCodec(
+     sp<AMessage> outputFormat = new AMessage();
+ 
+     mIsEncoder = encoder;
++    /* Meticulus:
++     * Software codecs don't require configuration? Not sure
++     * but skipping configuration for them seems to work.
++     */
++    if(strncmp("OMX.google.h264", mComponentName.c_str(), 15) == 0) {
++        ALOGI("Meticulus: Soft codec %s detected, skipping configureCodec\n", mComponentName.c_str());
++        return OK;
++    }
+ 
+     status_t err = setComponentRole(encoder /* isEncoder */, mime);
+ 
+-- 
+2.5.0
+
