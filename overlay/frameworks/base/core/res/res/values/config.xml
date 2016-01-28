@@ -151,7 +151,7 @@
      <integer name="config_longPressOnHomeBehavior">1</integer>
  
      <!-- Set Home Button Wake Support as a persistent behaviour. -->
-     <bool name="config_persistHomeWakeSupport">true</bool>
+       <!--     <bool name="config_persistHomeWakeSupport">true</bool>-->
  
 
     <!-- Control the behavior when the user double-taps the home button.
@@ -167,7 +167,7 @@
     <integer name="config_doubleTapOnHomeBehavior">3</integer>
     
     <!-- Boolean indicating whether we want button brightness support -->
-    <bool name="config_button_brightness_support">true</bool>
+   <!-- <bool name="config_button_brightness_support">true</bool>-->
 
     <!-- Screen brightness used to dim the screen when the user activity
          timeout expires.  May be less than the minimum allowed brightness setting
