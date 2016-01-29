@@ -2,7 +2,7 @@ LOCAL_PATH=../../../..
 
 PATCHES="bionic frameworks/av frameworks/base/ frameworks/native/ frameworks/opt/net/wifi/ \
         hardware/libhardware \
-        frameworks/opt/telephony/ libcore  packages/apps/Bluetooth/ packages/apps/OmniGears packages/apps/Settings/ \
+        frameworks/opt/telephony/ libcore  packages/apps/Bluetooth/ packages/apps/Settings/ \
         packages/services/Telecomm  packages/services/Telephony  system/core system/security"
 
 export CL_RED="\033[31m"
