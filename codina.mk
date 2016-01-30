@@ -127,7 +127,7 @@ PRODUCT_COPY_FILES += \
 # libaudioflinger prebuilt
 PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/prebuilt/libaudioflinger.so:system/lib/libaudioflinger.so \
-    $(LOCAL_PATH)/prebuilt/netd:system/bin/netd
+#    $(LOCAL_PATH)/prebuilt/netd:system/bin/netd
 
 # Misc Packages
 PRODUCT_PACKAGES += \
