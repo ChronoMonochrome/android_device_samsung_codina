@@ -1,11 +1,9 @@
 LOCAL_PATH=../../../..
 
-if [ "$PATCHES" == "" ] ; then
-        PATCHES="bionic build frameworks/av frameworks/base/ frameworks/native/ frameworks/opt/net/wifi/ \
+PATCHES="bionic build frameworks/av frameworks/base/ frameworks/native/ frameworks/opt/net/wifi/ \
         hardware/libhardware \
         frameworks/opt/telephony/ libcore $(find packages/apps/ -type d) \
         packages/services/Telecomm  packages/services/Telephony  system/core system/security"
-fi
 
 export CL_RED="\033[31m"
 export CL_GRN="\033[32m"
@@ -44,6 +42,7 @@ apply() {
 	 git reset --hard
          #echo -e $CL_RED$l$CL_RST | tr '.' '\n'
     fi;
+    for i in $(find . -name "*.rej" -o -name "*.orig"); do rm $i; done
 }
 
 apply_all() {
