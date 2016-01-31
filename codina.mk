@@ -125,9 +125,9 @@ PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/prebuilt/charger/images/battery_fail.png:root/res/images/charger/battery_fail.png \
 
 # libaudioflinger prebuilt
-#PRODUCT_COPY_FILES += \
-#    $(LOCAL_PATH)/prebuilt/libaudioflinger.so:system/lib/libaudioflinger.so \
-#    $(LOCAL_PATH)/prebuilt/netd:system/bin/netd
+PRODUCT_COPY_FILES += \
+    $(LOCAL_PATH)/prebuilt/libaudioflinger.so:system/lib/libaudioflinger.so \
+    $(LOCAL_PATH)/prebuilt/libaudioresampler.so:system/lib/libaudioresampler.so \
 
 # Misc Packages
 PRODUCT_PACKAGES += \
