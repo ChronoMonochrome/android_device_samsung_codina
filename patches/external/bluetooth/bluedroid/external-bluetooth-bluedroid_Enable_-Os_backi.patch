@@ -1,0 +1,13 @@
+diff --git a/Android.mk b/Android.mk
+index 200f100..bb89d10 100644
+--- a/Android.mk
++++ b/Android.mk
+@@ -18,6 +18,8 @@ ifneq ($(BOARD_BLUETOOTH_BDROID_HCILP_INCLUDED),)
+   bdroid_CFLAGS += -DHCILP_INCLUDED=$(BOARD_BLUETOOTH_BDROID_HCILP_INCLUDED)
+ endif
+ 
++bdroid_CFLAGS += -Os
++
+ include $(call all-subdir-makefiles)
+ 
+ # Cleanup our locals

@@ -1,0 +1,28 @@
+From 1e619f596e316370ddaf0dcaa87af84084cc1c87 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Sun, 31 Jan 2016 21:53:40 +0700
+Subject: [PATCH] FingerprintManager fixup
+
+Change-Id: Ifd7022ab18630c47041d1990c8eea513a8378f54
+---
+ core/jni/android_server_FingerprintManager.cpp | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/core/jni/android_server_FingerprintManager.cpp b/core/jni/android_server_FingerprintManager.cpp
+index b174d1b..0b2a895 100644
+--- a/core/jni/android_server_FingerprintManager.cpp
++++ b/core/jni/android_server_FingerprintManager.cpp
+@@ -116,8 +116,8 @@ static jint nativeEnroll(JNIEnv* env, jobject clazz, jint timeout) {
+ }
+ 
+ static jint nativeEnrollCancel(JNIEnv* env, jobject clazz) {
+-    ALOG(LOG_VERBOSE, LOG_TAG, "nativeEnrollCancel()\n");
+-    int ret = gContext.device->enroll_cancel(gContext.device);
++    ALOG(LOG_VERBOSE, LOG_TAG, "nativeCancel()\n");
++    int ret = gContext.device->cancel(gContext.device);
+     return reinterpret_cast<jint>(ret);
+ }
+ 
+-- 
+2.5.0
+
