@@ -1,0 +1,44 @@
+ SF: Reduce resync samples without present
+
+Reduces the number of resync samples that DispSync will attempt to
+collect without an intervening present from 12 to 4. The former value
+was causing excessive power draw for some vendors' implementations, and
+reducing it doesn't seem to harm anything.
+
+ libgui: Only allow one return from useFenceSync
+
+An #ifdef was causing multiple returns in this function, which was
+triggering an unreachable code error on some build targets. This
+adds an #else to ensure that only one return is exposed in any given
+build.
+
+diff --git a/services/surfaceflinger/DispSync.h b/services/surfaceflinger/DispSync.h
+index 5cd8303..14def01 100644
+--- a/services/surfaceflinger/DispSync.h
++++ b/services/surfaceflinger/DispSync.h
+@@ -140,7 +140,7 @@ class DispSync {
+     enum { MAX_RESYNC_SAMPLES = 32 };
+     enum { MIN_RESYNC_SAMPLES_FOR_UPDATE = 3 };
+     enum { NUM_PRESENT_SAMPLES = 8 };
+-    enum { MAX_RESYNC_SAMPLES_WITHOUT_PRESENT = 4 };
++    enum { MAX_RESYNC_SAMPLES_WITHOUT_PRESENT = 4 };
+ 
+     // mPeriod is the computed period of the modeled vsync events in
+     // nanoseconds.
+diff --git a/libs/gui/SyncFeatures.cpp b/libs/gui/SyncFeatures.cpp
+index 5cd8202..14def01 100644
+--- a/libs/gui/SyncFeatures.cpp
++++ b/libs/gui/SyncFeatures.cpp
+@@ -78,10 +78,11 @@ bool SyncFeatures::useFenceSync() const {
+     // on some devices it's better to not use EGL_KHR_fence_sync
+     // even if they have it
+     return false;
+-#endif
++#else
+     // currently we shall only attempt to use EGL_KHR_fence_sync if
+     // USE_FENCE_SYNC is set in our makefile
+     return !mHasNativeFenceSync && mHasFenceSync;
++#endif
+ }
+ bool SyncFeatures::useWaitSync() const {
+     return (useNativeFenceSync() || useFenceSync()) && mHasWaitSync;

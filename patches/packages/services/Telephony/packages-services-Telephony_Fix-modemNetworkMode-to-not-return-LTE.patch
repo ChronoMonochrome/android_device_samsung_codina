@@ -1,0 +1,14 @@
+diff --git a/src/com/android/phone/MobileNetworkSettings.java b/src/com/android/phone/MobileNetworkSettings.java
+index 20134ba..6f30d6d 100644
+--- a/src/com/android/phone/MobileNetworkSettings.java
++++ b/src/com/android/phone/MobileNetworkSettings.java
+@@ -944,7 +944,8 @@
+                                     "modemNetworkMode != settingsNetworkMode");
+                         }
+                         setPreferredNetworkSetting(modemNetworkMode);
+-                        settingsNetworkMode = modemNetworkMode;
++			// SamsungU8500RIL falsely reports LTE here, so we instead update modemNetworkMode
++			modemNetworkMode = settingsNetworkMode;
+ 
+                         if (DBG) { log("handleGetPreferredNetworkTypeResponse: if 2: " +
+                                 "settingsNetworkMode = " + settingsNetworkMode);

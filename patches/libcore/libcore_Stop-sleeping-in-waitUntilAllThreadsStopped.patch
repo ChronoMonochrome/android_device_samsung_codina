@@ -1,0 +1,31 @@
+ Stop sleeping in waitUntilAllThreadsStopped spin instead.
+
+We occasionally have to wait for threads to finish
+but 10ms seems too long and is a significant part of
+total time of Zygote fork (up to 15-20%).
+
+It turns out that all Java threads are already stopped
+but we're still waiting for their OS counterparts to finish.
+This shouldn't take much time so we can just spin here.
+
+diff --git a/dalvik/src/main/java/dalvik/system/ZygoteHooks.java b/dalvik/src/main/java/dalvik/system/ZygoteHooks.java
+index de40800..1391772 100644
+--- a/dalvik/src/main/java/dalvik/system/ZygoteHooks.java
++++ b/dalvik/src/main/java/dalvik/system/ZygoteHooks.java
+@@ -68,13 +68,10 @@ private static native void nativePostForkChild(long token, int debugFlags,
+      */
+     private static void waitUntilAllThreadsStopped() {
+         File tasks = new File("/proc/self/task");
++        // All Java daemons are stopped already. We're just waiting for their OS counterparts to
++        // finish as well. This shouldn't take much time so spinning is ok here.
+         while (tasks.list().length > 1) {
+-            try {
+-                // Experimentally, booting and playing about with a stingray, I never saw us
+-                // go round this loop more than once with a 10ms sleep.
+-                Thread.sleep(10);
+-            } catch (InterruptedException ignored) {
+-            }
++          Thread.yield();
+         }
+     }
+ }

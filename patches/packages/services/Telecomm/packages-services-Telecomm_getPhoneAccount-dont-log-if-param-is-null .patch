@@ -1,0 +1,14 @@
+diff --git a/src/com/android/server/telecom/TelecomService.java b/src/com/android/server/telecom/TelecomService.java
+index 1115f80..55b7e89 100644
+--- a/src/com/android/server/telecom/TelecomService.java
++++ b/src/com/android/server/telecom/TelecomService.java
+@@ -275,6 +275,9 @@ public void setUserSelectedOutgoingPhoneAccount(PhoneAccountHandle accountHandle
+ 
+         @Override
+         public PhoneAccount getPhoneAccount(PhoneAccountHandle accountHandle) {
++            if (accountHandle == null) {
++              return null;
++            }
+             try {
+                 if (!isVisibleToCaller(accountHandle)) {
+                     Log.w(this, "%s is not visible for the calling user", accountHandle);

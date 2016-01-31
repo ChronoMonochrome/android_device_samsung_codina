@@ -1,0 +1,30 @@
+diff --git a/src/java/com/android/internal/telephony/dataconnection/DcTracker.java b/src/java/com/android/internal/telephony/dataconnection/DcTracker.java
+index 000dce9..60d02a0 100644
+--- a/src/java/com/android/internal/telephony/dataconnection/DcTracker.java
++++ b/src/java/com/android/internal/telephony/dataconnection/DcTracker.java
+@@ -1510,7 +1510,11 @@ private void tryRestartDataConnections(boolean isCleanupNeeded, String reason) {
+         // TODO: It'd be nice to only do this if the changed entrie(s)
+         // match the current operator.
+         if (DBG) log("tryRestartDataConnections: createAllApnList and cleanUpAllConnections");
+-        createAllApnList();
++        try {
++            createAllApnList();
++        } catch (NullPointerException e) {
++            // Do Nothing
++        }
+         if (isCleanupNeeded) {
+             cleanUpAllConnections(!isDisconnected, reason);
+         }
+@@ -3054,7 +3060,11 @@ public void handleMessage (Message msg) {
+                 // set of apns (example, LTE->1x)
+                 if (onUpdateIcc()) {
+                     log("onUpdateIcc: tryRestartDataConnections " + Phone.REASON_NW_TYPE_CHANGED);
+-                    tryRestartDataConnections(true, Phone.REASON_NW_TYPE_CHANGED);
++                    try {
++                        tryRestartDataConnections(true, Phone.REASON_NW_TYPE_CHANGED);
++                    } catch (NullPointerException e) {
++                        // Do Nothing
++                    }
+                 } else if (isNvSubscription()){
+                     // If cdma subscription source changed to NV or data rat changed to cdma
+                     // (while subscription source was NV) - we need to trigger NV ready

@@ -1,0 +1,51 @@
+diff --git a/media/libstagefright/ACodec.cpp b/media/libstagefright/ACodec.cpp
+index 1ca9a4f..4eab70d 100644
+--- a/media/libstagefright/ACodec.cpp
++++ b/media/libstagefright/ACodec.cpp
+@@ -876,7 +876,11 @@ status_t ACodec::configureOutputBuffersFromNativeWindow(
+     // This check was present in KitKat.
+     if (def.nBufferCountActual < def.nBufferCountMin + *minUndequeuedBuffers) {
+ #endif
++#ifdef STE_HARDWARE
++    for (OMX_U32 extraBuffers = 1; /* condition inside loop */; extraBuffers--) {
++#else
+     for (OMX_U32 extraBuffers = 2 + 1; /* condition inside loop */; extraBuffers--) {
++#endif
+         OMX_U32 newBufferCount =
+             def.nBufferCountMin + *minUndequeuedBuffers + extraBuffers;
+         def.nBufferCountActual = newBufferCount;
+diff --git a/media/libstagefright/OMXCodec.cpp b/media/libstagefright/OMXCodec.cpp
+index d564e60..f635182 100644
+--- a/media/libstagefright/OMXCodec.cpp
++++ b/media/libstagefright/OMXCodec.cpp
+@@ -2448,7 +2448,11 @@ status_t OMXCodec::allocateOutputBuffersFromNativeWindow() {
+     // This check was present in KitKat.
+     if (def.nBufferCountActual < def.nBufferCountMin + minUndequeuedBufs) {
+ #endif
++#ifdef STE_HARDWARE
++    for (OMX_U32 extraBuffers = 1; /* condition inside loop */; extraBuffers--) {
++#else
+     for (OMX_U32 extraBuffers = 2 + 1; /* condition inside loop */; extraBuffers--) {
++#endif
+         OMX_U32 newBufferCount =
+             def.nBufferCountMin + minUndequeuedBufs + extraBuffers;
+         def.nBufferCountActual = newBufferCount;
+diff --git a/media/libstagefright/omx/GraphicBufferSource.cpp b/media/libstagefright/omx/GraphicBufferSource.cpp
+index 44c7edc..b108077 100644
+--- a/media/libstagefright/omx/GraphicBufferSource.cpp
++++ b/media/libstagefright/omx/GraphicBufferSource.cpp
+@@ -269,12 +269,14 @@ void GraphicBufferSource::codecBufferEmptied(OMX_BUFFERHEADERTYPE* header) {
+         } else if (type == kMetadataBufferTypeGraphicBuffer) {
+             GraphicBuffer *buffer;
+             memcpy(&buffer, data + 4, sizeof(buffer));
++#ifndef STE_HARDWARE
+             if (buffer != codecBuffer.mGraphicBuffer.get()) {
+                 // should never happen
+                 ALOGE("codecBufferEmptied: buffer is %p, expected %p",
+                         buffer, codecBuffer.mGraphicBuffer.get());
+                 CHECK(!"codecBufferEmptied: mismatched buffer");
+             }
++#endif
+         }
+     }
+ 
