@@ -1,17 +1,10 @@
 LOCAL_PATH=../../../..
 
-<<<<<<< HEAD:patches/patcher.sh
 PATCHES="art bionic build external/bluetooth/bluedroid external/dhcpcd \
 	frameworks/av frameworks/base/ frameworks/native/ frameworks/opt/net/wifi/ \
         hardware/libhardware \
         frameworks/opt/telephony/ libcore \
         packages/services/Telecomm  packages/services/Telephony  system/core system/security"
-=======
-
-PATCHES="bionic build frameworks/av frameworks/base/ frameworks/native/ frameworks/opt/net/wifi/ \
-	frameworks/opt/telephony/ libcore packages/apps/Bluetooth/ packages/apps/OmniGears packages/apps/Settings/ \
-        packages/services/Telecomm  packages/services/Telephony  system/core"
->>>>>>> parent of 96912a6... Update patches:patches/apply.sh
 
 export CL_RED="\033[31m"
 export CL_GRN="\033[32m"
