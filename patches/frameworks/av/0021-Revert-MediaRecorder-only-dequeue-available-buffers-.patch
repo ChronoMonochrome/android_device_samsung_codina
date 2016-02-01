@@ -1,0 +1,74 @@
+From 116e2b14bfd65c615660e67814304e96483f3f9c Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Thu, 28 Jan 2016 12:12:01 +0700
+Subject: [PATCH 21/58] Revert "MediaRecorder: only dequeue available buffers
+ from MediaCodec"
+
+This reverts commit f2a64852a4a48c5a3d8a08ffcda20d6884586672.
+---
+ include/media/stagefright/MediaCodecSource.h |  2 +-
+ media/libstagefright/MediaCodecSource.cpp    | 19 +++++--------------
+ 2 files changed, 6 insertions(+), 15 deletions(-)
+
+diff --git a/include/media/stagefright/MediaCodecSource.h b/include/media/stagefright/MediaCodecSource.h
+index 3629c8b..e1b2830 100644
+--- a/include/media/stagefright/MediaCodecSource.h
++++ b/include/media/stagefright/MediaCodecSource.h
+@@ -86,7 +86,7 @@ private:
+     void releaseEncoder();
+     status_t feedEncoderInputBuffers();
+     void scheduleDoMoreWork();
+-    status_t doMoreWork(int32_t numInput, int32_t numOutput);
++    status_t doMoreWork();
+     void suspend();
+     void resume(int64_t skipFramesBeforeUs = -1ll);
+     void signalEOS(status_t err = ERROR_END_OF_STREAM);
+diff --git a/media/libstagefright/MediaCodecSource.cpp b/media/libstagefright/MediaCodecSource.cpp
+index 327d3ad..210395e 100644
+--- a/media/libstagefright/MediaCodecSource.cpp
++++ b/media/libstagefright/MediaCodecSource.cpp
+@@ -612,11 +612,11 @@ status_t MediaCodecSource::feedEncoderInputBuffers() {
+     return OK;
+ }
+ 
+-status_t MediaCodecSource::doMoreWork(int32_t numInput, int32_t numOutput) {
+-    status_t err = OK;
++status_t MediaCodecSource::doMoreWork() {
++    status_t err;
+ 
+     if (!(mFlags & FLAG_USE_SURFACE_INPUT)) {
+-        while (numInput-- > 0) {
++        for (;;) {
+             size_t bufferIndex;
+             err = mEncoder->dequeueInputBuffer(&bufferIndex);
+ 
+@@ -630,7 +630,7 @@ status_t MediaCodecSource::doMoreWork(int32_t numInput, int32_t numOutput) {
+         feedEncoderInputBuffers();
+     }
+ 
+-    while (numOutput-- > 0) {
++    for (;;) {
+         size_t bufferIndex;
+         size_t offset;
+         size_t size;
+@@ -802,16 +802,7 @@ void MediaCodecSource::onMessageReceived(const sp<AMessage> &msg) {
+             break;
+         }
+ 
+-        int32_t numInput, numOutput;
+-
+-        if (!msg->findInt32("input-buffers", &numInput)) {
+-            numInput = INT32_MAX;
+-        }
+-        if (!msg->findInt32("output-buffers", &numOutput)) {
+-            numOutput = INT32_MAX;
+-        }
+-
+-        status_t err = doMoreWork(numInput, numOutput);
++        status_t err = doMoreWork();
+ 
+         if (err == OK) {
+             scheduleDoMoreWork();
+-- 
+2.5.0
+

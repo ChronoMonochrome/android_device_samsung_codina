@@ -1,0 +1,121 @@
+From b42119645c1101b5a50f7f4f100f54f3b1197035 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Thu, 28 Jan 2016 12:17:08 +0700
+Subject: [PATCH 42/58] Revert "NuPlayer: use generation to filter out stale
+ message from renderer."
+
+This reverts commit 57568df014f8629ebc5ca8bce9da796dd187401b.
+---
+ media/libmediaplayerservice/nuplayer/NuPlayer.cpp | 26 ++++++-----------------
+ media/libmediaplayerservice/nuplayer/NuPlayer.h   |  1 -
+ 2 files changed, 7 insertions(+), 20 deletions(-)
+
+diff --git a/media/libmediaplayerservice/nuplayer/NuPlayer.cpp b/media/libmediaplayerservice/nuplayer/NuPlayer.cpp
+index b589909..dad480d 100644
+--- a/media/libmediaplayerservice/nuplayer/NuPlayer.cpp
++++ b/media/libmediaplayerservice/nuplayer/NuPlayer.cpp
+@@ -155,7 +155,6 @@ NuPlayer::NuPlayer()
+       mCurrentOffloadInfo(AUDIO_INFO_INITIALIZER),
+       mAudioDecoderGeneration(0),
+       mVideoDecoderGeneration(0),
+-      mRendererGeneration(0),
+       mAudioEOS(false),
+       mVideoEOS(false),
+       mScanSourcesPending(false),
+@@ -634,10 +633,10 @@ void NuPlayer::onMessageReceived(const sp<AMessage> &msg) {
+                 flags |= Renderer::FLAG_OFFLOAD_AUDIO;
+             }
+ 
+-            sp<AMessage> notify = new AMessage(kWhatRendererNotify, id());
+-            ++mRendererGeneration;
+-            notify->setInt32("generation", mRendererGeneration);
+-            mRenderer = new Renderer(mAudioSink, notify, flags);
++            mRenderer = new Renderer(
++                    mAudioSink,
++                    new AMessage(kWhatRendererNotify, id()),
++                    flags);
+ 
+             mRendererLooper = new ALooper;
+             mRendererLooper->setName("NuPlayerRenderer");
+@@ -814,13 +813,11 @@ void NuPlayer::onMessageReceived(const sp<AMessage> &msg) {
+                 ALOGV("%s shutdown completed", audio ? "audio" : "video");
+                 if (audio) {
+                     mAudioDecoder.clear();
+-                    ++mAudioDecoderGeneration;
+ 
+                     CHECK_EQ((int)mFlushingAudio, (int)SHUTTING_DOWN_DECODER);
+                     mFlushingAudio = SHUT_DOWN;
+                 } else {
+                     mVideoDecoder.clear();
+-                    ++mVideoDecoderGeneration;
+ 
+                     CHECK_EQ((int)mFlushingVideo, (int)SHUTTING_DOWN_DECODER);
+                     mFlushingVideo = SHUT_DOWN;
+@@ -838,11 +835,9 @@ void NuPlayer::onMessageReceived(const sp<AMessage> &msg) {
+                 mRenderer->queueEOS(audio, err);
+                 if (audio && mFlushingAudio != NONE) {
+                     mAudioDecoder.clear();
+-                    ++mAudioDecoderGeneration;
+                     mFlushingAudio = SHUT_DOWN;
+                 } else if (!audio && mFlushingVideo != NONE){
+                     mVideoDecoder.clear();
+-                    ++mVideoDecoderGeneration;
+                     mFlushingVideo = SHUT_DOWN;
+                 }
+                 finishFlushIfPossible();
+@@ -862,14 +857,6 @@ void NuPlayer::onMessageReceived(const sp<AMessage> &msg) {
+ 
+         case kWhatRendererNotify:
+         {
+-            int32_t requesterGeneration = mRendererGeneration - 1;
+-            CHECK(msg->findInt32("generation", &requesterGeneration));
+-            if (requesterGeneration != mRendererGeneration) {
+-                ALOGV("got message from old renderer, generation(%d:%d)",
+-                        requesterGeneration, mRendererGeneration);
+-                return;
+-            }
+-
+             int32_t what;
+             CHECK(msg->findInt32("what", &what));
+ 
+@@ -932,7 +919,6 @@ void NuPlayer::onMessageReceived(const sp<AMessage> &msg) {
+                 CHECK(msg->findInt64("positionUs", &positionUs));
+                 closeAudioSink();
+                 mAudioDecoder.clear();
+-                ++mAudioDecoderGeneration;
+                 mRenderer->flush(true /* audio */);
+                 if (mVideoDecoder != NULL) {
+                     mRenderer->flush(false /* audio */);
+@@ -1863,6 +1849,9 @@ void NuPlayer::performReset() {
+     ++mScanSourcesGeneration;
+     mScanSourcesPending = false;
+ 
++    ++mAudioDecoderGeneration;
++    ++mVideoDecoderGeneration;
++
+     if (mRendererLooper != NULL) {
+         if (mRenderer != NULL) {
+             mRendererLooper->unregisterHandler(mRenderer->id());
+@@ -1871,7 +1860,6 @@ void NuPlayer::performReset() {
+         mRendererLooper.clear();
+     }
+     mRenderer.clear();
+-    ++mRendererGeneration;
+ 
+     if (mSource != NULL) {
+         mSource->stop();
+diff --git a/media/libmediaplayerservice/nuplayer/NuPlayer.h b/media/libmediaplayerservice/nuplayer/NuPlayer.h
+index eee96ca..7197e5f 100644
+--- a/media/libmediaplayerservice/nuplayer/NuPlayer.h
++++ b/media/libmediaplayerservice/nuplayer/NuPlayer.h
+@@ -137,7 +137,6 @@ private:
+     sp<ALooper> mRendererLooper;
+     int32_t mAudioDecoderGeneration;
+     int32_t mVideoDecoderGeneration;
+-    int32_t mRendererGeneration;
+ 
+     List<sp<Action> > mDeferredActions;
+ 
+-- 
+2.5.0
+

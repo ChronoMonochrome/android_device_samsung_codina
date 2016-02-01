@@ -1,0 +1,38 @@
+From ee8b8829417e6c933a4e2540ce568fe0550a713d Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Thu, 28 Jan 2016 12:19:20 +0700
+Subject: [PATCH 51/58] Revert "Log an error when audio/video encoder failed to
+ create"
+
+This reverts commit ef0cf50343f8a6d74894f96f5ecb5eec4c5f1bc6.
+---
+ media/libmediaplayerservice/StagefrightRecorder.cpp | 6 +-----
+ 1 file changed, 1 insertion(+), 5 deletions(-)
+
+diff --git a/media/libmediaplayerservice/StagefrightRecorder.cpp b/media/libmediaplayerservice/StagefrightRecorder.cpp
+index 2adec7b..3918522 100644
+--- a/media/libmediaplayerservice/StagefrightRecorder.cpp
++++ b/media/libmediaplayerservice/StagefrightRecorder.cpp
+@@ -932,10 +932,6 @@ sp<MediaSource> StagefrightRecorder::createAudioSource() {
+             MediaCodecSource::Create(mLooper, format, audioSource);
+     mAudioSourceNode = audioSource;
+ 
+-    if (audioEncoder == NULL) {
+-        ALOGE("Failed to create audio encoder");
+-    }
+-
+     return audioEncoder;
+ }
+ 
+@@ -1480,7 +1476,7 @@ status_t StagefrightRecorder::setupVideoEncoder(
+     sp<MediaCodecSource> encoder =
+             MediaCodecSource::Create(mLooper, format, cameraSource, flags);
+     if (encoder == NULL) {
+-        ALOGE("Failed to create video encoder");
++        ALOGW("Failed to create the encoder");
+         // When the encoder fails to be created, we need
+         // release the camera source due to the camera's lock
+         // and unlock mechanism.
+-- 
+2.5.0
+

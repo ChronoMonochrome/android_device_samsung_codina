@@ -1,0 +1,25 @@
+From a94f91dd465276e6afce3d99c52b5ef63c6a2d6f Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Thu, 28 Jan 2016 08:51:43 +0700
+Subject: [PATCH 11/58] 0012-Disable-setting-of-no-voip-audio-param.patch
+
+Change-Id: I243a72b909b35bfb6552c9a5e1af63e8cfcff644
+---
+ services/audiopolicy/AudioPolicyService.cpp | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/services/audiopolicy/AudioPolicyService.cpp b/services/audiopolicy/AudioPolicyService.cpp
+index dd4067f..e52539e 100644
+--- a/services/audiopolicy/AudioPolicyService.cpp
++++ b/services/audiopolicy/AudioPolicyService.cpp
+@@ -937,6 +937,7 @@ void AudioPolicyService::setParameters(audio_io_handle_t ioHandle,
+                                        const char *keyValuePairs,
+                                        int delayMs)
+ {
++    if(strcmp("voip=on",keyValuePairs) == 0) return;
+     mAudioCommandThread->parametersCommand(ioHandle, keyValuePairs,
+                                            delayMs);
+ }
+-- 
+2.5.0
+

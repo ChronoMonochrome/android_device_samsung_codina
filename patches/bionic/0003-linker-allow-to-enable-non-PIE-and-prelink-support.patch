@@ -1,0 +1,217 @@
+From 1ee6b23c3de11f015010a32e2f4c3877bd5bd8e2 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Mon, 1 Feb 2016 22:58:21 +0700
+Subject: [PATCH 3/3] linker: allow to enable non-PIE and prelink support
+
+Change-Id: Ie7e46bca10c313144aa54bbb1b327961cfaba566
+---
+ linker/Android.mk      |  8 ++++++++
+ linker/linker.cpp      | 47 +++++++++++++++++++++++++++++++++++++++++++++++
+ linker/linker_phdr.cpp | 45 ++++++++++++++++++++++++++++++++++++++++++++-
+ linker/linker_phdr.h   |  9 ++++++++-
+ 4 files changed, 107 insertions(+), 2 deletions(-)
+
+diff --git a/linker/Android.mk b/linker/Android.mk
+index 5853c90..0e4fffe 100644
+--- a/linker/Android.mk
++++ b/linker/Android.mk
+@@ -35,6 +35,14 @@ LOCAL_CONLYFLAGS += \
+ LOCAL_CPPFLAGS += \
+     -std=gnu++11 \
+ 
++ifeq ($(TARGET_ENABLE_NON_PIE_SUPPORT),true)
++    LOCAL_CFLAGS += -DENABLE_NON_PIE_SUPPORT
++endif
++
++ifeq ($(TARGET_NEEDS_BIONIC_PRELINK_SUPPORT),true)
++    LOCAL_CFLAGS += -DENABLE_PRELINK_SUPPORT
++endif
++
+ # We need to access Bionic private headers in the linker.
+ LOCAL_CFLAGS += -I$(LOCAL_PATH)/../libc/
+ 
+diff --git a/linker/linker.cpp b/linker/linker.cpp
+index 878db85..d9ff917 100644
+--- a/linker/linker.cpp
++++ b/linker/linker.cpp
+@@ -1305,6 +1305,7 @@ static int soinfo_relocate(soinfo* si, ElfW(Rel)* rel, unsigned count, soinfo* n
+             *reinterpret_cast<ElfW(Addr)*>(reloc) += sym_addr - rel->r_offset;
+             break;
+         case R_ARM_COPY:
++#ifndef ENABLE_NON_PIE_SUPPORT
+             /*
+              * ET_EXEC is not supported so this should not happen.
+              *
+@@ -1316,6 +1317,50 @@ static int soinfo_relocate(soinfo* si, ElfW(Rel)* rel, unsigned count, soinfo* n
+              */
+             DL_ERR("%s R_ARM_COPY relocations are not supported", si->name);
+             return -1;
++#else
++            if ((si->flags & FLAG_EXE) == 0) {
++                /*
++                * http://infocenter.arm.com/help/topic/com.arm.doc.ihi0044d/IHI0044D_aaelf.pdf
++                *
++                * Section 4.7.1.10 "Dynamic relocations"
++                * R_ARM_COPY may only appear in executable objects where e_type is
++                * set to ET_EXEC.
++                *
++                * TODO: FLAG_EXE is set for both ET_DYN and ET_EXEC executables.
++                * We should explicitly disallow ET_DYN executables from having
++                * R_ARM_COPY relocations.
++                */
++                DL_ERR("%s R_ARM_COPY relocations only supported for ET_EXEC", si->name);
++                return -1;
++            }
++            count_relocation(kRelocCopy);
++            MARK(rel->r_offset);
++            TRACE_TYPE(RELO, "RELO %08x <- %d @ %08x %s", reloc, s->st_size, sym_addr, sym_name);
++            if (reloc == sym_addr) {
++                ElfW(Sym)* src = soinfo_do_lookup(NULL, sym_name, &lsi, needed);
++
++                if (src == NULL) {
++                    DL_ERR("%s R_ARM_COPY relocation source cannot be resolved", si->name);
++                    return -1;
++                }
++                if (lsi->has_DT_SYMBOLIC) {
++                    DL_ERR("%s invalid R_ARM_COPY relocation against DT_SYMBOLIC shared "
++                           "library %s (built with -Bsymbolic?)", si->name, lsi->name);
++                    return -1;
++                }
++                if (s->st_size < src->st_size) {
++                    DL_ERR("%s R_ARM_COPY relocation size mismatch (%d < %d)",
++                           si->name, s->st_size, src->st_size);
++                    return -1;
++                }
++                memcpy(reinterpret_cast<void*>(reloc),
++                       reinterpret_cast<void*>(src->st_value + lsi->load_bias), src->st_size);
++            } else {
++                DL_ERR("%s R_ARM_COPY relocation target cannot be resolved", si->name);
++                return -1;
++            }
++            break;
++#endif
+ #elif defined(__i386__)
+         case R_386_JMP_SLOT:
+             count_relocation(kRelocAbsolute);
+@@ -2175,11 +2220,13 @@ static ElfW(Addr) __linker_init_post_relocation(KernelArgumentBlock& args, ElfW(
+     si->dynamic = NULL;
+     si->ref_count = 1;
+ 
++#ifndef ENABLE_NON_PIE_SUPPORT
+     ElfW(Ehdr)* elf_hdr = reinterpret_cast<ElfW(Ehdr)*>(si->base);
+     if (elf_hdr->e_type != ET_DYN) {
+         __libc_format_fd(2, "error: only position independent executables (PIE) are supported.\n");
+         exit(EXIT_FAILURE);
+     }
++#endif
+ 
+     // Use LD_LIBRARY_PATH and LD_PRELOAD (but only if we aren't setuid/setgid).
+     parse_LD_LIBRARY_PATH(ldpath_env);
+diff --git a/linker/linker_phdr.cpp b/linker/linker_phdr.cpp
+index 0b99d20..e5174a2 100644
+--- a/linker/linker_phdr.cpp
++++ b/linker/linker_phdr.cpp
+@@ -123,6 +123,9 @@ ElfReader::ElfReader(const char* name, int fd)
+     : name_(name), fd_(fd),
+       phdr_num_(0), phdr_mmap_(NULL), phdr_table_(NULL), phdr_size_(0),
+       load_start_(NULL), load_size_(0), load_bias_(0),
++#ifdef ENABLE_PRELINK_SUPPORT
++      required_base_(0),
++#endif
+       loaded_phdr_(NULL) {
+ }
+ 
+@@ -285,6 +288,38 @@ size_t phdr_table_get_load_size(const ElfW(Phdr)* phdr_table, size_t phdr_count,
+   return max_vaddr - min_vaddr;
+ }
+ 
++#ifdef ENABLE_PRELINK_SUPPORT
++typedef struct {
++    long mmap_addr;
++    char tag[4]; /* 'P', 'R', 'E', ' ' */
++} prelink_info_t;
++
++/* Returns the requested base address if the library is prelinked,
++ * and 0 otherwise.  */
++static ElfW(Addr) is_prelinked(int fd, const char *name)
++{
++    off_t sz = lseek(fd, -sizeof(prelink_info_t), SEEK_END);
++    if (sz < 0) {
++        DL_ERR("lseek() failed!");
++        return 0;
++    }
++
++    prelink_info_t info;
++    int rc = TEMP_FAILURE_RETRY(read(fd, &info, sizeof(info)));
++    if (rc != sizeof(info)) {
++        DL_ERR("Could not read prelink_info_t structure for `%s`\n", name);
++        return 0;
++    }
++
++    if (memcmp(info.tag, "PRE ", 4)) {
++        DL_ERR("`%s` is not a prelinked library\n", name);
++        return 0;
++    }
++
++    return (unsigned long)info.mmap_addr;
++}
++#endif
++
+ // Reserve a virtual address range big enough to hold all loadable
+ // segments of a program header table. This is done by creating a
+ // private anonymous mmap() with PROT_NONE.
+@@ -295,7 +330,9 @@ bool ElfReader::ReserveAddressSpace(const android_dlextinfo* extinfo) {
+     DL_ERR("\"%s\" has no loadable segments", name_);
+     return false;
+   }
+-
++#ifdef ENABLE_PRELINK_SUPPORT
++  required_base_ = is_prelinked(fd_, name_);
++#endif
+   uint8_t* addr = reinterpret_cast<uint8_t*>(min_vaddr);
+   void* start;
+   size_t reserved_size = 0;
+@@ -317,7 +354,13 @@ bool ElfReader::ReserveAddressSpace(const android_dlextinfo* extinfo) {
+       return false;
+     }
+     int mmap_flags = MAP_PRIVATE | MAP_ANONYMOUS;
++#ifndef ENABLE_PRELINK_SUPPORT
+     start = mmap(addr, load_size_, PROT_NONE, mmap_flags, -1, 0);
++#else
++    if (required_base_ != 0)
++      mmap_flags |= MAP_FIXED;
++    start = mmap((void*)required_base_, load_size_, PROT_NONE, mmap_flags, -1, 0);
++#endif
+     if (start == MAP_FAILED) {
+       DL_ERR("couldn't reserve %zd bytes of address space for \"%s\"", load_size_, name_);
+       return false;
+diff --git a/linker/linker_phdr.h b/linker/linker_phdr.h
+index 611f1a7..966ddcd 100644
+--- a/linker/linker_phdr.h
++++ b/linker/linker_phdr.h
+@@ -49,6 +49,9 @@ class ElfReader {
+   size_t load_size() { return load_size_; }
+   ElfW(Addr) load_bias() { return load_bias_; }
+   const ElfW(Phdr)* loaded_phdr() { return loaded_phdr_; }
++#ifdef ENABLE_PRELINK_SUPPORT
++  ElfW(Addr) required_base() { return required_base_; }
++#endif
+ 
+  private:
+   bool ReadElfHeader();
+@@ -75,7 +78,11 @@ class ElfReader {
+   size_t load_size_;
+   // Load bias.
+   ElfW(Addr) load_bias_;
+-
++#ifdef ENABLE_PRELINK_SUPPORT
++  // For prelinked libraries, mandatory load address of the first
++  // loadable segment. 0 otherwise.
++  ElfW(Addr) required_base_;
++#endif
+   // Loaded phdr.
+   const ElfW(Phdr)* loaded_phdr_;
+ };
+-- 
+2.5.0
+

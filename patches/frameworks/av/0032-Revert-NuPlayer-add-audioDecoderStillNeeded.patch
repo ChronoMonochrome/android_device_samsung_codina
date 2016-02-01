@@ -1,0 +1,56 @@
+From f5d1f92207a276caea8b11bd4fbc4f73c0f1b497 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Thu, 28 Jan 2016 12:15:15 +0700
+Subject: [PATCH 32/58] Revert "NuPlayer: add audioDecoderStillNeeded."
+
+This reverts commit d7988b1a7b32e39e671f7d4e2b2d8027a1f99639.
+---
+ media/libmediaplayerservice/nuplayer/NuPlayer.cpp | 11 +++--------
+ media/libmediaplayerservice/nuplayer/NuPlayer.h   |  2 --
+ 2 files changed, 3 insertions(+), 10 deletions(-)
+
+diff --git a/media/libmediaplayerservice/nuplayer/NuPlayer.cpp b/media/libmediaplayerservice/nuplayer/NuPlayer.cpp
+index 53eec91..5270efc 100644
+--- a/media/libmediaplayerservice/nuplayer/NuPlayer.cpp
++++ b/media/libmediaplayerservice/nuplayer/NuPlayer.cpp
+@@ -1048,9 +1048,9 @@ void NuPlayer::onMessageReceived(const sp<AMessage> &msg) {
+             } else {
+                 ALOGW("resume called when source is gone or not set");
+             }
+-            // |mAudioDecoder| may have been released due to the pause timeout, so re-create it if
+-            // needed.
+-            if (audioDecoderStillNeeded() && mAudioDecoder == NULL) {
++            // |mAudioDecoder| may have been released due to the pause timeout, so try to re-create
++            // it if needed.
++            if (mFlushingAudio != SHUT_DOWN) {
+                 instantiateDecoder(true /* audio */, &mAudioDecoder);
+             }
+             if (mRenderer != NULL) {
+@@ -1079,11 +1079,6 @@ void NuPlayer::onMessageReceived(const sp<AMessage> &msg) {
+     }
+ }
+ 
+-bool NuPlayer::audioDecoderStillNeeded() {
+-    // Audio decoder is no longer needed if it's in shut/shutting down status.
+-    return ((mFlushingAudio != SHUT_DOWN) && (mFlushingAudio != SHUTTING_DOWN_DECODER));
+-}
+-
+ void NuPlayer::finishFlushIfPossible() {
+     if (mFlushingAudio != NONE && mFlushingAudio != FLUSHED
+             && mFlushingAudio != SHUT_DOWN) {
+diff --git a/media/libmediaplayerservice/nuplayer/NuPlayer.h b/media/libmediaplayerservice/nuplayer/NuPlayer.h
+index 8157733..8fa7269 100644
+--- a/media/libmediaplayerservice/nuplayer/NuPlayer.h
++++ b/media/libmediaplayerservice/nuplayer/NuPlayer.h
+@@ -203,8 +203,6 @@ private:
+ 
+     void finishFlushIfPossible();
+ 
+-    bool audioDecoderStillNeeded();
+-
+     void flushDecoder(
+             bool audio, bool needShutdown, const sp<AMessage> &newFormat = NULL);
+     void updateDecoderFormatWithoutFlush(bool audio, const sp<AMessage> &format);
+-- 
+2.5.0
+

@@ -1,0 +1,45 @@
+From 250f0f2923bc5e8e80dc5875295d88e1b3767a1e Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Mon, 1 Feb 2016 22:45:48 +0700
+Subject: [PATCH 1/4] 
+ frameworks-opt-telephony_DcTracker-Dont-crash-if-its-NULL.patch
+
+Change-Id: I4d6657e0b683b775970278e16248d41e32bd9614
+---
+ .../internal/telephony/dataconnection/DcTracker.java        | 13 +++++++++++--
+ 1 file changed, 11 insertions(+), 2 deletions(-)
+
+diff --git a/src/java/com/android/internal/telephony/dataconnection/DcTracker.java b/src/java/com/android/internal/telephony/dataconnection/DcTracker.java
+index f93ca3d..72e54db 100755
+--- a/src/java/com/android/internal/telephony/dataconnection/DcTracker.java
++++ b/src/java/com/android/internal/telephony/dataconnection/DcTracker.java
+@@ -1823,7 +1823,12 @@ public final class DcTracker extends DcTrackerBase {
+         // TODO: It'd be nice to only do this if the changed entrie(s)
+         // match the current operator.
+         if (DBG) log("tryRestartDataConnections: createAllApnList and cleanUpAllConnections");
+-        createAllApnList();
++        try {
++            createAllApnList();
++        } catch (NullPointerException e) {
++            // Do Nothing
++        }
++
+         setInitialAttachApn();
+         if (isCleanupNeeded) {
+             cleanUpAllConnections(!isDisconnected, reason);
+@@ -3310,7 +3315,11 @@ public final class DcTracker extends DcTrackerBase {
+                 // set of apns (example, LTE->1x)
+                 if (onUpdateIcc()) {
+                     log("onUpdateIcc: tryRestartDataConnections " + Phone.REASON_NW_TYPE_CHANGED);
+-                    tryRestartDataConnections(true, Phone.REASON_NW_TYPE_CHANGED);
++                    try {
++                        tryRestartDataConnections(true, Phone.REASON_NW_TYPE_CHANGED);
++                    } catch (NullPointerException e) {
++                        // Do Nothing
++                    }
+                 } else if (isNvSubscription()){
+                     // If cdma subscription source changed to NV or data rat changed to cdma
+                     // (while subscription source was NV) - we need to trigger NV ready
+-- 
+2.5.0
+

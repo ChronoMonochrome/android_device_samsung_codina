@@ -1,0 +1,78 @@
+From e9bee1ac16a1c5d84de89b879902c18fca36f2e3 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Mon, 1 Feb 2016 22:52:41 +0700
+Subject: [PATCH 2/2] 
+ packages-services-Telecomm_W02-Fix-delay-in-bringing-incallui.patch
+
+Change-Id: I472482178925f8954ab0d111827f50ce5ab34b7f
+---
+ src/com/android/server/telecom/Call.java             | 16 +++++++++++++++-
+ src/com/android/server/telecom/InCallController.java |  4 ++++
+ 2 files changed, 19 insertions(+), 1 deletion(-)
+
+diff --git a/src/com/android/server/telecom/Call.java b/src/com/android/server/telecom/Call.java
+index b17da21..3afc1aa 100644
+--- a/src/com/android/server/telecom/Call.java
++++ b/src/com/android/server/telecom/Call.java
+@@ -22,6 +22,7 @@ import android.graphics.drawable.Drawable;
+ import android.net.Uri;
+ import android.os.Bundle;
+ import android.os.Handler;
++import android.os.SystemProperties;
+ import android.provider.ContactsContract.Contacts;
+ import android.telecom.CallState;
+ import android.telecom.DisconnectCause;
+@@ -312,6 +313,13 @@ final class Call implements CreateConnectionResponse {
+     private Call mConferenceLevelActiveCall = null;
+ 
+     private boolean mIsLocallyDisconnecting = false;
++    /**
++     * Applicable for MT call, whether to show MT call instantly to user or wait for 500ms for
++     * reading direct-to-voicemail value to decide whether to route MT call to voicemail or
++     * show to user.
++     */
++    private boolean mShowCallInstantly = SystemProperties
++            .getBoolean("persist.radio.showcallinstantly", true);
+ 
+     /**
+      * Persists the specified parameters and initializes the new instance.
+@@ -686,7 +694,7 @@ final class Call implements CreateConnectionResponse {
+                 // will not need to set STATE_RINGING state prior to calling reject.
+                 setState(CallState.RINGING);
+                 reject(false, null);
+-            } else {
++            } else if (!mShowCallInstantly) {
+                 // TODO: Make this class (not CallsManager) responsible for changing
+                 // the call state to STATE_RINGING.
+ 
+@@ -748,6 +756,12 @@ final class Call implements CreateConnectionResponse {
+             // the user or if we want to reject the call.
+             mDirectToVoicemailQueryPending = true;
+ 
++            if (mShowCallInstantly) {
++                for (Listener l : mListeners) {
++                    Log.d(this, "show incoming call instantly");
++                    l.onSuccessfulIncomingCall(this);
++                }
++            }
+             // Timeout the direct-to-voicemail lookup execution so that we dont wait too long before
+             // showing the user the incoming call screen.
+             mHandler.postDelayed(mDirectToVoicemailRunnable, Timeouts.getDirectToVoicemailMillis(
+diff --git a/src/com/android/server/telecom/InCallController.java b/src/com/android/server/telecom/InCallController.java
+index 4ba195f..552ea41 100644
+--- a/src/com/android/server/telecom/InCallController.java
++++ b/src/com/android/server/telecom/InCallController.java
+@@ -428,6 +428,10 @@ public final class InCallController extends CallsManagerListenerBase {
+      * @param call The {@link Call}.
+      */
+     private void updateCall(Call call) {
++        if (call.getState() == CallState.CONNECTING) {
++            Log.d(this, "updateCall skip update for CONNECTING");
++            return;
++        }
+         if (!mInCallServices.isEmpty()) {
+             for (Map.Entry<ComponentName, IInCallService> entry : mInCallServices.entrySet()) {
+                 ComponentName componentName = entry.getKey();
+-- 
+2.5.0
+

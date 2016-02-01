@@ -1,0 +1,223 @@
+From e1e6c9d55cd872680184aaed150f77f19687b007 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Thu, 28 Jan 2016 12:19:14 +0700
+Subject: [PATCH 50/58] Revert "StagefrightRecorder: webm (video only) support"
+
+This reverts commit 114819633470ebd5b346c13c2a82a0025d2d39c0.
+---
+ include/media/mediarecorder.h                      |  3 -
+ media/libmedia/mediarecorder.cpp                   |  7 +--
+ media/libmediaplayerservice/Android.mk             |  1 -
+ .../libmediaplayerservice/StagefrightRecorder.cpp  | 73 +++++++++-------------
+ media/libmediaplayerservice/StagefrightRecorder.h  |  4 +-
+ 5 files changed, 33 insertions(+), 55 deletions(-)
+
+diff --git a/include/media/mediarecorder.h b/include/media/mediarecorder.h
+index b0a62a7..5f88fa9 100644
+--- a/include/media/mediarecorder.h
++++ b/include/media/mediarecorder.h
+@@ -61,9 +61,6 @@ enum output_format {
+     OUTPUT_FORMAT_AAC_ADIF = 5,
+     OUTPUT_FORMAT_AAC_ADTS = 6,
+ 
+-    OUTPUT_FORMAT_AUDIO_ONLY_END = 7, // Used in validating the output format.  Should be the
+-                                      //  at the end of the audio only output formats.
+-
+     /* Stream over a socket, limited to a single stream */
+     OUTPUT_FORMAT_RTP_AVP = 7,
+ 
+diff --git a/media/libmedia/mediarecorder.cpp b/media/libmedia/mediarecorder.cpp
+index 1952b86..c8192e9 100644
+--- a/media/libmedia/mediarecorder.cpp
++++ b/media/libmedia/mediarecorder.cpp
+@@ -186,11 +186,8 @@ status_t MediaRecorder::setOutputFormat(int of)
+         ALOGE("setOutputFormat called in an invalid state: %d", mCurrentState);
+         return INVALID_OPERATION;
+     }
+-    if (mIsVideoSourceSet
+-            && of >= OUTPUT_FORMAT_AUDIO_ONLY_START //first non-video output format
+-            && of < OUTPUT_FORMAT_AUDIO_ONLY_END) {
+-        ALOGE("output format (%d) is meant for audio recording only"
+-              " and incompatible with video recording", of);
++    if (mIsVideoSourceSet && of >= OUTPUT_FORMAT_AUDIO_ONLY_START && of != OUTPUT_FORMAT_RTP_AVP && of != OUTPUT_FORMAT_MPEG2TS) { //first non-video output format
++        ALOGE("output format (%d) is meant for audio recording only and incompatible with video recording", of);
+         return INVALID_OPERATION;
+     }
+ 
+diff --git a/media/libmediaplayerservice/Android.mk b/media/libmediaplayerservice/Android.mk
+index 2cf5710..15fe347 100644
+--- a/media/libmediaplayerservice/Android.mk
++++ b/media/libmediaplayerservice/Android.mk
+@@ -51,7 +51,6 @@ LOCAL_C_INCLUDES :=                                                 \
+     $(TOP)/frameworks/av/media/libstagefright/include               \
+     $(TOP)/frameworks/av/media/libstagefright/rtsp                  \
+     $(TOP)/frameworks/av/media/libstagefright/wifi-display          \
+-    $(TOP)/frameworks/av/media/libstagefright/webm                  \
+     $(TOP)/frameworks/native/include/media/openmax                  \
+     $(TOP)/external/tremolo/Tremolo                                 \
+ 
+diff --git a/media/libmediaplayerservice/StagefrightRecorder.cpp b/media/libmediaplayerservice/StagefrightRecorder.cpp
+index 0a0ca30..2adec7b 100644
+--- a/media/libmediaplayerservice/StagefrightRecorder.cpp
++++ b/media/libmediaplayerservice/StagefrightRecorder.cpp
+@@ -19,7 +19,6 @@
+ #include <inttypes.h>
+ #include <utils/Log.h>
+ 
+-#include "WebmWriter.h"
+ #include "StagefrightRecorder.h"
+ 
+ #include <binder/IPCThreadState.h>
+@@ -765,8 +764,7 @@ status_t StagefrightRecorder::prepareInternal() {
+         case OUTPUT_FORMAT_DEFAULT:
+         case OUTPUT_FORMAT_THREE_GPP:
+         case OUTPUT_FORMAT_MPEG_4:
+-        case OUTPUT_FORMAT_WEBM:
+-            status = setupMPEG4orWEBMRecording();
++            status = setupMPEG4Recording();
+             break;
+ 
+         case OUTPUT_FORMAT_AMR_NB:
+@@ -828,14 +826,9 @@ status_t StagefrightRecorder::start() {
+         case OUTPUT_FORMAT_DEFAULT:
+         case OUTPUT_FORMAT_THREE_GPP:
+         case OUTPUT_FORMAT_MPEG_4:
+-        case OUTPUT_FORMAT_WEBM:
+         {
+-            bool isMPEG4 = true;
+-            if (mOutputFormat == OUTPUT_FORMAT_WEBM) {
+-                isMPEG4 = false;
+-            }
+             sp<MetaData> meta = new MetaData;
+-            setupMPEG4orWEBMMetaData(&meta);
++            setupMPEG4MetaData(&meta);
+             status = mWriter->start(meta.get());
+             break;
+         }
+@@ -1534,17 +1527,12 @@ status_t StagefrightRecorder::setupAudioEncoder(const sp<MediaWriter>& writer) {
+     return OK;
+ }
+ 
+-status_t StagefrightRecorder::setupMPEG4orWEBMRecording() {
++status_t StagefrightRecorder::setupMPEG4Recording() {
+     mWriter.clear();
+     mTotalBitRate = 0;
+ 
+     status_t err = OK;
+-    sp<MediaWriter> writer;
+-    if (mOutputFormat == OUTPUT_FORMAT_MPEG_4) {
+-        writer = new MPEG4Writer(mOutputFd);
+-    } else {
+-        writer = new WebmWriter(mOutputFd);
+-    }
++    sp<MediaWriter> writer = new MPEG4Writer(mOutputFd);
+ 
+     if (mVideoSource < VIDEO_SOURCE_LIST_END) {
+ 
+@@ -1564,25 +1552,22 @@ status_t StagefrightRecorder::setupMPEG4orWEBMRecording() {
+         mTotalBitRate += mVideoBitRate;
+     }
+ 
+-    if (mOutputFormat == OUTPUT_FORMAT_MPEG_4) {
+-        // Audio source is added at the end if it exists.
+-        // This help make sure that the "recoding" sound is suppressed for
+-        // camcorder applications in the recorded files.
+-        // TODO Audio source is currently unsupported for webm output; vorbis encoder needed.
+-        if (!mCaptureTimeLapse && (mAudioSource != AUDIO_SOURCE_CNT)) {
+-            err = setupAudioEncoder(writer);
+-            if (err != OK) return err;
+-            mTotalBitRate += mAudioBitRate;
+-        }
++    // Audio source is added at the end if it exists.
++    // This help make sure that the "recoding" sound is suppressed for
++    // camcorder applications in the recorded files.
++    if (!mCaptureTimeLapse && (mAudioSource != AUDIO_SOURCE_CNT)) {
++        err = setupAudioEncoder(writer);
++        if (err != OK) return err;
++        mTotalBitRate += mAudioBitRate;
++    }
+ 
+-        if (mInterleaveDurationUs > 0) {
+-            reinterpret_cast<MPEG4Writer *>(writer.get())->
+-                setInterleaveDuration(mInterleaveDurationUs);
+-        }
+-        if (mLongitudex10000 > -3600000 && mLatitudex10000 > -3600000) {
+-            reinterpret_cast<MPEG4Writer *>(writer.get())->
+-                setGeoData(mLatitudex10000, mLongitudex10000);
+-        }
++    if (mInterleaveDurationUs > 0) {
++        reinterpret_cast<MPEG4Writer *>(writer.get())->
++            setInterleaveDuration(mInterleaveDurationUs);
++    }
++    if (mLongitudex10000 > -3600000 && mLatitudex10000 > -3600000) {
++        reinterpret_cast<MPEG4Writer *>(writer.get())->
++            setGeoData(mLatitudex10000, mLongitudex10000);
+     }
+     if (mMaxFileDurationUs != 0) {
+         writer->setMaxFileDuration(mMaxFileDurationUs);
+@@ -1590,6 +1575,7 @@ status_t StagefrightRecorder::setupMPEG4orWEBMRecording() {
+     if (mMaxFileSizeBytes != 0) {
+         writer->setMaxFileSize(mMaxFileSizeBytes);
+     }
++
+     if (mVideoSource == VIDEO_SOURCE_DEFAULT
+             || mVideoSource == VIDEO_SOURCE_CAMERA) {
+         mStartTimeOffsetMs = mEncoderProfiles->getStartTimeOffsetMs(mCameraId);
+@@ -1598,7 +1584,8 @@ status_t StagefrightRecorder::setupMPEG4orWEBMRecording() {
+         mStartTimeOffsetMs = 200;
+     }
+     if (mStartTimeOffsetMs > 0) {
+-        writer->setStartTimeOffsetMs(mStartTimeOffsetMs);
++        reinterpret_cast<MPEG4Writer *>(writer.get())->
++            setStartTimeOffsetMs(mStartTimeOffsetMs);
+     }
+ 
+     writer->setListener(mListener);
+@@ -1606,22 +1593,20 @@ status_t StagefrightRecorder::setupMPEG4orWEBMRecording() {
+     return OK;
+ }
+ 
+-void StagefrightRecorder::setupMPEG4orWEBMMetaData(sp<MetaData> *meta) {
++void StagefrightRecorder::setupMPEG4MetaData(sp<MetaData> *meta) {
+     int64_t startTimeUs = systemTime() / 1000;
+     (*meta)->setInt64(kKeyTime, startTimeUs);
+     (*meta)->setInt32(kKeyFileType, mOutputFormat);
+     (*meta)->setInt32(kKeyBitRate, mTotalBitRate);
++    (*meta)->setInt32(kKey64BitFileOffset, mUse64BitFileOffset);
+     if (mMovieTimeScale > 0) {
+         (*meta)->setInt32(kKeyTimeScale, mMovieTimeScale);
+     }
+-    if (mOutputFormat == OUTPUT_FORMAT_MPEG_4) {
+-        (*meta)->setInt32(kKey64BitFileOffset, mUse64BitFileOffset);
+-        if (mTrackEveryTimeDurationUs > 0) {
+-            (*meta)->setInt64(kKeyTrackTimeStatus, mTrackEveryTimeDurationUs);
+-        }
+-        if (mRotationDegrees != 0) {
+-            (*meta)->setInt32(kKeyRotation, mRotationDegrees);
+-        }
++    if (mTrackEveryTimeDurationUs > 0) {
++        (*meta)->setInt64(kKeyTrackTimeStatus, mTrackEveryTimeDurationUs);
++    }
++    if (mRotationDegrees != 0) {
++        (*meta)->setInt32(kKeyRotation, mRotationDegrees);
+     }
+ }
+ 
+diff --git a/media/libmediaplayerservice/StagefrightRecorder.h b/media/libmediaplayerservice/StagefrightRecorder.h
+index 9062f30..377d168 100644
+--- a/media/libmediaplayerservice/StagefrightRecorder.h
++++ b/media/libmediaplayerservice/StagefrightRecorder.h
+@@ -128,8 +128,8 @@ private:
+     sp<ALooper> mLooper;
+ 
+     status_t prepareInternal();
+-    status_t setupMPEG4orWEBMRecording();
+-    void setupMPEG4orWEBMMetaData(sp<MetaData> *meta);
++    status_t setupMPEG4Recording();
++    void setupMPEG4MetaData(sp<MetaData> *meta);
+     status_t setupAMRRecording();
+     status_t setupAACRecording();
+     status_t setupRawAudioRecording();
+-- 
+2.5.0
+

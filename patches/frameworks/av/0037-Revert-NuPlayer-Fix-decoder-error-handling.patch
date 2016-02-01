@@ -1,0 +1,158 @@
+From e5b82424503d2eded9dad1b1449a7aded58d1e84 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Thu, 28 Jan 2016 12:17:03 +0700
+Subject: [PATCH 37/58] Revert "NuPlayer: Fix decoder error handling"
+
+This reverts commit cf31f1eecf46d599428e115dfee8dd47b76c83fc.
+---
+ media/libmediaplayerservice/nuplayer/NuPlayer.cpp  | 19 ++++--------
+ .../nuplayer/NuPlayerDecoder.cpp                   | 34 +++++-----------------
+ media/libstagefright/foundation/AMessage.cpp       |  2 +-
+ 3 files changed, 15 insertions(+), 40 deletions(-)
+
+diff --git a/media/libmediaplayerservice/nuplayer/NuPlayer.cpp b/media/libmediaplayerservice/nuplayer/NuPlayer.cpp
+index ef4abd4..ceedb40 100644
+--- a/media/libmediaplayerservice/nuplayer/NuPlayer.cpp
++++ b/media/libmediaplayerservice/nuplayer/NuPlayer.cpp
+@@ -832,31 +832,24 @@ void NuPlayer::onMessageReceived(const sp<AMessage> &msg) {
+ 
+                 finishFlushIfPossible();
+             } else if (what == Decoder::kWhatError) {
++                ALOGE("Received error from %s decoder, aborting playback.",
++                     audio ? "audio" : "video");
++
+                 status_t err;
+                 if (!msg->findInt32("err", &err)) {
+                     err = UNKNOWN_ERROR;
+                 }
+-                ALOGE("received error from %s decoder %#x", audio ? "audio" : "video", err);
+-
+-                ALOGI("shutting down %s", audio ? "audio" : "video");
++                mRenderer->queueEOS(audio, err);
+                 if (audio && mFlushingAudio != NONE) {
+-                    mRenderer->queueEOS(audio, err);
+                     mAudioDecoder.clear();
+                     ++mAudioDecoderGeneration;
+                     mFlushingAudio = SHUT_DOWN;
+-                    finishFlushIfPossible();
+-                } else if (!audio && mFlushingVideo != NONE) {
+-                    mRenderer->queueEOS(audio, err);
++                } else if (!audio && mFlushingVideo != NONE){
+                     mVideoDecoder.clear();
+                     ++mVideoDecoderGeneration;
+                     mFlushingVideo = SHUT_DOWN;
+-                    finishFlushIfPossible();
+-                }  else {
+-                    mDeferredActions.push_back(
+-                            new ShutdownDecoderAction(audio, !audio /* video */));
+-                    processDeferredActions();
+-                    notifyListener(MEDIA_ERROR, MEDIA_ERROR_UNKNOWN, err);
+                 }
++                finishFlushIfPossible();
+             } else if (what == Decoder::kWhatDrainThisBuffer) {
+                 renderBuffer(audio, msg);
+             } else {
+diff --git a/media/libmediaplayerservice/nuplayer/NuPlayerDecoder.cpp b/media/libmediaplayerservice/nuplayer/NuPlayerDecoder.cpp
+index 1a066b7..1b1b1c8 100644
+--- a/media/libmediaplayerservice/nuplayer/NuPlayerDecoder.cpp
++++ b/media/libmediaplayerservice/nuplayer/NuPlayerDecoder.cpp
+@@ -227,11 +227,7 @@ status_t NuPlayer::Decoder::getInputBuffers(Vector<sp<ABuffer> > *buffers) const
+ 
+ void NuPlayer::Decoder::handleError(int32_t err)
+ {
+-    // We cannot immediately release the codec due to buffers still outstanding
+-    // in the renderer.  We signal to the player the error so it can shutdown/release the
+-    // decoder after flushing and increment the generation to discard unnecessary messages.
+-
+-    ++mBufferGeneration;
++    mCodec->release();
+ 
+     sp<AMessage> notify = mNotify->dup();
+     notify->setInt32("what", kWhatError);
+@@ -246,8 +242,6 @@ bool NuPlayer::Decoder::handleAnInputBuffer() {
+             mComponentName.c_str(), res == OK ? (int)bufferIx : res);
+     if (res != OK) {
+         if (res != -EAGAIN) {
+-            ALOGE("Failed to dequeue input buffer for %s (err=%d)",
+-                    mComponentName.c_str(), res);
+             handleError(res);
+         }
+         return false;
+@@ -321,7 +315,7 @@ void android::NuPlayer::Decoder::onInputBufferFilled(const sp<AMessage> &msg) {
+         }
+     }
+ 
+-
++    mInputBufferIsDequeued.editItemAt(bufferIx) = false;
+ 
+     if (buffer == NULL /* includes !hasBuffer */) {
+         int32_t streamErr = ERROR_END_OF_STREAM;
+@@ -339,18 +333,12 @@ void android::NuPlayer::Decoder::onInputBufferFilled(const sp<AMessage> &msg) {
+                 0,
+                 0,
+                 MediaCodec::BUFFER_FLAG_EOS);
+-        if (err == OK) {
+-            mInputBufferIsDequeued.editItemAt(bufferIx) = false;
+-        } else if (streamErr == ERROR_END_OF_STREAM) {
++        if (streamErr == ERROR_END_OF_STREAM && err != OK) {
+             streamErr = err;
+             // err will not be ERROR_END_OF_STREAM
+         }
+ 
+         if (streamErr != ERROR_END_OF_STREAM) {
+-            ALOGE("Stream error for %s (err=%d), EOS %s queued",
+-                    mComponentName.c_str(),
+-                    streamErr,
+-                    err == OK ? "successfully" : "unsuccessfully");
+             handleError(streamErr);
+         }
+     } else {
+@@ -380,18 +368,14 @@ void android::NuPlayer::Decoder::onInputBufferFilled(const sp<AMessage> &msg) {
+                         timeUs,
+                         flags);
+         if (err != OK) {
+-            if (mediaBuffer != NULL) {
+-                mediaBuffer->release();
+-            }
+             ALOGE("Failed to queue input buffer for %s (err=%d)",
+                     mComponentName.c_str(), err);
+             handleError(err);
+-        } else {
+-            mInputBufferIsDequeued.editItemAt(bufferIx) = false;
+-            if (mediaBuffer != NULL) {
+-                CHECK(mMediaBuffers[bufferIx] == NULL);
+-                mMediaBuffers.editItemAt(bufferIx) = mediaBuffer;
+-            }
++        }
++
++        if (mediaBuffer != NULL) {
++            CHECK(mMediaBuffers[bufferIx] == NULL);
++            mMediaBuffers.editItemAt(bufferIx) = mediaBuffer;
+         }
+     }
+ }
+@@ -442,8 +426,6 @@ bool NuPlayer::Decoder::handleAnOutputBuffer() {
+         return true;
+     } else if (res != OK) {
+         if (res != -EAGAIN) {
+-            ALOGE("Failed to dequeue output buffer for %s (err=%d)",
+-                    mComponentName.c_str(), res);
+             handleError(res);
+         }
+         return false;
+diff --git a/media/libstagefright/foundation/AMessage.cpp b/media/libstagefright/foundation/AMessage.cpp
+index 795e8a6..bc3e3fb 100644
+--- a/media/libstagefright/foundation/AMessage.cpp
++++ b/media/libstagefright/foundation/AMessage.cpp
+@@ -485,7 +485,7 @@ AString AMessage::debugString(int32_t indent) const {
+             {
+                 sp<ABuffer> buffer = static_cast<ABuffer *>(item.u.refValue);
+ 
+-                if (buffer != NULL && buffer->data() != NULL && buffer->size() <= 64) {
++                if (buffer != NULL && buffer->size() <= 64) {
+                     tmp = StringPrintf("Buffer %s = {\n", item.mName);
+                     hexdump(buffer->data(), buffer->size(), indent + 4, &tmp);
+                     appendIndent(&tmp, indent + 2);
+-- 
+2.5.0
+

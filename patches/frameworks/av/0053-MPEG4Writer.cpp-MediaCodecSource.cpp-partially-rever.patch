@@ -1,0 +1,43 @@
+From 37850068e9382c956359d6f1e99219d85adf90fd Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Thu, 28 Jan 2016 12:25:03 +0700
+Subject: [PATCH 53/58] MPEG4Writer.cpp, MediaCodecSource.cpp: partially revert
+ "84333e0 warnings be gone."
+
+Change-Id: I2fe6789d6c77ef901b923e76c9db164f1469db06
+---
+ media/libstagefright/MPEG4Writer.cpp      | 2 +-
+ media/libstagefright/MediaCodecSource.cpp | 4 ++--
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/media/libstagefright/MPEG4Writer.cpp b/media/libstagefright/MPEG4Writer.cpp
+index fb316f9..f55e803 100644
+--- a/media/libstagefright/MPEG4Writer.cpp
++++ b/media/libstagefright/MPEG4Writer.cpp
+@@ -409,7 +409,7 @@ status_t MPEG4Writer::dump(
+ }
+ 
+ status_t MPEG4Writer::Track::dump(
+-        int fd, const Vector<String16>& /* args */) const {
++        int fd, const Vector<String16>& args) const {
+     const size_t SIZE = 256;
+     char buffer[SIZE];
+     String8 result;
+diff --git a/media/libstagefright/MediaCodecSource.cpp b/media/libstagefright/MediaCodecSource.cpp
+index 924173c..2c20d62 100644
+--- a/media/libstagefright/MediaCodecSource.cpp
++++ b/media/libstagefright/MediaCodecSource.cpp
+@@ -293,8 +293,8 @@ sp<IGraphicBufferProducer> MediaCodecSource::getGraphicBufferProducer() {
+     return mGraphicBufferProducer;
+ }
+ 
+-status_t MediaCodecSource::read(
+-        MediaBuffer** buffer, const ReadOptions* /* options */) {
++status_t MediaCodecSource::read(MediaBuffer** buffer,
++        const ReadOptions* options) {
+     Mutex::Autolock autolock(mOutputBufferLock);
+ 
+     *buffer = NULL;
+-- 
+2.5.0
+

@@ -1,0 +1,73 @@
+From b2a2625e538d6912cd31d7b66249c15862fec825 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Thu, 28 Jan 2016 12:17:01 +0700
+Subject: [PATCH 35/58] Revert "mediaplayer: make frame-accurate avsync
+ configurable"
+
+This reverts commit 274084f7bfd3f6bdf5a55cf16ceefed345aa0060.
+---
+ .../nuplayer/NuPlayerRenderer.cpp                    | 20 --------------------
+ 1 file changed, 20 deletions(-)
+
+diff --git a/media/libmediaplayerservice/nuplayer/NuPlayerRenderer.cpp b/media/libmediaplayerservice/nuplayer/NuPlayerRenderer.cpp
+index 6d10651..73ac057 100644
+--- a/media/libmediaplayerservice/nuplayer/NuPlayerRenderer.cpp
++++ b/media/libmediaplayerservice/nuplayer/NuPlayerRenderer.cpp
+@@ -20,8 +20,6 @@
+ 
+ #include "NuPlayerRenderer.h"
+ 
+-#include <cutils/properties.h>
+-
+ #include <media/stagefright/foundation/ABuffer.h>
+ #include <media/stagefright/foundation/ADebug.h>
+ #include <media/stagefright/foundation/AMessage.h>
+@@ -41,16 +39,6 @@ static const int64_t kOffloadPauseMaxUs = 60000000ll;
+ // static
+ const int64_t NuPlayer::Renderer::kMinPositionUpdateDelayUs = 100000ll;
+ 
+-static bool sFrameAccurateAVsync = false;
+-
+-static void readProperties() {
+-    char value[PROPERTY_VALUE_MAX];
+-    if (property_get("persist.sys.media.avsync", value, NULL)) {
+-        sFrameAccurateAVsync =
+-            !strcmp("1", value) || !strcasecmp("true", value);
+-    }
+-}
+-
+ NuPlayer::Renderer::Renderer(
+         const sp<MediaPlayerBase::AudioSink> &sink,
+         const sp<AMessage> &notify,
+@@ -80,7 +68,6 @@ NuPlayer::Renderer::Renderer(
+       mVideoLateByUs(0ll),
+       mAudioOffloadPauseTimeoutGeneration(0),
+       mAudioOffloadTornDown(false) {
+-    readProperties();
+ }
+ 
+ NuPlayer::Renderer::~Renderer() {
+@@ -589,11 +576,6 @@ void NuPlayer::Renderer::postDrainVideoQueue() {
+ 
+     ALOGW_IF(delayUs > 500000, "unusually high delayUs: %" PRId64, delayUs);
+     // post 2 display refreshes before rendering is due
+-    // FIXME currently this increases power consumption, so unless frame-accurate
+-    // AV sync is requested, post closer to required render time (at 0.63 vsyncs)
+-    if (!sFrameAccurateAVsync) {
+-        twoVsyncsUs >>= 4;
+-    }
+     msg->post(delayUs > twoVsyncsUs ? delayUs - twoVsyncsUs : 0);
+ 
+     mDrainVideoQueuePending = true;
+@@ -994,8 +976,6 @@ void NuPlayer::Renderer::onPause() {
+ }
+ 
+ void NuPlayer::Renderer::onResume() {
+-    readProperties();
+-
+     if (!mPaused) {
+         return;
+     }
+-- 
+2.5.0
+

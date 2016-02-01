@@ -1,0 +1,208 @@
+From b0dfe8aa95994f0697d2160072f4da8a20144094 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Mon, 1 Feb 2016 23:10:40 +0700
+Subject: [PATCH 10/13] 
+ 0014-Replacing-FloatMath-native-implementation-with-calls.patch
+
+Change-Id: Idbc9e83198925dcc120d822b8128002f045bf653
+---
+ core/java/android/util/FloatMath.java | 32 +++++++++++++-----
+ core/jni/Android.mk                   |  1 -
+ core/jni/AndroidRuntime.cpp           |  3 --
+ core/jni/android_util_FloatMath.cpp   | 61 -----------------------------------
+ 4 files changed, 24 insertions(+), 73 deletions(-)
+ delete mode 100644 core/jni/android_util_FloatMath.cpp
+
+diff --git a/core/java/android/util/FloatMath.java b/core/java/android/util/FloatMath.java
+index 0ffd5bd..fe4e9fe 100644
+--- a/core/java/android/util/FloatMath.java
++++ b/core/java/android/util/FloatMath.java
+@@ -34,7 +34,9 @@ public class FloatMath {
+      * @param value to be converted
+      * @return the floor of value
+      */
+-    public static native float floor(float value);
++    public static float floor(float value) {
++        return (float) Math.floor(value);
++    }
+ 
+     /**
+      * Returns the float conversion of the most negative (i.e. closest to
+@@ -43,7 +45,9 @@ public class FloatMath {
+      * @param value to be converted
+      * @return the ceiling of value
+      */
+-    public static native float ceil(float value);
++    public static float ceil(float value) {
++        return (float) Math.ceil(value);
++    }
+ 
+     /**
+      * Returns the closest float approximation of the sine of the argument.
+@@ -51,7 +55,9 @@ public class FloatMath {
+      * @param angle to compute the cosine of, in radians
+      * @return the sine of angle
+      */
+-    public static native float sin(float angle);
++    public static float sin(float angle) {
++        return (float) Math.sin(angle);
++    }
+ 
+     /**
+      * Returns the closest float approximation of the cosine of the argument.
+@@ -59,7 +65,9 @@ public class FloatMath {
+      * @param angle to compute the cosine of, in radians
+      * @return the cosine of angle
+      */
+-    public static native float cos(float angle);
++    public static float cos(float angle) {
++        return (float) Math.cos(angle);
++    }
+ 
+     /**
+      * Returns the closest float approximation of the square root of the
+@@ -68,7 +76,9 @@ public class FloatMath {
+      * @param value to compute sqrt of
+      * @return the square root of value
+      */
+-    public static native float sqrt(float value);
++    public static float sqrt(float value) {
++        return (float) Math.sqrt(value);
++    }
+ 
+     /**
+      * Returns the closest float approximation of the raising "e" to the power
+@@ -77,7 +87,9 @@ public class FloatMath {
+      * @param value to compute the exponential of
+      * @return the exponential of value
+      */
+-    public static native float exp(float value);
++    public static float exp(float value) {
++        return (float) Math.exp(value);
++    }
+ 
+     /**
+      * Returns the closest float approximation of the result of raising {@code
+@@ -87,7 +99,9 @@ public class FloatMath {
+      * @param y the exponent of the operation.
+      * @return {@code x} to the power of {@code y}.
+      */
+-    public static native float pow(float x, float y);
++    public static float pow(float x, float y) {
++        return (float) Math.pow(x, y);
++    }
+ 
+     /**
+      * Returns {@code sqrt(}<i>{@code x}</i><sup>{@code 2}</sup>{@code +} <i>
+@@ -97,5 +111,7 @@ public class FloatMath {
+      * @param y a float number
+      * @return the hypotenuse
+      */
+-    public static native float hypot(float x, float y);
++    public static float hypot(float x, float y) {
++        return (float) Math.hypot(x, y);
++    }
+ }
+diff --git a/core/jni/Android.mk b/core/jni/Android.mk
+index dbaa4b8..a300c9f 100644
+--- a/core/jni/Android.mk
++++ b/core/jni/Android.mk
+@@ -84,7 +84,6 @@ LOCAL_SRC_FILES:= \
+ 	android_util_Binder.cpp \
+ 	android_util_EventLog.cpp \
+ 	android_util_Log.cpp \
+-	android_util_FloatMath.cpp \
+ 	android_util_Process.cpp \
+ 	android_util_StringBlock.cpp \
+ 	android_util_XmlBlock.cpp \
+diff --git a/core/jni/AndroidRuntime.cpp b/core/jni/AndroidRuntime.cpp
+index 1f4105f..5bee433 100644
+--- a/core/jni/AndroidRuntime.cpp
++++ b/core/jni/AndroidRuntime.cpp
+@@ -95,8 +95,6 @@ extern int register_android_media_AudioTrack(JNIEnv *env);
+ extern int register_android_media_JetPlayer(JNIEnv *env);
+ extern int register_android_media_ToneGenerator(JNIEnv *env);
+ 
+-extern int register_android_util_FloatMath(JNIEnv* env);
+-
+ namespace android {
+ 
+ /*
+@@ -1228,7 +1226,6 @@ static const RegJNIRec gRegJNI[] = {
+     REG_JNI(register_android_os_SystemClock),
+     REG_JNI(register_android_util_EventLog),
+     REG_JNI(register_android_util_Log),
+-    REG_JNI(register_android_util_FloatMath),
+     REG_JNI(register_android_content_AssetManager),
+     REG_JNI(register_android_content_StringBlock),
+     REG_JNI(register_android_content_XmlBlock),
+diff --git a/core/jni/android_util_FloatMath.cpp b/core/jni/android_util_FloatMath.cpp
+deleted file mode 100644
+index 73b7a6f..0000000
+--- a/core/jni/android_util_FloatMath.cpp
++++ /dev/null
+@@ -1,61 +0,0 @@
+-#include "jni.h"
+-#include <android_runtime/AndroidRuntime.h>
+-#include <math.h>
+-#include <float.h>
+-#include "SkTypes.h"
+-
+-class MathUtilsGlue {
+-public:
+-    static float FloorF(JNIEnv* env, jobject clazz, float x) {
+-        return floorf(x);
+-    }
+-    
+-    static float CeilF(JNIEnv* env, jobject clazz, float x) {
+-        return ceilf(x);
+-    }
+-    
+-    static float SinF(JNIEnv* env, jobject clazz, float x) {
+-        return sinf(x);
+-    }
+-    
+-    static float CosF(JNIEnv* env, jobject clazz, float x) {
+-        return cosf(x);
+-    }
+-    
+-    static float SqrtF(JNIEnv* env, jobject clazz, float x) {
+-        return sqrtf(x);
+-    }
+-
+-    static float ExpF(JNIEnv* env, jobject clazz, float x) {
+-        return expf(x);
+-    }
+-
+-    static float PowF(JNIEnv* env, jobject clazz, float x, float y) {
+-        return powf(x, y);
+-    }
+-
+-    static float HypotF(JNIEnv* env, jobject clazz, float x, float y) {
+-        return hypotf(x, y);
+-    }
+-};
+-
+-static JNINativeMethod gMathUtilsMethods[] = {
+-    {"floor", "(F)F", (void*) MathUtilsGlue::FloorF},
+-    {"ceil", "(F)F", (void*) MathUtilsGlue::CeilF},
+-    {"sin", "(F)F", (void*) MathUtilsGlue::SinF},
+-    {"cos", "(F)F", (void*) MathUtilsGlue::CosF},
+-    {"sqrt", "(F)F", (void*) MathUtilsGlue::SqrtF},
+-    {"exp", "(F)F", (void*) MathUtilsGlue::ExpF},
+-    {"pow", "(FF)F", (void*) MathUtilsGlue::PowF},
+-    {"hypot", "(FF)F", (void*) MathUtilsGlue::HypotF},
+-};
+-
+-int register_android_util_FloatMath(JNIEnv* env)
+-{
+-    int result = android::AndroidRuntime::registerNativeMethods(env,
+-                                            "android/util/FloatMath",
+-                                            gMathUtilsMethods,
+-                                            SK_ARRAY_COUNT(gMathUtilsMethods));
+-    return result;
+-}
+-
+-- 
+2.5.0
+

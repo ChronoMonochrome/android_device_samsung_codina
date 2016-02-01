@@ -1,0 +1,28 @@
+From 8eed2a7c6007d29dec1f911feb02bc64ba04533e Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Mon, 1 Feb 2016 22:46:22 +0700
+Subject: [PATCH 3/4] frameworks-opt-telephony_Fix-Dds-switch-issue.patch
+
+Change-Id: I7332e7e1d8909020855126b9450c87f68cffaca7
+---
+ src/java/com/android/internal/telephony/dataconnection/DcTracker.java | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/src/java/com/android/internal/telephony/dataconnection/DcTracker.java b/src/java/com/android/internal/telephony/dataconnection/DcTracker.java
+index 72e54db..2e9373a 100755
+--- a/src/java/com/android/internal/telephony/dataconnection/DcTracker.java
++++ b/src/java/com/android/internal/telephony/dataconnection/DcTracker.java
+@@ -3490,8 +3490,8 @@ public final class DcTracker extends DcTrackerBase {
+     public void registerForAllDataDisconnected(Handler h, int what, Object obj) {
+         mAllDataDisconnectedRegistrants.addUnique(h, what, obj);
+ 
+-        if (isDisconnected()) {
+-            log("notify All Data Disconnected");
++        if (!isConnected()) {
++            log("No Apncontext is connected, notify All Data Disconnected");
+             notifyAllDataDisconnected();
+         }
+     }
+-- 
+2.5.0
+

@@ -1,0 +1,169 @@
+From 9a48486063acde4a2b1f0290e2ea76069518e3b3 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Thu, 28 Jan 2016 12:17:06 +0700
+Subject: [PATCH 40/58] Revert "NuPlayer will notify SeekComplete only when
+ requested so."
+
+This reverts commit e427abf1ea252ff305fc33aacdd2e83cf34891b5.
+---
+ media/libmediaplayerservice/nuplayer/NuPlayer.cpp  | 35 ++++++++--------------
+ media/libmediaplayerservice/nuplayer/NuPlayer.h    |  7 ++---
+ .../nuplayer/NuPlayerDriver.cpp                    |  6 ++--
+ 3 files changed, 19 insertions(+), 29 deletions(-)
+
+diff --git a/media/libmediaplayerservice/nuplayer/NuPlayer.cpp b/media/libmediaplayerservice/nuplayer/NuPlayer.cpp
+index e9cbd5d..b589909 100644
+--- a/media/libmediaplayerservice/nuplayer/NuPlayer.cpp
++++ b/media/libmediaplayerservice/nuplayer/NuPlayer.cpp
+@@ -64,18 +64,16 @@ private:
+ };
+ 
+ struct NuPlayer::SeekAction : public Action {
+-    SeekAction(int64_t seekTimeUs, bool needNotify)
+-        : mSeekTimeUs(seekTimeUs),
+-          mNeedNotify(needNotify) {
++    SeekAction(int64_t seekTimeUs)
++        : mSeekTimeUs(seekTimeUs) {
+     }
+ 
+     virtual void execute(NuPlayer *player) {
+-        player->performSeek(mSeekTimeUs, mNeedNotify);
++        player->performSeek(mSeekTimeUs);
+     }
+ 
+ private:
+     int64_t mSeekTimeUs;
+-    bool mNeedNotify;
+ 
+     DISALLOW_EVIL_CONSTRUCTORS(SeekAction);
+ };
+@@ -326,10 +324,9 @@ void NuPlayer::resetAsync() {
+     (new AMessage(kWhatReset, id()))->post();
+ }
+ 
+-void NuPlayer::seekToAsync(int64_t seekTimeUs, bool needNotify) {
++void NuPlayer::seekToAsync(int64_t seekTimeUs) {
+     sp<AMessage> msg = new AMessage(kWhatSeek, id());
+     msg->setInt64("seekTimeUs", seekTimeUs);
+-    msg->setInt32("needNotify", needNotify);
+     msg->post();
+ }
+ 
+@@ -564,8 +561,7 @@ void NuPlayer::onMessageReceived(const sp<AMessage> &msg) {
+                     // the extractor may not yet be started and will assert.
+                     // If the video decoder is not set (perhaps audio only in this case)
+                     // do not perform a seek as it is not needed.
+-                    mDeferredActions.push_back(
+-                            new SeekAction(mCurrentPositionUs, false /* needNotify */));
++                    mDeferredActions.push_back(new SeekAction(mCurrentPositionUs));
+                 }
+ 
+                 // If there is a new surface texture, instantiate decoders
+@@ -944,7 +940,7 @@ void NuPlayer::onMessageReceived(const sp<AMessage> &msg) {
+                 mRenderer->signalDisableOffloadAudio();
+                 mOffloadAudio = false;
+ 
+-                performSeek(positionUs, false /* needNotify */);
++                performSeek(positionUs);
+                 instantiateDecoder(true /* audio */, &mAudioDecoder);
+             }
+             break;
+@@ -973,18 +969,14 @@ void NuPlayer::onMessageReceived(const sp<AMessage> &msg) {
+         case kWhatSeek:
+         {
+             int64_t seekTimeUs;
+-            int32_t needNotify;
+             CHECK(msg->findInt64("seekTimeUs", &seekTimeUs));
+-            CHECK(msg->findInt32("needNotify", &needNotify));
+ 
+-            ALOGV("kWhatSeek seekTimeUs=%lld us, needNotify=%d",
+-                    seekTimeUs, needNotify);
++            ALOGV("kWhatSeek seekTimeUs=%lld us", seekTimeUs);
+ 
+             mDeferredActions.push_back(
+                     new SimpleAction(&NuPlayer::performDecoderFlush));
+ 
+-            mDeferredActions.push_back(
+-                    new SeekAction(seekTimeUs, needNotify));
++            mDeferredActions.push_back(new SeekAction(seekTimeUs));
+ 
+             processDeferredActions();
+             break;
+@@ -1796,11 +1788,10 @@ void NuPlayer::processDeferredActions() {
+     }
+ }
+ 
+-void NuPlayer::performSeek(int64_t seekTimeUs, bool needNotify) {
+-    ALOGV("performSeek seekTimeUs=%lld us (%.2f secs), needNotify(%d)",
++void NuPlayer::performSeek(int64_t seekTimeUs) {
++    ALOGV("performSeek seekTimeUs=%lld us (%.2f secs)",
+           seekTimeUs,
+-          seekTimeUs / 1E6,
+-          needNotify);
++          seekTimeUs / 1E6);
+ 
+     if (mSource == NULL) {
+         // This happens when reset occurs right before the loop mode
+@@ -1817,9 +1808,7 @@ void NuPlayer::performSeek(int64_t seekTimeUs, bool needNotify) {
+         sp<NuPlayerDriver> driver = mDriver.promote();
+         if (driver != NULL) {
+             driver->notifyPosition(seekTimeUs);
+-            if (needNotify) {
+-                driver->notifySeekComplete();
+-            }
++            driver->notifySeekComplete();
+         }
+     }
+ 
+diff --git a/media/libmediaplayerservice/nuplayer/NuPlayer.h b/media/libmediaplayerservice/nuplayer/NuPlayer.h
+index 8fa7269..eee96ca 100644
+--- a/media/libmediaplayerservice/nuplayer/NuPlayer.h
++++ b/media/libmediaplayerservice/nuplayer/NuPlayer.h
+@@ -59,9 +59,8 @@ struct NuPlayer : public AHandler {
+     // Will notify the driver through "notifyResetComplete" once finished.
+     void resetAsync();
+ 
+-    // Will notify the driver through "notifySeekComplete" once finished
+-    // and needNotify is true.
+-    void seekToAsync(int64_t seekTimeUs, bool needNotify = false);
++    // Will notify the driver through "notifySeekComplete" once finished.
++    void seekToAsync(int64_t seekTimeUs);
+ 
+     status_t setVideoScalingMode(int32_t mode);
+     status_t getTrackInfo(Parcel* reply) const;
+@@ -216,7 +215,7 @@ private:
+ 
+     void processDeferredActions();
+ 
+-    void performSeek(int64_t seekTimeUs, bool needNotify);
++    void performSeek(int64_t seekTimeUs);
+     void performDecoderFlush();
+     void performDecoderShutdown(bool audio, bool video);
+     void performReset();
+diff --git a/media/libmediaplayerservice/nuplayer/NuPlayerDriver.cpp b/media/libmediaplayerservice/nuplayer/NuPlayerDriver.cpp
+index a9bca49..7ec9876 100644
+--- a/media/libmediaplayerservice/nuplayer/NuPlayerDriver.cpp
++++ b/media/libmediaplayerservice/nuplayer/NuPlayerDriver.cpp
+@@ -240,7 +240,9 @@ status_t NuPlayerDriver::start() {
+             mPlayer->start();
+ 
+             if (mStartupSeekTimeUs >= 0) {
+-                if (mStartupSeekTimeUs > 0) {
++                if (mStartupSeekTimeUs == 0) {
++                    notifySeekComplete_l();
++                } else {
+                     mPlayer->seekToAsync(mStartupSeekTimeUs);
+                 }
+ 
+@@ -367,7 +369,7 @@ status_t NuPlayerDriver::seekTo(int msec) {
+             mAtEOS = false;
+             // seeks can take a while, so we essentially paused
+             notifyListener_l(MEDIA_PAUSED);
+-            mPlayer->seekToAsync(seekTimeUs, true /* needNotify */);
++            mPlayer->seekToAsync(seekTimeUs);
+             break;
+         }
+ 
+-- 
+2.5.0
+

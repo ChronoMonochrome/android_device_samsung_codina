@@ -1,0 +1,38 @@
+From b6649775583788900ff41c73a8c59546033c5903 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Mon, 1 Feb 2016 22:46:43 +0700
+Subject: [PATCH 4/4] 
+ frameworks-opt-telephony_kill-IccSmsInterfaceManager-log-spam.patch
+
+Change-Id: I743538ff273dbc84707074b13e34055de6c29381
+---
+ src/java/com/android/internal/telephony/IccSmsInterfaceManager.java | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/src/java/com/android/internal/telephony/IccSmsInterfaceManager.java b/src/java/com/android/internal/telephony/IccSmsInterfaceManager.java
+index 749cfcf..821fccc 100644
+--- a/src/java/com/android/internal/telephony/IccSmsInterfaceManager.java
++++ b/src/java/com/android/internal/telephony/IccSmsInterfaceManager.java
+@@ -849,7 +849,8 @@ public class IccSmsInterfaceManager {
+                 Binder.getCallingUid());
+ 
+         if (!mCdmaBroadcastRangeManager.enableRange(startMessageId, endMessageId, client)) {
+-            log("Failed to add cdma broadcast subscription for MID range " + startMessageId
++            if (DBG)
++                log("Failed to add cdma broadcast subscription for MID range " + startMessageId
+                     + " to " + endMessageId + " from client " + client);
+             return false;
+         }
+@@ -876,7 +877,8 @@ public class IccSmsInterfaceManager {
+                 Binder.getCallingUid());
+ 
+         if (!mCdmaBroadcastRangeManager.disableRange(startMessageId, endMessageId, client)) {
+-            log("Failed to remove cdma broadcast subscription for MID range " + startMessageId
++            if (DBG)
++                log("Failed to remove cdma broadcast subscription for MID range " + startMessageId
+                     + " to " + endMessageId + " from client " + client);
+             return false;
+         }
+-- 
+2.5.0
+

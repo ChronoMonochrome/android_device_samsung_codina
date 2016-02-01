@@ -1,0 +1,70 @@
+From a4374921cb38aadbdb36d81c19ec212f0346e3be Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Mon, 1 Feb 2016 22:51:30 +0700
+Subject: [PATCH 1/2] packages-services-Telecomm_Low-incall-volume-new.patch
+
+Change-Id: I2e85f7e42a33dda26b75867a04ab184692dcd004
+---
+ .../android/server/telecom/CallAudioManager.java   | 32 ++++++++++++++++++++++
+ 1 file changed, 32 insertions(+)
+
+diff --git a/src/com/android/server/telecom/CallAudioManager.java b/src/com/android/server/telecom/CallAudioManager.java
+index ffa4879..52abecb 100644
+--- a/src/com/android/server/telecom/CallAudioManager.java
++++ b/src/com/android/server/telecom/CallAudioManager.java
+@@ -123,6 +123,36 @@ final class CallAudioManager extends CallsManagerListenerBase
+         }
+     }
+ 
++     /**
++     * Reset the audio stream volume to fix the low in-call volume bug.
++     *
++     * Due to a bug in the OMX system, the audio stream volume is set to 0 after it was set to it's default volume.
++     * Calling resetAudioStreamVolume() triggers the system to reset the volume.
++     *
++     * This should be called on every place where is switched between audio modes.
++     *
++     * REMARK: I think it only appears on the voice call stream, but to be sure I also do it on the bluetooth stream.
++     */
++    private void resetAudioStreamVolume() {
++        // determine actual streamType
++        int streamType = AudioManager.STREAM_VOICE_CALL;
++        if (mBluetoothManager.isBluetoothAudioConnectedOrPending()) {
++            streamType = AudioManager.STREAM_BLUETOOTH_SCO;
++        }
++        // determine volume and 1 level lower volume (lowest level can be 0)
++        int volume = mAudioManager.getStreamVolume(streamType);
++        int lowerVolume = volume - 1;
++        if (lowerVolume < 0) {
++            lowerVolume = 0;
++        }
++        Log.i(this,"resetAudioStreamVolume (streamType=" + streamType + ", streamVolume=" + volume + ")...");
++        // It's important to change it to another volume before restoring the original volume,
++        // otherwise the volume change will NOT be triggered!!
++        mAudioManager.setStreamVolume(streamType, lowerVolume, 0);
++        mAudioManager.setStreamVolume(streamType, volume, 0);
++    }
++
++
+     @Override
+     public void onForegroundCallChanged(Call oldForegroundCall, Call newForegroundCall) {
+         onCallUpdated(newForegroundCall);
+@@ -382,6 +412,7 @@ final class CallAudioManager extends CallsManagerListenerBase
+                 // DISCONNECTED. When the call eventually transitions to the next state, audio
+                 // focus will be correctly abandoned by the if clause above.
+             }
++            resetAudioStreamVolume();
+         }
+     }
+ 
+@@ -502,6 +533,7 @@ final class CallAudioManager extends CallsManagerListenerBase
+         Call call = CallsManager.getInstance().getForegroundCall();
+         if (call != null && call.getConnectionService() != null) {
+             call.getConnectionService().onAudioStateChanged(call, mAudioState);
++            resetAudioStreamVolume();
+         }
+     }
+ 
+-- 
+2.5.0
+

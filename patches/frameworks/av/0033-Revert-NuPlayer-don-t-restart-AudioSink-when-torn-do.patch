@@ -1,0 +1,117 @@
+From b62d812de941f28209f6e314e88b3155ed09cbc4 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Thu, 28 Jan 2016 12:15:31 +0700
+Subject: [PATCH 33/58] Revert "NuPlayer: don't restart AudioSink when torn
+ down due to pause timeout."
+
+This reverts commit 0852917279f79a94907e9906d0533ae409a30f6a.
+---
+ media/libmediaplayerservice/nuplayer/NuPlayer.cpp         | 11 +----------
+ media/libmediaplayerservice/nuplayer/NuPlayerRenderer.cpp |  8 +++-----
+ media/libmediaplayerservice/nuplayer/NuPlayerRenderer.h   |  7 +------
+ 3 files changed, 5 insertions(+), 21 deletions(-)
+
+diff --git a/media/libmediaplayerservice/nuplayer/NuPlayer.cpp b/media/libmediaplayerservice/nuplayer/NuPlayer.cpp
+index 5270efc..d225851 100644
+--- a/media/libmediaplayerservice/nuplayer/NuPlayer.cpp
++++ b/media/libmediaplayerservice/nuplayer/NuPlayer.cpp
+@@ -966,8 +966,6 @@ void NuPlayer::onMessageReceived(const sp<AMessage> &msg) {
+                 ALOGV("Tear down audio offload, fall back to s/w path");
+                 int64_t positionUs;
+                 CHECK(msg->findInt64("positionUs", &positionUs));
+-                int32_t reason;
+-                CHECK(msg->findInt32("reason", &reason));
+                 closeAudioSink();
+                 mAudioDecoder.clear();
+                 ++mAudioDecoderGeneration;
+@@ -979,9 +977,7 @@ void NuPlayer::onMessageReceived(const sp<AMessage> &msg) {
+                 mOffloadAudio = false;
+ 
+                 performSeek(positionUs, false /* needNotify */);
+-                if (reason == Renderer::kDueToError) {
+-                    instantiateDecoder(true /* audio */, &mAudioDecoder);
+-                }
++                instantiateDecoder(true /* audio */, &mAudioDecoder);
+             }
+             break;
+         }
+@@ -1048,11 +1044,6 @@ void NuPlayer::onMessageReceived(const sp<AMessage> &msg) {
+             } else {
+                 ALOGW("resume called when source is gone or not set");
+             }
+-            // |mAudioDecoder| may have been released due to the pause timeout, so try to re-create
+-            // it if needed.
+-            if (mFlushingAudio != SHUT_DOWN) {
+-                instantiateDecoder(true /* audio */, &mAudioDecoder);
+-            }
+             if (mRenderer != NULL) {
+                 mRenderer->resume();
+             } else {
+diff --git a/media/libmediaplayerservice/nuplayer/NuPlayerRenderer.cpp b/media/libmediaplayerservice/nuplayer/NuPlayerRenderer.cpp
+index d6bf1de..7e5087f 100644
+--- a/media/libmediaplayerservice/nuplayer/NuPlayerRenderer.cpp
++++ b/media/libmediaplayerservice/nuplayer/NuPlayerRenderer.cpp
+@@ -274,7 +274,7 @@ void NuPlayer::Renderer::onMessageReceived(const sp<AMessage> &msg) {
+ 
+         case kWhatAudioOffloadTearDown:
+         {
+-            onAudioOffloadTearDown(kDueToError);
++            onAudioOffloadTearDown();
+             break;
+         }
+ 
+@@ -285,8 +285,7 @@ void NuPlayer::Renderer::onMessageReceived(const sp<AMessage> &msg) {
+             if (generation != mAudioOffloadPauseTimeoutGeneration) {
+                 break;
+             }
+-            ALOGV("Audio Offload tear down due to pause timeout.");
+-            onAudioOffloadTearDown(kDueToTimeout);
++            onAudioOffloadTearDown();
+             break;
+         }
+ 
+@@ -1090,7 +1089,7 @@ int64_t NuPlayer::Renderer::getPlayedOutAudioDurationUs(int64_t nowUs) {
+     return durationUs;
+ }
+ 
+-void NuPlayer::Renderer::onAudioOffloadTearDown(AudioOffloadTearDownReason reason) {
++void NuPlayer::Renderer::onAudioOffloadTearDown() {
+     if (mAudioOffloadTornDown) {
+         return;
+     }
+@@ -1111,7 +1110,6 @@ void NuPlayer::Renderer::onAudioOffloadTearDown(AudioOffloadTearDownReason reaso
+     sp<AMessage> notify = mNotify->dup();
+     notify->setInt32("what", kWhatAudioOffloadTearDown);
+     notify->setInt64("positionUs", currentPositionUs);
+-    notify->setInt32("reason", reason);
+     notify->post();
+ }
+ 
+diff --git a/media/libmediaplayerservice/nuplayer/NuPlayerRenderer.h b/media/libmediaplayerservice/nuplayer/NuPlayerRenderer.h
+index 4237902..8e6112b 100644
+--- a/media/libmediaplayerservice/nuplayer/NuPlayerRenderer.h
++++ b/media/libmediaplayerservice/nuplayer/NuPlayerRenderer.h
+@@ -69,11 +69,6 @@ struct NuPlayer::Renderer : public AHandler {
+         kWhatAudioOffloadPauseTimeout = 'aOPT',
+     };
+ 
+-    enum AudioOffloadTearDownReason {
+-        kDueToError = 0,
+-        kDueToTimeout,
+-    };
+-
+ protected:
+     virtual ~Renderer();
+ 
+@@ -162,7 +157,7 @@ private:
+     void onPause();
+     void onResume();
+     void onSetVideoFrameRate(float fps);
+-    void onAudioOffloadTearDown(AudioOffloadTearDownReason reason);
++    void onAudioOffloadTearDown();
+ 
+     void notifyEOS(bool audio, status_t finalResult, int64_t delayUs = 0);
+     void notifyFlushComplete(bool audio);
+-- 
+2.5.0
+

@@ -1,0 +1,79 @@
+From db2884ad8e1cf301f3573f5e886759ef13820de9 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Thu, 28 Jan 2016 12:19:26 +0700
+Subject: [PATCH 52/58] Revert "initialize encoder at start() time for camera
+ source"
+
+This reverts commit 1a5690652f3f6ee40f15c2f9f6c4b6badf4dbcf5.
+---
+ .../libmediaplayerservice/StagefrightRecorder.cpp  | 22 +++++-----------------
+ media/libmediaplayerservice/StagefrightRecorder.h  |  1 -
+ 2 files changed, 5 insertions(+), 18 deletions(-)
+
+diff --git a/media/libmediaplayerservice/StagefrightRecorder.cpp b/media/libmediaplayerservice/StagefrightRecorder.cpp
+index 3918522..d377acd 100644
+--- a/media/libmediaplayerservice/StagefrightRecorder.cpp
++++ b/media/libmediaplayerservice/StagefrightRecorder.cpp
+@@ -748,7 +748,7 @@ status_t StagefrightRecorder::setClientName(const String16& clientName) {
+     return OK;
+ }
+ 
+-status_t StagefrightRecorder::prepareInternal() {
++status_t StagefrightRecorder::prepare() {
+     ALOGV("prepare");
+     if (mOutputFd < 0) {
+         ALOGE("Output file descriptor is invalid");
+@@ -794,13 +794,6 @@ status_t StagefrightRecorder::prepareInternal() {
+     return status;
+ }
+ 
+-status_t StagefrightRecorder::prepare() {
+-    if (mVideoSource == VIDEO_SOURCE_SURFACE) {
+-        return prepareInternal();
+-    }
+-    return OK;
+-}
+-
+ status_t StagefrightRecorder::start() {
+     ALOGV("start");
+     if (mOutputFd < 0) {
+@@ -808,20 +801,15 @@ status_t StagefrightRecorder::start() {
+         return INVALID_OPERATION;
+     }
+ 
+-    status_t status = OK;
+-
+-    if (mVideoSource != VIDEO_SOURCE_SURFACE) {
+-        status = prepareInternal();
+-        if (status != OK) {
+-            return status;
+-        }
+-    }
+-
++    // Get UID here for permission checking
++    mClientUid = IPCThreadState::self()->getCallingUid();
+     if (mWriter == NULL) {
+         ALOGE("File writer is not avaialble");
+         return UNKNOWN_ERROR;
+     }
+ 
++    status_t status = OK;
++
+     switch (mOutputFormat) {
+         case OUTPUT_FORMAT_DEFAULT:
+         case OUTPUT_FORMAT_THREE_GPP:
+diff --git a/media/libmediaplayerservice/StagefrightRecorder.h b/media/libmediaplayerservice/StagefrightRecorder.h
+index 377d168..7d6abd3 100644
+--- a/media/libmediaplayerservice/StagefrightRecorder.h
++++ b/media/libmediaplayerservice/StagefrightRecorder.h
+@@ -127,7 +127,6 @@ private:
+     sp<IGraphicBufferProducer> mGraphicBufferProducer;
+     sp<ALooper> mLooper;
+ 
+-    status_t prepareInternal();
+     status_t setupMPEG4Recording();
+     void setupMPEG4MetaData(sp<MetaData> *meta);
+     status_t setupAMRRecording();
+-- 
+2.5.0
+

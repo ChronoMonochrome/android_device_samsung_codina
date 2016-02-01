@@ -1,0 +1,107 @@
+From 1e8ab49210cc4eead15e198a0da26997fcbb4ecd Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Thu, 28 Jan 2016 12:27:38 +0700
+Subject: [PATCH 54/58] MPEG4Writer.cpp: revert "Make frameworks/av 64-bit
+ compatible"
+
+Change-Id: Ibe383859af80e39c1d5ec2245bb9619cf963f7ef
+---
+ media/libstagefright/MPEG4Writer.cpp | 19 +++++++++----------
+ 1 file changed, 9 insertions(+), 10 deletions(-)
+
+diff --git a/media/libstagefright/MPEG4Writer.cpp b/media/libstagefright/MPEG4Writer.cpp
+index f55e803..763e19d 100644
+--- a/media/libstagefright/MPEG4Writer.cpp
++++ b/media/libstagefright/MPEG4Writer.cpp
+@@ -16,7 +16,6 @@
+ 
+ //#define LOG_NDEBUG 0
+ #define LOG_TAG "MPEG4Writer"
+-#include <inttypes.h>
+ #include <utils/Log.h>
+ 
+ #include <arpa/inet.h>
+@@ -420,7 +419,7 @@ status_t MPEG4Writer::Track::dump(
+     result.append(buffer);
+     snprintf(buffer, SIZE, "       frames encoded : %d\n", mStszTableEntries->count());
+     result.append(buffer);
+-    snprintf(buffer, SIZE, "       duration encoded : %" PRId64 " us\n", mTrackDurationUs);
++    snprintf(buffer, SIZE, "       duration encoded : %lld us\n", mTrackDurationUs);
+     result.append(buffer);
+     ::write(fd, result.string(), result.size());
+     return OK;
+@@ -1410,7 +1409,7 @@ void MPEG4Writer::Track::addOneSttsTableEntry(
+         size_t sampleCount, int32_t duration) {
+ 
+     if (duration == 0) {
+-        ALOGW("0-duration samples found: %zu", sampleCount);
++        ALOGW("0-duration samples found: %d", sampleCount);
+     }
+     mSttsTableEntries->add(htonl(sampleCount));
+     mSttsTableEntries->add(htonl(duration));
+@@ -1590,7 +1589,7 @@ void MPEG4Writer::writeAllChunks() {
+     sendSessionSummary();
+ 
+     mChunkInfos.clear();
+-    ALOGD("%zu chunks are written in the last batch", outstandingChunks);
++    ALOGD("%d chunks are written in the last batch", outstandingChunks);
+ }
+ 
+ bool MPEG4Writer::findChunkToWrite(Chunk *chunk) {
+@@ -1783,7 +1782,7 @@ status_t MPEG4Writer::Track::stop() {
+ 
+     void *dummy;
+     pthread_join(mThread, &dummy);
+-    status_t err = static_cast<status_t>(reinterpret_cast<uintptr_t>(dummy));
++    status_t err = (status_t) dummy;
+ 
+     ALOGD("%s track stopped", mIsAudio? "Audio": "Video");
+     return err;
+@@ -1798,7 +1797,7 @@ void *MPEG4Writer::Track::ThreadWrapper(void *me) {
+     Track *track = static_cast<Track *>(me);
+ 
+     status_t err = track->threadEntry();
+-    return (void *)(uintptr_t)err;
++    return (void *) err;
+ }
+ 
+ static void getNalUnitType(uint8_t byte, uint8_t* type) {
+@@ -1870,7 +1869,7 @@ status_t MPEG4Writer::Track::copyAVCCodecSpecificData(
+     // 2 bytes for each of the parameter set length field
+     // plus the 7 bytes for the header
+     if (size < 4 + 7) {
+-        ALOGE("Codec specific data length too short: %zu", size);
++        ALOGE("Codec specific data length too short: %d", size);
+         return ERROR_MALFORMED;
+     }
+ 
+@@ -1939,7 +1938,7 @@ status_t MPEG4Writer::Track::parseAVCCodecSpecificData(
+         }
+ 
+         if (nSeqParamSets > 0x1F) {
+-            ALOGE("Too many seq parameter sets (%zu) found", nSeqParamSets);
++            ALOGE("Too many seq parameter sets (%d) found", nSeqParamSets);
+             return ERROR_MALFORMED;
+         }
+     }
+@@ -1952,7 +1951,7 @@ status_t MPEG4Writer::Track::parseAVCCodecSpecificData(
+             return ERROR_MALFORMED;
+         }
+         if (nPicParamSets > 0xFF) {
+-            ALOGE("Too many pic parameter sets (%zd) found", nPicParamSets);
++            ALOGE("Too many pic parameter sets (%d) found", nPicParamSets);
+             return ERROR_MALFORMED;
+         }
+     }
+@@ -1982,7 +1981,7 @@ status_t MPEG4Writer::Track::makeAVCCodecSpecificData(
+     }
+ 
+     if (size < 4) {
+-        ALOGE("Codec specific data length too short: %zu", size);
++        ALOGE("Codec specific data length too short: %d", size);
+         return ERROR_MALFORMED;
+     }
+ 
+-- 
+2.5.0
+

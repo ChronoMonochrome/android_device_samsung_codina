@@ -1,0 +1,38 @@
+From 89d678e8646e84a2e336ab7f76d4c5ecb1bab71d Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Mon, 1 Feb 2016 23:54:47 +0700
+Subject: [PATCH 2/2] art_0001-Extend-kWatchDogTimeoutSeconds-to-1-hour.patch
+
+Change-Id: I6b165cc7d03e6ab18160d9e0cab3b38efb8b7f8e
+---
+ dex2oat/dex2oat.cc | 13 +++----------
+ 1 file changed, 3 insertions(+), 10 deletions(-)
+
+diff --git a/dex2oat/dex2oat.cc b/dex2oat/dex2oat.cc
+index 6d7f115..577a1d9 100644
+--- a/dex2oat/dex2oat.cc
++++ b/dex2oat/dex2oat.cc
+@@ -695,17 +695,10 @@ class WatchDog {
+   // When setting timeouts, keep in mind that the build server may not be as fast as your desktop.
+   // Debug builds are slower so they have larger timeouts.
+   static const unsigned int kSlowdownFactor = kIsDebugBuild ? 5U : 1U;
+-#if ART_USE_PORTABLE_COMPILER
+-  // 2 minutes scaled by kSlowdownFactor.
+-  static const unsigned int kWatchDogWarningSeconds = kSlowdownFactor * 2 * 60;
+   // 30 minutes scaled by kSlowdownFactor.
+-  static const unsigned int kWatchDogTimeoutSeconds = kSlowdownFactor * 30 * 60;
+-#else
+-  // 1 minutes scaled by kSlowdownFactor.
+-  static const unsigned int kWatchDogWarningSeconds = kSlowdownFactor * 1 * 60;
+-  // 6 minutes scaled by kSlowdownFactor.
+-  static const unsigned int kWatchDogTimeoutSeconds = kSlowdownFactor * 6 * 60;
+-#endif
++  static const unsigned int kWatchDogWarningSeconds = kSlowdownFactor * 30 * 60;
++  // 60 minutes scaled by kSlowdownFactor.
++  static const unsigned int kWatchDogTimeoutSeconds = kSlowdownFactor * 60 * 60;
+ 
+   bool is_watch_dog_enabled_;
+   bool shutting_down_;
+-- 
+2.5.0
+

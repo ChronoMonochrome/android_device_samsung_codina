@@ -1,0 +1,25 @@
+From 5fa45796e98c13fb02724dcb66bc84dfbea6ca58 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Mon, 1 Feb 2016 21:59:24 +0700
+Subject: [PATCH 05/13] Fix
+
+Change-Id: I453b0d7446b10ad9f1b850f50e69e6d21ab83d8f
+---
+ media/jni/audioeffect/android_media_Visualizer.cpp | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/media/jni/audioeffect/android_media_Visualizer.cpp b/media/jni/audioeffect/android_media_Visualizer.cpp
+index 37446ed..8463d94 100644
+--- a/media/jni/audioeffect/android_media_Visualizer.cpp
++++ b/media/jni/audioeffect/android_media_Visualizer.cpp
+@@ -425,7 +425,6 @@ static void android_media_visualizer_native_finalize(JNIEnv *env,  jobject thiz)
+     Visualizer* lpVisualizer = (Visualizer *)env->GetLongField(
+         thiz, fields.fidNativeVisualizer);
+     if (lpVisualizer) {
+-        lpVisualizer->cancelCaptureCallBack();
+         ALOGV("deleting Visualizer: %p\n", lpVisualizer);
+         delete lpVisualizer;
+     }
+-- 
+2.5.0
+

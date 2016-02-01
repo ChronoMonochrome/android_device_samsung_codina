@@ -1,0 +1,313 @@
+From 2561df2b2c62e8565be32ec358895e42e6dc9917 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Thu, 28 Jan 2016 12:10:32 +0700
+Subject: [PATCH 19/58] Revert "support for time lapse/slow motion when using
+ SURFACE source"
+
+This reverts commit 2c9c8cba8562cc3a27532e4cd348912cc78d8d98.
+
+Change-Id: I60cdd7951bcf884a1d9c7b778b9f8e41ad25287a
+---
+ include/media/IOMX.h                               |  1 -
+ include/media/stagefright/ACodec.h                 |  3 --
+ .../libmediaplayerservice/StagefrightRecorder.cpp  | 17 ++-------
+ media/libstagefright/ACodec.cpp                    | 34 +++---------------
+ media/libstagefright/Utils.cpp                     |  5 ---
+ media/libstagefright/omx/GraphicBufferSource.cpp   | 42 ++--------------------
+ media/libstagefright/omx/GraphicBufferSource.h     | 13 -------
+ media/libstagefright/omx/OMXNodeInstance.cpp       |  9 +----
+ 8 files changed, 10 insertions(+), 114 deletions(-)
+
+diff --git a/include/media/IOMX.h b/include/media/IOMX.h
+index 627f23b..bd1d0e3 100644
+--- a/include/media/IOMX.h
++++ b/include/media/IOMX.h
+@@ -148,7 +148,6 @@ public:
+         INTERNAL_OPTION_REPEAT_PREVIOUS_FRAME_DELAY,  // data is an int64_t
+         INTERNAL_OPTION_MAX_TIMESTAMP_GAP, // data is int64_t
+         INTERNAL_OPTION_START_TIME, // data is an int64_t
+-        INTERNAL_OPTION_TIME_LAPSE, // data is an int64_t[2]
+     };
+     virtual status_t setInternalOption(
+             node_id node,
+diff --git a/include/media/stagefright/ACodec.h b/include/media/stagefright/ACodec.h
+index fcccc6d..c951de3 100644
+--- a/include/media/stagefright/ACodec.h
++++ b/include/media/stagefright/ACodec.h
+@@ -213,9 +213,6 @@ private:
+     int64_t mRepeatFrameDelayUs;
+     int64_t mMaxPtsGapUs;
+ 
+-    int64_t mTimePerFrameUs;
+-    int64_t mTimePerCaptureUs;
+-
+     bool mCreateInputBuffersSuspended;
+ 
+     bool mTunneled;
+diff --git a/media/libmediaplayerservice/StagefrightRecorder.cpp b/media/libmediaplayerservice/StagefrightRecorder.cpp
+index cadd691..4634b8f 100644
+--- a/media/libmediaplayerservice/StagefrightRecorder.cpp
++++ b/media/libmediaplayerservice/StagefrightRecorder.cpp
+@@ -688,10 +688,10 @@ status_t StagefrightRecorder::setParameter(
+             return setParamTimeLapseEnable(timeLapseEnable);
+         }
+     } else if (key == "time-between-time-lapse-frame-capture") {
+-        int64_t timeBetweenTimeLapseFrameCaptureUs;
+-        if (safe_strtoi64(value.string(), &timeBetweenTimeLapseFrameCaptureUs)) {
++        int64_t timeBetweenTimeLapseFrameCaptureMs;
++        if (safe_strtoi64(value.string(), &timeBetweenTimeLapseFrameCaptureMs)) {
+             return setParamTimeBetweenTimeLapseFrameCapture(
+-                    timeBetweenTimeLapseFrameCaptureUs);
++                    1000LL * timeBetweenTimeLapseFrameCaptureMs);
+         }
+     } else {
+         ALOGE("setParameter: failed to find key %s", key.string());
+@@ -1494,17 +1494,6 @@ status_t StagefrightRecorder::setupVideoEncoder(
+         format->setInt32("stride", mVideoWidth);
+         format->setInt32("slice-height", mVideoWidth);
+         format->setInt32("color-format", OMX_COLOR_FormatAndroidOpaque);
+-
+-        // set up time lapse/slow motion for surface source
+-        if (mCaptureTimeLapse) {
+-            if (mTimeBetweenTimeLapseFrameCaptureUs <= 0) {
+-                ALOGE("Invalid mTimeBetweenTimeLapseFrameCaptureUs value: %lld",
+-                    mTimeBetweenTimeLapseFrameCaptureUs);
+-                return BAD_VALUE;
+-            }
+-            format->setInt64("time-lapse",
+-                    mTimeBetweenTimeLapseFrameCaptureUs);
+-        }
+     }
+ 
+     format->setInt32("bitrate", mVideoBitRate);
+diff --git a/media/libstagefright/ACodec.cpp b/media/libstagefright/ACodec.cpp
+index ec76804..84e0315 100644
+--- a/media/libstagefright/ACodec.cpp
++++ b/media/libstagefright/ACodec.cpp
+@@ -420,8 +420,6 @@ ACodec::ACodec()
+       mMetaDataBuffersToSubmit(0),
+       mRepeatFrameDelayUs(-1ll),
+       mMaxPtsGapUs(-1ll),
+-      mTimePerFrameUs(-1ll),
+-      mTimePerCaptureUs(-1ll),
+       mCreateInputBuffersSuspended(false),
+       mTunneled(false) {
+     mUninitializedState = new UninitializedState(this);
+@@ -1268,11 +1266,7 @@ status_t ACodec::configureCodec(
+         }
+ 
+         if (!msg->findInt64("max-pts-gap-to-encoder", &mMaxPtsGapUs)) {
+-            mMaxPtsGapUs = -1ll;
+-        }
+-
+-        if (!msg->findInt64("time-lapse", &mTimePerCaptureUs)) {
+-            mTimePerCaptureUs = -1ll;
++            mMaxPtsGapUs = -1l;
+         }
+ 
+         if (!msg->findInt32(
+@@ -2255,7 +2249,6 @@ status_t ACodec::setupVideoEncoder(const char *mime, const sp<AMessage> &msg) {
+             return INVALID_OPERATION;
+         }
+         frameRate = (float)tmp;
+-        mTimePerFrameUs = (int64_t) (1000000.0f / frameRate);
+     }
+ 
+     video_def->xFramerate = (OMX_U32)(frameRate * 65536.0f);
+@@ -4822,7 +4815,7 @@ void ACodec::LoadedState::onCreateInputSurface(
+         }
+     }
+ 
+-    if (err == OK && mCodec->mMaxPtsGapUs > 0ll) {
++    if (err == OK && mCodec->mMaxPtsGapUs > 0l) {
+         err = mCodec->mOMX->setInternalOption(
+                 mCodec->mNode,
+                 kPortIndexInput,
+@@ -4834,27 +4827,8 @@ void ACodec::LoadedState::onCreateInputSurface(
+             ALOGE("[%s] Unable to configure max timestamp gap (err %d)",
+                     mCodec->mComponentName.c_str(),
+                     err);
+-        }
+-    }
+-
+-    if (err == OK && mCodec->mTimePerCaptureUs > 0ll
+-            && mCodec->mTimePerFrameUs > 0ll) {
+-        int64_t timeLapse[2];
+-        timeLapse[0] = mCodec->mTimePerFrameUs;
+-        timeLapse[1] = mCodec->mTimePerCaptureUs;
+-        err = mCodec->mOMX->setInternalOption(
+-                mCodec->mNode,
+-                kPortIndexInput,
+-                IOMX::INTERNAL_OPTION_TIME_LAPSE,
+-                &timeLapse[0],
+-                sizeof(timeLapse));
+-
+-        if (err != OK) {
+-            ALOGE("[%s] Unable to configure time lapse (err %d)",
+-                    mCodec->mComponentName.c_str(),
+-                    err);
+-        }
+-    }
++          }
++      }
+ 
+     if (err == OK && mCodec->mCreateInputBuffersSuspended) {
+         bool suspend = true;
+diff --git a/media/libstagefright/Utils.cpp b/media/libstagefright/Utils.cpp
+index 4a2ee23..b62e527 100644
+--- a/media/libstagefright/Utils.cpp
++++ b/media/libstagefright/Utils.cpp
+@@ -564,11 +564,6 @@ void convertMessageToMetaData(const sp<AMessage> &msg, sp<MetaData> &meta) {
+         }
+     }
+ 
+-    int32_t timeScale;
+-    if (msg->findInt32("time-scale", &timeScale)) {
+-        meta->setInt32(kKeyTimeScale, timeScale);
+-    }
+-
+     // XXX TODO add whatever other keys there are
+ 
+ #if 0
+diff --git a/media/libstagefright/omx/GraphicBufferSource.cpp b/media/libstagefright/omx/GraphicBufferSource.cpp
+index e925a30..34149c5 100644
+--- a/media/libstagefright/omx/GraphicBufferSource.cpp
++++ b/media/libstagefright/omx/GraphicBufferSource.cpp
+@@ -57,8 +57,6 @@ GraphicBufferSource::GraphicBufferSource(OMXNodeInstance* nodeInstance,
+     mLatestSubmittedBufferFrameNum(0),
+     mLatestSubmittedBufferUseCount(0),
+     mRepeatBufferDeferred(false),
+-    mTimePerCaptureUs(-1ll),
+-    mTimePerFrameUs(-1ll),
+     mPrevCaptureUs(-1ll),
+     mPrevFrameUs(-1ll),
+     mUseGraphicBufferInMeta(useGraphicBufferInMeta) {
+@@ -581,30 +579,7 @@ status_t GraphicBufferSource::signalEndOfInputStream() {
+ int64_t GraphicBufferSource::getTimestamp(const BufferQueue::BufferItem &item) {
+     int64_t timeUs = item.mTimestamp / 1000;
+ 
+-    if (mTimePerCaptureUs > 0ll) {
+-        // Time lapse or slow motion mode
+-        if (mPrevCaptureUs < 0ll) {
+-            // first capture
+-            mPrevCaptureUs = timeUs;
+-            mPrevFrameUs = timeUs;
+-        } else {
+-            // snap to nearest capture point
+-            int64_t nFrames = (timeUs + mTimePerCaptureUs / 2 - mPrevCaptureUs)
+-                    / mTimePerCaptureUs;
+-            if (nFrames <= 0) {
+-                // skip this frame as it's too close to previous capture
+-                ALOGV("skipping frame, timeUs %lld", timeUs);
+-                return -1;
+-            }
+-            mPrevCaptureUs = mPrevCaptureUs + nFrames * mTimePerCaptureUs;
+-            mPrevFrameUs += mTimePerFrameUs * nFrames;
+-        }
+-
+-        ALOGV("timeUs %lld, captureUs %lld, frameUs %lld",
+-                timeUs, mPrevCaptureUs, mPrevFrameUs);
+-
+-        return mPrevFrameUs;
+-    } else if (mMaxTimestampGapUs > 0ll) {
++    if (mMaxTimestampGapUs > 0ll) {
+         /* Cap timestamp gap between adjacent frames to specified max
+          *
+          * In the scenario of cast mirroring, encoding could be suspended for
+@@ -767,7 +742,7 @@ void GraphicBufferSource::onFrameAvailable() {
+             // If this is the first time we're seeing this buffer, add it to our
+             // slot table.
+             if (item.mGraphicBuffer != NULL) {
+-                ALOGV("onFrameAvailable: setting mBufferSlot %d", item.mBuf);
++                ALOGV("fillCodecBuffer_l: setting mBufferSlot %d", item.mBuf);
+                 mBufferSlot[item.mBuf] = item.mGraphicBuffer;
+             }
+             mConsumer->releaseBuffer(item.mBuf, item.mFrameNumber,
+@@ -843,19 +818,6 @@ void GraphicBufferSource::setSkipFramesBeforeUs(int64_t skipFramesBeforeUs) {
+             (skipFramesBeforeUs > 0) ? (skipFramesBeforeUs * 1000) : -1ll;
+ }
+ 
+-status_t GraphicBufferSource::setTimeLapseUs(int64_t* data) {
+-    Mutex::Autolock autoLock(mMutex);
+-
+-    if (mExecuting || data[0] <= 0ll || data[1] <= 0ll) {
+-        return INVALID_OPERATION;
+-    }
+-
+-    mTimePerFrameUs = data[0];
+-    mTimePerCaptureUs = data[1];
+-
+-    return OK;
+-}
+-
+ void GraphicBufferSource::onMessageReceived(const sp<AMessage> &msg) {
+     switch (msg->what()) {
+         case kWhatRepeatLastFrame:
+diff --git a/media/libstagefright/omx/GraphicBufferSource.h b/media/libstagefright/omx/GraphicBufferSource.h
+index c0860ab..7509a80 100644
+--- a/media/libstagefright/omx/GraphicBufferSource.h
++++ b/media/libstagefright/omx/GraphicBufferSource.h
+@@ -119,13 +119,6 @@ public:
+     // of suspension on input.
+     status_t setMaxTimestampGapUs(int64_t maxGapUs);
+ 
+-    // Sets the time lapse (or slow motion) parameters.
+-    // data[0] is the time (us) between two frames for playback
+-    // data[1] is the time (us) between two frames for capture
+-    // When set, the sample's timestamp will be modified to playback framerate,
+-    // and capture timestamp will be modified to capture rate.
+-    status_t setTimeLapseUs(int64_t* data);
+-
+     // Sets the start time us (in system time), samples before which should
+     // be dropped and not submitted to encoder
+     void setSkipFramesBeforeUs(int64_t startTimeUs);
+@@ -266,12 +259,6 @@ private:
+     // no codec buffer was available at the time.
+     bool mRepeatBufferDeferred;
+ 
+-    // Time lapse / slow motion configuration
+-    int64_t mTimePerCaptureUs;
+-    int64_t mTimePerFrameUs;
+-    int64_t mPrevCaptureUs;
+-    int64_t mPrevFrameUs;
+-
+     bool mUseGraphicBufferInMeta;
+ 
+     void onMessageReceived(const sp<AMessage> &msg);
+diff --git a/media/libstagefright/omx/OMXNodeInstance.cpp b/media/libstagefright/omx/OMXNodeInstance.cpp
+index fc5389e..34bb1a9 100644
+--- a/media/libstagefright/omx/OMXNodeInstance.cpp
++++ b/media/libstagefright/omx/OMXNodeInstance.cpp
+@@ -934,7 +934,6 @@ status_t OMXNodeInstance::setInternalOption(
+         case IOMX::INTERNAL_OPTION_REPEAT_PREVIOUS_FRAME_DELAY:
+         case IOMX::INTERNAL_OPTION_MAX_TIMESTAMP_GAP:
+         case IOMX::INTERNAL_OPTION_START_TIME:
+-        case IOMX::INTERNAL_OPTION_TIME_LAPSE:
+         {
+             const sp<GraphicBufferSource> &bufferSource =
+                 getGraphicBufferSource();
+@@ -968,7 +967,7 @@ status_t OMXNodeInstance::setInternalOption(
+                 int64_t maxGapUs = *(int64_t *)data;
+ 
+                 return bufferSource->setMaxTimestampGapUs(maxGapUs);
+-            } else if (type == IOMX::INTERNAL_OPTION_START_TIME) {
++            } else { // IOMX::INTERNAL_OPTION_START_TIME
+                 if (size != sizeof(int64_t)) {
+                     return INVALID_OPERATION;
+                 }
+@@ -976,12 +975,6 @@ status_t OMXNodeInstance::setInternalOption(
+                 int64_t skipFramesBeforeUs = *(int64_t *)data;
+ 
+                 bufferSource->setSkipFramesBeforeUs(skipFramesBeforeUs);
+-            } else { // IOMX::INTERNAL_OPTION_TIME_LAPSE
+-                if (size != sizeof(int64_t) * 2) {
+-                    return INVALID_OPERATION;
+-                }
+-
+-                bufferSource->setTimeLapseUs((int64_t *)data);
+             }
+ 
+             return OK;
+-- 
+2.5.0
+

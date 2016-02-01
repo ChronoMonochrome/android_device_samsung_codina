@@ -1,0 +1,39 @@
+From 501ceedea26e957ceb485649119cc6e6b5190839 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Mon, 1 Feb 2016 13:08:21 +0700
+Subject: [PATCH 02/13] 
+ 0002-base-Allow-media_rw-gid-1023-full-SD-card-access.patch
+
+Change-Id: Ie33a326fd83a199313e2ba55b05bdba184f93160
+---
+ data/etc/platform.xml | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/data/etc/platform.xml b/data/etc/platform.xml
+index 0f37865..4c2d1dc 100644
+--- a/data/etc/platform.xml
++++ b/data/etc/platform.xml
+@@ -60,17 +60,20 @@
+ 
+     <permission name="android.permission.READ_EXTERNAL_STORAGE" >
+         <group gid="sdcard_r" />
++        <group gid="media_rw" />
+     </permission>
+ 
+     <permission name="android.permission.WRITE_EXTERNAL_STORAGE" >
+         <group gid="sdcard_r" />
+         <group gid="sdcard_rw" />
++        <group gid="media_rw" />
+     </permission>
+ 
+     <permission name="android.permission.ACCESS_ALL_EXTERNAL_STORAGE" >
+         <group gid="sdcard_r" />
+         <group gid="sdcard_rw" />
+         <group gid="sdcard_all" />
++        <group gid="media_rw" />
+     </permission>
+ 
+     <permission name="android.permission.WRITE_MEDIA_STORAGE" >
+-- 
+2.5.0
+

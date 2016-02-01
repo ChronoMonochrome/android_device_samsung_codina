@@ -1,0 +1,36 @@
+From 8abb81ed5159d5b7429567969d60e0c8953bf4fb Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Thu, 28 Jan 2016 12:14:48 +0700
+Subject: [PATCH 29/58] Revert "NuPlayerDriver: request seek notification when
+ prepare*() is called in STOPPED state."
+
+This reverts commit dab70a065a8e972d272ed948e77cf2cd0f1525e1.
+---
+ media/libmediaplayerservice/nuplayer/NuPlayerDriver.cpp | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/media/libmediaplayerservice/nuplayer/NuPlayerDriver.cpp b/media/libmediaplayerservice/nuplayer/NuPlayerDriver.cpp
+index 63c4fce..c57955d 100644
+--- a/media/libmediaplayerservice/nuplayer/NuPlayerDriver.cpp
++++ b/media/libmediaplayerservice/nuplayer/NuPlayerDriver.cpp
+@@ -191,7 +191,7 @@ status_t NuPlayerDriver::prepare_l() {
+             mAtEOS = false;
+             mState = STATE_STOPPED_AND_PREPARING;
+             mIsAsyncPrepare = false;
+-            mPlayer->seekToAsync(0, true /* needNotify */);
++            mPlayer->seekToAsync(0);
+             while (mState == STATE_STOPPED_AND_PREPARING) {
+                 mCondition.wait(mLock);
+             }
+@@ -216,7 +216,7 @@ status_t NuPlayerDriver::prepareAsync() {
+             mAtEOS = false;
+             mState = STATE_STOPPED_AND_PREPARING;
+             mIsAsyncPrepare = true;
+-            mPlayer->seekToAsync(0, true /* needNotify */);
++            mPlayer->seekToAsync(0);
+             return OK;
+         default:
+             return INVALID_OPERATION;
+-- 
+2.5.0
+

@@ -1,0 +1,593 @@
+From e6fd0d80e2a93f4228a7927e710fa8f619fa1c33 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Mon, 1 Feb 2016 23:08:09 +0700
+Subject: [PATCH 06/13] 0007-Disable-a-lot-of-extra-unneeded-debugging.patch
+
+Change-Id: Ia09343650ae56ec4dba603b9042cd82408682df6
+---
+ core/java/android/app/VoiceInteractor.java         |   2 +-
+ .../service/fingerprint/FingerprintManager.java    |   4 +-
+ .../service/fingerprint/FingerprintUtils.java      |   2 +-
+ .../service/voice/VoiceInteractionSession.java     |   2 +-
+ .../android/internal/app/NetInitiatedActivity.java |   2 +-
+ .../internal/location/GpsNetInitiatedHandler.java  |   2 +-
+ media/jni/android_media_ExtMediaPlayer.cpp         |   4 +-
+ media/jni/android_media_MediaPlayer.cpp            |  43 ------
+ media/jni/android_media_MediaRecorder.cpp          |   9 --
+ media/jni/android_mtp_MtpDatabase.cpp              | 147 ++++++++++-----------
+ .../backupconfirm/BackupRestoreConfirmation.java   |   2 +-
+ .../printspooler/model/MutexFileProvider.java      |   2 +-
+ .../sharedstoragebackup/ObbBackupService.java      |   2 +-
+ .../sharedstoragebackup/SharedStorageAgent.java    |   2 +-
+ .../src/com/android/systemui/recent/Recents.java   |   2 +-
+ .../systemui/statusbar/GestureRecorder.java        |   2 +-
+ .../impl/keyguard/KeyguardServiceDelegate.java     |   2 +-
+ .../server/appwidget/AppWidgetServiceImpl.java     |   3 +-
+ .../server/backup/BackupManagerService.java        |   2 +-
+ .../com/android/server/backup/FullBackupJob.java   |   2 +-
+ .../server/fingerprint/FingerprintService.java     |   2 +-
+ .../android/onemedia/playback/LocalRenderer.java   |   2 +-
+ 22 files changed, 93 insertions(+), 149 deletions(-)
+
+diff --git a/core/java/android/app/VoiceInteractor.java b/core/java/android/app/VoiceInteractor.java
+index 723cb9b..11f02fc 100644
+--- a/core/java/android/app/VoiceInteractor.java
++++ b/core/java/android/app/VoiceInteractor.java
+@@ -59,7 +59,7 @@ import java.util.ArrayList;
+ @SystemApi
+ public class VoiceInteractor {
+     static final String TAG = "VoiceInteractor";
+-    static final boolean DEBUG = true;
++    static final boolean DEBUG = false;
+ 
+     final IVoiceInteractor mInteractor;
+ 
+diff --git a/core/java/android/service/fingerprint/FingerprintManager.java b/core/java/android/service/fingerprint/FingerprintManager.java
+index 178cc8b..42306f7 100644
+--- a/core/java/android/service/fingerprint/FingerprintManager.java
++++ b/core/java/android/service/fingerprint/FingerprintManager.java
+@@ -38,7 +38,7 @@ import android.util.Slog;
+ 
+ public class FingerprintManager {
+     private static final String TAG = "FingerprintManager";
+-    private static final boolean DEBUG = true;
++    private static final boolean DEBUG = false;
+     private static final int MSG_ENROLL_RESULT = 100;
+     private static final int MSG_ACQUIRED = 101;
+     private static final int MSG_PROCESSED = 102;
+@@ -248,4 +248,4 @@ public class FingerprintManager {
+     private void sendError(int msg, int arg1, int arg2) {
+         mHandler.obtainMessage(msg, arg1, arg2);
+     }
+-}
+\ No newline at end of file
++}
+diff --git a/core/java/android/service/fingerprint/FingerprintUtils.java b/core/java/android/service/fingerprint/FingerprintUtils.java
+index a4caf8e..426e81e 100644
+--- a/core/java/android/service/fingerprint/FingerprintUtils.java
++++ b/core/java/android/service/fingerprint/FingerprintUtils.java
+@@ -29,7 +29,7 @@ import java.util.Arrays;
+  */
+ public
+ class FingerprintUtils {
+-    private static final boolean DEBUG = true;
++    private static final boolean DEBUG = false;
+     private static final String TAG = "FingerprintUtils";
+ 
+     public static int[] getFingerprintIdsForUser(ContentResolver res, int userId) {
+diff --git a/core/java/android/service/voice/VoiceInteractionSession.java b/core/java/android/service/voice/VoiceInteractionSession.java
+index 749f813..5a23609 100644
+--- a/core/java/android/service/voice/VoiceInteractionSession.java
++++ b/core/java/android/service/voice/VoiceInteractionSession.java
+@@ -58,7 +58,7 @@ import static android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
+  */
+ public abstract class VoiceInteractionSession implements KeyEvent.Callback {
+     static final String TAG = "VoiceInteractionSession";
+-    static final boolean DEBUG = true;
++    static final boolean DEBUG = false;
+ 
+     final Context mContext;
+     final HandlerCaller mHandlerCaller;
+diff --git a/core/java/com/android/internal/app/NetInitiatedActivity.java b/core/java/com/android/internal/app/NetInitiatedActivity.java
+index b951f50..a5eea80 100644
+--- a/core/java/com/android/internal/app/NetInitiatedActivity.java
++++ b/core/java/com/android/internal/app/NetInitiatedActivity.java
+@@ -40,7 +40,7 @@ public class NetInitiatedActivity extends AlertActivity implements DialogInterfa
+ 
+     private static final String TAG = "NetInitiatedActivity";
+ 
+-    private static final boolean DEBUG = true;
++    private static final boolean DEBUG = false;
+     private static final boolean VERBOSE = false;
+ 
+     private static final int POSITIVE_BUTTON = AlertDialog.BUTTON_POSITIVE;
+diff --git a/location/java/com/android/internal/location/GpsNetInitiatedHandler.java b/location/java/com/android/internal/location/GpsNetInitiatedHandler.java
+index e9e475c..be1da4f 100644
+--- a/location/java/com/android/internal/location/GpsNetInitiatedHandler.java
++++ b/location/java/com/android/internal/location/GpsNetInitiatedHandler.java
+@@ -50,7 +50,7 @@ public class GpsNetInitiatedHandler {
+ 
+     private static final String TAG = "GpsNetInitiatedHandler";
+ 
+-    private static final boolean DEBUG = true;
++    private static final boolean DEBUG = false;
+     private static final boolean VERBOSE = false;
+ 
+     // NI verify activity for bringing up UI (not used yet)
+diff --git a/media/jni/android_media_ExtMediaPlayer.cpp b/media/jni/android_media_ExtMediaPlayer.cpp
+index e45ae16..1c4b7d5 100644
+--- a/media/jni/android_media_ExtMediaPlayer.cpp
++++ b/media/jni/android_media_ExtMediaPlayer.cpp
+@@ -110,7 +110,7 @@ void JNIExtMediaPlayerListener::notify(int msg, int ext1, int ext2, const Parcel
+     if (mParcel != NULL)
+     {
+       if((extfields.ext_post_event != NULL) &&
+-         ((msg == MEDIA_PREPARED) || (msg == MEDIA_TIMED_TEXT) || (msg == MEDIA_QOE)))
++         ((msg == MEDIA_PREPARED) || (msg == MEDIA_TIMED_TEXT)))
+       {
+         ALOGE("JNIExtMediaPlayerListener::notify calling ext_post_event");
+         if (ext2 == 1 && (msg == MEDIA_TIMED_TEXT))
+@@ -145,7 +145,7 @@ void JNIExtMediaPlayerListener::notify(int msg, int ext1, int ext2, const Parcel
+   else
+   {
+     if((extfields.ext_post_event != NULL) &&
+-       ((msg == MEDIA_PREPARED) || (msg == MEDIA_TIMED_TEXT) ||(msg == MEDIA_QOE)))
++       ((msg == MEDIA_PREPARED) || (msg == MEDIA_TIMED_TEXT)))
+     {
+       ALOGD("JNIExtMediaPlayerListener::notify calling ext_post_events");
+       env->CallStaticVoidMethod(mClass, extfields.ext_post_event, mObject, msg, ext1, ext2, NULL);
+diff --git a/media/jni/android_media_MediaPlayer.cpp b/media/jni/android_media_MediaPlayer.cpp
+index a6a9f35..73a924d 100644
+--- a/media/jni/android_media_MediaPlayer.cpp
++++ b/media/jni/android_media_MediaPlayer.cpp
+@@ -37,7 +37,6 @@
+ #include "utils/KeyedVector.h"
+ #include "utils/String8.h"
+ #include "android_media_Utils.h"
+-#include "android_media_ExtMediaPlayer.h"
+ 
+ #include "android_os_Parcel.h"
+ #include "android_util_Binder.h"
+@@ -696,14 +695,6 @@ android_media_MediaPlayer_native_setup(JNIEnv *env, jobject thiz, jobject weak_t
+     // create new listener and give it to MediaPlayer
+     sp<JNIMediaPlayerListener> listener = new JNIMediaPlayerListener(env, thiz, weak_this);
+     mp->setListener(listener);
+-    if (JNIExtMediaPlayerListener::checkExtMedia(env, thiz)) {
+-      ALOGD("QCMediaPlayer mediaplayer present");
+-       sp<JNIExtMediaPlayerListener> extmedialistener = new JNIExtMediaPlayerListener(
+-                                                            env, thiz, weak_this, listener);
+-       mp->setListener(extmedialistener);
+-    } else {
+-      ALOGE("QCMediaPlayer mediaplayer NOT present");
+-    }
+ 
+     // Stow our new C++ MediaPlayer in an opaque field in the Java object.
+     setMediaPlayer(env, thiz, mp);
+@@ -858,38 +849,6 @@ android_media_MediaPlayer_setNextMediaPlayer(JNIEnv *env, jobject thiz, jobject
+     ;
+ }
+ 
+-static jboolean
+-android_media_MediaPlayer_suspend(JNIEnv *env, jobject thiz)
+-{
+-    sp<MediaPlayer> mp = getMediaPlayer(env, thiz);
+-    if (mp == NULL) {
+-        jniThrowException(env, "java/lang/IllegalStateException", NULL);
+-        return false;
+-    }
+-
+-    if (mp->suspend() != OK) {
+-        return false;
+-    }
+-
+-    return true;
+-}
+-
+-static jboolean
+-android_media_MediaPlayer_resume(JNIEnv *env, jobject thiz)
+-{
+-    sp<MediaPlayer> mp = getMediaPlayer(env, thiz);
+-    if (mp == NULL) {
+-        jniThrowException(env, "java/lang/IllegalStateException", NULL);
+-        return false;
+-    }
+-
+-    if (mp->resume() != OK) {
+-        return false;
+-    }
+-
+-    return true;
+-}
+-
+ // ----------------------------------------------------------------------------
+ 
+ static JNINativeMethod gMethods[] = {
+@@ -934,8 +893,6 @@ static JNINativeMethod gMethods[] = {
+     {"native_pullBatteryData", "(Landroid/os/Parcel;)I",        (void *)android_media_MediaPlayer_pullBatteryData},
+     {"native_setRetransmitEndpoint", "(Ljava/lang/String;I)I",  (void *)android_media_MediaPlayer_setRetransmitEndpoint},
+     {"setNextMediaPlayer",  "(Landroid/media/MediaPlayer;)V",   (void *)android_media_MediaPlayer_setNextMediaPlayer},
+-    {"_suspend",             "()Z",                             (void *)android_media_MediaPlayer_suspend},
+-    {"_resume",              "()Z",                             (void *)android_media_MediaPlayer_resume},
+ };
+ 
+ static const char* const kClassPathName = "android/media/MediaPlayer";
+diff --git a/media/jni/android_media_MediaRecorder.cpp b/media/jni/android_media_MediaRecorder.cpp
+index fff89eb..5646740 100644
+--- a/media/jni/android_media_MediaRecorder.cpp
++++ b/media/jni/android_media_MediaRecorder.cpp
+@@ -379,14 +379,6 @@ android_media_MediaRecorder_start(JNIEnv *env, jobject thiz)
+ }
+ 
+ static void
+-android_media_MediaRecorder_pause(JNIEnv *env, jobject thiz)
+-{
+-    ALOGV("pause");
+-    sp<MediaRecorder> mr = getMediaRecorder(env, thiz);
+-    process_media_recorder_call(env, mr->pause(), "java/lang/RuntimeException", "pause failed.");
+-}
+-
+-static void
+ android_media_MediaRecorder_stop(JNIEnv *env, jobject thiz)
+ {
+     ALOGV("stop");
+@@ -507,7 +499,6 @@ static JNINativeMethod gMethods[] = {
+     {"getSurface",           "()Landroid/view/Surface;",        (void *)android_media_MediaRecorder_getSurface},
+     {"getMaxAmplitude",      "()I",                             (void *)android_media_MediaRecorder_native_getMaxAmplitude},
+     {"start",                "()V",                             (void *)android_media_MediaRecorder_start},
+-    {"pause",                "()V",                             (void *)android_media_MediaRecorder_pause},
+     {"stop",                 "()V",                             (void *)android_media_MediaRecorder_stop},
+     {"native_reset",         "()V",                             (void *)android_media_MediaRecorder_native_reset},
+     {"release",              "()V",                             (void *)android_media_MediaRecorder_release},
+diff --git a/media/jni/android_mtp_MtpDatabase.cpp b/media/jni/android_mtp_MtpDatabase.cpp
+index aa7e1b4..19b54a6 100644
+--- a/media/jni/android_mtp_MtpDatabase.cpp
++++ b/media/jni/android_mtp_MtpDatabase.cpp
+@@ -468,63 +468,6 @@ out:
+     return result;
+ }
+ 
+-static bool readLongValue(int type, MtpDataPacket& packet, jlong& longValue) {
+-    switch (type) {
+-        case MTP_TYPE_INT8: {
+-            int8_t temp;
+-            if (!packet.getInt8(temp)) return false;
+-            longValue = temp;
+-            break;
+-        }
+-        case MTP_TYPE_UINT8: {
+-            uint8_t temp;
+-            if (!packet.getUInt8(temp)) return false;
+-            longValue = temp;
+-            break;
+-        }
+-        case MTP_TYPE_INT16: {
+-            int16_t temp;
+-            if (!packet.getInt16(temp)) return false;
+-            longValue = temp;
+-            break;
+-        }
+-        case MTP_TYPE_UINT16: {
+-            uint16_t temp;
+-            if (!packet.getUInt16(temp)) return false;
+-            longValue = temp;
+-            break;
+-        }
+-        case MTP_TYPE_INT32: {
+-            int32_t temp;
+-            if (!packet.getInt32(temp)) return false;
+-            longValue = temp;
+-            break;
+-        }
+-        case MTP_TYPE_UINT32: {
+-            uint32_t temp;
+-            if (!packet.getUInt32(temp)) return false;
+-            longValue = temp;
+-            break;
+-        }
+-        case MTP_TYPE_INT64: {
+-            int64_t temp;
+-            if (!packet.getInt64(temp)) return false;
+-            longValue = temp;
+-            break;
+-        }
+-        case MTP_TYPE_UINT64: {
+-            uint64_t temp;
+-            if (!packet.getUInt64(temp)) return false;
+-            longValue = temp;
+-            break;
+-        }
+-        default:
+-            ALOGE("unsupported type in readLongValue");
+-            return false;
+-    }
+-    return true;
+-}
+-
+ MtpResponseCode MyMtpDatabase::setObjectPropertyValue(MtpObjectHandle handle,
+                                             MtpObjectProperty property,
+                                             MtpDataPacket& packet) {
+@@ -536,22 +479,49 @@ MtpResponseCode MyMtpDatabase::setObjectPropertyValue(MtpObjectHandle handle,
+     JNIEnv* env = AndroidRuntime::getJNIEnv();
+     jlong longValue = 0;
+     jstring stringValue = NULL;
+-    MtpResponseCode result = MTP_RESPONSE_INVALID_OBJECT_PROP_FORMAT;
+ 
+-    if (type == MTP_TYPE_STR) {
+-        MtpStringBuffer buffer;
+-        if (!packet.getString(buffer)) goto fail;
+-        stringValue = env->NewStringUTF((const char *)buffer);
+-    } else {
+-        if (!readLongValue(type, packet, longValue)) goto fail;
++    switch (type) {
++        case MTP_TYPE_INT8:
++            longValue = packet.getInt8();
++            break;
++        case MTP_TYPE_UINT8:
++            longValue = packet.getUInt8();
++            break;
++        case MTP_TYPE_INT16:
++            longValue = packet.getInt16();
++            break;
++        case MTP_TYPE_UINT16:
++            longValue = packet.getUInt16();
++            break;
++        case MTP_TYPE_INT32:
++            longValue = packet.getInt32();
++            break;
++        case MTP_TYPE_UINT32:
++            longValue = packet.getUInt32();
++            break;
++        case MTP_TYPE_INT64:
++            longValue = packet.getInt64();
++            break;
++        case MTP_TYPE_UINT64:
++            longValue = packet.getUInt64();
++            break;
++        case MTP_TYPE_STR:
++        {
++            MtpStringBuffer buffer;
++            packet.getString(buffer);
++            stringValue = env->NewStringUTF((const char *)buffer);
++            break;
++         }
++        default:
++            ALOGE("unsupported type in setObjectPropertyValue\n");
++            return MTP_RESPONSE_INVALID_OBJECT_PROP_FORMAT;
+     }
+ 
+-    result = env->CallIntMethod(mDatabase, method_setObjectProperty,
++    jint result = env->CallIntMethod(mDatabase, method_setObjectProperty,
+                 (jint)handle, (jint)property, longValue, stringValue);
+     if (stringValue)
+         env->DeleteLocalRef(stringValue);
+ 
+-fail:
+     checkAndClearExceptionFromCallback(env, __FUNCTION__);
+     return result;
+ }
+@@ -639,22 +609,49 @@ MtpResponseCode MyMtpDatabase::setDevicePropertyValue(MtpDeviceProperty property
+     JNIEnv* env = AndroidRuntime::getJNIEnv();
+     jlong longValue = 0;
+     jstring stringValue = NULL;
+-    MtpResponseCode result = MTP_RESPONSE_INVALID_DEVICE_PROP_FORMAT;
+ 
+-    if (type == MTP_TYPE_STR) {
+-        MtpStringBuffer buffer;
+-        if (!packet.getString(buffer)) goto fail;
+-        stringValue = env->NewStringUTF((const char *)buffer);
+-    } else {
+-        if (!readLongValue(type, packet, longValue)) goto fail;
++    switch (type) {
++        case MTP_TYPE_INT8:
++            longValue = packet.getInt8();
++            break;
++        case MTP_TYPE_UINT8:
++            longValue = packet.getUInt8();
++            break;
++        case MTP_TYPE_INT16:
++            longValue = packet.getInt16();
++            break;
++        case MTP_TYPE_UINT16:
++            longValue = packet.getUInt16();
++            break;
++        case MTP_TYPE_INT32:
++            longValue = packet.getInt32();
++            break;
++        case MTP_TYPE_UINT32:
++            longValue = packet.getUInt32();
++            break;
++        case MTP_TYPE_INT64:
++            longValue = packet.getInt64();
++            break;
++        case MTP_TYPE_UINT64:
++            longValue = packet.getUInt64();
++            break;
++        case MTP_TYPE_STR:
++        {
++            MtpStringBuffer buffer;
++            packet.getString(buffer);
++            stringValue = env->NewStringUTF((const char *)buffer);
++            break;
++         }
++        default:
++            ALOGE("unsupported type in setDevicePropertyValue\n");
++            return MTP_RESPONSE_INVALID_OBJECT_PROP_FORMAT;
+     }
+ 
+-    result = env->CallIntMethod(mDatabase, method_setDeviceProperty,
++    jint result = env->CallIntMethod(mDatabase, method_setDeviceProperty,
+                 (jint)property, longValue, stringValue);
+     if (stringValue)
+         env->DeleteLocalRef(stringValue);
+ 
+-fail:
+     checkAndClearExceptionFromCallback(env, __FUNCTION__);
+     return result;
+ }
+diff --git a/packages/BackupRestoreConfirmation/src/com/android/backupconfirm/BackupRestoreConfirmation.java b/packages/BackupRestoreConfirmation/src/com/android/backupconfirm/BackupRestoreConfirmation.java
+index cde835c..0c2dcbb 100644
+--- a/packages/BackupRestoreConfirmation/src/com/android/backupconfirm/BackupRestoreConfirmation.java
++++ b/packages/BackupRestoreConfirmation/src/com/android/backupconfirm/BackupRestoreConfirmation.java
+@@ -49,7 +49,7 @@ import android.widget.Toast;
+  */
+ public class BackupRestoreConfirmation extends Activity {
+     static final String TAG = "BackupRestoreConfirmation";
+-    static final boolean DEBUG = true;
++    static final boolean DEBUG = false;
+ 
+     static final String DID_ACKNOWLEDGE = "did_acknowledge";
+ 
+diff --git a/packages/PrintSpooler/src/com/android/printspooler/model/MutexFileProvider.java b/packages/PrintSpooler/src/com/android/printspooler/model/MutexFileProvider.java
+index 0df5e3c..60c9b58 100644
+--- a/packages/PrintSpooler/src/com/android/printspooler/model/MutexFileProvider.java
++++ b/packages/PrintSpooler/src/com/android/printspooler/model/MutexFileProvider.java
+@@ -35,7 +35,7 @@ import java.io.IOException;
+ public final class MutexFileProvider {
+     private static final String LOG_TAG = "MutexFileProvider";
+ 
+-    private static final boolean DEBUG = true;
++    private static final boolean DEBUG = false;
+ 
+     private final Object mLock = new Object();
+ 
+diff --git a/packages/SharedStorageBackup/src/com/android/sharedstoragebackup/ObbBackupService.java b/packages/SharedStorageBackup/src/com/android/sharedstoragebackup/ObbBackupService.java
+index 0485334..88fa3e8 100644
+--- a/packages/SharedStorageBackup/src/com/android/sharedstoragebackup/ObbBackupService.java
++++ b/packages/SharedStorageBackup/src/com/android/sharedstoragebackup/ObbBackupService.java
+@@ -43,7 +43,7 @@ import com.android.internal.backup.IObbBackupService;
+  */
+ public class ObbBackupService extends Service {
+     static final String TAG = "ObbBackupService";
+-    static final boolean DEBUG = true;
++    static final boolean DEBUG = false;
+ 
+     /**
+      * IObbBackupService interface implementation
+diff --git a/packages/SharedStorageBackup/src/com/android/sharedstoragebackup/SharedStorageAgent.java b/packages/SharedStorageBackup/src/com/android/sharedstoragebackup/SharedStorageAgent.java
+index 89f84fc..a0ed73a 100644
+--- a/packages/SharedStorageBackup/src/com/android/sharedstoragebackup/SharedStorageAgent.java
++++ b/packages/SharedStorageBackup/src/com/android/sharedstoragebackup/SharedStorageAgent.java
+@@ -16,7 +16,7 @@ import java.util.HashSet;
+ 
+ public class SharedStorageAgent extends FullBackupAgent {
+     static final String TAG = "SharedStorageAgent";
+-    static final boolean DEBUG = true;
++    static final boolean DEBUG = false;
+ 
+     StorageVolume[] mVolumes;
+ 
+diff --git a/packages/SystemUI/src/com/android/systemui/recent/Recents.java b/packages/SystemUI/src/com/android/systemui/recent/Recents.java
+index 9a55590..8e4e686 100644
+--- a/packages/SystemUI/src/com/android/systemui/recent/Recents.java
++++ b/packages/SystemUI/src/com/android/systemui/recent/Recents.java
+@@ -40,7 +40,7 @@ import com.android.systemui.recents.AlternateRecentsComponent;
+ 
+ public class Recents extends SystemUI implements RecentsComponent {
+     private static final String TAG = "Recents";
+-    private static final boolean DEBUG = true;
++    private static final boolean DEBUG = false;
+ 
+     // Which recents to use
+     boolean mUseAlternateRecents = true;
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/GestureRecorder.java b/packages/SystemUI/src/com/android/systemui/statusbar/GestureRecorder.java
+index f2adaf0..5580d6c 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/GestureRecorder.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/GestureRecorder.java
+@@ -34,7 +34,7 @@ import java.util.LinkedList;
+  * Convenience class for capturing gestures for later analysis.
+  */
+ public class GestureRecorder {
+-    public static final boolean DEBUG = true; // for now
++    public static final boolean DEBUG = false; // for now
+     public static final String TAG = GestureRecorder.class.getSimpleName();
+ 
+     public class Gesture {
+diff --git a/policy/src/com/android/internal/policy/impl/keyguard/KeyguardServiceDelegate.java b/policy/src/com/android/internal/policy/impl/keyguard/KeyguardServiceDelegate.java
+index 410b3cb..1e654fe 100644
+--- a/policy/src/com/android/internal/policy/impl/keyguard/KeyguardServiceDelegate.java
++++ b/policy/src/com/android/internal/policy/impl/keyguard/KeyguardServiceDelegate.java
+@@ -38,7 +38,7 @@ public class KeyguardServiceDelegate {
+     private static final String EXTRA_ACTIVE = "active";
+ 
+     private static final String TAG = "KeyguardServiceDelegate";
+-    private static final boolean DEBUG = true;
++    private static final boolean DEBUG = false;
+     protected KeyguardServiceWrapper mKeyguardService;
+     private View mScrim; // shown if keyguard crashes
+     private KeyguardState mKeyguardState = new KeyguardState();
+diff --git a/services/appwidget/java/com/android/server/appwidget/AppWidgetServiceImpl.java b/services/appwidget/java/com/android/server/appwidget/AppWidgetServiceImpl.java
+index f5b3825..733682d 100644
+--- a/services/appwidget/java/com/android/server/appwidget/AppWidgetServiceImpl.java
++++ b/services/appwidget/java/com/android/server/appwidget/AppWidgetServiceImpl.java
+@@ -121,7 +121,6 @@ class AppWidgetServiceImpl extends IAppWidgetService.Stub implements WidgetBacku
+     private static final int TAG_UNDEFINED = -1;
+ 
+     private static final int UNKNOWN_UID = -1;
+-
+     private static final int LOADED_PROFILE_ID = -1;
+ 
+     private static final int UNKNOWN_USER_ID = -10;
+@@ -3471,7 +3470,7 @@ class AppWidgetServiceImpl extends IAppWidgetService.Stub implements WidgetBacku
+     private final class BackupRestoreController {
+         private static final String TAG = "BackupRestoreController";
+ 
+-        private static final boolean DEBUG = true;
++        private static final boolean DEBUG = false;
+ 
+         // Version of backed-up widget state.
+         private static final int WIDGET_STATE_VERSION = 2;
+diff --git a/services/backup/java/com/android/server/backup/BackupManagerService.java b/services/backup/java/com/android/server/backup/BackupManagerService.java
+index 89e36af..75ea10d 100644
+--- a/services/backup/java/com/android/server/backup/BackupManagerService.java
++++ b/services/backup/java/com/android/server/backup/BackupManagerService.java
+@@ -157,7 +157,7 @@ import libcore.io.IoUtils;
+ public class BackupManagerService extends IBackupManager.Stub {
+ 
+     private static final String TAG = "BackupManagerService";
+-    private static final boolean DEBUG = true;
++    private static final boolean DEBUG = false;
+     private static final boolean MORE_DEBUG = false;
+     private static final boolean DEBUG_SCHEDULING = MORE_DEBUG || true;
+ 
+diff --git a/services/backup/java/com/android/server/backup/FullBackupJob.java b/services/backup/java/com/android/server/backup/FullBackupJob.java
+index 601f15e..5b56fac 100644
+--- a/services/backup/java/com/android/server/backup/FullBackupJob.java
++++ b/services/backup/java/com/android/server/backup/FullBackupJob.java
+@@ -25,7 +25,7 @@ import android.content.Context;
+ 
+ public class FullBackupJob extends JobService {
+     private static final String TAG = "FullBackupJob";
+-    private static final boolean DEBUG = true;
++    private static final boolean DEBUG = false;
+ 
+     private static ComponentName sIdleService =
+             new ComponentName("android", FullBackupJob.class.getName());
+diff --git a/services/core/java/com/android/server/fingerprint/FingerprintService.java b/services/core/java/com/android/server/fingerprint/FingerprintService.java
+index 2941574..135ed7c 100644
+--- a/services/core/java/com/android/server/fingerprint/FingerprintService.java
++++ b/services/core/java/com/android/server/fingerprint/FingerprintService.java
+@@ -50,7 +50,7 @@ import java.util.Set;
+  */
+ public class FingerprintService extends SystemService {
+     private final String TAG = "FingerprintService";
+-    private static final boolean DEBUG = true;
++    private static final boolean DEBUG = false;
+     private ArrayMap<IBinder, ClientData> mClients = new ArrayMap<IBinder, ClientData>();
+ 
+     private static final int MSG_NOTIFY = 10;
+diff --git a/tests/OneMedia/src/com/android/onemedia/playback/LocalRenderer.java b/tests/OneMedia/src/com/android/onemedia/playback/LocalRenderer.java
+index c8a8d6c..6463e1f 100644
+--- a/tests/OneMedia/src/com/android/onemedia/playback/LocalRenderer.java
++++ b/tests/OneMedia/src/com/android/onemedia/playback/LocalRenderer.java
+@@ -47,7 +47,7 @@ public class LocalRenderer extends Renderer implements OnPreparedListener,
+         OnBufferingUpdateListener, OnCompletionListener, OnErrorListener,
+         OnAudioFocusChangeListener {
+     private static final String TAG = "MediaPlayerManager";
+-    private static final boolean DEBUG = true;
++    private static final boolean DEBUG = false;
+     private static long sDebugInstanceId = 0;
+ 
+     private static final String[] SUPPORTED_FEATURES = {
+-- 
+2.5.0
+

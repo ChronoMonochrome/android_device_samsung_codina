@@ -1,0 +1,27 @@
+From f1e6d69b02a89a56ae9a944e4c784efada4c30bd Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Thu, 28 Jan 2016 22:40:05 +0700
+Subject: [PATCH 57/58] StagefrightRecorder: fix build breakage due to changed
+ API
+
+Change-Id: Ief788e4ea539e660b7ca763456d2347c9d53d91f
+---
+ media/libmediaplayerservice/StagefrightRecorder.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/media/libmediaplayerservice/StagefrightRecorder.cpp b/media/libmediaplayerservice/StagefrightRecorder.cpp
+index 068a10e..be5ca68 100644
+--- a/media/libmediaplayerservice/StagefrightRecorder.cpp
++++ b/media/libmediaplayerservice/StagefrightRecorder.cpp
+@@ -94,7 +94,7 @@ status_t StagefrightRecorder::init() {
+ // while encoding GL Frames
+ sp<IGraphicBufferProducer> StagefrightRecorder::querySurfaceMediaSource() const {
+     ALOGV("Get SurfaceMediaSource");
+-    return mSurfaceMediaSource->getBufferQueue();
++    return mSurfaceMediaSource->getProducer();
+ }
+ 
+ status_t StagefrightRecorder::setAudioSource(audio_source_t as) {
+-- 
+2.5.0
+

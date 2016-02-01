@@ -1,0 +1,92 @@
+From d0b50845fec7110a6c2f622ce3d2f1c7fa063ff6 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Thu, 28 Jan 2016 12:15:13 +0700
+Subject: [PATCH 30/58] Revert "NuPlayerRenderer: adjust anchor time correctly
+ for video only case."
+
+This reverts commit 49966fff32b27f8821ebe280f25688b3c4f5f73f.
+---
+ .../nuplayer/NuPlayerRenderer.cpp                     | 19 +------------------
+ .../libmediaplayerservice/nuplayer/NuPlayerRenderer.h |  1 -
+ 2 files changed, 1 insertion(+), 19 deletions(-)
+
+diff --git a/media/libmediaplayerservice/nuplayer/NuPlayerRenderer.cpp b/media/libmediaplayerservice/nuplayer/NuPlayerRenderer.cpp
+index e5c64f6..d6bf1de 100644
+--- a/media/libmediaplayerservice/nuplayer/NuPlayerRenderer.cpp
++++ b/media/libmediaplayerservice/nuplayer/NuPlayerRenderer.cpp
+@@ -72,7 +72,6 @@ NuPlayer::Renderer::Renderer(
+       mHasVideo(false),
+       mSyncQueues(false),
+       mPaused(false),
+-      mPauseStartedTimeRealUs(-1),
+       mVideoSampleReceived(false),
+       mVideoRenderingStarted(false),
+       mVideoRenderingStartGeneration(0),
+@@ -575,9 +574,7 @@ void NuPlayer::Renderer::postDrainVideoQueue() {
+             if (!mHasAudio) {
+                 mAnchorTimeMediaUs = mediaTimeUs;
+                 mAnchorTimeRealUs = nowUs;
+-                if (!mPaused || mVideoSampleReceived) {
+-                    notifyPosition();
+-                }
++                notifyPosition();
+             }
+             realTimeUs = nowUs;
+         } else {
+@@ -648,10 +645,6 @@ void NuPlayer::Renderer::onDrainVideoQueue() {
+         }
+     } else {
+         mVideoLateByUs = 0ll;
+-        if (!mHasAudio && !mVideoSampleReceived) {
+-            mAnchorTimeMediaUs = -1;
+-            mAnchorTimeRealUs = -1;
+-        }
+     }
+ 
+     entry->mNotifyConsumed->setInt64("timestampNs", realTimeUs * 1000ll);
+@@ -837,9 +830,6 @@ void NuPlayer::Renderer::onFlush(const sp<AMessage> &msg) {
+     {
+          Mutex::Autolock autoLock(mLock);
+          syncQueuesDone_l();
+-         if (!mHasAudio) {
+-             mPauseStartedTimeRealUs = -1;
+-         }
+     }
+ 
+     ALOGV("flushing %s", audio ? "audio" : "video");
+@@ -990,9 +980,6 @@ void NuPlayer::Renderer::onPause() {
+         ++mVideoQueueGeneration;
+         prepareForMediaRenderingStart();
+         mPaused = true;
+-        if (!mHasAudio) {
+-            mPauseStartedTimeRealUs = ALooper::GetNowUs();
+-        }
+     }
+ 
+     mDrainAudioQueuePending = false;
+@@ -1021,10 +1008,6 @@ void NuPlayer::Renderer::onResume() {
+ 
+     Mutex::Autolock autoLock(mLock);
+     mPaused = false;
+-    if (!mHasAudio && mPauseStartedTimeRealUs != -1) {
+-        mAnchorTimeRealUs += ALooper::GetNowUs() - mPauseStartedTimeRealUs;
+-        mPauseStartedTimeRealUs = -1;
+-    }
+ 
+     if (!mAudioQueue.empty()) {
+         postDrainAudioQueue_l();
+diff --git a/media/libmediaplayerservice/nuplayer/NuPlayerRenderer.h b/media/libmediaplayerservice/nuplayer/NuPlayerRenderer.h
+index d27c238..4237902 100644
+--- a/media/libmediaplayerservice/nuplayer/NuPlayerRenderer.h
++++ b/media/libmediaplayerservice/nuplayer/NuPlayerRenderer.h
+@@ -130,7 +130,6 @@ private:
+     bool mSyncQueues;
+ 
+     bool mPaused;
+-    int64_t mPauseStartedTimeRealUs;
+     bool mVideoSampleReceived;
+     bool mVideoRenderingStarted;
+     int32_t mVideoRenderingStartGeneration;
+-- 
+2.5.0
+

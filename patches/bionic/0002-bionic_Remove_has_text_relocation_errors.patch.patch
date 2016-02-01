@@ -1,0 +1,26 @@
+From bcaf8c9e35bb5c4c402343d6a239f6f724e2d834 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Mon, 1 Feb 2016 22:56:32 +0700
+Subject: [PATCH 2/3] bionic_Remove_has_text_relocation_errors.patch
+
+Change-Id: I526295cbe17b4ab5ae3bbd00d3dd5ba7899f5e76
+---
+ linker/linker.cpp | 2 --
+ 1 file changed, 2 deletions(-)
+
+diff --git a/linker/linker.cpp b/linker/linker.cpp
+index cf65705..878db85 100644
+--- a/linker/linker.cpp
++++ b/linker/linker.cpp
+@@ -1943,8 +1943,6 @@ static bool soinfo_link_image(soinfo* si, const android_dlextinfo* extinfo) {
+     if (si->has_text_relocations) {
+         // Make segments writable to allow text relocations to work properly. We will later call
+         // phdr_table_protect_segments() after all of them are applied and all constructors are run.
+-        DL_WARN("%s has text relocations. This is wasting memory and prevents "
+-                "security hardening. Please fix.", si->name);
+         if (phdr_table_unprotect_segments(si->phdr, si->phnum, si->load_bias) < 0) {
+             DL_ERR("can't unprotect loadable segments for \"%s\": %s",
+                    si->name, strerror(errno));
+-- 
+2.5.0
+
