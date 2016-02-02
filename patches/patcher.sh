@@ -1,10 +1,15 @@
 LOCAL_PATH=../../../..
 
-PATCHES="art bionic external/bluetooth/bluedroid external/dhcpcd \
+KERNEL_PATCH="kernel/codina/chrono"
+
+if [ -z $PATCHES ] ; then
+	PATCHES="art bionic external/bluetooth/bluedroid external/dhcpcd \
 	frameworks/av frameworks/base/ frameworks/native/ frameworks/opt/net/wifi/ \
+	$KERNEL_PATCH \
         hardware/libhardware \
         frameworks/opt/telephony/ libcore \
         packages/services/Telecomm  packages/services/Telephony  system/core"
+fi
 
 export CL_RED="\033[31m"
 export CL_GRN="\033[32m"
@@ -55,7 +60,11 @@ apply_all() {
     for i in $( ls *.patch )
     do
         echo "applying "$i
-        apply $i
+        if [ "$1" != "$KERNEL_PATCH" ] ; then
+            apply $i
+        else
+            git am $i
+        fi
         echo ""
     done
  
