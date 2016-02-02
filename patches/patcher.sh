@@ -2,9 +2,14 @@ LOCAL_PATH=../../../..
 
 CURRENT_DIR=$PWD
 
-PATCHES="external/bluetooth/bluedroid frameworks/av frameworks/native \
-              hardware/libhardware kernel/codina/chrono  \
-              system/core system/vold"
+KERNEL_PATCH="kernel/codina/chrono"
+
+if [ -z $PATCHES ] ; then
+	PATCHES="external/bluetooth/bluedroid frameworks/av frameworks/native \
+			hardware/libhardware kernel/codina/chrono  \
+			$KERNEL_PATCH \
+			system/core system/vold"
+fi
 
 export CL_RED="\033[31m"
 export CL_GRN="\033[32m"
@@ -54,7 +59,11 @@ apply_all() {
     for i in $( ls *.patch )
     do
         echo "applying "$i
-        apply $i
+        if [ "$1" != "$KERNEL_PATCH" ] ; then
+            apply $i
+        else
+            git am $i
+        fi
         echo ""
     done
  
