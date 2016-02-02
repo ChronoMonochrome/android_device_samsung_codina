@@ -43,7 +43,11 @@ import static com.android.internal.telephony.RILConstants.*;
 import com.android.internal.telephony.CommandException;
 import com.android.internal.telephony.dataconnection.DataCallResponse;
 import com.android.internal.telephony.dataconnection.DcFailCause;
+import com.android.internal.telephony.gsm.SmsBroadcastConfigInfo;
+import com.android.internal.telephony.gsm.SuppServiceNotification;
 import com.android.internal.telephony.RILConstants;
+import com.android.internal.telephony.cdma.CdmaCallWaitingNotification;
+import com.android.internal.telephony.cdma.CdmaInformationRecords;
 import com.android.internal.telephony.cdma.CdmaInformationRecords.CdmaSignalInfoRec;
 import com.android.internal.telephony.cdma.SignalToneUtil;
 
@@ -72,7 +76,6 @@ import android.telephony.PhoneNumberUtils;
 import android.telephony.SignalStrength;
 import android.telephony.SmsManager;
 import android.telephony.SmsMessage;
-import android.telephony.TelephonyManager;
 import android.text.TextUtils;
 import android.telephony.Rlog;
 
@@ -216,12 +219,10 @@ public class SamsungU8500RIL extends RIL implements CommandsInterface {
     {
         ConnectivityManager cm =
             (ConnectivityManager)mContext.getSystemService(Context.CONNECTIVITY_SERVICE);
-        TelephonyManager tm = TelephonyManager.from(mContext);
-        
         NetworkInfo ni_active = cm.getActiveNetworkInfo();
 
         return ni_active != null && ni_active.getTypeName().equalsIgnoreCase( "mobile" ) &&
-                ni_active.isConnected() && tm.getDataEnabled();
+                ni_active.isConnected() && cm.getMobileDataEnabled();
     }
 
     private boolean hasNetworkTypeChanged(int networkType)
@@ -590,9 +591,8 @@ public class SamsungU8500RIL extends RIL implements CommandsInterface {
             AsyncResult.forMessage(rr.mResult, ret, null);
             rr.mResult.sendToTarget();
         }
-
-	return rr;
-   }
+        return rr;
+    }
 
     @Override
     public void
