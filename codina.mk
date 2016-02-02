@@ -23,7 +23,7 @@ PRODUCT_AAPT_CONFIG := normal hdpi
 PRODUCT_AAPT_PREF_CONFIG := hdpi
 
 PRODUCT_PACKAGES += \
-    OmniTorch
+    VisualizationWallpapers
 
 # U8500 Common init
 PRODUCT_COPY_FILES += \
@@ -52,6 +52,10 @@ PRODUCT_COPY_FILES += \
 # init.d
 PRODUCT_COPY_FILES += \
     $(call find-copy-subdir-files,*,$(LOCAL_PATH)/configs/init.d,system/etc/init.d) \
+
+# boot animation
+PRODUCT_COPY_FILES += \
+    $(LOCAL_PATH)/prebuilt/bootanimation.zip:system/media/bootanimation.zip
 
 # Wifi
 PRODUCT_COPY_FILES += \
