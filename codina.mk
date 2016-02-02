@@ -49,6 +49,11 @@ PRODUCT_COPY_FILES += \
     frameworks/av/media/libstagefright/data/media_codecs_google_audio.xml:system/etc/media_codecs_google_audio.xml \
     frameworks/av/media/libstagefright/data/media_codecs_google_telephony.xml:system/etc/media_codecs_google_telephony.xml \
 
+# FIXME: audioflinger built from source doesn't work
+PRODUCT_COPY_FILES += \
+    $(LOCAL_PATH)/prebuilt/libaudioresampler.so:system/lib/libaudioresampler.so \
+    $(LOCAL_PATH)/prebuilt/libaudioflinger.so:system/lib/libaudioflinger.so
+
 # init.d
 PRODUCT_COPY_FILES += \
     $(call find-copy-subdir-files,*,$(LOCAL_PATH)/configs/init.d,system/etc/init.d) \
