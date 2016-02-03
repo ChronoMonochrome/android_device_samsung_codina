@@ -1,21 +1,16 @@
-  Eliminate benign overflow condition triggered upon loop termination i…
+From c28da85a79cbf7b82e05194fc3664715517f6401 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Mon, 1 Feb 2016 13:08:22 +0700
+Subject: [PATCH 5/8] frameworks-native_Fix_Native_new_32.patch
 
-In readFromParcel, a while loop is terminated when sampleCount = 0. The
-decrement operation that was here would decrease sampleCount, an unsigned value,
-below 0, triggering an unsigned integer overflow. The while loop was refactored
-to eliminate this condition.
-Bug: 24171356
- Eliminate multiple benign overflow conditions.
-
-In InputTransport.cpp, there are multiple loops in which loop
-termination occurs when the value becomes zero. These termination
-conditions are all written value-- > 0, which, since value is
-unsigned, result in an unsigned integer overflow when value is 0.
-These loops were refactored to eliminate these conditions.
-Bug: 24171356
+Change-Id: I5d2ab368e6372c9543f6e7335d691360156c60a3
+---
+ libs/input/Input.cpp          |  3 ++-
+ libs/input/InputTransport.cpp | 14 ++++++++++----
+ 2 files changed, 12 insertions(+), 5 deletions(-)
 
 diff --git a/libs/input/Input.cpp b/libs/input/Input.cpp
-index 5cd8508..34def01 100644
+index 3a7afe9..a60619f 100644
 --- a/libs/input/Input.cpp
 +++ b/libs/input/Input.cpp
 @@ -452,7 +452,8 @@ status_t MotionEvent::readFromParcel(Parcel* parcel) {
@@ -29,7 +24,7 @@ index 5cd8508..34def01 100644
          for (size_t i = 0; i < pointerCount; i++) {
              mSamplePointerCoords.push();
 diff --git a/libs/input/InputTransport.cpp b/libs/input/InputTransport.cpp
-index 5cd8508..44def01 100644
+index 090ee53..92b28d9 100644
 --- a/libs/input/InputTransport.cpp
 +++ b/libs/input/InputTransport.cpp
 @@ -510,7 +510,8 @@ status_t InputConsumer::consume(InputEventFactoryInterface* factory,
@@ -74,3 +69,6 @@ index 5cd8508..44def01 100644
              return status;
          }
      }
+-- 
+2.5.0
+

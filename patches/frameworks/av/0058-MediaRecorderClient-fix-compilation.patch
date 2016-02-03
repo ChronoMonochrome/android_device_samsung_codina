@@ -1,0 +1,26 @@
+From 2bf645e5b8dfe2019d983dcf4f6bdb096d2fca97 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Tue, 2 Feb 2016 19:32:36 +0700
+Subject: [PATCH 58/58] MediaRecorderClient: fix compilation
+
+Change-Id: Ibf9826e5c196621d9e152aaed4f555806d435f5c
+---
+ media/libmediaplayerservice/MediaRecorderClient.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/media/libmediaplayerservice/MediaRecorderClient.cpp b/media/libmediaplayerservice/MediaRecorderClient.cpp
+index 194abbb..2877e46 100644
+--- a/media/libmediaplayerservice/MediaRecorderClient.cpp
++++ b/media/libmediaplayerservice/MediaRecorderClient.cpp
+@@ -96,7 +96,7 @@ status_t MediaRecorderClient::setVideoSource(int vs)
+ {
+     ALOGV("setVideoSource(%d)", vs);
+     // Check camera permission for sources other than SURFACE
+-    if (vs != VIDEO_SOURCE_SURFACE && !checkPermission(cameraPermission)) {
++    if (vs != VIDEO_SOURCE_GRALLOC_BUFFER && !checkPermission(cameraPermission)) {
+         return PERMISSION_DENIED;
+     }
+     Mutex::Autolock lock(mLock);
+-- 
+2.5.0
+

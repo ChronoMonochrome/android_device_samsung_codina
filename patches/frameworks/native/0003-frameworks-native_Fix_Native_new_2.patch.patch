@@ -1,20 +1,15 @@
- Avoid overwriting EGL14.EGL_NO_SURFACE
+From ecc84965510ff72568477487ffd32874289f850f Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Mon, 1 Feb 2016 13:08:22 +0700
+Subject: [PATCH 3/8] frameworks-native_Fix_Native_new_2.patch
 
-Both EGL14 and EGLExt have the same initialization codes for
-EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_CONTEXT and EGL14.EGL_NO_DISPLAY.
-Since EGLExt is initialized later, they are overwritten by EGLExt's
-initialization codes.
-Therefore, EGL_NO_SURFACE returned by methods in EGL14 is not
-actually EGL14.EGL_NO_SURFACE object and it makes several problems in
-handling error cases.
-For instance, "Let's fish" game application cannot be run on L.
-
-To solve the problem, this patch makes EGL14.EGL_NO_SURFACE,
-EGL14.EGL_NO_CONTEXT and EGL14.EGL_NO_DISPLAY initialized just once.
-
+Change-Id: I673c404803de5d19ce14f4170f9b5d7c4f9b661b
+---
+ opengl/tools/glgen/stubs/egl/EGLExtcHeader.cpp | 16 ++++++----------
+ 1 file changed, 6 insertions(+), 10 deletions(-)
 
 diff --git a/opengl/tools/glgen/stubs/egl/EGLExtcHeader.cpp b/opengl/tools/glgen/stubs/egl/EGLExtcHeader.cpp
-index 5cd8506..14def01 100644
+index b5c19df..7976d2d 100644
 --- a/opengl/tools/glgen/stubs/egl/EGLExtcHeader.cpp
 +++ b/opengl/tools/glgen/stubs/egl/EGLExtcHeader.cpp
 @@ -81,23 +81,19 @@ nativeClassInit(JNIEnv *_env, jclass glImplClass)
@@ -47,3 +42,6 @@ index 5cd8506..14def01 100644
  }
  
  static void *
+-- 
+2.5.0
+

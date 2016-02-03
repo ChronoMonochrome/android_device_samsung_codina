@@ -1,3 +1,39 @@
+From 07a76fc55d424daa58a82c5feb32e2851e9e1470 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Mon, 1 Feb 2016 13:08:23 +0700
+Subject: [PATCH 6/8] frameworks-native_Native-fix.patch
+
+Change-Id: I533659445b14e6e5a79da44b587702ce965c8d29
+---
+ include/binder/MemoryBase.h                |   3 +
+ include/binder/Parcel.h                    |  32 +++++-
+ include/gui/BufferItem.h                   |   4 +-
+ include/gui/BufferQueue.h                  |   4 +
+ include/gui/ConsumerBase.h                 |   5 +-
+ include/gui/GLConsumer.h                   |  38 +++++++
+ include/gui/IGraphicBufferConsumer.h       |   4 +
+ include/gui/IGraphicBufferProducer.h       |   4 +
+ include/media/openmax/OMX_IVCommon.h       |   3 +
+ include/ui/Fence.h                         |   4 +
+ include/ui/GraphicBuffer.h                 |  10 +-
+ include/ui/PixelFormat.h                   |   9 ++
+ include/ui/Region.h                        |  24 ++++
+ libs/binder/MemoryBase.cpp                 |  19 ++++
+ libs/binder/Parcel.cpp                     |  14 +++
+ libs/gui/Android.mk                        |   1 +
+ libs/gui/BufferQueueProducer.cpp           |   4 +-
+ libs/gui/ConsumerBase.cpp                  |   2 +-
+ libs/gui/GLConsumer.cpp                    | 175 ++++++++++++++++++++++++++++-
+ libs/ui/PixelFormat.cpp                    |   4 +
+ opengl/include/EGL/eglext.h                |   2 +
+ opengl/libs/EGL/eglApi.cpp                 |   4 +
+ opengl/libs/EGL/egl_entries.in             |   2 +
+ services/surfaceflinger/DisplayDevice.cpp  |  28 ++++-
+ services/surfaceflinger/DisplayDevice.h    |   2 +
+ services/surfaceflinger/SurfaceFlinger.cpp |   3 +
+ 26 files changed, 388 insertions(+), 16 deletions(-)
+ mode change 100644 => 100755 services/surfaceflinger/DisplayDevice.cpp
+
 diff --git a/include/binder/MemoryBase.h b/include/binder/MemoryBase.h
 index 463e26d..5bf104b 100644
 --- a/include/binder/MemoryBase.h
@@ -443,7 +479,7 @@ index 6604757..e6d6401 100644
  }; // namespace android
  
 diff --git a/libs/binder/Parcel.cpp b/libs/binder/Parcel.cpp
-index 1dbb06f..3338a65 100644
+index 777bc3c..2b91a7d 100644
 --- a/libs/binder/Parcel.cpp
 +++ b/libs/binder/Parcel.cpp
 @@ -875,6 +875,13 @@ status_t Parcel::writeBlob(size_t len, WritableBlob* outBlob)
@@ -460,7 +496,7 @@ index 1dbb06f..3338a65 100644
  status_t Parcel::write(const FlattenableHelperInterface& val)
  {
      status_t err;
-@@ -1287,6 +1294,13 @@ status_t Parcel::readBlob(size_t len, ReadableBlob* outBlob) const
+@@ -1291,6 +1298,13 @@ status_t Parcel::readBlob(size_t len, ReadableBlob* outBlob) const
      return NO_ERROR;
  }
  
@@ -921,10 +957,10 @@ index 3a26c38..44e7d52 100644
  
      EGLConfig       mConfig;
 diff --git a/services/surfaceflinger/SurfaceFlinger.cpp b/services/surfaceflinger/SurfaceFlinger.cpp
-index 48743af..d895428 100644
+index e148367..952e90a 100644
 --- a/services/surfaceflinger/SurfaceFlinger.cpp
 +++ b/services/surfaceflinger/SurfaceFlinger.cpp
-@@ -3423,6 +3423,7 @@ class GraphicProducerWrapper : public BBinder, public MessageHandler {
+@@ -3421,6 +3421,7 @@ class GraphicProducerWrapper : public BBinder, public MessageHandler {
      uint32_t code;
      Parcel const* data;
      Parcel* reply;
@@ -932,7 +968,7 @@ index 48743af..d895428 100644
  
      enum {
          MSG_API_CALL,
-@@ -3436,6 +3437,7 @@ class GraphicProducerWrapper : public BBinder, public MessageHandler {
+@@ -3434,6 +3435,7 @@ class GraphicProducerWrapper : public BBinder, public MessageHandler {
       */
      virtual status_t transact(uint32_t code,
              const Parcel& data, Parcel* reply, uint32_t /* flags */) {
@@ -940,7 +976,7 @@ index 48743af..d895428 100644
          this->code = code;
          this->data = &data;
          this->reply = reply;
-@@ -3453,6 +3455,7 @@ class GraphicProducerWrapper : public BBinder, public MessageHandler {
+@@ -3451,6 +3453,7 @@ class GraphicProducerWrapper : public BBinder, public MessageHandler {
              looper->sendMessage(this, Message(MSG_API_CALL));
              barrier.wait();
          }
@@ -948,3 +984,6 @@ index 48743af..d895428 100644
          return result;
      }
  
+-- 
+2.5.0
+

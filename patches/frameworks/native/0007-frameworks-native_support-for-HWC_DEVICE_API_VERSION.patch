@@ -1,0 +1,109 @@
+From b509bf305cef87649872ee3581b24cec5fc9819a Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Mon, 1 Feb 2016 13:08:23 +0700
+Subject: [PATCH 7/8] 
+ frameworks-native_support-for-HWC_DEVICE_API_VERSION-1.patch
+
+Change-Id: I1bca4d612b5f35ed292ab05817b8340664c14e6a
+---
+ services/surfaceflinger/Android.mk                   | 7 ++++++-
+ services/surfaceflinger/DisplayHardware/HWComposer.h | 5 ++++-
+ services/surfaceflinger/Layer.cpp                    | 2 ++
+ services/surfaceflinger/SurfaceFlinger.cpp           | 2 ++
+ 4 files changed, 14 insertions(+), 2 deletions(-)
+
+diff --git a/services/surfaceflinger/Android.mk b/services/surfaceflinger/Android.mk
+index 73d3f7f..6659c05 100644
+--- a/services/surfaceflinger/Android.mk
++++ b/services/surfaceflinger/Android.mk
+@@ -4,6 +4,7 @@ include $(CLEAR_VARS)
+ LOCAL_CLANG := true
+ 
+ LOCAL_ADDITIONAL_DEPENDENCIES := $(LOCAL_PATH)/Android.mk
++
+ LOCAL_SRC_FILES:= \
+     Client.cpp \
+     DisplayDevice.cpp \
+@@ -20,7 +21,6 @@ LOCAL_SRC_FILES:= \
+     SurfaceFlingerConsumer.cpp \
+     Transform.cpp \
+     DisplayHardware/FramebufferSurface.cpp \
+-    DisplayHardware/HWComposer.cpp \
+     DisplayHardware/PowerHAL.cpp \
+     DisplayHardware/VirtualDisplaySurface.cpp \
+     Effects/Daltonizer.cpp \
+@@ -36,6 +36,11 @@ LOCAL_SRC_FILES:= \
+     RenderEngine/GLES10RenderEngine.cpp \
+     RenderEngine/GLES11RenderEngine.cpp \
+     RenderEngine/GLES20RenderEngine.cpp
++ifneq (,$(findstring TARGET_NEEDS_HWC_V0,$(LOCAL_CFLAGS)))
++LOCAL_SRC_FILES += DisplayHardware/HWComposer.cpp
++else
++LOCAL_SRC_FILES += DisplayHardware/HWComposer_v0.cpp
++endif
+ 
+ LOCAL_CFLAGS:= -DLOG_TAG=\"SurfaceFlinger\"
+ LOCAL_CFLAGS += -DGL_GLEXT_PROTOTYPES -DEGL_EGLEXT_PROTOTYPES
+diff --git a/services/surfaceflinger/DisplayHardware/HWComposer.h b/services/surfaceflinger/DisplayHardware/HWComposer.h
+index 4e3d1d1..70165bd 100644
+--- a/services/surfaceflinger/DisplayHardware/HWComposer.h
++++ b/services/surfaceflinger/DisplayHardware/HWComposer.h
+@@ -129,7 +129,6 @@ public:
+     //GPUTiledRect : function to find out if DR can be used in GPU Comp.
+     bool canUseTiledDR(int32_t id, Rect& dr);
+ #endif
+-
+     // get the releaseFence file descriptor for a display's framebuffer layer.
+     // the release fence is only valid after commit()
+     sp<Fence> getAndResetReleaseFence(int32_t id);
+@@ -178,14 +177,18 @@ public:
+         virtual sp<Fence> getAndResetReleaseFence() = 0;
+         virtual void setDefaultState() = 0;
+         virtual void setSkip(bool skip) = 0;
++#ifndef TARGET_NEEDS_HWC_V0
+         virtual void setIsCursorLayerHint(bool isCursor = true) = 0;
+         virtual void setAnimating(bool animating) = 0;
++#endif
+         virtual void setBlending(uint32_t blending) = 0;
+         virtual void setTransform(uint32_t transform) = 0;
+         virtual void setFrame(const Rect& frame) = 0;
+         virtual void setCrop(const FloatRect& crop) = 0;
+         virtual void setVisibleRegionScreen(const Region& reg) = 0;
++#ifndef TARGET_NEEDS_HWC_V0
+         virtual void setSidebandStream(const sp<NativeHandle>& stream) = 0;
++#endif
+ #ifdef QCOM_BSP
+         virtual void setDirtyRect(const Rect& dirtyRect) = 0;
+ #endif
+diff --git a/services/surfaceflinger/Layer.cpp b/services/surfaceflinger/Layer.cpp
+index 86c9dda..3d158e4 100755
+--- a/services/surfaceflinger/Layer.cpp
++++ b/services/surfaceflinger/Layer.cpp
+@@ -557,7 +557,9 @@ void Layer::setPerFrameData(const sp<const DisplayDevice>& hw,
+     layer.setVisibleRegionScreen(visible);
+ 
+     if (mSidebandStream.get()) {
++#ifndef TARGET_NEEDS_HWC_V0
+         layer.setSidebandStream(mSidebandStream);
++#endif
+     } else {
+         // NOTE: buffer can be NULL if the client never drew into this
+         // layer yet, or if we ran out of memory
+diff --git a/services/surfaceflinger/SurfaceFlinger.cpp b/services/surfaceflinger/SurfaceFlinger.cpp
+index 952e90a..9dcfa92 100644
+--- a/services/surfaceflinger/SurfaceFlinger.cpp
++++ b/services/surfaceflinger/SurfaceFlinger.cpp
+@@ -1259,8 +1259,10 @@ void SurfaceFlinger::setUpHWComposer() {
+                 for (size_t i=0 ; cur!=end && i<count ; ++i, ++cur) {
+                     const sp<Layer>& layer(currentLayers[i]);
+                     if (layer->isPotentialCursor()) {
++#ifndef TARGET_NEEDS_HWC_V0
+                         cur->setIsCursorLayerHint();
+                         break;
++#endif
+                     }
+                 }
+             }
+-- 
+2.5.0
+

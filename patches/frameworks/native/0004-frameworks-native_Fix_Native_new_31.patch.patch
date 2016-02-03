@@ -1,13 +1,15 @@
- Enable multiple benign overflow conditions.
+From 4b7b0cca2bea99d4ce85cb101364cb3992d960de Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Mon, 1 Feb 2016 13:08:22 +0700
+Subject: [PATCH 4/8] frameworks-native_Fix_Native_new_31.patch
 
-In VelocityTracker.cpp, there are multiple loops in which loop
-termination occurs when the value becomes zero. These termination
-conditions are all written value-- > 0, which, since value is
-unsigned, result in an integer overflow condition when value is 0.
-These loop were refactored to eliminate these conditions.
+Change-Id: If8ddc92c614d973e37d6d0e5149d3f8be8be1145
+---
+ libs/input/VelocityTracker.cpp | 9 ++++++---
+ 1 file changed, 6 insertions(+), 3 deletions(-)
 
 diff --git a/libs/input/VelocityTracker.cpp b/libs/input/VelocityTracker.cpp
-index 5cd8508..24def01 100644
+index 6c70c3c..7f6b157 100644
 --- a/libs/input/VelocityTracker.cpp
 +++ b/libs/input/VelocityTracker.cpp
 @@ -46,7 +46,8 @@ static const nsecs_t ASSUME_POINTER_STOPPED_TIME = 40 * NANOS_PER_MS;
@@ -40,3 +42,6 @@ index 5cd8508..24def01 100644
          outB[i] = vectorDot(&q[i][0], wy, m);
          for (uint32_t j = n - 1; j > i; j--) {
              outB[i] -= r[i][j] * outB[j];
+-- 
+2.5.0
+

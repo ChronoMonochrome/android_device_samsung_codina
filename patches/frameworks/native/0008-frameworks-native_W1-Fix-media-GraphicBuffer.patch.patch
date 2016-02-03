@@ -1,10 +1,18 @@
-Subject:: fix for screen recording
+From 6e39188981d78af510e3c3ffcc9f0141ceb1db76 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Mon, 1 Feb 2016 13:08:23 +0700
+Subject: [PATCH 8/8] frameworks-native_W1-Fix-media-GraphicBuffer.patch
+
+Change-Id: I2143cc9db351bcfdbac4c492a7da0bfa075f9b42
+---
+ libs/gui/BufferQueueProducer.cpp | 5 +++++
+ 1 file changed, 5 insertions(+)
 
 diff --git a/libs/gui/BufferQueueProducer.cpp b/libs/gui/BufferQueueProducer.cpp
-index 6f76019..ff6a570 100644
+index 1caf7e4..3c36756 100644
 --- a/libs/gui/BufferQueueProducer.cpp
 +++ b/libs/gui/BufferQueueProducer.cpp
-@@ -204,7 +204,12 @@ status_t BufferQueueProducer::waitForFreeSlotThenRelock(const char* caller,
+@@ -199,7 +199,12 @@ status_t BufferQueueProducer::waitForFreeSlotThenRelock(const char* caller,
              const int newUndequeuedCount =
                  maxBufferCount - (dequeuedCount + 1);
              const int minUndequeuedCount =
@@ -17,3 +25,6 @@ index 6f76019..ff6a570 100644
              if (newUndequeuedCount < minUndequeuedCount) {
                  BQ_LOGE("%s: min undequeued buffer count (%d) exceeded "
                          "(dequeued=%d undequeued=%d)",
+-- 
+2.5.0
+

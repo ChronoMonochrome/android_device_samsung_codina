@@ -1,0 +1,32 @@
+From 5b31cabc180c21e551589c2e41dcc716d206e238 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Wed, 3 Feb 2016 18:51:12 +0700
+Subject: [PATCH] Build recovery
+
+Change-Id: I770223fe5e69210fc4345ac7e445b4f682cea1bf
+---
+ Android.mk | 4 ----
+ 1 file changed, 4 deletions(-)
+
+diff --git a/Android.mk b/Android.mk
+index 7e04a07..b16ad00 100644
+--- a/Android.mk
++++ b/Android.mk
+@@ -12,8 +12,6 @@
+ # See the License for the specific language governing permissions and
+ # limitations under the License.
+ 
+-ifeq ($(call my-dir),$(call project-path-for,recovery))
+-
+ LOCAL_PATH := $(call my-dir)
+ 
+ include $(CLEAR_VARS)
+@@ -312,5 +310,3 @@ include $(LOCAL_PATH)/minui/Android.mk \
+     $(LOCAL_PATH)/updater/Android.mk \
+     $(LOCAL_PATH)/applypatch/Android.mk \
+     $(LOCAL_PATH)/voldclient/Android.mk
+-
+-endif
+-- 
+2.5.0
+

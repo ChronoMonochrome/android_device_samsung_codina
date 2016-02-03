@@ -1,0 +1,48 @@
+From f055149aef69767bc1e35f3b294f9006a0dbeba5 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Wed, 3 Feb 2016 18:52:40 +0700
+Subject: [PATCH 14/14] android_media_AudioEffect: fix compilation
+
+Change-Id: Ica8a44583ad65e26a7185116579124ab84831ae3
+---
+ media/jni/audioeffect/android_media_AudioEffect.cpp | 20 ++++++++++++++++++--
+ 1 file changed, 18 insertions(+), 2 deletions(-)
+
+diff --git a/media/jni/audioeffect/android_media_AudioEffect.cpp b/media/jni/audioeffect/android_media_AudioEffect.cpp
+index c364d46..c9cefbd 100644
+--- a/media/jni/audioeffect/android_media_AudioEffect.cpp
++++ b/media/jni/audioeffect/android_media_AudioEffect.cpp
+@@ -803,12 +803,28 @@ static jobjectArray
+ android_media_AudioEffect_native_queryPreProcessings(JNIEnv *env, jclass clazz __unused,
+                                                      jint audioSession)
+ {
+-    effect_descriptor_t *descriptors = new effect_descriptor_t[AudioEffect::kMaxPreProcessing];
+-    uint32_t numEffects = AudioEffect::kMaxPreProcessing;
++    // kDefaultNumEffects is a "reasonable" value ensuring that only one query will be enough on
++    // most devices to get all active audio pre processing on a given session.
++    static const uint32_t kDefaultNumEffects = 5;
++
++    effect_descriptor_t *descriptors = new effect_descriptor_t[kDefaultNumEffects];
++    uint32_t numEffects = kDefaultNumEffects;
+ 
+     status_t status = AudioEffect::queryDefaultPreProcessing(audioSession,
+                                            descriptors,
+                                            &numEffects);
++    if ((status != NO_ERROR && status != NO_MEMORY) ||
++            numEffects == 0) {
++        delete[] descriptors;
++        return NULL;
++    }
++    if (status == NO_MEMORY) {
++        delete [] descriptors;
++        descriptors = new effect_descriptor_t[numEffects];
++        status = AudioEffect::queryDefaultPreProcessing(audioSession,
++                                               descriptors,
++                                               &numEffects);
++    }
+     if (status != NO_ERROR || numEffects == 0) {
+         delete[] descriptors;
+         return NULL;
+-- 
+2.5.0
+

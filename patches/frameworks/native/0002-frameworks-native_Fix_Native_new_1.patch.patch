@@ -1,12 +1,18 @@
-  SurfaceFlinger: Fix null pointer exception
+From c6eacb6eee6f6d9f58507b368cc915f63fbf5a92 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Mon, 1 Feb 2016 13:08:22 +0700
+Subject: [PATCH 2/8] frameworks-native_Fix_Native_new_1.patch
 
-Fixes a null pointer exception in getActiveConfig
+Change-Id: I123841752bcaeee7d66e644110607b568cac01a7
+---
+ services/surfaceflinger/SurfaceFlinger.cpp | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
 
 diff --git a/services/surfaceflinger/SurfaceFlinger.cpp b/services/surfaceflinger/SurfaceFlinger.cpp
-index 5cd8505..14def01 100644
+index 1c4180f..e148367 100644
 --- a/services/surfaceflinger/SurfaceFlinger.cpp
 +++ b/services/surfaceflinger/SurfaceFlinger.cpp
-@@ -681,7 +681,11 @@ status_t SurfaceFlinger::getDisplayStats(const sp<IBinder>& display,
+@@ -678,7 +678,11 @@ status_t SurfaceFlinger::getDisplayStats(const sp<IBinder>& display,
  }
  
  int SurfaceFlinger::getActiveConfig(const sp<IBinder>& display) {
@@ -19,3 +25,6 @@ index 5cd8505..14def01 100644
  }
  
  void SurfaceFlinger::setActiveConfigInternal(const sp<DisplayDevice>& hw, int mode) {
+-- 
+2.5.0
+
