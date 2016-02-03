@@ -1,5 +1,15 @@
+From cf55226e9e8071eb63aca8a43fb9c06874ee9731 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Mon, 1 Feb 2016 13:08:24 +0700
+Subject: [PATCH 01/14] system-core_Add_pre_C++11_constexpr.patch
+
+Change-Id: I72f25d1fff64acd44833f3dfaebca4ed8be0d270
+---
+ include/utils/Compat.h | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
 diff --git a/include/utils/Compat.h b/include/utils/Compat.h
-index b4a2700..a0397a0 100644
+index fb7748e..eb8fa46 100644
 --- a/include/utils/Compat.h
 +++ b/include/utils/Compat.h
 @@ -48,6 +48,17 @@ static inline ssize_t pread64(int fd, void* buf, size_t nbytes, off64_t offset)
@@ -20,3 +30,6 @@ index b4a2700..a0397a0 100644
   * TEMP_FAILURE_RETRY is defined by some, but not all, versions of
   * <unistd.h>. (Alas, it is not as standard as we'd hoped!) So, if it's
   * not already defined, then define it here.
+-- 
+2.5.0
+

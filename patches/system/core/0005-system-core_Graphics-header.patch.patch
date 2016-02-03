@@ -1,3 +1,13 @@
+From 5a6270ace144eca792d5c59bb3738793304eaaab Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Mon, 1 Feb 2016 13:08:24 +0700
+Subject: [PATCH 05/14] system-core_Graphics-header.patch
+
+Change-Id: I413476e724822ab2f1603143d6e5d3ae84519692
+---
+ include/system/graphics.h | 15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
+
 diff --git a/include/system/graphics.h b/include/system/graphics.h
 index b207ee8..8a70153 100644
 --- a/include/system/graphics.h
@@ -24,3 +34,6 @@ index b207ee8..8a70153 100644
  };
  
  /*
+-- 
+2.5.0
+

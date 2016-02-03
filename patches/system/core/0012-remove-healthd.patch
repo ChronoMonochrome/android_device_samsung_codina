@@ -1,7 +1,7 @@
 From dbadecb58da07a555086415c537440f3ffac5339 Mon Sep 17 00:00:00 2001
 From: Shilin Victor <chrono.monochrome@gmail.com>
 Date: Mon, 1 Feb 2016 20:50:19 +0700
-Subject: [PATCH] remove healthd
+Subject: [PATCH 12/14] remove healthd
 
 Change-Id: I0ee5b94f9a3e3958bbfdbf184117f6eef4c69290
 ---

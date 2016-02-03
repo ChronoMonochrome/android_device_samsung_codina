@@ -1,8 +1,19 @@
+From 91bd454608d5cc11c5407cd3bfa7f7bf62f50a94 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Mon, 1 Feb 2016 13:08:24 +0700
+Subject: [PATCH 09/14] system-core_remove_flash_recovery_service.patch
+
+Change-Id: I7e9618d04c01f2eee6808209363a3b2c71a404d9
+---
+ rootdir/init.rc | 26 +++++++++++++++++++-------
+ 1 file changed, 19 insertions(+), 7 deletions(-)
+
 diff --git a/rootdir/init.rc b/rootdir/init.rc
-index b4a25fe..a0397a0 100644
+index 32d33d8..691f6c5 100644
 --- a/rootdir/init.rc
 +++ b/rootdir/init.rc
-@@ -516,4 +516,16 @@ socket adbd stream 660 system system
+@@ -519,6 +519,18 @@ service adbd /sbin/adbd --root_seclabel=u:r:su:s0
+     disabled
      seclabel u:r:adbd:s0
  
 +# Always start adbd on userdebug and eng builds
@@ -19,7 +30,8 @@ index b4a25fe..a0397a0 100644
 +
  # adbd on at boot in emulator
  on property:ro.kernel.qemu=1
-@@ -602,15 +603,15 @@ service installd /system/bin/installd
+     start adbd
+@@ -606,15 +618,15 @@ service installd /system/bin/installd
      class main
      socket installd stream 600 system system
  
@@ -42,3 +54,6 @@ index b4a25fe..a0397a0 100644
  
  service racoon /system/bin/racoon
      class main
+-- 
+2.5.0
+

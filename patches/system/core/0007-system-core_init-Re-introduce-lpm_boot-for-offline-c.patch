@@ -1,5 +1,16 @@
+From 2cd36bbfd80fa742464e1b75372cdc00010ba355 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Mon, 1 Feb 2016 13:08:24 +0700
+Subject: [PATCH 07/14] 
+ system-core_init-Re-introduce-lpm_boot-for-offline-charging01.patch
+
+Change-Id: I3126fab33fbd23a75029e55aa914636fa7d14979
+---
+ init/Android.mk | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
 diff --git a/init/Android.mk b/init/Android.mk
-index f3bb7d6..a5e0d0e 100644
+index db000c2..482cd5f 100755
 --- a/init/Android.mk
 +++ b/init/Android.mk
 @@ -34,7 +34,10 @@ endif
@@ -14,3 +25,6 @@ index f3bb7d6..a5e0d0e 100644
  
  $(foreach system_core_init_define,$(SYSTEM_CORE_INIT_DEFINES), \
    $(if $($(system_core_init_define)), \
+-- 
+2.5.0
+

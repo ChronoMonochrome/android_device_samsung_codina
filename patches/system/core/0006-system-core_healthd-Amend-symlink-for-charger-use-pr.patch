@@ -1,8 +1,19 @@
+From a97a9998dab3dcff55f25eb96d8d5269d0e7fab8 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Mon, 1 Feb 2016 13:08:24 +0700
+Subject: [PATCH 06/14] 
+ system-core_healthd-Amend-symlink-for-charger-use-prebuilt-kitka.patch
+
+Change-Id: Id896ddf14444653d6b15ef911f39d25200fb9931
+---
+ healthd/Android.mk | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
 diff --git a/healthd/Android.mk b/healthd/Android.mk
-index b3a2901..a0397a0 100644
+index 06f1fad..5eaff5a 100644
 --- a/healthd/Android.mk
 +++ b/healthd/Android.mk
-@@ -67,9 +67,9 @@ endif
+@@ -66,9 +66,9 @@ endif
  
  LOCAL_HAL_STATIC_LIBRARIES := libhealthd
  
@@ -14,3 +25,6 @@ index b3a2901..a0397a0 100644
  
  include $(BUILD_EXECUTABLE)
  
+-- 
+2.5.0
+

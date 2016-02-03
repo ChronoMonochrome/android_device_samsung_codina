@@ -1,0 +1,59 @@
+From 1b660b7986af036ed1049a5b06be5453911c89e7 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Mon, 1 Feb 2016 13:08:24 +0700
+Subject: [PATCH 14/14] system-core_remove_flash_recovery_service.patch
+
+Change-Id: I7e9618d04c01f2eee6808209363a3b2c71a404d9
+---
+ rootdir/init.rc | 26 +++++++++++++++++++-------
+ 1 file changed, 19 insertions(+), 7 deletions(-)
+
+diff --git a/rootdir/init.rc b/rootdir/init.rc
+index ce62a55..24602d2 100644
+--- a/rootdir/init.rc
++++ b/rootdir/init.rc
+@@ -510,6 +510,18 @@ service adbd /sbin/adbd --root_seclabel=u:r:su:s0
+     disabled
+     seclabel u:r:adbd:s0
+ 
++# Always start adbd on userdebug and eng builds
++on property:ro.debuggable=1
++    #write /sys/class/android_usb/android0/enable 1
++    #start adbd
++    setprop service.adb.root 1
++
++# Restart adbd so it can run as root
++on property:service.adb.root=1
++    write /sys/class/android_usb/android0/enable 0
++    restart adbd
++    write /sys/class/android_usb/android0/enable 1
++
+ # adbd on at boot in emulator
+ on property:ro.kernel.qemu=1
+     start adbd
+@@ -597,15 +609,15 @@ service installd /system/bin/installd
+     class main
+     socket installd stream 600 system system
+ 
+-service flash_recovery /system/bin/install-recovery.sh
+-    class main
+-    seclabel u:r:install_recovery:s0
+-    oneshot
+-    disabled
++#service flash_recovery /system/bin/install-recovery.sh
++#    class main
++#    seclabel u:r:install_recovery:s0
++#    oneshot
++#    disabled
+ 
+ # update recovery if enabled
+-on property:persist.sys.recovery_update=true
+-    start flash_recovery
++#on property:persist.sys.recovery_update=true
++#    start flash_recovery
+ 
+ service racoon /system/bin/racoon
+     class main
+-- 
+2.5.0
+

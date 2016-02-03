@@ -1,0 +1,29 @@
+From 68567e2b490de0059e74e55a0e6811eae055b6dd Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Mon, 1 Feb 2016 13:08:24 +0700
+Subject: [PATCH 04/14] system-core_Fix-shutdown-reboot-bug.patch
+
+Change-Id: Ifb597d2b62544ca468d25d9585ba55434f74767c
+---
+ libcutils/android_reboot.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/libcutils/android_reboot.c b/libcutils/android_reboot.c
+index 30738d7..f213216 100644
+--- a/libcutils/android_reboot.c
++++ b/libcutils/android_reboot.c
+@@ -96,7 +96,11 @@ static void remount_ro(void)
+ 
+ 
+     /* Now poll /proc/mounts till it's done */
++#ifdef STE_HARDWARE
++    while (!remount_ro_done() && (cnt < 50)) {
++#else
+     while (!remount_ro_done() && (cnt < 3600)) {
++#endif
+         usleep(100000);
+         cnt++;
+     }
+-- 
+2.5.0
+

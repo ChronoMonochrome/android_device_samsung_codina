@@ -1,29 +1,16 @@
- logd: enable -Os and GNU C89 back
+From 7a72044fcbf01a8710b17cbeca6ffb6c4314ab38 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Mon, 1 Feb 2016 13:08:24 +0700
+Subject: [PATCH 03/14] system-core_enable_-Os_and_GNU_C89_back-new.patch
 
-Aggressive -O2, -O3 optimizations on GCC 5.1 and GNU C11 standards
-causes a seg-fault on logd.
+Change-Id: Id8b850c1dd2756d1ff67e86f043609b473e322fc
+---
+ libcutils/Android.mk | 10 +++++-----
+ logd/Android.mk      |  4 ++++
+ 2 files changed, 9 insertions(+), 5 deletions(-)
 
- libcutils: fix compilation errors
-
-By removing -Werror and enforcing GNU C89 standards
-
-diff --git a/logd/Android.mk b/logd/Android.mk
-index b4a2710..a0397a0 100644
---- a/logd/Android.mk
-+++ b/logd/Android.mk
-@@ -27,6 +27,10 @@ LOCAL_SHARED_LIBRARIES := \
-     libutils
- 
- LOCAL_CFLAGS := -Werror $(shell sed -n 's/^\([0-9]*\)[ \t]*auditd[ \t].*/-DAUDITD_LOG_TAG=\1/p' $(LOCAL_PATH)/event.logtags)
-+LOCAL_CFLAGS += -Os
-+
-+LOCAL_CONLYFLAGS += -std=gnu89
-+LOCAL_CPPFLAGS += -std=gnu++03
- 
- include $(BUILD_EXECUTABLE)
- 
 diff --git a/libcutils/Android.mk b/libcutils/Android.mk
-index b4a2720..a0397a0 100644
+index bee2bd7..5a803f8 100644
 --- a/libcutils/Android.mk
 +++ b/libcutils/Android.mk
 @@ -79,7 +79,7 @@ LOCAL_SRC_FILES := $(commonSources) $(commonHostSources) dlmalloc_stubs.c
@@ -70,3 +57,21 @@ index b4a2720..a0397a0 100644
  LOCAL_SRC_FILES := str_parms.c hashmap.c memory.c
  LOCAL_SHARED_LIBRARIES := liblog
  LOCAL_MODULE_TAGS := optional
+diff --git a/logd/Android.mk b/logd/Android.mk
+index 188511f..8bdaf18 100644
+--- a/logd/Android.mk
++++ b/logd/Android.mk
+@@ -27,6 +27,10 @@ LOCAL_SHARED_LIBRARIES := \
+     libutils
+ 
+ LOCAL_CFLAGS := -Werror $(shell sed -n 's/^\([0-9]*\)[ \t]*auditd[ \t].*/-DAUDITD_LOG_TAG=\1/p' $(LOCAL_PATH)/event.logtags)
++LOCAL_CFLAGS += -Os
++
++LOCAL_CONLYFLAGS += -std=gnu89
++LOCAL_CPPFLAGS += -std=gnu++03
+ 
+ include $(BUILD_EXECUTABLE)
+ 
+-- 
+2.5.0
+

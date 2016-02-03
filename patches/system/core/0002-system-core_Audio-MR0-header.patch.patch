@@ -1,8 +1,18 @@
+From dcb00ae8857f2aa2394228cce53e062e9dbf760a Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Mon, 1 Feb 2016 13:08:24 +0700
+Subject: [PATCH 02/14] system-core_Audio-MR0-header.patch
+
+Change-Id: I59a0c1d8f72830470fc9bd40166518df090f3a9a
+---
+ include/system/audio.h | 31 +++++++++++++++++++++++++++++++
+ 1 file changed, 31 insertions(+)
+
 diff --git a/include/system/audio.h b/include/system/audio.h
-index 1af31fc..e280cce 100644
+index fe0b01e..63ad96c 100644
 --- a/include/system/audio.h
 +++ b/include/system/audio.h
-@@ -643,7 +643,11 @@ typedef enum {
+@@ -634,7 +634,11 @@ typedef enum {
  enum {
      AUDIO_DEVICE_NONE                          = 0x0,
      /* reserved bits */
@@ -14,7 +24,7 @@ index 1af31fc..e280cce 100644
      AUDIO_DEVICE_BIT_DEFAULT                   = 0x40000000,
      /* output devices */
      AUDIO_DEVICE_OUT_EARPIECE                  = 0x1,
-@@ -723,6 +727,27 @@ enum {
+@@ -714,6 +718,27 @@ enum {
                                   AUDIO_DEVICE_OUT_USB_DEVICE),
  
      /* input devices */
@@ -42,7 +52,7 @@ index 1af31fc..e280cce 100644
      AUDIO_DEVICE_IN_COMMUNICATION         = AUDIO_DEVICE_BIT_IN | 0x1,
      AUDIO_DEVICE_IN_AMBIENT               = AUDIO_DEVICE_BIT_IN | 0x2,
      AUDIO_DEVICE_IN_BUILTIN_MIC           = AUDIO_DEVICE_BIT_IN | 0x4,
-@@ -743,6 +768,7 @@ enum {
+@@ -734,6 +759,7 @@ enum {
      AUDIO_DEVICE_IN_FM_TUNER              = AUDIO_DEVICE_BIT_IN | 0x2000,
      /* TV tuner input */
      AUDIO_DEVICE_IN_TV_TUNER              = AUDIO_DEVICE_BIT_IN | 0x4000,
@@ -50,7 +60,7 @@ index 1af31fc..e280cce 100644
      /* Analog jack with line impedance detected */
      AUDIO_DEVICE_IN_LINE                  = AUDIO_DEVICE_BIT_IN | 0x8000,
      /* S/PDIF in */
-@@ -754,7 +780,12 @@ enum {
+@@ -745,7 +771,12 @@ enum {
      AUDIO_DEVICE_IN_FM_RX                 = AUDIO_DEVICE_BIT_IN | 0x200000,
      AUDIO_DEVICE_IN_FM_RX_A2DP            = AUDIO_DEVICE_BIT_IN | 0x400000,
  #endif
@@ -63,3 +73,6 @@ index 1af31fc..e280cce 100644
  
      AUDIO_DEVICE_IN_ALL     = (AUDIO_DEVICE_IN_COMMUNICATION |
                                 AUDIO_DEVICE_IN_AMBIENT |
+-- 
+2.5.0
+
