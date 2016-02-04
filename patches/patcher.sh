@@ -1,7 +1,7 @@
 LOCAL_PATH=../../../..
 
-PATCHES="art bionic external/fuse external/bluetooth/bluedroid frameworks/base frameworks/native \
-              hardware/libhardware kernel/codina/chrono libcore packages/apps/Settings packages/services/Telephony/ \
+PATCHES="frameworks/base frameworks/native \
+              hardware/libhardware kernel/codina/chrono libcore \
               system/core system/vold"
 
 export CL_RED="\033[31m"
