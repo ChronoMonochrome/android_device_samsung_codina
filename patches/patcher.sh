@@ -1,5 +1,7 @@
 LOCAL_PATH=../../../..
 
+CURRENT_DIR=$PWD
+
 PATCHES="frameworks/base frameworks/native \
               hardware/libhardware kernel/codina/chrono libcore \
               system/core system/vold"
@@ -90,3 +92,5 @@ if [ "$1" != "clean" ]; then
 	apply_all $i
 	done
 fi
+
+cd $CURRENT_DIR
