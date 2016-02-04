@@ -1,5 +1,7 @@
 LOCAL_PATH=../../../..
 
+CURRENT_DIR=$PWD
+
 KERNEL_PATCH="kernel/codina/chrono"
 
 if [ "$PATCHES" == "" ] ; then
@@ -101,3 +103,5 @@ if [ "$1" != "clean" ]; then
 	apply_all $i
 	done
 fi
+
+cd $CURRENT_DIR
