@@ -2,8 +2,8 @@ LOCAL_PATH=../../../..
 
 CURRENT_DIR=$PWD
 
-PATCHES="frameworks/base frameworks/native \
-              hardware/libhardware kernel/codina/chrono libcore \
+PATCHES="external/bluetooth/bluedroid frameworks/av frameworks/native \
+              hardware/libhardware kernel/codina/chrono  \
               system/core system/vold"
 
 export CL_RED="\033[31m"
