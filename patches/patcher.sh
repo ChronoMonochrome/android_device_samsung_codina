@@ -4,12 +4,12 @@ CURRENT_DIR=$PWD
 
 KERNEL_PATCH="kernel/codina/chrono"
 
-if [ -z $PATCHES ] ; then
+#if [ -z "$PATCHES" ] ; then
 	PATCHES="external/bluetooth/bluedroid frameworks/av frameworks/native \
-			hardware/libhardware kernel/codina/chrono  \
+			hardware/libhardware  \
 			$KERNEL_PATCH \
-			system/core system/vold"
-fi
+			system/core"
+#fi
 
 export CL_RED="\033[31m"
 export CL_GRN="\033[32m"
