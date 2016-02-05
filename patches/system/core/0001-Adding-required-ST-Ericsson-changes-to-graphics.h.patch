@@ -1,0 +1,37 @@
+From 4153158ddbaa284f14fbcc45732ddf9d60f19fff Mon Sep 17 00:00:00 2001
+From: Alin Jerpelea <jerpelea@gmail.com>
+Date: Tue, 2 Jul 2013 17:59:14 +0100
+Subject: [PATCH] Adding required ST-Ericsson changes to graphics.h
+
+Pixel formats have been added to graphics.h (they used to be in
+hardware.h). One is ST-Ericsson specific and the rest are just
+added since they were there in GB.
+
+Change-Id: I383e25ecc8faa89678642bbea65fd7b12ba9ca32
+---
+ include/system/graphics.h | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/include/system/graphics.h b/include/system/graphics.h
+index 82b5fcc..789ee9b 100644
+--- a/include/system/graphics.h
++++ b/include/system/graphics.h
+@@ -144,6 +144,15 @@ enum {
+     HAL_PIXEL_FORMAT_YCbCr_422_SP       = 0x10, // NV16
+     HAL_PIXEL_FORMAT_YCrCb_420_SP       = 0x11, // NV21
+     HAL_PIXEL_FORMAT_YCbCr_422_I        = 0x14, // YUY2
++#ifdef STE_HARDWARE
++    HAL_PIXEL_FORMAT_YCBCR42XMBN        = 0xE,
++    HAL_PIXEL_FORMAT_YCbCr_422_P        = 0x12,
++    HAL_PIXEL_FORMAT_YCbCr_420_P        = 0x13,
++    HAL_PIXEL_FORMAT_YCbCr_420_SP       = 0x21,
++    HAL_PIXEL_FORMAT_YCrCb_422_SP       = 0x23,
++    HAL_PIXEL_FORMAT_YCrCb_422_P        = 0x24,
++    HAL_PIXEL_FORMAT_YCrCb_420_P        = 0x25,
++#endif
+ };
+ 
+ 
+-- 
+2.5.0
+

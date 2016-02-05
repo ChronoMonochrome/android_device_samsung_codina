@@ -1,0 +1,246 @@
+From 14c995a48082af5481232e5329407f6d4eedf603 Mon Sep 17 00:00:00 2001
+From: Robert Rozic <rooobertinhooo@gmail.com>
+Date: Sun, 26 Jan 2014 10:58:53 +0100
+Subject: [PATCH 2/2] Fix buffers and youtube freezes
+
+---
+ include/gui/BufferQueue.h    | 16 ---------------
+ include/gui/SurfaceTexture.h |  5 ++++-
+ libs/gui/BufferQueue.cpp     | 47 --------------------------------------------
+ libs/gui/SurfaceTexture.cpp  | 34 +++++++++++++++++++-------------
+ 4 files changed, 24 insertions(+), 78 deletions(-)
+
+diff --git a/include/gui/BufferQueue.h b/include/gui/BufferQueue.h
+index 6b2f676..cd38cfe 100644
+--- a/include/gui/BufferQueue.h
++++ b/include/gui/BufferQueue.h
+@@ -54,9 +54,6 @@ class BufferQueue : public BnSurfaceTexture {
+ public:
+     enum { MIN_UNDEQUEUED_BUFFERS = 2 };
+     enum { NUM_BUFFER_SLOTS = 32 };
+-#ifdef STE_HARDWARE
+-    enum { NUM_BLIT_BUFFER_SLOTS = 2 };
+-#endif
+     enum { NO_CONNECTED_API = 0 };
+     enum { INVALID_BUFFER_SLOT = -1 };
+     enum { STALE_BUFFER_SLOT = 1, NO_BUFFER_AVAILABLE };
+@@ -322,12 +319,6 @@ private:
+     // for the given slot.
+     void freeBufferLocked(int index);
+ 
+-#ifdef STE_HARDWARE
+-    // freeBlitBufferLocked frees the resources for mBlitSlots (both GraphicBuffer and EGLImage)
+-    // for the given slot.
+-    void freeBlitBufferLocked(int index);
+-#endif
+-
+     // freeAllBuffersLocked frees the resources (both GraphicBuffer and
+     // EGLImage) for all slots.
+     void freeAllBuffersLocked();
+@@ -488,13 +479,6 @@ private:
+     // for a slot when requestBuffer is called with that slot's index.
+     BufferSlot mSlots[NUM_BUFFER_SLOTS];
+ 
+-#ifdef STE_HARDWARE
+-    // mBlitSlots contains several buffers which will
+-    // be rendered alternately in case color transform is needed (instead
+-    // of rendering the buffers in mSlots).
+-    BufferSlot mBlitSlots[NUM_BLIT_BUFFER_SLOTS];
+-#endif
+-
+     // mDefaultWidth holds the default width of allocated buffers. It is used
+     // in requestBuffers() if a width and height of zero is specified.
+     uint32_t mDefaultWidth;
+diff --git a/include/gui/SurfaceTexture.h b/include/gui/SurfaceTexture.h
+index 89fbb4f..046d450 100644
+--- a/include/gui/SurfaceTexture.h
++++ b/include/gui/SurfaceTexture.h
+@@ -47,6 +47,9 @@ class String8;
+ 
+ class SurfaceTexture : public ConsumerBase {
+ public:
++#ifdef STE_HARDWARE
++    enum { NUM_BLIT_BUFFER_SLOTS = 2 };
++#endif
+     typedef ConsumerBase::FrameAvailableListener FrameAvailableListener;
+ 
+     // SurfaceTexture constructs a new SurfaceTexture object. tex indicates the
+@@ -411,7 +414,7 @@ private:
+     // mBlitSlots contains several buffers which will
+     // be rendered alternately in case color transform is needed (instead
+     // of rendering the buffers in mSlots).
+-    EGLSlot mBlitSlots[BufferQueue::NUM_BLIT_BUFFER_SLOTS];
++    EGLSlot mBlitSlots[NUM_BLIT_BUFFER_SLOTS];
+ 
+     // mGraphicBufferAlloc is the connection to SurfaceFlinger that is used to
+     // allocate new GraphicBuffer objects.
+diff --git a/libs/gui/BufferQueue.cpp b/libs/gui/BufferQueue.cpp
+index 146044f..acf6cec 100644
+--- a/libs/gui/BufferQueue.cpp
++++ b/libs/gui/BufferQueue.cpp
+@@ -919,31 +919,9 @@ void BufferQueue::freeBufferLocked(int slot) {
+         eglDestroySyncKHR(mSlots[slot].mEglDisplay, mSlots[slot].mEglFence);
+         mSlots[slot].mEglFence = EGL_NO_SYNC_KHR;
+     }
+-
+     mSlots[slot].mFence.clear();
+ }
+ 
+-#ifdef STE_HARDWARE
+-void BufferQueue::freeBlitBufferLocked(int slot) {
+-    ST_LOGV("freeBufferLocked: slot=%d", slot);
+-    mBlitSlots[slot].mGraphicBuffer = 0;
+-    if (mBlitSlots[slot].mBufferState == BufferSlot::ACQUIRED) {
+-        mBlitSlots[slot].mNeedsCleanupOnRelease = true;
+-    }
+-    mBlitSlots[slot].mBufferState = BufferSlot::FREE;
+-    mBlitSlots[slot].mFrameNumber = 0;
+-    mBlitSlots[slot].mAcquireCalled = false;
+-
+-    // destroy fence as BufferQueue now takes ownership
+-    if (mBlitSlots[slot].mEglFence != EGL_NO_SYNC_KHR) {
+-        eglDestroySyncKHR(mBlitSlots[slot].mEglDisplay, mBlitSlots[slot].mEglFence);
+-        mBlitSlots[slot].mEglFence = EGL_NO_SYNC_KHR;
+-    }
+-
+-    mBlitSlots[slot].mFence.clear();
+-}
+-#endif
+-
+ void BufferQueue::freeAllBuffersLocked() {
+     ALOGW_IF(!mQueue.isEmpty(),
+             "freeAllBuffersLocked called but mQueue is not empty");
+@@ -952,11 +930,6 @@ void BufferQueue::freeAllBuffersLocked() {
+     for (int i = 0; i < NUM_BUFFER_SLOTS; i++) {
+         freeBufferLocked(i);
+     }
+-#ifdef STE_HARDWARE
+-    for (int i = 0; i < NUM_BLIT_BUFFER_SLOTS; i++) {
+-        freeBlitBufferLocked(i);
+-    }
+-#endif
+ }
+ 
+ status_t BufferQueue::acquireBuffer(BufferItem *buffer) {
+@@ -973,30 +946,10 @@ status_t BufferQueue::acquireBuffer(BufferItem *buffer) {
+             numAcquiredBuffers++;
+         }
+     }
+-
+-#ifdef STE_HARDWARE
+-    int numBlitAcquiredBuffers = 0;
+-    for (int i = 0; i < NUM_BLIT_BUFFER_SLOTS; i++) {
+-        if (mBlitSlots[i].mBufferState == BufferSlot::ACQUIRED) {
+-            numBlitAcquiredBuffers++;
+-        }
+-    }
+-#endif
+-
+     if (numAcquiredBuffers >= mMaxAcquiredBufferCount+1) {
+-#ifdef STE_HARDWARE
+-       // We assume we are using blit slots if the normal slots exceed the max count
+-       // TODO: Make a way to check the one in use instead of checking both.
+-        if (numBlitAcquiredBuffers >= mMaxAcquiredBufferCount+1) {
+-            ST_LOGE("acquireBuffer: max acquired blit buffer count reached: %d (max=%d)",
+-                    numBlitAcquiredBuffers, mMaxAcquiredBufferCount);
+-            return INVALID_OPERATION;
+-        }
+-#else
+         ST_LOGE("acquireBuffer: max acquired buffer count reached: %d (max=%d)",
+                 numAcquiredBuffers, mMaxAcquiredBufferCount);
+         return INVALID_OPERATION;
+-#endif
+     }
+ 
+     // check if queue is empty
+diff --git a/libs/gui/SurfaceTexture.cpp b/libs/gui/SurfaceTexture.cpp
+index 7c8a01d..75c3f7a 100644
+--- a/libs/gui/SurfaceTexture.cpp
++++ b/libs/gui/SurfaceTexture.cpp
+@@ -150,7 +150,8 @@ SurfaceTexture::SurfaceTexture(GLuint tex, bool allowSynchronousMode,
+             sizeof(mCurrentTransformMatrix));
+ 
+ #ifdef STE_HARDWARE
+-    for (int i = 0; i < BufferQueue::NUM_BLIT_BUFFER_SLOTS; i++) {
++
++    for (int i = 0; i < NUM_BLIT_BUFFER_SLOTS; i++) {
+         mBlitSlots[i].mEglImage = EGL_NO_IMAGE_KHR;
+         mBlitSlots[i].mEglDisplay = EGL_NO_DISPLAY;
+     }
+@@ -160,7 +161,7 @@ SurfaceTexture::SurfaceTexture(GLuint tex, bool allowSynchronousMode,
+     if (hw_get_module(COPYBIT_HARDWARE_MODULE_ID, &module) == 0) {
+         copybit_open(module, &mBlitEngine);
+     }
+-    ALOGE_IF(!mBlitEngine, "Cannot open copybit mBlitEngine=%p", mBlitEngine);
++    ALOGE_IF(!mBlitEngine, "\nCannot open copybit mBlitEngine=%p", mBlitEngine);
+ #endif
+ 
+     mBufferQueue->setConsumerUsageBits(DEFAULT_USAGE_FLAGS);
+@@ -350,7 +351,7 @@ status_t SurfaceTexture::updateTexImage(BufferRejecter* rejecter, bool skipSync,
+             }
+             // mBlitSlots contains several buffers (NUM_BLIT_BUFFER_SLOTS),
+             // advance (potentially wrap) the index
+-            mNextBlitSlot = (mNextBlitSlot + 1) % BufferQueue::NUM_BLIT_BUFFER_SLOTS;
++            mNextBlitSlot = (mNextBlitSlot + 1) % NUM_BLIT_BUFFER_SLOTS;
+         } else {
+             mNeedsConversion = false;
+             image = mEglSlots[buf].mEglImage;
+@@ -376,11 +377,7 @@ status_t SurfaceTexture::updateTexImage(BufferRejecter* rejecter, bool skipSync,
+         // we call the rejecter here, in case the caller has a reason to
+         // not accept this buffer. this is used by SurfaceFlinger to
+         // reject buffers which have the wrong size
+-#ifdef STE_HARDWARE
+-        if (rejecter && rejecter->reject(item.mGraphicBuffer, item)) {
+-#else
+         if (rejecter && rejecter->reject(mSlots[buf].mGraphicBuffer, item)) {
+-#endif
+             releaseBufferLocked(buf, dpy, EGL_NO_SYNC_KHR);
+             glBindTexture(mTexTarget, mTexName);
+             return NO_ERROR;
+@@ -527,12 +524,6 @@ status_t SurfaceTexture::detachFromContext() {
+         }
+     }
+ 
+-#ifdef STE_HARDWARE
+-    if (mBlitEngine) {
+-        copybit_close(mBlitEngine);
+-    }
+-#endif
+-
+     mEglDisplay = EGL_NO_DISPLAY;
+     mEglContext = EGL_NO_CONTEXT;
+     mAttached = false;
+@@ -995,6 +986,21 @@ void SurfaceTexture::abandonLocked() {
+     ST_LOGV("abandonLocked");
+     mCurrentTextureBuf.clear();
+     ConsumerBase::abandonLocked();
++#ifdef STE_HARDWARE
++    for (int i = 0; i < NUM_BLIT_BUFFER_SLOTS; i++) {
++        mBlitSlots[i].mGraphicBuffer = 0;
++        if (mBlitSlots[i].mEglImage != EGL_NO_IMAGE_KHR) {
++            eglDestroyImageKHR(mBlitSlots[i].mEglDisplay, mBlitSlots[i].mEglImage);
++            mBlitSlots[i].mEglImage = EGL_NO_IMAGE_KHR;
++            mBlitSlots[i].mEglDisplay = EGL_NO_DISPLAY;
++        }
++    }
++#endif
++#ifdef STE_HARDWARE
++    if (mBlitEngine) {
++        copybit_close(mBlitEngine);
++    }
++#endif
+ }
+ 
+ void SurfaceTexture::setName(const String8& name) {
+@@ -1051,7 +1057,7 @@ status_t SurfaceTexture::convert() {
+         return NO_ERROR;
+ 
+     if (mConversionBltSlot < 0 ||
+-            mConversionBltSlot >= BufferQueue::NUM_BLIT_BUFFER_SLOTS ||
++            mConversionBltSlot >= NUM_BLIT_BUFFER_SLOTS ||
+             mConversionSrcSlot < 0 ||
+             mConversionSrcSlot >= BufferQueue::NUM_BUFFER_SLOTS) {
+         ALOGE_IF(STE_DEFERDBG, "%s: Incorrect setup for deferred "
+-- 
+2.5.0
+
