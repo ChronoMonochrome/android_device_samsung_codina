@@ -127,7 +127,6 @@ PRODUCT_COPY_FILES += \
 # libaudioflinger prebuilt
 PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/prebuilt/libaudioflinger.so:system/lib/libaudioflinger.so \
-    $(LOCAL_PATH)/prebuilt/libaudioresampler.so:system/lib/libaudioresampler.so \
 
 # Misc Packages
 PRODUCT_PACKAGES += \
