@@ -1,0 +1,44 @@
+From 0b06bcdf91b7ad89ae9fc52b138ce28d26182b6f Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Wed, 10 Feb 2016 00:18:56 +0700
+Subject: [PATCH 4/4] integrated kernel build defconfig change
+
+Change-Id: I45a4e31ccdf42309d996e6b78996439d06b940de
+---
+ arch/arm/configs/codina_defconfig | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/arch/arm/configs/codina_defconfig b/arch/arm/configs/codina_defconfig
+index 42d64b4..950b265 100755
+--- a/arch/arm/configs/codina_defconfig
++++ b/arch/arm/configs/codina_defconfig
+@@ -1009,7 +1009,7 @@ CONFIG_COMPDEV=y
+ # CONFIG_COMPDEV_DEBUG is not set
+ CONFIG_CLONEDEV=y
+ # CONFIG_CLONEDEV_DEBUG is not set
+-CONFIG_NFC_PN544=m
++CONFIG_NFC_PN544=y
+ CONFIG_SAMSUNG_JACK=y
+ # CONFIG_SAMSUNG_JACK_SW_WATERPROOF is not set
+ # CONFIG_U8500_SIM_DETECT is not set
+@@ -1101,7 +1101,7 @@ CONFIG_NETDEVICES=y
+ # CONFIG_BONDING is not set
+ # CONFIG_MACVLAN is not set
+ # CONFIG_EQUALIZER is not set
+-CONFIG_TUN=m
++CONFIG_TUN=y
+ # CONFIG_VETH is not set
+ CONFIG_MII=m
+ # CONFIG_PHYLIB is not set
+@@ -2418,7 +2418,7 @@ CONFIG_INOTIFY_USER=y
+ # CONFIG_QUOTA is not set
+ # CONFIG_QUOTACTL is not set
+ # CONFIG_AUTOFS4_FS is not set
+-CONFIG_FUSE_FS=m
++CONFIG_FUSE_FS=y
+ # CONFIG_CUSE is not set
+ CONFIG_GENERIC_ACL=y
+ 
+-- 
+2.5.0
+

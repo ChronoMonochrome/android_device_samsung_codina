@@ -1,0 +1,74 @@
+From 15c643d44be3afc7281068f7f43280718b40fc2b Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Tue, 9 Feb 2016 04:05:12 +0700
+Subject: [PATCH 17/19] frameworks-native_Fix_Native_new_32.patch
+
+Change-Id: I834e1e4d10b15643244bf031783b29aa1fc57086
+---
+ libs/input/Input.cpp          |  3 ++-
+ libs/input/InputTransport.cpp | 14 ++++++++++----
+ 2 files changed, 12 insertions(+), 5 deletions(-)
+
+diff --git a/libs/input/Input.cpp b/libs/input/Input.cpp
+index 3a7afe9..a60619f 100644
+--- a/libs/input/Input.cpp
++++ b/libs/input/Input.cpp
+@@ -452,7 +452,8 @@ status_t MotionEvent::readFromParcel(Parcel* parcel) {
+         properties.toolType = parcel->readInt32();
+     }
+ 
+-    while (sampleCount-- > 0) {
++    while (sampleCount > 0) {
++        sampleCount--;
+         mSampleEventTimes.push(parcel->readInt64());
+         for (size_t i = 0; i < pointerCount; i++) {
+             mSamplePointerCoords.push();
+diff --git a/libs/input/InputTransport.cpp b/libs/input/InputTransport.cpp
+index 090ee53..92b28d9 100644
+--- a/libs/input/InputTransport.cpp
++++ b/libs/input/InputTransport.cpp
+@@ -510,7 +510,8 @@ status_t InputConsumer::consume(InputEventFactoryInterface* factory,
+ status_t InputConsumer::consumeBatch(InputEventFactoryInterface* factory,
+         nsecs_t frameTime, uint32_t* outSeq, InputEvent** outEvent) {
+     status_t result;
+-    for (size_t i = mBatches.size(); i-- > 0; ) {
++    for (size_t i = mBatches.size(); i > 0; ) {
++        i--;
+         Batch& batch = mBatches.editItemAt(i);
+         if (frameTime < 0) {
+             result = consumeSamples(factory, batch, batch.samples.size(),
+@@ -815,7 +816,8 @@ status_t InputConsumer::sendFinishedSignal(uint32_t seq, bool handled) {
+         uint32_t currentSeq = seq;
+         uint32_t chainSeqs[seqChainCount];
+         size_t chainIndex = 0;
+-        for (size_t i = seqChainCount; i-- > 0; ) {
++        for (size_t i = seqChainCount; i > 0; ) {
++             i--;
+              const SeqChain& seqChain = mSeqChains.itemAt(i);
+              if (seqChain.seq == currentSeq) {
+                  currentSeq = seqChain.chain;
+@@ -824,7 +826,8 @@ status_t InputConsumer::sendFinishedSignal(uint32_t seq, bool handled) {
+              }
+         }
+         status_t status = OK;
+-        while (!status && chainIndex-- > 0) {
++        while (!status && chainIndex > 0) {
++            chainIndex--;
+             status = sendUnchainedFinishedSignal(chainSeqs[chainIndex], handled);
+         }
+         if (status) {
+@@ -834,7 +837,10 @@ status_t InputConsumer::sendFinishedSignal(uint32_t seq, bool handled) {
+                 seqChain.seq = chainIndex != 0 ? chainSeqs[chainIndex - 1] : seq;
+                 seqChain.chain = chainSeqs[chainIndex];
+                 mSeqChains.push(seqChain);
+-            } while (chainIndex-- > 0);
++                if (chainIndex != 0) {
++                    chainIndex--;
++                }
++            } while (chainIndex > 0);
+             return status;
+         }
+     }
+-- 
+2.5.0
+

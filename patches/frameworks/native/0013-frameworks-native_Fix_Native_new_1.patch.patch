@@ -1,0 +1,30 @@
+From b94e4b3f8420fc4a34f098a8edf0b45c81849f19 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Tue, 9 Feb 2016 04:05:11 +0700
+Subject: [PATCH 13/19] frameworks-native_Fix_Native_new_1.patch
+
+Change-Id: I795e71b5a19ae6134a9cc8122fdffe33a8f9431f
+---
+ services/surfaceflinger/SurfaceFlinger.cpp | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/services/surfaceflinger/SurfaceFlinger.cpp b/services/surfaceflinger/SurfaceFlinger.cpp
+index 9f7ae0b..1a1c593 100644
+--- a/services/surfaceflinger/SurfaceFlinger.cpp
++++ b/services/surfaceflinger/SurfaceFlinger.cpp
+@@ -631,7 +631,11 @@ status_t SurfaceFlinger::getDisplayStats(const sp<IBinder>& display,
+ }
+ 
+ int SurfaceFlinger::getActiveConfig(const sp<IBinder>& display) {
+-    return getDisplayDevice(display)->getActiveConfig();
++    sp<DisplayDevice> device(getDisplayDevice(display));
++    if (device != NULL) {
++        return device->getActiveConfig();
++    }
++    return BAD_VALUE;
+ }
+ 
+ void SurfaceFlinger::setActiveConfigInternal(const sp<DisplayDevice>& hw, int mode) {
+-- 
+2.5.0
+

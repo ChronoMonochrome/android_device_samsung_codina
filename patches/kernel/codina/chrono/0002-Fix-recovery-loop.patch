@@ -1,0 +1,29 @@
+From 416ca7b8445c5fe4682ec6e5c409e2cd650646b5 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Thu, 15 Jan 2015 13:58:44 +0400
+Subject: [PATCH 2/4] Fix recovery loop
+
+---
+ usr/u8500_initramfs_files/init | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/usr/u8500_initramfs_files/init b/usr/u8500_initramfs_files/init
+index 32eacfb..49a6938 100644
+--- a/usr/u8500_initramfs_files/init
++++ b/usr/u8500_initramfs_files/init
+@@ -18,6 +18,12 @@ fi
+ 
+ busybox cpio -i < ${load_image}
+ 
++if busybox grep -q bootmode=2 /proc/cmdline ; then
++       busybox insmod /modules/j4fs.ko
++       busybox insmod /modules/param.ko
++       busybox mount -t j4fs /dev/block/mmcblk0p1 /mnt/.lfs
++fi
++
+ busybox umount /sys
+ busybox umount /proc
+ busybox date >>boot.txt
+-- 
+2.5.0
+

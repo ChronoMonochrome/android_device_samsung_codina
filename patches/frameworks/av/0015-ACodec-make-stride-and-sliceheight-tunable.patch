@@ -1,0 +1,62 @@
+From 3a8bc2e6cfb9f2c94f3413a4a507a3633800775c Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Sat, 21 Nov 2015 07:04:16 +0200
+Subject: [PATCH 15/17] ACodec: make stride and sliceheight tunable
+
+Change-Id: I2b6357a2d5d1cd59f96fd89a73a9ab5cf18a117f
+---
+ media/libstagefright/ACodec.cpp | 18 ++++++++++++++++--
+ 1 file changed, 16 insertions(+), 2 deletions(-)
+
+diff --git a/media/libstagefright/ACodec.cpp b/media/libstagefright/ACodec.cpp
+index c020110..accd75e 100644
+--- a/media/libstagefright/ACodec.cpp
++++ b/media/libstagefright/ACodec.cpp
+@@ -42,6 +42,7 @@
+ #include <media/stagefright/OMXCodec.h>
+ 
+ #include <media/hardware/HardwareAPI.h>
++#include <cutils/properties.h>
+ 
+ #include <OMX_AudioExt.h>
+ #include <OMX_VideoExt.h>
+@@ -2473,21 +2474,34 @@ status_t ACodec::setupVideoEncoder(const char *mime, const sp<AMessage> &msg) {
+     video_def->nFrameWidth = width;
+     video_def->nFrameHeight = height;
+ 
+-    int32_t stride;
++    int32_t stride, tmpstride;
+     if (!msg->findInt32("stride", &stride)) {
+         stride = width;
+     }
+ 
++    tmpstride = stride;
++
++    stride = property_get_int32("debug.stride", stride);
++    ALOGE("overriding old stride=%d to %d\n", tmpstride, stride);
++
+     video_def->nStride = stride;
+ 
+-    int32_t sliceHeight;
++    int32_t sliceHeight, tmpsliceheight;
+     if (!msg->findInt32("slice-height", &sliceHeight)) {
+         sliceHeight = height;
+     }
+ 
++    tmpsliceheight = sliceHeight;
++    sliceHeight = property_get_int32("debug.sliceheight", sliceHeight);
++    ALOGE("overriding old sliceHeight=%d to %d\n", tmpsliceheight, sliceHeight);
++
+     video_def->nSliceHeight = sliceHeight;
+ 
+     def.nBufferSize = (video_def->nStride * video_def->nSliceHeight * 3) / 2;
++    int32_t minbuffersize = (width * height * 3) / 2;
++    if (def.nBufferSize < minbuffersize)
++	def.nBufferSize = minbuffersize;
++    ALOGE("def.nBufferSize=%d\n", def.nBufferSize);
+ 
+     float frameRate;
+     if (!msg->findFloat("frame-rate", &frameRate)) {
+-- 
+2.5.0
+

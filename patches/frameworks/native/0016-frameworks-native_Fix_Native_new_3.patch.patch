@@ -1,0 +1,42 @@
+From 5cb8ad3d9718b3422c2b5ee9e7ba76542dc9c941 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Tue, 9 Feb 2016 04:05:12 +0700
+Subject: [PATCH 16/19] frameworks-native_Fix_Native_new_3.patch
+
+Change-Id: Ibb6a7e31cb0bd38c102121e965ace714e9915dd1
+---
+ libs/binder/Parcel.cpp | 11 +++++++++--
+ 1 file changed, 9 insertions(+), 2 deletions(-)
+
+diff --git a/libs/binder/Parcel.cpp b/libs/binder/Parcel.cpp
+index 731d839..a532795 100644
+--- a/libs/binder/Parcel.cpp
++++ b/libs/binder/Parcel.cpp
+@@ -1538,8 +1538,14 @@ void Parcel::freeDataNoInit()
+         if (mData) {
+             LOG_ALLOC("Parcel %p: freeing with %zu capacity", this, mDataCapacity);
+             pthread_mutex_lock(&gParcelGlobalAllocSizeLock);
+-            gParcelGlobalAllocSize -= mDataCapacity;
+-            gParcelGlobalAllocCount--;
++            if (mDataCapacity <= gParcelGlobalAllocSize) {
++              gParcelGlobalAllocSize = gParcelGlobalAllocSize - mDataCapacity;
++            } else {
++              gParcelGlobalAllocSize = 0;
++            }
++            if (gParcelGlobalAllocCount > 0) {
++              gParcelGlobalAllocCount--;
++            }
+             pthread_mutex_unlock(&gParcelGlobalAllocSizeLock);
+             free(mData);
+         }
+@@ -1700,6 +1706,7 @@ status_t Parcel::continueWrite(size_t desired)
+                 pthread_mutex_lock(&gParcelGlobalAllocSizeLock);
+                 gParcelGlobalAllocSize += desired;
+                 gParcelGlobalAllocSize -= mDataCapacity;
++                gParcelGlobalAllocCount++;
+                 pthread_mutex_unlock(&gParcelGlobalAllocSizeLock);
+                 mData = data;
+                 mDataCapacity = desired;
+-- 
+2.5.0
+

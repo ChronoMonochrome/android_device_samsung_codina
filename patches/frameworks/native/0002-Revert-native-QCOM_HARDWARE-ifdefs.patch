@@ -1,0 +1,3467 @@
+From 3cdacdc68fb170748b1590faed95c719e112696d Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Tue, 9 Feb 2016 10:48:37 +0700
+Subject: [PATCH 02/19] Revert "native: QCOM_HARDWARE ifdefs"
+
+This reverts commit 96e174b170c45e338ca0b125d2ba92fb05e3dc27.
+---
+ include/gui/BufferItem.h                           |   2 -
+ include/gui/GLConsumer.h                           |   4 -
+ include/gui/IGraphicBufferConsumer.h               |   2 -
+ include/gui/IGraphicBufferProducer.h               |   6 -
+ include/gui/Surface.h                              |   4 -
+ include/media/openmax/OMX_Audio.h                  |   4 +-
+ include/private/gui/LayerState.h                   |   4 -
+ libs/gui/Android.mk                                |   2 -
+ libs/gui/BufferItem.cpp                            |  10 -
+ libs/gui/BufferQueueConsumer.cpp                   |   4 -
+ libs/gui/BufferQueueProducer.cpp                   |   8 -
+ libs/gui/GLConsumer.cpp                            |   6 -
+ libs/gui/IGraphicBufferAlloc.cpp                   |   8 -
+ libs/gui/IGraphicBufferProducer.cpp                |   8 -
+ libs/gui/Surface.cpp                               |  48 ----
+ libs/gui/SurfaceComposerClient.cpp                 |   2 -
+ libs/gui/SurfaceControl.cpp                        |   4 -
+ libs/ui/Region.cpp                                 |   4 -
+ opengl/libs/EGL/eglApi.cpp                         |  59 +----
+ opengl/libs/EGL/egl_entries.in                     |   4 +-
+ opengl/libs/GLES2/gl2.cpp                          |   4 -
+ services/inputflinger/EventHub.h                   |   2 -
+ services/inputflinger/InputReader.cpp              |  16 --
+ services/inputflinger/InputReader.h                |   2 -
+ services/inputflinger/PointerControllerInterface.h |   2 -
+ services/surfaceflinger/Android.mk                 |   2 -
+ services/surfaceflinger/DispSync.h                 |   9 +-
+ services/surfaceflinger/DisplayDevice.cpp          |  13 +-
+ services/surfaceflinger/DisplayDevice.h            |   6 -
+ .../DisplayHardware/FramebufferSurface.cpp         |   2 -
+ .../surfaceflinger/DisplayHardware/HWComposer.cpp  | 141 +----------
+ .../surfaceflinger/DisplayHardware/HWComposer.h    |  28 ---
+ .../DisplayHardware/VirtualDisplaySurface.cpp      |  83 +------
+ .../DisplayHardware/VirtualDisplaySurface.h        |  15 --
+ services/surfaceflinger/Layer.cpp                  | 105 --------
+ services/surfaceflinger/Layer.h                    |  10 -
+ .../RenderEngine/GLES20RenderEngine.cpp            |   2 -
+ .../RenderEngine/GLES20RenderEngine.h              |   2 -
+ .../surfaceflinger/RenderEngine/RenderEngine.h     |   2 -
+ services/surfaceflinger/SurfaceFlinger.cpp         | 263 +--------------------
+ services/surfaceflinger/SurfaceFlinger.h           |  22 --
+ 41 files changed, 20 insertions(+), 904 deletions(-)
+
+diff --git a/include/gui/BufferItem.h b/include/gui/BufferItem.h
+index 75f0100..f1896b2 100644
+--- a/include/gui/BufferItem.h
++++ b/include/gui/BufferItem.h
+@@ -60,11 +60,9 @@ class BufferItem : public Flattenable<BufferItem> {
+     // mCrop is the current crop rectangle for this buffer slot.
+     Rect mCrop;
+ 
+-#ifdef QCOM_HARDWARE
+     // mDirtyRect is the dirty rectangle for this buffer slot.
+     Rect mDirtyRect;
+ 
+-#endif /* QCOM_HARDWARE */
+     // mTransform is the current transform flags for this buffer slot.
+     // refer to NATIVE_WINDOW_TRANSFORM_* in <window.h>
+     uint32_t mTransform;
+diff --git a/include/gui/GLConsumer.h b/include/gui/GLConsumer.h
+index 9931ec5..bd7b973 100644
+--- a/include/gui/GLConsumer.h
++++ b/include/gui/GLConsumer.h
+@@ -176,11 +176,9 @@ public:
+     // getCurrentCrop returns the cropping rectangle of the current buffer.
+     Rect getCurrentCrop() const;
+ 
+-#ifdef QCOM_HARDWARE
+     // getDirtyRegion returns the dirty rect associated with the current buffer.
+     Rect getCurrentDirtyRect() const;
+ 
+-#endif /* QCOM_HARDWARE */
+     // getCurrentTransform returns the transform of the current buffer.
+     uint32_t getCurrentTransform() const;
+ 
+@@ -373,12 +371,10 @@ private:
+     // mCurrentCrop is the crop rectangle that applies to the current texture.
+     // It gets set each time updateTexImage is called.
+     Rect mCurrentCrop;
+-#ifdef QCOM_HARDWARE
+ 
+     //mCurrentDirtyRect is the dirty rectangle associated with the current
+     //buffer.
+     Rect mCurrentDirtyRect;
+-#endif /* QCOM_HARDWARE */
+ 
+     // mCurrentTransform is the transform identifier for the current texture. It
+     // gets set each time updateTexImage is called.
+diff --git a/include/gui/IGraphicBufferConsumer.h b/include/gui/IGraphicBufferConsumer.h
+index 3ba9e4c..e083f71 100644
+--- a/include/gui/IGraphicBufferConsumer.h
++++ b/include/gui/IGraphicBufferConsumer.h
+@@ -67,11 +67,9 @@ public:
+         // mCrop is the current crop rectangle for this buffer slot.
+         Rect mCrop;
+ 
+-#ifdef QCOM_HARDWARE
+         // mDirtyRect is the dirty rectangle for this buffer slot.
+         Rect mDirtyRect;
+ 
+-#endif /* QCOM_HARDWARE */
+         // mTransform is the current transform flags for this buffer slot.
+         // refer to NATIVE_WINDOW_TRANSFORM_* in <window.h>
+         uint32_t mTransform;
+diff --git a/include/gui/IGraphicBufferProducer.h b/include/gui/IGraphicBufferProducer.h
+index b8ac9b2..48e32cc 100644
+--- a/include/gui/IGraphicBufferProducer.h
++++ b/include/gui/IGraphicBufferProducer.h
+@@ -281,7 +281,6 @@ public:
+         : timestamp(timestamp), isAutoTimestamp(isAutoTimestamp), crop(crop),
+           scalingMode(scalingMode), transform(transform), stickyTransform(sticky),
+           async(async), fence(fence) { }
+-#ifdef QCOM_HARDWARE
+ 
+         inline QueueBufferInput(int64_t timestamp, bool isAutoTimestamp,
+                 const Rect& crop, const Rect& dirtyRect, int scalingMode, uint32_t transform, bool async,
+@@ -290,7 +289,6 @@ public:
+           dirtyRect(dirtyRect),scalingMode(scalingMode), transform(transform), stickyTransform(sticky),
+           async(async), fence(fence) { }
+ 
+-#endif /* QCOM_HARDWARE */
+         inline void deflate(int64_t* outTimestamp, bool* outIsAutoTimestamp,
+                 Rect* outCrop, int* outScalingMode, uint32_t* outTransform,
+                 bool* outAsync, sp<Fence>* outFence,
+@@ -307,7 +305,6 @@ public:
+             }
+         }
+ 
+-#ifdef QCOM_HARDWARE
+         inline void deflate(int64_t* outTimestamp, bool* outIsAutoTimestamp,
+                 Rect* outCrop, Rect* outDirtyRect, int* outScalingMode, uint32_t* outTransform,
+                 bool* outAsync, sp<Fence>* outFence,
+@@ -326,7 +323,6 @@ public:
+         }
+ 
+ 
+-#endif /* QCOM_HARDWARE */
+         // Flattenable protocol
+         size_t getFlattenedSize() const;
+         size_t getFdCount() const;
+@@ -337,9 +333,7 @@ public:
+         int64_t timestamp;
+         int isAutoTimestamp;
+         Rect crop;
+-#ifdef QCOM_HARDWARE
+         Rect dirtyRect;
+-#endif /* QCOM_HARDWARE */
+         int scalingMode;
+         uint32_t transform;
+         uint32_t stickyTransform;
+diff --git a/include/gui/Surface.h b/include/gui/Surface.h
+index 61622eb..31138e1 100644
+--- a/include/gui/Surface.h
++++ b/include/gui/Surface.h
+@@ -101,12 +101,10 @@ public:
+      */
+     void allocateBuffers();
+ 
+-#ifdef QCOM_HARDWARE
+     /* sets dirty rectangle of the buffer that gets queued next for the
+      * Surface */
+     status_t setDirtyRect(const Rect* dirtyRect);
+ 
+-#endif /* QCOM_HARDWARE */
+ protected:
+     virtual ~Surface();
+ 
+@@ -231,12 +229,10 @@ private:
+     // mCrop is the crop rectangle that will be used for the next buffer
+     // that gets queued. It is set by calling setCrop.
+     Rect mCrop;
+-#ifdef QCOM_HARDWARE
+ 
+     // mDirtyRect is the dirty rectangle set for the next buffer that gets
+     // queued. It is set by calling setDirtyRect.
+     Rect mDirtyRect;
+-#endif /* QCOM_HARDWARE */
+ 
+     // mScalingMode is the scaling mode that will be used for the next
+     // buffers that get queued. It is set by calling setScalingMode.
+diff --git a/include/media/openmax/OMX_Audio.h b/include/media/openmax/OMX_Audio.h
+index 658e03c..a516df8 100644
+--- a/include/media/openmax/OMX_Audio.h
++++ b/include/media/openmax/OMX_Audio.h
+@@ -125,12 +125,10 @@ typedef enum OMX_AUDIO_CODINGTYPE {
+     OMX_AUDIO_CodingRA,          /**< Any variant of RA encoded data */
+     OMX_AUDIO_CodingMIDI,        /**< Any variant of MIDI encoded data */
+     OMX_AUDIO_CodingFLAC,        /**< Any variant of FLAC encoded data */
+-#ifdef QCOM_HARDWARE
+ #ifdef DOLBY_UDC
+     OMX_AUDIO_CodingDDP,         /**< Any variant of DDP encoded data */
+ #endif // DOLBY_END
+-#endif
+-    OMX_AUDIO_CodingKhronosExtensions = 0x6F000000, /**< Reserved region for introducing Khronos Standard Extensions */
++    OMX_AUDIO_CodingKhronosExtensions = 0x6F000000, /**< Reserved region for introducing Khronos Standard Extensions */ 
+     OMX_AUDIO_CodingVendorStartUnused = 0x7F000000, /**< Reserved region for introducing Vendor Extensions */
+     OMX_AUDIO_CodingMax = 0x7FFFFFFF
+ } OMX_AUDIO_CODINGTYPE;
+diff --git a/include/private/gui/LayerState.h b/include/private/gui/LayerState.h
+index 0f17654..6ce4cdb 100644
+--- a/include/private/gui/LayerState.h
++++ b/include/private/gui/LayerState.h
+@@ -39,9 +39,7 @@ struct layer_state_t {
+     enum {
+         eLayerHidden        = 0x01,     // SURFACE_HIDDEN in SurfaceControl.java
+         eLayerOpaque        = 0x02,     // SURFACE_OPAQUE
+-#ifdef QCOM_HARDWARE
+         eLayerTransparent   = 0x80,     // SURFACE_TRANSPARENT
+-#endif /* QCOM_HARDWARE */
+     };
+ 
+     enum {
+@@ -55,9 +53,7 @@ struct layer_state_t {
+         eLayerStackChanged          = 0x00000080,
+         eCropChanged                = 0x00000100,
+         eOpacityChanged             = 0x00000200,
+-#ifdef QCOM_HARDWARE
+         eTransparencyChanged        = 0x80000000,
+-#endif /* QCOM_HARDWARE */
+     };
+ 
+     layer_state_t()
+diff --git a/libs/gui/Android.mk b/libs/gui/Android.mk
+index 86740ac..e61e579 100644
+--- a/libs/gui/Android.mk
++++ b/libs/gui/Android.mk
+@@ -46,7 +46,6 @@ LOCAL_SHARED_LIBRARIES := \
+ 	libutils \
+ 	liblog
+ 
+-ifeq ($(BOARD_USES_QCOM_HARDWARE),true)
+ # Executed only on QCOM BSPs
+ ifeq ($(TARGET_USES_QCOM_BSP),true)
+ ifneq ($(TARGET_QCOM_DISPLAY_VARIANT),)
+@@ -56,7 +55,6 @@ else
+ endif
+     LOCAL_CFLAGS += -DQCOM_BSP
+ endif
+-endif
+ 
+ LOCAL_MODULE:= libgui
+ 
+diff --git a/libs/gui/BufferItem.cpp b/libs/gui/BufferItem.cpp
+index ebff8b3..797df9f 100644
+--- a/libs/gui/BufferItem.cpp
++++ b/libs/gui/BufferItem.cpp
+@@ -34,9 +34,7 @@ BufferItem::BufferItem() :
+     mAcquireCalled(false),
+     mTransformToDisplayInverse(false) {
+     mCrop.makeInvalid();
+-#ifdef QCOM_HARDWARE
+     mDirtyRect.makeInvalid();
+-#endif /* QCOM_HARDWARE */
+ }
+ 
+ BufferItem::~BufferItem() {}
+@@ -46,9 +44,7 @@ BufferItem::operator IGraphicBufferConsumer::BufferItem() const {
+     bufferItem.mGraphicBuffer = mGraphicBuffer;
+     bufferItem.mFence = mFence;
+     bufferItem.mCrop = mCrop;
+-#ifdef QCOM_HARDWARE
+     bufferItem.mDirtyRect = mDirtyRect;
+-#endif /* QCOM_HARDWARE */
+     bufferItem.mTransform = mTransform;
+     bufferItem.mScalingMode = mScalingMode;
+     bufferItem.mTimestamp = mTimestamp;
+@@ -63,9 +59,7 @@ BufferItem::operator IGraphicBufferConsumer::BufferItem() const {
+ 
+ size_t BufferItem::getPodSize() const {
+     size_t c =  sizeof(mCrop) +
+-#ifdef QCOM_HARDWARE
+             sizeof(mDirtyRect) +
+-#endif /* QCOM_HARDWARE */
+             sizeof(mTransform) +
+             sizeof(mScalingMode) +
+             sizeof(mTimestamp) +
+@@ -136,9 +130,7 @@ status_t BufferItem::flatten(
+     }
+ 
+     FlattenableUtils::write(buffer, size, mCrop);
+-#ifdef QCOM_HARDWARE
+     FlattenableUtils::write(buffer, size, mDirtyRect);
+-#endif /* QCOM_HARDWARE */
+     FlattenableUtils::write(buffer, size, mTransform);
+     FlattenableUtils::write(buffer, size, mScalingMode);
+     FlattenableUtils::write(buffer, size, mTimestamp);
+@@ -181,9 +173,7 @@ status_t BufferItem::unflatten(
+     }
+ 
+     FlattenableUtils::read(buffer, size, mCrop);
+-#ifdef QCOM_HARDWARE
+     FlattenableUtils::read(buffer, size, mDirtyRect);
+-#endif /* QCOM_HARDWARE */
+     FlattenableUtils::read(buffer, size, mTransform);
+     FlattenableUtils::read(buffer, size, mScalingMode);
+     FlattenableUtils::read(buffer, size, mTimestamp);
+diff --git a/libs/gui/BufferQueueConsumer.cpp b/libs/gui/BufferQueueConsumer.cpp
+index d46be2c..76a826e 100644
+--- a/libs/gui/BufferQueueConsumer.cpp
++++ b/libs/gui/BufferQueueConsumer.cpp
+@@ -25,9 +25,7 @@
+ #include <gui/BufferQueueCore.h>
+ #include <gui/IConsumerListener.h>
+ #include <gui/IProducerListener.h>
+-#ifdef QCOM_HARDWARE
+ #include <cutils/properties.h>
+-#endif /* QCOM_HARDWARE */
+ 
+ namespace android {
+ 
+@@ -92,7 +90,6 @@ status_t BufferQueueConsumer::acquireBuffer(BufferItem* outBuffer,
+         // the timestamps are being auto-generated by Surface. If the app isn't
+         // generating timestamps explicitly, it probably doesn't want frames to
+         // be discarded based on them.
+-#ifdef QCOM_HARDWARE
+ #ifdef QCOM_BSP
+         char property[PROPERTY_VALUE_MAX];
+         if (property_get("hw.sf.app_buff_count", property, NULL) > 0) {
+@@ -104,7 +101,6 @@ status_t BufferQueueConsumer::acquireBuffer(BufferItem* outBuffer,
+            }
+         }
+ #endif
+-#endif /* QCOM_HARDWARE */
+         while (mCore->mQueue.size() > 1 && !mCore->mQueue[0].mIsAutoTimestamp) {
+             // If entry[1] is timely, drop entry[0] (and repeat). We apply an
+             // additional criterion here: we only drop the earlier buffer if our
+diff --git a/libs/gui/BufferQueueProducer.cpp b/libs/gui/BufferQueueProducer.cpp
+index 7809314..b43ee93 100644
+--- a/libs/gui/BufferQueueProducer.cpp
++++ b/libs/gui/BufferQueueProducer.cpp
+@@ -517,20 +517,14 @@ status_t BufferQueueProducer::queueBuffer(int slot,
+     int64_t timestamp;
+     bool isAutoTimestamp;
+     Rect crop;
+-#ifdef QCOM_HARDWARE
+     Rect dirtyRect;
+-#endif /* QCOM_HARDWARE */
+     int scalingMode;
+     uint32_t transform;
+     uint32_t stickyTransform;
+     bool async;
+     sp<Fence> fence;
+-#ifndef QCOM_HARDWARE
+-    input.deflate(&timestamp, &isAutoTimestamp, &crop, &scalingMode, &transform,
+-#else /* QCOM_HARDWARE */
+ 
+     input.deflate(&timestamp, &isAutoTimestamp, &crop, &dirtyRect, &scalingMode, &transform,
+-#endif /* QCOM_HARDWARE */
+             &async, &fence, &stickyTransform);
+ 
+     if (fence == NULL) {
+@@ -611,9 +605,7 @@ status_t BufferQueueProducer::queueBuffer(int slot,
+         item.mAcquireCalled = mSlots[slot].mAcquireCalled;
+         item.mGraphicBuffer = mSlots[slot].mGraphicBuffer;
+         item.mCrop = crop;
+-#ifdef QCOM_HARDWARE
+         item.mDirtyRect = dirtyRect;
+-#endif /* QCOM_HARDWARE */
+         item.mTransform = transform & ~NATIVE_WINDOW_TRANSFORM_INVERSE_DISPLAY;
+         item.mTransformToDisplayInverse =
+                 bool(transform & NATIVE_WINDOW_TRANSFORM_INVERSE_DISPLAY);
+diff --git a/libs/gui/GLConsumer.cpp b/libs/gui/GLConsumer.cpp
+index ca97109..9d5a539 100644
+--- a/libs/gui/GLConsumer.cpp
++++ b/libs/gui/GLConsumer.cpp
+@@ -141,9 +141,7 @@ GLConsumer::GLConsumer(const sp<IGraphicBufferConsumer>& bq, uint32_t tex,
+             sizeof(mCurrentTransformMatrix));
+ 
+     mConsumer->setConsumerUsageBits(DEFAULT_USAGE_FLAGS);
+-#ifdef QCOM_HARDWARE
+     mCurrentDirtyRect.clear();
+-#endif /* QCOM_HARDWARE */
+ }
+ 
+ GLConsumer::GLConsumer(const sp<IGraphicBufferConsumer>& bq, uint32_t texTarget,
+@@ -440,9 +438,7 @@ status_t GLConsumer::updateAndReleaseLocked(const BufferQueue::BufferItem& item)
+     mCurrentTimestamp = item.mTimestamp;
+     mCurrentFence = item.mFence;
+     mCurrentFrameNumber = item.mFrameNumber;
+-#ifdef QCOM_HARDWARE
+     mCurrentDirtyRect = item.mDirtyRect;
+-#endif /* QCOM_HARDWARE */
+ 
+     computeCurrentTransformMatrixLocked();
+ 
+@@ -989,12 +985,10 @@ status_t GLConsumer::doGLFenceWaitLocked() const {
+     return NO_ERROR;
+ }
+ 
+-#ifdef QCOM_HARDWARE
+ Rect GLConsumer::getCurrentDirtyRect() const {
+      Mutex::Autolock lock(mMutex);
+      return mCurrentDirtyRect;
+ }
+-#endif /* QCOM_HARDWARE */
+ 
+ void GLConsumer::freeBufferLocked(int slotIndex) {
+     ST_LOGV("freeBufferLocked: slotIndex=%d", slotIndex);
+diff --git a/libs/gui/IGraphicBufferAlloc.cpp b/libs/gui/IGraphicBufferAlloc.cpp
+index 972527e..e090746 100644
+--- a/libs/gui/IGraphicBufferAlloc.cpp
++++ b/libs/gui/IGraphicBufferAlloc.cpp
+@@ -50,21 +50,13 @@ public:
+         data.writeInt32(h);
+         data.writeInt32(format);
+         data.writeInt32(usage);
+-#ifndef QCOM_HARDWARE
+-        remote()->transact(CREATE_GRAPHIC_BUFFER, data, &reply);
+-#else /* QCOM_HARDWARE */
+         status_t result = remote()->transact(CREATE_GRAPHIC_BUFFER, data, &reply);
+         if(result != NO_ERROR){
+             *error = result;
+             return NULL;
+         }
+-#endif /* QCOM_HARDWARE */
+         sp<GraphicBuffer> graphicBuffer;
+-#ifndef QCOM_HARDWARE
+-        status_t result = reply.readInt32();
+-#else /* QCOM_HARDWARE */
+         result = reply.readInt32();
+-#endif /* QCOM_HARDWARE */
+         if (result == NO_ERROR) {
+             graphicBuffer = new GraphicBuffer();
+             result = reply.read(*graphicBuffer);
+diff --git a/libs/gui/IGraphicBufferProducer.cpp b/libs/gui/IGraphicBufferProducer.cpp
+index 735eac3..649ab3b 100644
+--- a/libs/gui/IGraphicBufferProducer.cpp
++++ b/libs/gui/IGraphicBufferProducer.cpp
+@@ -433,9 +433,7 @@ size_t IGraphicBufferProducer::QueueBufferInput::getFlattenedSize() const {
+     return sizeof(timestamp)
+          + sizeof(isAutoTimestamp)
+          + sizeof(crop)
+-#ifdef QCOM_HARDWARE
+          + sizeof(dirtyRect)
+-#endif /* QCOM_HARDWARE */
+          + sizeof(scalingMode)
+          + sizeof(transform)
+          + sizeof(stickyTransform)
+@@ -456,9 +454,7 @@ status_t IGraphicBufferProducer::QueueBufferInput::flatten(
+     FlattenableUtils::write(buffer, size, timestamp);
+     FlattenableUtils::write(buffer, size, isAutoTimestamp);
+     FlattenableUtils::write(buffer, size, crop);
+-#ifdef QCOM_HARDWARE
+     FlattenableUtils::write(buffer, size, dirtyRect);
+-#endif /* QCOM_HARDWARE */
+     FlattenableUtils::write(buffer, size, scalingMode);
+     FlattenableUtils::write(buffer, size, transform);
+     FlattenableUtils::write(buffer, size, stickyTransform);
+@@ -473,9 +469,7 @@ status_t IGraphicBufferProducer::QueueBufferInput::unflatten(
+               sizeof(timestamp)
+             + sizeof(isAutoTimestamp)
+             + sizeof(crop)
+-#ifdef QCOM_HARDWARE
+             + sizeof(dirtyRect)
+-#endif /* QCOM_HARDWARE */
+             + sizeof(scalingMode)
+             + sizeof(transform)
+             + sizeof(stickyTransform)
+@@ -488,9 +482,7 @@ status_t IGraphicBufferProducer::QueueBufferInput::unflatten(
+     FlattenableUtils::read(buffer, size, timestamp);
+     FlattenableUtils::read(buffer, size, isAutoTimestamp);
+     FlattenableUtils::read(buffer, size, crop);
+-#ifdef QCOM_HARDWARE
+     FlattenableUtils::read(buffer, size, dirtyRect);
+-#endif /* QCOM_HARDWARE */
+     FlattenableUtils::read(buffer, size, scalingMode);
+     FlattenableUtils::read(buffer, size, transform);
+     FlattenableUtils::read(buffer, size, stickyTransform);
+diff --git a/libs/gui/Surface.cpp b/libs/gui/Surface.cpp
+index 202d79e..7859609 100644
+--- a/libs/gui/Surface.cpp
++++ b/libs/gui/Surface.cpp
+@@ -36,11 +36,9 @@
+ 
+ #include <private/gui/ComposerService.h>
+ 
+-#ifdef QCOM_HARDWARE
+ #ifdef QCOM_BSP
+ #include <gralloc_priv.h>
+ #endif
+-#endif /* QCOM_HARDWARE */
+ 
+ namespace android {
+ 
+@@ -71,9 +69,7 @@ Surface::Surface(
+     mReqUsage = 0;
+     mTimestamp = NATIVE_WINDOW_TIMESTAMP_AUTO;
+     mCrop.clear();
+-#ifdef QCOM_HARDWARE
+     mDirtyRect.clear();
+-#endif /* QCOM_HARDWARE */
+     mScalingMode = NATIVE_WINDOW_SCALING_MODE_FREEZE;
+     mTransform = 0;
+     mStickyTransform = 0;
+@@ -135,18 +131,12 @@ int Surface::hook_queueBuffer(ANativeWindow* window,
+ int Surface::hook_dequeueBuffer_DEPRECATED(ANativeWindow* window,
+         ANativeWindowBuffer** buffer) {
+     Surface* c = getSelf(window);
+-#ifndef QCOM_HARDWARE
+-    ANativeWindowBuffer* buf;
+-#else /* QCOM_HARDWARE */
+     ANativeWindowBuffer* buf = NULL;
+-#endif /* QCOM_HARDWARE */
+     int fenceFd = -1;
+     int result = c->dequeueBuffer(&buf, &fenceFd);
+-#ifdef QCOM_HARDWARE
+ 
+     if (result != NO_ERROR) return result;
+ 
+-#endif /* QCOM_HARDWARE */
+     sp<Fence> fence(new Fence(fenceFd));
+     int waitResult = fence->waitForever("dequeueBuffer_DEPRECATED");
+     if (waitResult != OK) {
+@@ -190,13 +180,11 @@ int Surface::hook_perform(ANativeWindow* window, int operation, ...) {
+     return c->perform(operation, args);
+ }
+ 
+-#ifdef QCOM_HARDWARE
+ status_t Surface::setDirtyRect(const Rect* dirtyRect) {
+     Mutex::Autolock lock(mMutex);
+     mDirtyRect = *dirtyRect;
+     return NO_ERROR;
+ }
+-#endif /* QCOM_HARDWARE */
+ 
+ int Surface::setSwapInterval(int interval) {
+     ATRACE_CALL();
+@@ -341,23 +329,17 @@ int Surface::queueBuffer(android_native_buffer_t* buffer, int fenceFd) {
+     Rect crop;
+     mCrop.intersect(Rect(buffer->width, buffer->height), &crop);
+ 
+-#ifdef QCOM_HARDWARE
+     Rect dirtyRect = mDirtyRect;
+     if(dirtyRect.isEmpty()) {
+         int drWidth = mUserWidth ? mUserWidth : mDefaultWidth;
+         int drHeight = mUserHeight ? mUserHeight : mDefaultHeight;
+         dirtyRect = Rect(drWidth, drHeight);
+     }
+-#endif /* QCOM_HARDWARE */
+ 
+     sp<Fence> fence(fenceFd >= 0 ? new Fence(fenceFd) : Fence::NO_FENCE);
+     IGraphicBufferProducer::QueueBufferOutput output;
+     IGraphicBufferProducer::QueueBufferInput input(timestamp, isAutoTimestamp,
+-#ifndef QCOM_HARDWARE
+-            crop, mScalingMode, mTransform ^ mStickyTransform, mSwapIntervalZero,
+-#else /* QCOM_HARDWARE */
+             crop, dirtyRect, mScalingMode, mTransform ^ mStickyTransform, mSwapIntervalZero,
+-#endif /* QCOM_HARDWARE */
+             fence, mStickyTransform);
+     status_t err = mGraphicBufferProducer->queueBuffer(i, input, &output);
+     if (err != OK)  {
+@@ -374,9 +356,7 @@ int Surface::queueBuffer(android_native_buffer_t* buffer, int fenceFd) {
+     }
+ 
+     mConsumerRunningBehind = (numPendingBuffers >= 2);
+-#ifdef QCOM_HARDWARE
+     mDirtyRect.clear();
+-#endif /* QCOM_HARDWARE */
+     return err;
+ }
+ 
+@@ -426,7 +406,6 @@ int Surface::query(int what, int* value) const {
+                 }
+                 return err;
+             }
+-#ifdef QCOM_HARDWARE
+             case NATIVE_WINDOW_CONSUMER_USAGE_BITS: {
+                 status_t err = NO_ERROR;
+                 err = mGraphicBufferProducer->query(what, value);
+@@ -437,7 +416,6 @@ int Surface::query(int what, int* value) const {
+                     return err;
+                 }
+             }
+-#endif /* QCOM_HARDWARE */
+         }
+     }
+     return mGraphicBufferProducer->query(what, value);
+@@ -860,7 +838,6 @@ status_t Surface::lock(
+             return err;
+         }
+         // we're intending to do software rendering from this point
+-#ifdef QCOM_HARDWARE
+         // Do not overwrite the mReqUsage flag which was set by the client
+ #ifdef QCOM_BSP
+         setUsage(mReqUsage & GRALLOC_USAGE_PRIVATE_EXTERNAL_ONLY |
+@@ -869,11 +846,8 @@ status_t Surface::lock(
+                     GRALLOC_USAGE_SW_READ_OFTEN |
+                     GRALLOC_USAGE_SW_WRITE_OFTEN);
+ #else
+-#endif /* QCOM_HARDWARE */
+         setUsage(GRALLOC_USAGE_SW_READ_OFTEN | GRALLOC_USAGE_SW_WRITE_OFTEN);
+-#ifdef QCOM_HARDWARE
+ #endif
+-#endif /* QCOM_HARDWARE */
+     }
+ 
+     ANativeWindowBuffer* out;
+@@ -893,9 +867,7 @@ status_t Surface::lock(
+         }
+ 
+         // figure out if we can copy the frontbuffer back
+-#ifdef QCOM_HARDWARE
+         int backBufferSlot(getSlotFromBufferLocked(backBuffer.get()));
+-#endif /* QCOM_HARDWARE */
+         const sp<GraphicBuffer>& frontBuffer(mPostedBuffer);
+         const bool canCopyBack = (frontBuffer != 0 &&
+                 backBuffer->width  == frontBuffer->width &&
+@@ -903,10 +875,6 @@ status_t Surface::lock(
+                 backBuffer->format == frontBuffer->format);
+ 
+         if (canCopyBack) {
+-#ifndef QCOM_HARDWARE
+-            // copy the area that is invalid and not repainted this round
+-            const Region copyback(mDirtyRegion.subtract(newDirtyRegion));
+-#else /* QCOM_HARDWARE */
+             Mutex::Autolock lock(mMutex);
+             Region oldDirtyRegion;
+             if(mSlots[backBufferSlot].dirtyRegion.isEmpty()) {
+@@ -918,16 +886,12 @@ status_t Surface::lock(
+                 }
+             }
+             const Region copyback(oldDirtyRegion.subtract(newDirtyRegion));
+-#endif /* QCOM_HARDWARE */
+             if (!copyback.isEmpty())
+                 copyBlt(backBuffer, frontBuffer, copyback);
+         } else {
+             // if we can't copy-back anything, modify the user's dirty
+             // region to make sure they redraw the whole buffer
+             newDirtyRegion.set(bounds);
+-#ifndef QCOM_HARDWARE
+-            mDirtyRegion.clear();
+-#endif /* ! QCOM_HARDWARE */
+             Mutex::Autolock lock(mMutex);
+             for (size_t i=0 ; i<NUM_BUFFER_SLOTS ; i++) {
+                 mSlots[i].dirtyRegion.clear();
+@@ -937,23 +901,11 @@ status_t Surface::lock(
+ 
+         { // scope for the lock
+             Mutex::Autolock lock(mMutex);
+-#ifndef QCOM_HARDWARE
+-            int backBufferSlot(getSlotFromBufferLocked(backBuffer.get()));
+-#endif /* ! QCOM_HARDWARE */
+             if (backBufferSlot >= 0) {
+-#ifndef QCOM_HARDWARE
+-                Region& dirtyRegion(mSlots[backBufferSlot].dirtyRegion);
+-                mDirtyRegion.subtract(dirtyRegion);
+-                dirtyRegion = newDirtyRegion;
+-#else /* QCOM_HARDWARE */
+                mSlots[backBufferSlot].dirtyRegion = newDirtyRegion;
+-#endif /* QCOM_HARDWARE */
+             }
+         }
+ 
+-#ifndef QCOM_HARDWARE
+-        mDirtyRegion.orSelf(newDirtyRegion);
+-#endif /* ! QCOM_HARDWARE */
+         if (inOutDirtyBounds) {
+             *inOutDirtyBounds = newDirtyRegion.getBounds();
+         }
+diff --git a/libs/gui/SurfaceComposerClient.cpp b/libs/gui/SurfaceComposerClient.cpp
+index 1022c85..9e0704a 100644
+--- a/libs/gui/SurfaceComposerClient.cpp
++++ b/libs/gui/SurfaceComposerClient.cpp
+@@ -316,11 +316,9 @@ status_t Composer::setFlags(const sp<SurfaceComposerClient>& client,
+     if (mask & layer_state_t::eLayerHidden) {
+         s->what |= layer_state_t::eVisibilityChanged;
+     }
+-#ifdef QCOM_HARDWARE
+     if (mask & layer_state_t::eLayerTransparent) {
+         s->what |= layer_state_t::eTransparencyChanged;
+     }
+-#endif /* QCOM_HARDWARE */
+     s->flags &= ~mask;
+     s->flags |= (flags & mask);
+     s->mask |= mask;
+diff --git a/libs/gui/SurfaceControl.cpp b/libs/gui/SurfaceControl.cpp
+index b0f6e3c..c49947d 100644
+--- a/libs/gui/SurfaceControl.cpp
++++ b/libs/gui/SurfaceControl.cpp
+@@ -181,14 +181,10 @@ status_t SurfaceControl::writeSurfaceToParcel(
+     if (control != NULL) {
+         bp = control->mGraphicBufferProducer;
+     }
+-#ifndef QCOM_HARDWARE
+-    return parcel->writeStrongBinder(bp->asBinder());
+-#else /* QCOM_HARDWARE */
+     if (bp != NULL) {
+         return parcel->writeStrongBinder(bp->asBinder());
+     }
+     return NO_INIT;
+-#endif /* QCOM_HARDWARE */
+ }
+ 
+ sp<Surface> SurfaceControl::getSurface() const
+diff --git a/libs/ui/Region.cpp b/libs/ui/Region.cpp
+index 29e4e6e..cfadbb2 100644
+--- a/libs/ui/Region.cpp
++++ b/libs/ui/Region.cpp
+@@ -800,13 +800,9 @@ SharedBuffer const* Region::getSharedBuffer(size_t* count) const {
+         size_t numRects = isRect() ? 1 : mStorage.size() - 1;
+         count[0] = numRects;
+     }
+-#ifndef QCOM_HARDWARE
+-    sb->acquire();
+-#else /* QCOM_HARDWARE */
+     if (sb != NULL) {
+        sb->acquire();
+     }
+-#endif /* QCOM_HARDWARE */
+     return sb;
+ }
+ 
+diff --git a/opengl/libs/EGL/eglApi.cpp b/opengl/libs/EGL/eglApi.cpp
+index e3d2066..937665b 100644
+--- a/opengl/libs/EGL/eglApi.cpp
++++ b/opengl/libs/EGL/eglApi.cpp
+@@ -158,20 +158,14 @@ static const extention_map_t sExtensionMap[] = {
+  * These extensions entry-points should not be exposed to applications.
+  * They're used internally by the Android EGL layer.
+  */
+-#ifndef QCOM_HARDWARE
+-#define FILTER_EXTENSIONS(procname) \
+-        (!strcmp((procname), "eglSetBlobCacheFuncsANDROID") ||    \
+-         !strcmp((procname), "eglHibernateProcessIMG")      ||    \
+-         !strcmp((procname), "eglAwakenProcessIMG")         ||    \
+-         !strcmp((procname), "eglDupNativeFenceFDANDROID"))
+-#else /* QCOM_HARDWARE */
+ #define FILTER_EXTENSIONS(procname) \
+         (!strcmp((procname), "eglSetBlobCacheFuncsANDROID") ||    \
+          !strcmp((procname), "eglHibernateProcessIMG")      ||    \
+          !strcmp((procname), "eglAwakenProcessIMG")         ||    \
+          !strcmp((procname), "eglDupNativeFenceFDANDROID")  ||    \
+          !strcmp((procname), "eglGpuPerfHintQCOM"))
+-#endif /* QCOM_HARDWARE */
++
++
+ 
+ // accesses protected by sExtensionMapMutex
+ static DefaultKeyedVector<String8, __eglMustCastToProperFunctionPointerType> sGLExtentionMap;
+@@ -459,26 +453,8 @@ EGLSurface eglCreateWindowSurface(  EGLDisplay dpy, EGLConfig config,
+ #else
+         // by default, just pick RGBA_8888
+         EGLint format = HAL_PIXEL_FORMAT_RGBA_8888;
+-#ifdef QCOM_HARDWARE
+         EGLint color_buffer = EGL_RGB_BUFFER;
+-#endif /* QCOM_HARDWARE */
+-
+-#ifndef QCOM_HARDWARE
+-        EGLint a = 0;
+-        cnx->egl.eglGetConfigAttrib(iDpy, config, EGL_ALPHA_SIZE, &a);
+-        if (a > 0) {
+-            // alpha-channel requested, there's really only one suitable format
+-            format = HAL_PIXEL_FORMAT_RGBA_8888;
+-        } else {
+-            EGLint r, g, b;
+-            r = g = b = 0;
+-            cnx->egl.eglGetConfigAttrib(iDpy, config, EGL_RED_SIZE,   &r);
+-            cnx->egl.eglGetConfigAttrib(iDpy, config, EGL_GREEN_SIZE, &g);
+-            cnx->egl.eglGetConfigAttrib(iDpy, config, EGL_BLUE_SIZE,  &b);
+-            EGLint colorDepth = r + g + b;
+-            if (colorDepth <= 16) {
+-                format = HAL_PIXEL_FORMAT_RGB_565;
+-#else /* QCOM_HARDWARE */
++
+         if (!cnx->egl.eglGetConfigAttrib(iDpy, config, EGL_COLOR_BUFFER_TYPE, &color_buffer))
+         {
+             ALOGE("Could not configure a color buffer format");
+@@ -496,11 +472,7 @@ EGLSurface eglCreateWindowSurface(  EGLDisplay dpy, EGLConfig config,
+             if (a > 0) {
+                 // alpha-channel requested, there's really only one suitable format
+                 // Format will already be RGBA8888
+-#endif /* QCOM_HARDWARE */
+             } else {
+-#ifndef QCOM_HARDWARE
+-                format = HAL_PIXEL_FORMAT_RGBX_8888;
+-#else /* QCOM_HARDWARE */
+                 EGLint r, g, b;
+                 r = g = b = 0;
+                 cnx->egl.eglGetConfigAttrib(iDpy, config, EGL_RED_SIZE,   &r);
+@@ -512,28 +484,8 @@ EGLSurface eglCreateWindowSurface(  EGLDisplay dpy, EGLConfig config,
+                 } else {
+                     format = HAL_PIXEL_FORMAT_RGBX_8888;
+                 }
+-#endif /* QCOM_HARDWARE */
+             }
+-#ifndef QCOM_HARDWARE
+-        }
+-#endif /* ! QCOM_HARDWARE */
+ 
+-#ifndef QCOM_HARDWARE
+-        // now select a corresponding sRGB format if needed
+-        if (attrib_list && dp->haveExtension("EGL_KHR_gl_colorspace")) {
+-            for (const EGLint* attr = attrib_list; *attr != EGL_NONE; attr += 2) {
+-                if (*attr == EGL_GL_COLORSPACE_KHR) {
+-                    if (ENABLE_EGL_KHR_GL_COLORSPACE) {
+-                        format = modifyFormatColorspace(format, *(attr+1));
+-                    } else {
+-                        // Normally we'd pass through unhandled attributes to
+-                        // the driver. But in case the driver implements this
+-                        // extension but we're disabling it, we want to prevent
+-                        // it getting through -- support will be broken without
+-                        // our help.
+-                        ALOGE("sRGB window surfaces not supported");
+-                        return setError(EGL_BAD_ATTRIBUTE, EGL_NO_SURFACE);
+-#else /* QCOM_HARDWARE */
+             // now select a corresponding sRGB format if needed
+             if (attrib_list && dp->haveExtension("EGL_KHR_gl_colorspace")) {
+                 for (const EGLint* attr = attrib_list; *attr != EGL_NONE; attr += 2) {
+@@ -549,7 +501,6 @@ EGLSurface eglCreateWindowSurface(  EGLDisplay dpy, EGLConfig config,
+                             ALOGE("sRGB window surfaces not supported");
+                             return setError(EGL_BAD_ATTRIBUTE, EGL_NO_SURFACE);
+                         }
+-#endif /* QCOM_HARDWARE */
+                     }
+                 }
+             }
+@@ -1617,8 +1568,6 @@ EGLBoolean eglPresentationTimeANDROID(EGLDisplay dpy, EGLSurface surface,
+     return EGL_TRUE;
+ }
+ 
+-#ifdef QCOM_HARDWARE
+-
+ // ----------------------------------------------------------------------------
+ // QCOM extensions
+ // ----------------------------------------------------------------------------
+@@ -1655,8 +1604,8 @@ EGLBoolean eglGpuPerfHintQCOM(EGLDisplay dpy, EGLContext ctx, EGLint *attrib_lis
+                 attrib_list);
+     }
+     return result;
++
+ }
+-#endif /* QCOM_HARDWARE */
+ 
+ // ----------------------------------------------------------------------------
+ // NVIDIA extensions
+diff --git a/opengl/libs/EGL/egl_entries.in b/opengl/libs/EGL/egl_entries.in
+index 88e13cb..aa92ea0 100644
+--- a/opengl/libs/EGL/egl_entries.in
++++ b/opengl/libs/EGL/egl_entries.in
+@@ -81,12 +81,10 @@ EGL_ENTRY(EGLBoolean, eglSetSwapRectangleANDROID, EGLDisplay, EGLSurface, EGLint
+ EGL_ENTRY(EGLClientBuffer, eglGetRenderBufferANDROID, EGLDisplay, EGLSurface)
+ EGL_ENTRY(EGLint, eglDupNativeFenceFDANDROID, EGLDisplay, EGLSyncKHR)
+ 
+-#ifdef QCOM_HARDWARE
+ /* QCOM extensions */
+ 
+ EGL_ENTRY(EGLBoolean, eglGpuPerfHintQCOM, EGLDisplay, EGLContext, EGLint *)
+ 
+-#endif /* QCOM_HARDWARE */
+ /* NVIDIA extensions */
+ 
+ EGL_ENTRY(EGLuint64NV, eglGetSystemTimeFrequencyNV, void)
+@@ -95,4 +93,4 @@ EGL_ENTRY(EGLuint64NV, eglGetSystemTimeNV, void)
+ /* IMG extensions */
+ 
+ EGL_ENTRY(EGLBoolean, eglHibernateProcessIMG, void)
+-EGL_ENTRY(EGLBoolean, eglAwakenProcessIMG, void)
++EGL_ENTRY(EGLBoolean, eglAwakenProcessIMG, void)
+\ No newline at end of file
+diff --git a/opengl/libs/GLES2/gl2.cpp b/opengl/libs/GLES2/gl2.cpp
+index 0f635fe..0157bfe 100644
+--- a/opengl/libs/GLES2/gl2.cpp
++++ b/opengl/libs/GLES2/gl2.cpp
+@@ -180,11 +180,7 @@ const GLubyte * glGetString(GLenum name)
+     const GLubyte * ret = egl_get_string_for_current_context(name);
+     if (ret == NULL) {
+         gl_hooks_t::gl_t const * const _c = &getGlThreadSpecific()->gl;
+-#ifndef QCOM_HARDWARE
+-        ret = _c->glGetString(name);
+-#else /* QCOM_HARDWARE */
+         if(_c) ret = _c->glGetString(name);
+-#endif /* QCOM_HARDWARE */
+     }
+     return ret;
+ }
+diff --git a/services/inputflinger/EventHub.h b/services/inputflinger/EventHub.h
+index a62d8e2..2fbf3e1 100644
+--- a/services/inputflinger/EventHub.h
++++ b/services/inputflinger/EventHub.h
+@@ -57,14 +57,12 @@
+ #define MSC_ANDROID_TIME_SEC 0x6
+ #define MSC_ANDROID_TIME_USEC 0x7
+ 
+-#ifdef QCOM_HARDWARE
+ /**
+  * code for a special button that is used to show/hide a
+  * circular hovering cursor in the input framework.
+  */
+ #define BTN_USF_HOVERING_CURSOR         0x230
+ 
+-#endif /* QCOM_HARDWARE */
+ namespace android {
+ 
+ enum {
+diff --git a/services/inputflinger/InputReader.cpp b/services/inputflinger/InputReader.cpp
+index f03d8f7..7b09b36 100644
+--- a/services/inputflinger/InputReader.cpp
++++ b/services/inputflinger/InputReader.cpp
+@@ -58,11 +58,9 @@
+ #define INDENT4 "        "
+ #define INDENT5 "          "
+ 
+-#ifdef QCOM_HARDWARE
+ // Ultrasound device name.
+ #define USF_DEVICE_NAME "usf_tsc"
+ 
+-#endif /* QCOM_HARDWARE */
+ namespace android {
+ 
+ // --- Constants ---
+@@ -2093,13 +2091,11 @@ void KeyboardInputMapper::process(const RawEvent* rawEvent) {
+                 keyCode = AKEYCODE_UNKNOWN;
+                 flags = 0;
+             }
+-#ifdef QCOM_HARDWARE
+             InputDeviceIdentifier identifier = getEventHub()->getDeviceIdentifier(rawEvent->deviceId);
+             if ((identifier.name == USF_DEVICE_NAME) && (scanCode == BTN_USF_HOVERING_CURSOR))
+             {
+                 break;
+             }
+-#endif /* QCOM_HARDWARE */
+             processKey(rawEvent->when, rawEvent->value != 0, keyCode, scanCode, flags);
+         }
+         break;
+@@ -2605,9 +2601,7 @@ void CursorInputMapper::fadePointer() {
+ TouchInputMapper::TouchInputMapper(InputDevice* device) :
+         InputMapper(device),
+         mSource(0), mDeviceMode(DEVICE_MODE_DISABLED),
+-#ifdef QCOM_HARDWARE
+         mHasExternalHoveringCursorControl(false), mExternalHoveringCursorVisible(false),
+-#endif /* QCOM_HARDWARE */
+         mSurfaceWidth(-1), mSurfaceHeight(-1), mSurfaceLeft(0), mSurfaceTop(0),
+         mSurfaceOrientation(DISPLAY_ORIENTATION_0) {
+ }
+@@ -2879,10 +2873,8 @@ void TouchInputMapper::configureParameters() {
+                         && getDevice()->isExternal();
+     }
+ 
+-#ifdef QCOM_HARDWARE
+     mHasExternalHoveringCursorControl = getDevice()->hasKey(BTN_USF_HOVERING_CURSOR);
+ 
+-#endif /* QCOM_HARDWARE */
+     // Initial downs on external touch devices should wake the device.
+     // Normally we don't do this for internal touch screens to prevent them from waking
+     // up in your pocket but you can enable it using the input device configuration.
+@@ -3079,11 +3071,7 @@ void TouchInputMapper::configureSurface(nsecs_t when, bool* outResetNeeded) {
+     }
+ 
+     // Create pointer controller if needed.
+-#ifndef QCOM_HARDWARE
+-    if (mDeviceMode == DEVICE_MODE_POINTER ||
+-#else /* QCOM_HARDWARE */
+     if (mDeviceMode == DEVICE_MODE_POINTER || mHasExternalHoveringCursorControl ||
+-#endif /* QCOM_HARDWARE */
+             (mDeviceMode == DEVICE_MODE_DIRECT && mConfig.showTouches)) {
+         if (mPointerController == NULL) {
+             mPointerController = getPolicy()->obtainPointerController(getDeviceId());
+@@ -3753,7 +3741,6 @@ void TouchInputMapper::process(const RawEvent* rawEvent) {
+     if (rawEvent->type == EV_SYN && rawEvent->code == SYN_REPORT) {
+         sync(rawEvent->when);
+     }
+-#ifdef QCOM_HARDWARE
+     if (mHasExternalHoveringCursorControl && rawEvent->type == EV_KEY) {
+         if (rawEvent->code == BTN_USF_HOVERING_CURSOR && mPointerController != NULL) {
+             if (rawEvent->value) {
+@@ -3768,7 +3755,6 @@ void TouchInputMapper::process(const RawEvent* rawEvent) {
+             }
+         }
+     }
+-#endif /* QCOM_HARDWARE */
+ }
+ 
+ void TouchInputMapper::sync(nsecs_t when) {
+@@ -3898,7 +3884,6 @@ void TouchInputMapper::sync(nsecs_t when) {
+                 mPointerController->setSpots(mCurrentCookedPointerData.pointerCoords,
+                         mCurrentCookedPointerData.idToIndex,
+                         mCurrentCookedPointerData.touchingIdBits);
+-#ifdef QCOM_HARDWARE
+             }
+ 
+             if (mHasExternalHoveringCursorControl && mPointerController != NULL) {
+@@ -3918,7 +3903,6 @@ void TouchInputMapper::sync(nsecs_t when) {
+                         mPointerController->unfade(android::PointerControllerInterface::TRANSITION_IMMEDIATE);
+                     }
+                 }
+-#endif /* QCOM_HARDWARE */
+             }
+ 
+             dispatchHoverExit(when, policyFlags);
+diff --git a/services/inputflinger/InputReader.h b/services/inputflinger/InputReader.h
+index d7f3a7a..7bb85c3 100644
+--- a/services/inputflinger/InputReader.h
++++ b/services/inputflinger/InputReader.h
+@@ -1369,13 +1369,11 @@ protected:
+ 
+     Vector<VirtualKey> mVirtualKeys;
+ 
+-#ifdef QCOM_HARDWARE
+     // true if we support external hovering cursor control
+     bool mHasExternalHoveringCursorControl;
+     // visibility state of hovering cursor (true=visible)
+     bool mExternalHoveringCursorVisible;
+ 
+-#endif /* QCOM_HARDWARE */
+     virtual void configureParameters();
+     virtual void dumpParameters(String8& dump);
+     virtual void configureRawPointerAxes();
+diff --git a/services/inputflinger/PointerControllerInterface.h b/services/inputflinger/PointerControllerInterface.h
+index 9e5a010..2c4015b 100644
+--- a/services/inputflinger/PointerControllerInterface.h
++++ b/services/inputflinger/PointerControllerInterface.h
+@@ -79,10 +79,8 @@ public:
+         PRESENTATION_POINTER,
+         // Show spots and a spot anchor in place of the mouse pointer.
+         PRESENTATION_SPOT,
+-#ifdef QCOM_HARDWARE
+         // Show a stylus hovering icon (small circle)
+         PRESENTATION_STYLUS_HOVER,
+-#endif /* QCOM_HARDWARE */
+     };
+ 
+     /* Sets the mode of the pointer controller. */
+diff --git a/services/surfaceflinger/Android.mk b/services/surfaceflinger/Android.mk
+index b708722..714a00c 100644
+--- a/services/surfaceflinger/Android.mk
++++ b/services/surfaceflinger/Android.mk
+@@ -106,7 +106,6 @@ LOCAL_SHARED_LIBRARIES := \
+ 	libgui \
+ 	libpowermanager
+ 
+-ifeq ($(BOARD_USES_QCOM_HARDWARE), true)
+ ifeq ($(TARGET_USES_QCOM_BSP), true)
+ ifneq ($(TARGET_QCOM_DISPLAY_VARIANT),)
+     LOCAL_C_INCLUDES        += hardware/qcom/display-$(TARGET_QCOM_DISPLAY_VARIANT)/libgralloc
+@@ -118,7 +117,6 @@ endif
+     LOCAL_SHARED_LIBRARIES += libqdutils
+     LOCAL_CFLAGS += -DQCOM_BSP
+ endif
+-endif
+ 
+ LOCAL_MODULE:= libsurfaceflinger
+ 
+diff --git a/services/surfaceflinger/DispSync.h b/services/surfaceflinger/DispSync.h
+index 446a44a..3531ebe 100644
+--- a/services/surfaceflinger/DispSync.h
++++ b/services/surfaceflinger/DispSync.h
+@@ -26,13 +26,8 @@
+ namespace android {
+ 
+ // Ignore present (retire) fences if the device doesn't have support for the
+-// sync framework, or if all phase offsets are zero.  The latter is useful
+-// because it allows us to avoid resync bursts on devices that don't need
+-// phase-offset VSYNC events.
+-#if !defined(QCOM_HARDWARE) && (defined(RUNNING_WITHOUT_SYNC_FRAMEWORK) || \
+-        (VSYNC_EVENT_PHASE_OFFSET_NS == 0 && SF_VSYNC_EVENT_PHASE_OFFSET_NS == 0))
+-static const bool kIgnorePresentFences = true;
+-#elif defined(QCOM_HARDWARE) && defined(RUNNING_WITHOUT_SYNC_FRAMEWORK)
++// sync framework.
++#if defined(RUNNING_WITHOUT_SYNC_FRAMEWORK)
+ static const bool kIgnorePresentFences = true;
+ #else
+ static const bool kIgnorePresentFences = false;
+diff --git a/services/surfaceflinger/DisplayDevice.cpp b/services/surfaceflinger/DisplayDevice.cpp
+index 7fd5ded..d0adee0 100644
+--- a/services/surfaceflinger/DisplayDevice.cpp
++++ b/services/surfaceflinger/DisplayDevice.cpp
+@@ -134,19 +134,22 @@ DisplayDevice::DisplayDevice(
+             mDisplayName = "Virtual Screen";    // e.g. Overlay #n
+             break;
+     }
+-
+     char property[PROPERTY_VALUE_MAX];
+     int panelOrientation = DisplayState::eOrientationDefault;
+     // Set the panel orientation from the property.
+     property_get("persist.panel.orientation", property, "0");
+     panelOrientation = atoi(property) / 90;
+ 
+-#ifdef QCOM_HARDWARE
+     mPanelInverseMounted = false;
+     // Check if panel is inverse mounted (contents show up HV flipped)
+     property_get("persist.panel.inversemounted", property, "0");
+     mPanelInverseMounted = !!atoi(property);
+-#endif /* QCOM_HARDWARE */
++
++    char property[PROPERTY_VALUE_MAX];
++    int panelOrientation = DisplayState::eOrientationDefault;
++    // Set the panel orientation from the property.
++    property_get("persist.panel.orientation", property, "0");
++    panelOrientation = atoi(property) / 90;
+ 
+     // initialize the display orientation transform.
+     setProjection(panelOrientation, mViewport, mFrame);
+@@ -159,14 +162,12 @@ DisplayDevice::~DisplayDevice() {
+     }
+ }
+ 
+-#ifdef QCOM_HARDWARE
+ #ifdef QCOM_BSP
+ void DisplayDevice::eglSwapPreserved(bool enable) const {
+     int swapValue = enable ? EGL_BUFFER_PRESERVED : EGL_BUFFER_DESTROYED;
+     eglSurfaceAttrib(mDisplay, mSurface, EGL_SWAP_BEHAVIOR, swapValue);
+ }
+ #endif
+-#endif /* QCOM_HARDWARE */
+ 
+ void DisplayDevice::disconnect(HWComposer& hwc) {
+     if (mHwcDisplayId >= 0) {
+@@ -437,11 +438,9 @@ status_t DisplayDevice::orientationToTransfrom(
+         return BAD_VALUE;
+     }
+ 
+-#ifdef QCOM_HARDWARE
+     if (DISPLAY_PRIMARY == mHwcDisplayId && isPanelInverseMounted()) {
+         flags = flags ^ Transform::ROT_180;
+     }
+-#endif /* QCOM_HARDWARE */
+ 
+     tr->set(flags, w, h);
+     return NO_ERROR;
+diff --git a/services/surfaceflinger/DisplayDevice.h b/services/surfaceflinger/DisplayDevice.h
+index 9b4ca50..ae93472 100644
+--- a/services/surfaceflinger/DisplayDevice.h
++++ b/services/surfaceflinger/DisplayDevice.h
+@@ -126,12 +126,10 @@ public:
+     int32_t                 getHwcDisplayId() const { return mHwcDisplayId; }
+     const wp<IBinder>&      getDisplayToken() const { return mDisplayToken; }
+ 
+-#ifdef QCOM_HARDWARE
+     bool isPanelInverseMounted() const {
+         return mPanelInverseMounted;
+     }
+ 
+-#endif /* QCOM_HARDWARE */
+     // We pass in mustRecompose so we can keep VirtualDisplaySurface's state
+     // machine happy without actually queueing a buffer if nothing has changed
+     status_t beginFrame(bool mustRecompose) const;
+@@ -177,14 +175,12 @@ public:
+     void dump(String8& result) const;
+     int getHardwareOrientation();
+ 
+-#ifdef QCOM_HARDWARE
+ #ifdef QCOM_BSP
+     /* To set egl atribute, EGL_SWAP_BEHAVIOR value
+      * (EGL_BUFFER_PRESERVED/EGL_BUFFER_DESTROYED)
+      */
+     void eglSwapPreserved(bool status) const;
+ #endif
+-#endif /* QCOM_HARDWARE */
+ private:
+     /*
+      *  Constants, set during initialization
+@@ -242,10 +238,8 @@ private:
+     int mPowerMode;
+     // Current active config
+     int mActiveConfig;
+-#ifdef QCOM_HARDWARE
+     // Panel is inverse mounted
+     int mPanelInverseMounted;
+-#endif /* QCOM_HARDWARE */
+ };
+ 
+ }; // namespace android
+diff --git a/services/surfaceflinger/DisplayHardware/FramebufferSurface.cpp b/services/surfaceflinger/DisplayHardware/FramebufferSurface.cpp
+index 340fee8..4197599 100644
+--- a/services/surfaceflinger/DisplayHardware/FramebufferSurface.cpp
++++ b/services/surfaceflinger/DisplayHardware/FramebufferSurface.cpp
+@@ -66,9 +66,7 @@ FramebufferSurface::FramebufferSurface(HWComposer& hwc, int disp,
+     mConsumer->setDefaultBufferFormat(mHwc.getFormat(disp));
+     mConsumer->setDefaultBufferSize(mHwc.getWidth(disp),  mHwc.getHeight(disp));
+     mConsumer->setDefaultMaxBufferCount(NUM_FRAMEBUFFER_SURFACE_BUFFERS);
+-#ifdef QCOM_HARDWARE
+     mConsumer->setMaxAcquiredBufferCount(NUM_FRAMEBUFFER_SURFACE_BUFFERS - 1);
+-#endif /* QCOM_HARDWARE */
+ }
+ 
+ status_t FramebufferSurface::beginFrame(bool /*mustRecompose*/) {
+diff --git a/services/surfaceflinger/DisplayHardware/HWComposer.cpp b/services/surfaceflinger/DisplayHardware/HWComposer.cpp
+index 0bb7d0f..a241660 100644
+--- a/services/surfaceflinger/DisplayHardware/HWComposer.cpp
++++ b/services/surfaceflinger/DisplayHardware/HWComposer.cpp
+@@ -47,10 +47,8 @@
+ #include "../Layer.h"           // needed only for debugging
+ #include "../SurfaceFlinger.h"
+ 
+-#ifdef QCOM_HARDWARE
+ #define GPUTILERECT_DEBUG 0
+ 
+-#endif /* QCOM_HARDWARE */
+ namespace android {
+ 
+ #define MIN_HWC_HEADER_VERSION HWC_HEADER_VERSION
+@@ -92,12 +90,8 @@ HWComposer::HWComposer(
+       mFbDev(0), mHwc(0), mNumDisplays(1),
+       mCBContext(new cb_context),
+       mEventHandler(handler),
+-#ifndef QCOM_HARDWARE
+-      mDebugForceFakeVSync(false)
+-#else /* QCOM_HARDWARE */
+       mDebugForceFakeVSync(false),
+       mVDSEnabled(false)
+-#endif /* QCOM_HARDWARE */
+ {
+     for (size_t i =0 ; i<MAX_HWC_DISPLAYS ; i++) {
+         mLists[i] = 0;
+@@ -185,9 +179,7 @@ HWComposer::HWComposer(
+         config.height = mFbDev->height;
+         config.xdpi = mFbDev->xdpi;
+         config.ydpi = mFbDev->ydpi;
+-#ifdef QCOM_HARDWARE
+         config.secure = true; //XXX: Assuming primary is always true
+-#endif /* QCOM_HARDWARE */
+         config.refresh = nsecs_t(1e9 / mFbDev->fps);
+         disp.configs.push_back(config);
+         disp.currentConfig = 0;
+@@ -198,7 +190,6 @@ HWComposer::HWComposer(
+         }
+     }
+ 
+-#ifdef QCOM_HARDWARE
+     // read system property for VDS solution
+     // This property is expected to be setup once during bootup
+     if( (property_get("persist.hwc.enable_vds", value, NULL) > 0) &&
+@@ -208,18 +199,15 @@ HWComposer::HWComposer(
+         mVDSEnabled = true;
+     }
+ 
+-#endif /* QCOM_HARDWARE */
+     if (needVSyncThread) {
+         // we don't have VSYNC support, we need to fake it
+         mVSyncThread = new VSyncThread(*this);
+     }
+-#ifdef QCOM_HARDWARE
+ #ifdef QCOM_BSP
+     // Threshold Area to enable GPU Tiled Rect.
+     property_get("debug.hwc.gpuTiledThreshold", value, "1.9");
+     mDynThreshold = atof(value);
+ #endif
+-#endif /* QCOM_HARDWARE */
+ }
+ 
+ HWComposer::~HWComposer() {
+@@ -363,12 +351,10 @@ static const uint32_t DISPLAY_ATTRIBUTES[] = {
+     HWC_DISPLAY_HEIGHT,
+     HWC_DISPLAY_DPI_X,
+     HWC_DISPLAY_DPI_Y,
+-#ifdef QCOM_HARDWARE
+     //To specify if display is secure
+     //Primary is considered as secure always
+     //HDMI can be secure based on HDCP
+     HWC_DISPLAY_SECURE,
+-#endif /* QCOM_HARDWARE */
+     HWC_DISPLAY_NO_ATTRIBUTE,
+ };
+ #define NUM_DISPLAY_ATTRIBUTES (sizeof(DISPLAY_ATTRIBUTES) / sizeof(DISPLAY_ATTRIBUTES)[0])
+@@ -391,16 +377,12 @@ status_t HWComposer::queryDisplayProperties(int disp) {
+         return err;
+     }
+ 
+-#ifndef QCOM_HARDWARE
+-    mDisplayData[disp].currentConfig = 0;
+-#else /* QCOM_HARDWARE */
+     int currentConfig = getActiveConfig(disp);
+     if (currentConfig < 0 || currentConfig > (numConfigs-1)) {
+         ALOGE("%s: Invalid display config! %d", __FUNCTION__, currentConfig);
+         currentConfig = 0;
+     }
+     mDisplayData[disp].currentConfig = currentConfig;
+-#endif /* QCOM_HARDWARE */
+     for (size_t c = 0; c < numConfigs; ++c) {
+         err = mHwc->getDisplayAttributes(mHwc, disp, configs[c],
+                 DISPLAY_ATTRIBUTES, values);
+@@ -428,11 +410,9 @@ status_t HWComposer::queryDisplayProperties(int disp) {
+                 case HWC_DISPLAY_DPI_Y:
+                     config.ydpi = values[i] / 1000.0f;
+                     break;
+-#ifdef QCOM_HARDWARE
+                 case HWC_DISPLAY_SECURE:
+                     config.secure = values[i];
+                     break;
+-#endif /* QCOM_HARDWARE */
+                 default:
+                     ALOG_ASSERT(false, "unknown display attribute[%zu] %#x",
+                             i, DISPLAY_ATTRIBUTES[i]);
+@@ -513,11 +493,7 @@ sp<Fence> HWComposer::getDisplayFence(int disp) const {
+ }
+ 
+ uint32_t HWComposer::getFormat(int disp) const {
+-#ifndef QCOM_HARDWARE
+-    if (uint32_t(disp)>31 || !mAllocatedDisplayIDs.hasBit(disp)) {
+-#else /* QCOM_HARDWARE */
+     if (uint32_t(disp)>= MAX_HWC_DISPLAYS || !mAllocatedDisplayIDs.hasBit(disp)) {
+-#endif /* QCOM_HARDWARE */
+         return HAL_PIXEL_FORMAT_RGBA_8888;
+     } else {
+         return mDisplayData[disp].format;
+@@ -548,12 +524,11 @@ float HWComposer::getDpiY(int disp) const {
+     return mDisplayData[disp].configs[currentConfig].ydpi;
+ }
+ 
+-#ifdef QCOM_HARDWARE
+ bool HWComposer::isSecure(int disp) const {
+     size_t currentConfig = mDisplayData[disp].currentConfig;
+     return mDisplayData[disp].configs[currentConfig].secure;
+ }
+-#endif /* QCOM_HARDWARE */
++
+ 
+ nsecs_t HWComposer::getRefreshPeriod(int disp) const {
+     size_t currentConfig = mDisplayData[disp].currentConfig;
+@@ -574,46 +549,7 @@ void HWComposer::eventControl(int disp, int event, int enabled) {
+               event, disp, enabled);
+         return;
+     }
+-#ifndef QCOM_HARDWARE
+-    if (event != EVENT_VSYNC) {
+-        ALOGW("eventControl got unexpected event %d (disp=%d en=%d)",
+-              event, disp, enabled);
+-        return;
+-    }
+-#endif /* ! QCOM_HARDWARE */
+     status_t err = NO_ERROR;
+-#ifndef QCOM_HARDWARE
+-    if (mHwc && !mDebugForceFakeVSync) {
+-        // NOTE: we use our own internal lock here because we have to call
+-        // into the HWC with the lock held, and we want to make sure
+-        // that even if HWC blocks (which it shouldn't), it won't
+-        // affect other threads.
+-        Mutex::Autolock _l(mEventControlLock);
+-        const int32_t eventBit = 1UL << event;
+-        const int32_t newValue = enabled ? eventBit : 0;
+-        const int32_t oldValue = mDisplayData[disp].events & eventBit;
+-        if (newValue != oldValue) {
+-            ATRACE_CALL();
+-            err = mHwc->eventControl(mHwc, disp, event, enabled);
+-            if (!err) {
+-                int32_t& events(mDisplayData[disp].events);
+-                events = (events & ~eventBit) | newValue;
+-
+-                char tag[16];
+-                snprintf(tag, sizeof(tag), "HW_VSYNC_ON_%1u", disp);
+-                ATRACE_INT(tag, enabled);
+-	    }
+-        }
+-        // error here should not happen -- not sure what we should
+-        // do if it does.
+-        ALOGE_IF(err, "eventControl(%d, %d) failed %s",
+-                event, enabled, strerror(-err));
+-    }
+-
+-    if (err == NO_ERROR && mVSyncThread != NULL) {
+-        mVSyncThread->setEnabled(enabled);
+-    }
+-#else /* QCOM_HARDWARE */
+     switch(event) {
+         case EVENT_VSYNC:
+             if (mHwc && !mDebugForceFakeVSync) {
+@@ -642,6 +578,7 @@ void HWComposer::eventControl(int disp, int event, int enabled) {
+                 ALOGE_IF(err, "eventControl(%d, %d) failed %s",
+                          event, enabled, strerror(-err));
+             }
++
+             if (err == NO_ERROR && mVSyncThread != NULL) {
+                 mVSyncThread->setEnabled(enabled);
+             }
+@@ -656,7 +593,6 @@ void HWComposer::eventControl(int disp, int event, int enabled) {
+             break;
+     }
+     return;
+-#endif /* QCOM_HARDWARE */
+ }
+ 
+ status_t HWComposer::createWorkList(int32_t id, size_t numLayers) {
+@@ -675,10 +611,8 @@ status_t HWComposer::createWorkList(int32_t id, size_t numLayers) {
+                     + numLayers * sizeof(hwc_layer_1_t);
+             free(disp.list);
+             disp.list = (hwc_display_contents_1_t*)malloc(size);
+-#ifdef QCOM_HARDWARE
+             if(disp.list == NULL)
+                 return NO_MEMORY;
+-#endif /* QCOM_HARDWARE */
+             disp.capacity = numLayers;
+         }
+         if (hwcHasApiVersion(mHwc, HWC_DEVICE_API_VERSION_1_1)) {
+@@ -746,9 +680,7 @@ status_t HWComposer::setFramebufferTarget(int32_t id,
+ }
+ 
+ status_t HWComposer::prepare() {
+-#ifdef QCOM_HARDWARE
+     Mutex::Autolock _l(mDrawLock);
+-#endif /* QCOM_HARDWARE */
+     for (size_t i=0 ; i<mNumDisplays ; i++) {
+         DisplayData& disp(mDisplayData[i]);
+         if (disp.framebufferTarget) {
+@@ -794,17 +726,11 @@ status_t HWComposer::prepare() {
+             DisplayData& disp(mDisplayData[i]);
+             disp.hasFbComp = false;
+             disp.hasOvComp = false;
+-#ifdef QCOM_HARDWARE
+ #ifdef QCOM_BSP
+             disp.hasBlitComp = false;
+ #endif
+ 
+-#endif /* QCOM_HARDWARE */
+             if (disp.list) {
+-#ifndef QCOM_HARDWARE
+-                for (size_t i=0 ; i<disp.list->numHwLayers ; i++) {
+-                    hwc_layer_1_t& l = disp.list->hwLayers[i];
+-#else /* QCOM_HARDWARE */
+ #ifdef QCOM_BSP
+                //GPUTILERECT
+                prev_comp_map[i] = current_comp_map[i];
+@@ -813,27 +739,17 @@ status_t HWComposer::prepare() {
+ #endif
+                 for (size_t j=0 ; j<disp.list->numHwLayers ; j++) {
+                     hwc_layer_1_t& l = disp.list->hwLayers[j];
+-#endif /* QCOM_HARDWARE */
+ 
+                     //ALOGD("prepare: %d, type=%d, handle=%p",
+-#ifndef QCOM_HARDWARE
+-                    //        i, l.compositionType, l.handle);
+-#else /* QCOM_HARDWARE */
+                     //        j, l.compositionType, l.handle);
+-#endif /* QCOM_HARDWARE */
+ 
+-#ifndef QCOM_HARDWARE
+-                    if (l.flags & HWC_SKIP_LAYER) {
+-#else /* QCOM_HARDWARE */
+                     if ((i == DisplayDevice::DISPLAY_PRIMARY) &&
+                                 l.flags & HWC_SKIP_LAYER) {
+-#endif /* QCOM_HARDWARE */
+                         l.compositionType = HWC_FRAMEBUFFER;
+                     }
+                     if (l.compositionType == HWC_FRAMEBUFFER) {
+                         disp.hasFbComp = true;
+                     }
+-#ifdef QCOM_HARDWARE
+                     // If the composition type is BLIT, we set this to
+                     // trigger a FLIP
+                     if(l.compositionType == HWC_BLIT) {
+@@ -842,21 +758,18 @@ status_t HWComposer::prepare() {
+                         disp.hasBlitComp = true;
+ #endif
+                     }
+-#endif /* QCOM_HARDWARE */
+                     if (l.compositionType == HWC_OVERLAY) {
+                         disp.hasOvComp = true;
+                     }
+                     if (l.compositionType == HWC_CURSOR_OVERLAY) {
+                         disp.hasOvComp = true;
+                     }
+-#ifdef QCOM_HARDWARE
+ #ifdef QCOM_BSP
+                     //GPUTILERECT
+                     if(l.compositionType != HWC_FRAMEBUFFER_TARGET) {
+                         current_comp_map[i].compType[j] = l.compositionType;
+                     }
+ #endif
+-#endif /* QCOM_HARDWARE */
+                 }
+                 if (disp.list->numHwLayers == (disp.framebufferTarget ? 1 : 0)) {
+                     disp.hasFbComp = true;
+@@ -869,7 +782,6 @@ status_t HWComposer::prepare() {
+     return (status_t)err;
+ }
+ 
+-#ifdef QCOM_HARDWARE
+ #ifdef QCOM_BSP
+ bool HWComposer::hasBlitComposition(int32_t id) const {
+     if (!mHwc || uint32_t(id) > 31 || !mAllocatedDisplayIDs.hasBit(id))
+@@ -877,7 +789,6 @@ bool HWComposer::hasBlitComposition(int32_t id) const {
+     return mDisplayData[id].hasBlitComp;
+ }
+ #endif
+-#endif /* QCOM_HARDWARE */
+ bool HWComposer::hasHwcComposition(int32_t id) const {
+     if (!mHwc || uint32_t(id)>31 || !mAllocatedDisplayIDs.hasBit(id))
+         return false;
+@@ -963,13 +874,7 @@ status_t HWComposer::setPowerMode(int disp, int mode) {
+ status_t HWComposer::setActiveConfig(int disp, int mode) {
+     LOG_FATAL_IF(disp >= VIRTUAL_DISPLAY_ID_BASE);
+     DisplayData& dd(mDisplayData[disp]);
+-#ifndef QCOM_HARDWARE
+-    dd.currentConfig = mode;
+-#endif /* ! QCOM_HARDWARE */
+     if (mHwc && hwcHasApiVersion(mHwc, HWC_DEVICE_API_VERSION_1_4)) {
+-#ifndef QCOM_HARDWARE
+-        return (status_t)mHwc->setActiveConfig(mHwc, disp, mode);
+-#else /* QCOM_HARDWARE */
+         status_t status = static_cast<status_t>(
+                 mHwc->setActiveConfig(mHwc, disp, mode));
+         if (status == NO_ERROR) {
+@@ -979,14 +884,12 @@ status_t HWComposer::setActiveConfig(int disp, int mode) {
+                     __FUNCTION__, mode, disp);
+         }
+         return status;
+-#endif /* QCOM_HARDWARE */
+     } else {
+         LOG_FATAL_IF(mode != 0);
+     }
+     return NO_ERROR;
+ }
+ 
+-#ifdef QCOM_HARDWARE
+ int HWComposer::getActiveConfig(int disp) const {
+     LOG_FATAL_IF(disp >= VIRTUAL_DISPLAY_ID_BASE);
+     if (mHwc && hwcHasApiVersion(mHwc, HWC_DEVICE_API_VERSION_1_4)) {
+@@ -996,7 +899,6 @@ int HWComposer::getActiveConfig(int disp) const {
+     }
+ }
+ 
+-#endif /* QCOM_HARDWARE */
+ void HWComposer::disconnectDisplay(int disp) {
+     LOG_ALWAYS_FATAL_IF(disp < 0 || disp == HWC_DISPLAY_PRIMARY);
+     DisplayData& dd(mDisplayData[disp]);
+@@ -1180,7 +1082,6 @@ public:
+             }
+         }
+     }
+-#ifdef QCOM_HARDWARE
+     virtual void setAnimating(bool animating) {
+         if (animating) {
+             getLayer()->flags |= HWC_SCREENSHOT_ANIMATOR_LAYER;
+@@ -1188,7 +1089,6 @@ public:
+             getLayer()->flags &= ~HWC_SCREENSHOT_ANIMATOR_LAYER;
+         }
+     }
+-#endif /* QCOM_HARDWARE */
+     virtual void setBlending(uint32_t blending) {
+         getLayer()->blending = blending;
+     }
+@@ -1231,7 +1131,6 @@ public:
+         getLayer()->sidebandStream = stream->handle();
+     }
+ 
+-#ifdef QCOM_HARDWARE
+     virtual void setDirtyRect(const Rect& dirtyRect) {
+         Rect srcCrop;
+         srcCrop.left = int(ceilf(getLayer()->sourceCropf.left));
+@@ -1246,7 +1145,6 @@ public:
+         srcCrop.intersect(dirtyRect, &finalDR);
+         getLayer()->dirtyRect = reinterpret_cast<hwc_rect_t const&>(finalDR);
+     }
+-#endif /* QCOM_HARDWARE */
+ 
+     virtual void setBuffer(const sp<GraphicBuffer>& buffer) {
+         if (buffer == 0 || buffer->handle == 0) {
+@@ -1324,10 +1222,8 @@ HWComposer::LayerListIterator HWComposer::end(int32_t id) {
+ static String8 getFormatStr(PixelFormat format) {
+     switch (format) {
+     case PIXEL_FORMAT_RGBA_8888:    return String8("RGBA_8888");
+-#ifdef QCOM_HARDWARE
+     case PIXEL_FORMAT_RGBA_4444:    return String8("RGBA_4444");
+     case PIXEL_FORMAT_RGBA_5551:    return String8("RGBA_5551");
+-#endif /* QCOM_HARDWARE */
+     case PIXEL_FORMAT_RGBX_8888:    return String8("RGBx_8888");
+     case PIXEL_FORMAT_RGB_888:      return String8("RGB_888");
+     case PIXEL_FORMAT_RGB_565:      return String8("RGB_565");
+@@ -1344,9 +1240,7 @@ static String8 getFormatStr(PixelFormat format) {
+ }
+ 
+ void HWComposer::dump(String8& result) const {
+-#ifdef QCOM_HARDWARE
+     Mutex::Autolock _l(mDrawLock);
+-#endif /* QCOM_HARDWARE */
+     if (mHwc) {
+         result.appendFormat("Hardware Composer state (version %08x):\n", hwcApiVersion(mHwc));
+         result.appendFormat("  mDebugForceFakeVSync=%d\n", mDebugForceFakeVSync);
+@@ -1362,35 +1256,20 @@ void HWComposer::dump(String8& result) const {
+             result.appendFormat("  Display[%zd] configurations (* current):\n", i);
+             for (size_t c = 0; c < disp.configs.size(); ++c) {
+                 const DisplayConfig& config(disp.configs[c]);
+-#ifndef QCOM_HARDWARE
+-                result.appendFormat("    %s%zd: %ux%u, xdpi=%f, ydpi=%f, refresh=%" PRId64 "\n",
+-#else /* QCOM_HARDWARE */
+                 result.appendFormat("    %s%zd: %ux%u, xdpi=%f, ydpi=%f, secure=%d refresh=%" PRId64 "\n",
+-#endif /* QCOM_HARDWARE */
+                         c == disp.currentConfig ? "* " : "", c, config.width, config.height,
+-#ifndef QCOM_HARDWARE
+-                        config.xdpi, config.ydpi, config.refresh);
+-#else /* QCOM_HARDWARE */
+                         config.xdpi, config.ydpi, config.secure, config.refresh);
+-#endif /* QCOM_HARDWARE */
+             }
+ 
+             if (disp.list) {
+                 result.appendFormat(
+                         "  numHwLayers=%zu, flags=%08x\n",
+                         disp.list->numHwLayers, disp.list->flags);
+-
+                 result.append(
+-#ifndef QCOM_HARDWARE
+-                        "    type   |  handle  | hint | flag | tr | blnd |   format    |     source crop (l,t,r,b)      |          frame         | name \n"
+-                        "-----------+----------+------+------+----+------+-------------+--------------------------------+------------------------+------\n");
+-                //      " _________ | ________ | ____ | ____ | __ | ____ | ___________ |_____._,_____._,_____._,_____._ |_____,_____,_____,_____ | ___...
+-#else /* QCOM_HARDWARE */
+ 
+                         "    type   |  handle  | hint | flag | tr | blnd |  format     |     source crop(l,t,r,b)       |           frame        |      dirtyRect         |  name \n"
+                         "------------+----------+----------+----------+----+-------+----------+-----------------------------------+---------------------------+-------------------\n");
+                 //      " __________ | ________ | ________ | ________ | __ | _____ | ________ | [_____._,_____._,_____._,_____._] | [_____,_____,_____,_____] | [_____,_____,_____,_____] |
+-#endif /* QCOM_HARDWARE */
+                 for (size_t i=0 ; i<disp.list->numHwLayers ; i++) {
+                     const hwc_layer_1_t&l = disp.list->hwLayers[i];
+                     int32_t format = -1;
+@@ -1419,9 +1298,7 @@ void HWComposer::dump(String8& result) const {
+                             "FB TARGET",
+                             "SIDEBAND",
+                             "HWC_CURSOR",
+-#ifdef QCOM_HARDWARE
+                             "FB_BLIT",
+-#endif /* QCOM_HARDWARE */
+                             "UNKNOWN"};
+                     if (type >= NELEM(compositionTypeName))
+                         type = NELEM(compositionTypeName) - 1;
+@@ -1429,33 +1306,21 @@ void HWComposer::dump(String8& result) const {
+                     String8 formatStr = getFormatStr(format);
+                     if (hwcHasApiVersion(mHwc, HWC_DEVICE_API_VERSION_1_3)) {
+                         result.appendFormat(
+-#ifndef QCOM_HARDWARE
+-                                " %9s | %08" PRIxPTR " | %04x | %04x | %02x | %04x | %-11s |%7.1f,%7.1f,%7.1f,%7.1f |%5d,%5d,%5d,%5d | %s\n",
+-#else /* QCOM_HARDWARE */
+                                 " %9s | %08" PRIxPTR " | %04x | %04x | %02x | %04x | %-11s |%7.1f,%7.1f,%7.1f,%7.1f |%5d,%5d,%5d,%5d | [%5d,%5d,%5d,%5d] | %s\n",
+-#endif /* QCOM_HARDWARE */
+                                         compositionTypeName[type],
+                                         intptr_t(l.handle), l.hints, l.flags, l.transform, l.blending, formatStr.string(),
+                                         l.sourceCropf.left, l.sourceCropf.top, l.sourceCropf.right, l.sourceCropf.bottom,
+                                         l.displayFrame.left, l.displayFrame.top, l.displayFrame.right, l.displayFrame.bottom,
+-#ifdef QCOM_HARDWARE
+                                         l.dirtyRect.left, l.dirtyRect.top, l.dirtyRect.right, l.dirtyRect.bottom,
+-#endif /* QCOM_HARDWARE */
+                                         name.string());
+                     } else {
+                         result.appendFormat(
+-#ifndef QCOM_HARDWARE
+-                                " %9s | %08" PRIxPTR " | %04x | %04x | %02x | %04x | %-11s |%7d,%7d,%7d,%7d |%5d,%5d,%5d,%5d | %s\n",
+-#else /* QCOM_HARDWARE */
+                                 " %9s | %08" PRIxPTR " | %04x | %04x | %02x | %04x | %-11s |%7d,%7d,%7d,%7d |%5d,%5d,%5d,%5d | [%5d,%5d,%5d,%5d] | %s\n",
+-#endif /* QCOM_HARDWARE */
+                                         compositionTypeName[type],
+                                         intptr_t(l.handle), l.hints, l.flags, l.transform, l.blending, formatStr.string(),
+                                         l.sourceCrop.left, l.sourceCrop.top, l.sourceCrop.right, l.sourceCrop.bottom,
+                                         l.displayFrame.left, l.displayFrame.top, l.displayFrame.right, l.displayFrame.bottom,
+-#ifdef QCOM_HARDWARE
+                                         l.dirtyRect.left, l.dirtyRect.top, l.dirtyRect.right, l.dirtyRect.bottom,
+-#endif /* QCOM_HARDWARE */
+                                         name.string());
+                     }
+                 }
+@@ -1544,7 +1409,6 @@ HWComposer::DisplayData::~DisplayData() {
+     free(list);
+ }
+ 
+-#ifdef QCOM_HARDWARE
+ #ifdef QCOM_BSP
+ //======================== GPU TiledRect/DR changes =====================
+ bool HWComposer::areVisibleRegionsOverlapping(int32_t id ) {
+@@ -1713,6 +1577,5 @@ bool HWComposer::canUseTiledDR(int32_t id, Rect& unionDr ){
+     return status;
+ }
+ #endif
+-#endif /* QCOM_HARDWARE */
+ 
+ }; // namespace android
+diff --git a/services/surfaceflinger/DisplayHardware/HWComposer.h b/services/surfaceflinger/DisplayHardware/HWComposer.h
+index 9f7d81d..44399be 100644
+--- a/services/surfaceflinger/DisplayHardware/HWComposer.h
++++ b/services/surfaceflinger/DisplayHardware/HWComposer.h
+@@ -32,10 +32,8 @@
+ #include <utils/Timers.h>
+ #include <utils/Vector.h>
+ 
+-#ifdef QCOM_HARDWARE
+ #define MAX_LAYER_COUNT 32
+ 
+-#endif /* QCOM_HARDWARE */
+ extern "C" int clock_nanosleep(clockid_t clock_id, int flags,
+                            const struct timespec *request,
+                            struct timespec *remain);
+@@ -107,11 +105,9 @@ public:
+     // set active config
+     status_t setActiveConfig(int disp, int mode);
+ 
+-#ifdef QCOM_HARDWARE
+     // get active config
+     int getActiveConfig(int disp) const;
+ 
+-#endif /* QCOM_HARDWARE */
+     // reset state when an external, non-virtual display is disconnected
+     void disconnectDisplay(int disp);
+ 
+@@ -126,7 +122,6 @@ public:
+     // does this display have layers handled by GLES
+     bool hasGlesComposition(int32_t id) const;
+ 
+-#ifdef QCOM_HARDWARE
+ #ifdef QCOM_BSP
+     // does this display have layers handled by BLIT HW
+     bool hasBlitComposition(int32_t id) const;
+@@ -135,16 +130,13 @@ public:
+     bool canUseTiledDR(int32_t id, Rect& dr);
+ #endif
+ 
+-#endif /* QCOM_HARDWARE */
+     // get the releaseFence file descriptor for a display's framebuffer layer.
+     // the release fence is only valid after commit()
+     sp<Fence> getAndResetReleaseFence(int32_t id);
+ 
+-#ifdef QCOM_HARDWARE
+     // is VDS solution enabled
+     inline bool isVDSEnabled() const { return mVDSEnabled; };
+ 
+-#endif /* QCOM_HARDWARE */
+     // needed forward declarations
+     class LayerListIterator;
+ 
+@@ -187,18 +179,14 @@ public:
+         virtual void setDefaultState() = 0;
+         virtual void setSkip(bool skip) = 0;
+         virtual void setIsCursorLayerHint(bool isCursor = true) = 0;
+-#ifdef QCOM_HARDWARE
+         virtual void setAnimating(bool animating) = 0;
+-#endif /* QCOM_HARDWARE */
+         virtual void setBlending(uint32_t blending) = 0;
+         virtual void setTransform(uint32_t transform) = 0;
+         virtual void setFrame(const Rect& frame) = 0;
+         virtual void setCrop(const FloatRect& crop) = 0;
+         virtual void setVisibleRegionScreen(const Region& reg) = 0;
+         virtual void setSidebandStream(const sp<NativeHandle>& stream) = 0;
+-#ifdef QCOM_HARDWARE
+         virtual void setDirtyRect(const Rect& dirtyRect) = 0;
+-#endif /* QCOM_HARDWARE */
+         virtual void setBuffer(const sp<GraphicBuffer>& buffer) = 0;
+         virtual void setAcquireFenceFd(int fenceFd) = 0;
+         virtual void setPlaneAlpha(uint8_t alpha) = 0;
+@@ -275,12 +263,8 @@ public:
+     // Events handling ---------------------------------------------------------
+ 
+     enum {
+-#ifndef QCOM_HARDWARE
+-        EVENT_VSYNC = HWC_EVENT_VSYNC
+-#else /* QCOM_HARDWARE */
+         EVENT_VSYNC = HWC_EVENT_VSYNC,
+         EVENT_ORIENTATION = HWC_EVENT_ORIENTATION
+-#endif /* QCOM_HARDWARE */
+     };
+ 
+     void eventControl(int disp, int event, int enabled);
+@@ -290,9 +274,7 @@ public:
+         uint32_t height;
+         float xdpi;
+         float ydpi;
+-#ifdef QCOM_HARDWARE
+         bool secure;
+-#endif /* QCOM_HARDWARE */
+         nsecs_t refresh;
+     };
+ 
+@@ -302,9 +284,7 @@ public:
+     sp<Fence> getDisplayFence(int disp) const;
+     uint32_t getFormat(int disp) const;
+     bool isConnected(int disp) const;
+-#ifdef QCOM_HARDWARE
+     bool isSecure(int disp) const;
+-#endif /* QCOM_HARDWARE */
+ 
+     // These return the values for the current config of a given display index.
+     // To get the values for all configs, use getConfigs below.
+@@ -373,11 +353,9 @@ private:
+         bool connected;
+         bool hasFbComp;
+         bool hasOvComp;
+-#ifdef QCOM_HARDWARE
+ #ifdef QCOM_BSP
+         bool hasBlitComp;
+ #endif
+-#endif /* QCOM_HARDWARE */
+         size_t capacity;
+         hwc_display_contents_1* list;
+         hwc_layer_1* framebufferTarget;
+@@ -407,20 +385,15 @@ private:
+     sp<VSyncThread>                 mVSyncThread;
+     bool                            mDebugForceFakeVSync;
+     BitSet32                        mAllocatedDisplayIDs;
+-#ifdef QCOM_HARDWARE
+     bool                            mVDSEnabled;
+-#endif /* QCOM_HARDWARE */
+     // protected by mLock
+     mutable Mutex mLock;
+-#ifdef QCOM_HARDWARE
+     // synchronization between Draw call and Dumpsys call
+     mutable Mutex mDrawLock;
+-#endif /* QCOM_HARDWARE */
+     mutable nsecs_t mLastHwVSync[HWC_NUM_PHYSICAL_DISPLAY_TYPES];
+ 
+     // thread-safe
+     mutable Mutex mEventControlLock;
+-#ifdef QCOM_HARDWARE
+ 
+     //GPUTileRect : CompMap, class to track the composition type of layers
+     struct CompMap {
+@@ -467,7 +440,6 @@ private:
+     float mDynThreshold;
+     bool canHandleOverlapArea(int32_t id, Rect unionDr);
+ #endif
+-#endif /* QCOM_HARDWARE */
+ };
+ 
+ // ---------------------------------------------------------------------------
+diff --git a/services/surfaceflinger/DisplayHardware/VirtualDisplaySurface.cpp b/services/surfaceflinger/DisplayHardware/VirtualDisplaySurface.cpp
+index be3b748..c6f7606 100644
+--- a/services/surfaceflinger/DisplayHardware/VirtualDisplaySurface.cpp
++++ b/services/surfaceflinger/DisplayHardware/VirtualDisplaySurface.cpp
+@@ -17,24 +17,14 @@
+ // #define LOG_NDEBUG 0
+ #include "VirtualDisplaySurface.h"
+ #include "HWComposer.h"
+-#ifdef QCOM_HARDWARE
+ #include <cutils/properties.h>
+-#ifdef QCOM_BSP
++#if QCOM_BSP
+ #include <gralloc_priv.h>
+ #endif
+-#endif /* QCOM_HARDWARE */
+ // ---------------------------------------------------------------------------
+ namespace android {
+ // ---------------------------------------------------------------------------
+ 
+-#ifndef QCOM_HARDWARE
+-#if defined(FORCE_HWC_COPY_FOR_VIRTUAL_DISPLAYS)
+-static const bool sForceHwcCopy = true;
+-#else
+-static const bool sForceHwcCopy = false;
+-#endif
+-#endif /* ! QCOM_HARDWARE */
+-
+ #define VDS_LOGE(msg, ...) ALOGE("[%s] " msg, \
+         mDisplayName.string(), ##__VA_ARGS__)
+ #define VDS_LOGW_IF(cond, msg, ...) ALOGW_IF(cond, "[%s] " msg, \
+@@ -52,58 +42,34 @@ static const char* dbgCompositionTypeStr(DisplaySurface::CompositionType type) {
+     }
+ }
+ 
+-#ifndef QCOM_HARDWARE
+-VirtualDisplaySurface::VirtualDisplaySurface(HWComposer& hwc, int32_t dispId,
+-#else /* QCOM_HARDWARE */
+ VirtualDisplaySurface::VirtualDisplaySurface(HWComposer& hwc,
+         int32_t &hwcDisplayId,
+-#endif /* QCOM_HARDWARE */
+         const sp<IGraphicBufferProducer>& sink,
+         const sp<IGraphicBufferProducer>& bqProducer,
+         const sp<IGraphicBufferConsumer>& bqConsumer,
+-#ifndef QCOM_HARDWARE
+-        const String8& name)
+-#else /* QCOM_HARDWARE */
+         const String8& name,
+         bool secure)
+-#endif /* QCOM_HARDWARE */
+ :   ConsumerBase(bqConsumer),
+     mHwc(hwc),
+-#ifndef QCOM_HARDWARE
+-    mDisplayId(dispId),
+-#else /* QCOM_HARDWARE */
+     mDisplayId(NO_MEMORY),
+-#endif /* QCOM_HARDWARE */
+     mDisplayName(name),
+     mOutputUsage(GRALLOC_USAGE_HW_COMPOSER),
+     mProducerSlotSource(0),
+     mDbgState(DBG_STATE_IDLE),
+     mDbgLastCompositionType(COMPOSITION_UNKNOWN),
+-#ifndef QCOM_HARDWARE
+-    mMustRecompose(false)
+-#else /* QCOM_HARDWARE */
+     mMustRecompose(false),
+     mForceHwcCopy(false),
+     mSecure(false)
+-#endif /* QCOM_HARDWARE */
+ {
+     mSource[SOURCE_SINK] = sink;
+     mSource[SOURCE_SCRATCH] = bqProducer;
+ 
+-#ifndef QCOM_HARDWARE
+-    resetPerFrameState();
+-
+-    int sinkWidth, sinkHeight;
+-#else /* QCOM_HARDWARE */
+     int sinkWidth, sinkHeight, sinkFormat, sinkUsage;
+-#endif /* QCOM_HARDWARE */
+     sink->query(NATIVE_WINDOW_WIDTH, &sinkWidth);
+     sink->query(NATIVE_WINDOW_HEIGHT, &sinkHeight);
+-#ifdef QCOM_HARDWARE
+     sink->query(NATIVE_WINDOW_FORMAT, &sinkFormat);
+     sink->query(NATIVE_WINDOW_CONSUMER_USAGE_BITS, &sinkUsage);
+ 
+-#endif /* QCOM_HARDWARE */
+     mSinkBufferWidth = sinkWidth;
+     mSinkBufferHeight = sinkHeight;
+ 
+@@ -111,27 +77,14 @@ VirtualDisplaySurface::VirtualDisplaySurface(HWComposer& hwc,
+     // with GLES. If the consumer needs CPU access, use the default format
+     // set by the consumer. Otherwise allow gralloc to decide the format based
+     // on usage bits.
+-#ifndef QCOM_HARDWARE
+-    int sinkUsage;
+-    sink->query(NATIVE_WINDOW_CONSUMER_USAGE_BITS, &sinkUsage);
+-    if (sinkUsage & (GRALLOC_USAGE_SW_READ_MASK | GRALLOC_USAGE_SW_WRITE_MASK)) {
+-        int sinkFormat;
+-        sink->query(NATIVE_WINDOW_FORMAT, &sinkFormat);
+-        mDefaultOutputFormat = sinkFormat;
+-    } else {
+-#else /* QCOM_HARDWARE */
+     mDefaultOutputFormat = sinkFormat;
+     if((sinkUsage & GRALLOC_USAGE_HW_VIDEO_ENCODER)
+-#ifdef QCOM_BSP
++#if QCOM_BSP
+             && (sinkUsage & GRALLOC_USAGE_PRIVATE_WFD)
+ #endif
+       )
+     {
+-#endif /* QCOM_HARDWARE */
+         mDefaultOutputFormat = HAL_PIXEL_FORMAT_IMPLEMENTATION_DEFINED;
+-#ifndef QCOM_HARDWARE
+-    }
+-#else /* QCOM_HARDWARE */
+         mForceHwcCopy = true;
+         //Set secure flag only if the session requires HW protection, currently
+         //there is no other way to distinguish different security protection levels
+@@ -157,16 +110,13 @@ VirtualDisplaySurface::VirtualDisplaySurface(HWComposer& hwc,
+ 
+     hwcDisplayId = mDisplayId; //update display id for device creation in SF
+ 
+-#endif /* QCOM_HARDWARE */
+     mOutputFormat = mDefaultOutputFormat;
+-#ifdef QCOM_HARDWARE
+     // TODO: need to add the below logs as part of dumpsys output
+     VDS_LOGV("creation: sinkFormat: 0x%x sinkUsage: 0x%x mForceHwcCopy: %d",
+             mOutputFormat, sinkUsage, mForceHwcCopy);
+ 
+     setOutputUsage();
+     resetPerFrameState();
+-#endif /* QCOM_HARDWARE */
+ 
+     ConsumerBase::mName = String8::format("VDS: %s", mDisplayName.string());
+     mConsumer->setConsumerName(ConsumerBase::mName);
+@@ -178,7 +128,6 @@ VirtualDisplaySurface::VirtualDisplaySurface(HWComposer& hwc,
+ VirtualDisplaySurface::~VirtualDisplaySurface() {
+ }
+ 
+-#ifdef QCOM_HARDWARE
+ // helper to update the output usage when the display is secure
+ void VirtualDisplaySurface::setOutputUsage() {
+     mOutputUsage = GRALLOC_USAGE_HW_COMPOSER;
+@@ -195,7 +144,6 @@ void VirtualDisplaySurface::setOutputUsage() {
+     }
+ }
+ 
+-#endif /* QCOM_HARDWARE */
+ status_t VirtualDisplaySurface::beginFrame(bool mustRecompose) {
+     if (mDisplayId < 0)
+         return NO_ERROR;
+@@ -218,11 +166,7 @@ status_t VirtualDisplaySurface::prepareFrame(CompositionType compositionType) {
+     mDbgState = DBG_STATE_PREPARED;
+ 
+     mCompositionType = compositionType;
+-#ifndef QCOM_HARDWARE
+-    if (sForceHwcCopy && mCompositionType == COMPOSITION_GLES) {
+-#else /* QCOM_HARDWARE */
+     if (mForceHwcCopy) {
+-#endif /* QCOM_HARDWARE */
+         // Some hardware can do RGB->YUV conversion more efficiently in hardware
+         // controlled by HWC than in hardware controlled by the video encoder.
+         // Forcing GLES-composed frames to go through an extra copy by the HWC
+@@ -254,11 +198,7 @@ status_t VirtualDisplaySurface::prepareFrame(CompositionType compositionType) {
+         // format/usage and get a new buffer when the GLES driver calls
+         // dequeueBuffer().
+         mOutputFormat = mDefaultOutputFormat;
+-#ifndef QCOM_HARDWARE
+-        mOutputUsage = GRALLOC_USAGE_HW_COMPOSER;
+-#else /* QCOM_HARDWARE */
+         setOutputUsage();
+-#endif /* QCOM_HARDWARE */
+         refreshOutputBuffer();
+     }
+ 
+@@ -273,9 +213,6 @@ status_t VirtualDisplaySurface::advanceFrame() {
+     if (mDisplayId < 0)
+         return NO_ERROR;
+ 
+-#ifndef QCOM_HARDWARE
+-    if (mCompositionType == COMPOSITION_HWC) {
+-#else /* QCOM_HARDWARE */
+     // When mForceHwcCopy is true, we override the composition type to MIXED.
+     // Therefore, we need to check whether we are in this scenario and add
+     // checks to satisfy the state machine requirements and reduce log spam.
+@@ -290,7 +227,6 @@ status_t VirtualDisplaySurface::advanceFrame() {
+                 dbgStateStr(),
+                 (mDbgState == DBG_STATE_PREPARED) ? "HWC" : "GLES/MIXED");
+     } else if (mCompositionType == COMPOSITION_HWC) {
+-#endif /* QCOM_HARDWARE */
+         VDS_LOGW_IF(mDbgState != DBG_STATE_PREPARED,
+                 "Unexpected advanceFrame() in %s state on HWC frame",
+                 dbgStateStr());
+@@ -301,12 +237,7 @@ status_t VirtualDisplaySurface::advanceFrame() {
+     }
+     mDbgState = DBG_STATE_HWC;
+ 
+-#ifndef QCOM_HARDWARE
+-    if (mOutputProducerSlot < 0 ||
+-            (mCompositionType != COMPOSITION_HWC && mFbProducerSlot < 0)) {
+-#else /* QCOM_HARDWARE */
+     if (mOutputProducerSlot < 0) {
+-#endif /* QCOM_HARDWARE */
+         // Last chance bailout if something bad happened earlier. For example,
+         // in a GLES configuration, if the sink disappears then dequeueBuffer
+         // will fail, the GLES driver won't queue a buffer, but SurfaceFlinger
+@@ -344,11 +275,7 @@ void VirtualDisplaySurface::onFrameCommitted() {
+     mDbgState = DBG_STATE_IDLE;
+ 
+     sp<Fence> fbFence = mHwc.getAndResetReleaseFence(mDisplayId);
+-#ifndef QCOM_HARDWARE
+-    if (mCompositionType == COMPOSITION_MIXED && mFbProducerSlot >= 0) {
+-#else /* QCOM_HARDWARE */
+     if (mFbProducerSlot >= 0) {
+-#endif /* QCOM_HARDWARE */
+         // release the scratch buffer back to the pool
+         Mutex::Autolock lock(mMutex);
+         int sslot = mapProducer2SourceSlot(SOURCE_SCRATCH, mFbProducerSlot);
+@@ -363,14 +290,10 @@ void VirtualDisplaySurface::onFrameCommitted() {
+         QueueBufferOutput qbo;
+         sp<Fence> outFence = mHwc.getLastRetireFence(mDisplayId);
+         VDS_LOGV("onFrameCommitted: queue sink sslot=%d", sslot);
+-#ifndef QCOM_HARDWARE
+-        if (mMustRecompose) {
+-#else /* QCOM_HARDWARE */
+         // Allow queuing to sink buffer if mMustRecompose is true or
+         // mForceHwcCopy is true. This is required to support Miracast WFD Sink
+         // Initiatied Pause/Resume feature support
+         if (mForceHwcCopy || mMustRecompose) {
+-#endif /* QCOM_HARDWARE */
+             status_t result = mSource[SOURCE_SINK]->queueBuffer(sslot,
+                     QueueBufferInput(
+                         systemTime(), false /* isAutoTimestamp */,
+@@ -598,7 +521,7 @@ status_t VirtualDisplaySurface::queueBuffer(int pslot,
+         uint32_t transform;
+         bool async;
+         input.deflate(&timestamp, &isAutoTimestamp, &crop, &scalingMode,
+-                &transform, &async, &mFbFence);
++               &transform, &async, &mFbFence);
+ 
+         mFbProducerSlot = pslot;
+         mOutputFence = mFbFence;
+diff --git a/services/surfaceflinger/DisplayHardware/VirtualDisplaySurface.h b/services/surfaceflinger/DisplayHardware/VirtualDisplaySurface.h
+index 114aaad..d43aa2c 100644
+--- a/services/surfaceflinger/DisplayHardware/VirtualDisplaySurface.h
++++ b/services/surfaceflinger/DisplayHardware/VirtualDisplaySurface.h
+@@ -72,20 +72,12 @@ class VirtualDisplaySurface : public DisplaySurface,
+                               public BnGraphicBufferProducer,
+                               private ConsumerBase {
+ public:
+-#ifndef QCOM_HARDWARE
+-    VirtualDisplaySurface(HWComposer& hwc, int32_t dispId,
+-#else /* QCOM_HARDWARE */
+     VirtualDisplaySurface(HWComposer& hwc, int32_t &hwcDisplayId,
+-#endif /* QCOM_HARDWARE */
+             const sp<IGraphicBufferProducer>& sink,
+             const sp<IGraphicBufferProducer>& bqProducer,
+             const sp<IGraphicBufferConsumer>& bqConsumer,
+-#ifndef QCOM_HARDWARE
+-            const String8& name);
+-#else /* QCOM_HARDWARE */
+             const String8& name,
+             bool secure);
+-#endif /* QCOM_HARDWARE */
+ 
+     //
+     // DisplaySurface interface
+@@ -134,9 +126,7 @@ private:
+     void updateQueueBufferOutput(const QueueBufferOutput& qbo);
+     void resetPerFrameState();
+     status_t refreshOutputBuffer();
+-#ifdef QCOM_HARDWARE
+     void setOutputUsage();
+-#endif /* QCOM_HARDWARE */
+ 
+     // Both the sink and scratch buffer pools have their own set of slots
+     // ("source slots", or "sslot"). We have to merge these into the single
+@@ -151,13 +141,9 @@ private:
+     // Immutable after construction
+     //
+     HWComposer& mHwc;
+-#ifndef QCOM_HARDWARE
+-    const int32_t mDisplayId;
+-#endif /* ! QCOM_HARDWARE */
+     const String8 mDisplayName;
+     sp<IGraphicBufferProducer> mSource[2]; // indexed by SOURCE_*
+     uint32_t mDefaultOutputFormat;
+-#ifdef QCOM_HARDWARE
+ 
+     // Force copy flag. Used to determine if we are forcing composition
+     // through HWC.
+@@ -171,7 +157,6 @@ private:
+ 
+     // secure flag
+     bool mSecure;
+-#endif /* QCOM_HARDWARE */
+ 
+     //
+     // Inter-frame state
+diff --git a/services/surfaceflinger/Layer.cpp b/services/surfaceflinger/Layer.cpp
+index 43e45c7..d80a358 100755
+--- a/services/surfaceflinger/Layer.cpp
++++ b/services/surfaceflinger/Layer.cpp
+@@ -47,11 +47,9 @@
+ #include "DisplayHardware/HWComposer.h"
+ 
+ #include "RenderEngine/RenderEngine.h"
+-#ifdef QCOM_HARDWARE
+ #ifdef QCOM_BSP
+ #include <gralloc_priv.h>
+ #endif
+-#endif /* QCOM_HARDWARE */
+ 
+ #define DEBUG_RESIZE    0
+ 
+@@ -59,7 +57,6 @@ namespace android {
+ 
+ // ---------------------------------------------------------------------------
+ 
+-#ifdef QCOM_HARDWARE
+ /* Calculates the aspect ratio for external display based on the video w/h */
+ static Rect getAspectRatio(const sp<const DisplayDevice>& hw,
+                            const int& srcWidth, const int& srcHeight) {
+@@ -85,7 +82,6 @@ static Rect getAspectRatio(const sp<const DisplayDevice>& hw,
+     return outRect;
+ }
+ 
+-#endif /* QCOM_HARDWARE */
+ int32_t Layer::sSequence = 1;
+ 
+ Layer::Layer(SurfaceFlinger* flinger, const sp<Client>& client,
+@@ -113,12 +109,8 @@ Layer::Layer(SurfaceFlinger* flinger, const sp<Client>& client,
+         mProtectedByApp(false),
+         mHasSurface(false),
+         mClientRef(client),
+-#ifndef QCOM_HARDWARE
+-        mPotentialCursor(false)
+-#else /* QCOM_HARDWARE */
+         mPotentialCursor(false),
+         mTransformHint(0)
+-#endif /* QCOM_HARDWARE */
+ {
+     mCurrentCrop.makeInvalid();
+     mFlinger->getRenderEngine().genTextures(1, &mTextureName);
+@@ -170,7 +162,6 @@ void Layer::onFirstRef() {
+     mSurfaceFlingerConsumer->setDefaultMaxBufferCount(2);
+ #else
+     mSurfaceFlingerConsumer->setDefaultMaxBufferCount(3);
+-#ifdef QCOM_HARDWARE
+ 
+ #ifdef QCOM_BSP
+     char property[PROPERTY_VALUE_MAX];
+@@ -179,7 +170,6 @@ void Layer::onFirstRef() {
+     }
+ #endif
+ 
+-#endif /* QCOM_HARDWARE */
+ #endif
+ 
+     const sp<const DisplayDevice> hw(mFlinger->getDefaultDisplayDevice());
+@@ -333,13 +323,9 @@ static Rect reduce(const Rect& win, const Region& exclude) {
+     if (CC_LIKELY(exclude.isEmpty())) {
+         return win;
+     }
+-#ifndef QCOM_HARDWARE
+-    if (exclude.isRect()) {
+-#else /* QCOM_HARDWARE */
+     Rect tmp;
+     win.intersect(exclude.getBounds(), &tmp);
+     if (exclude.isRect() && !tmp.isEmpty()) {
+-#endif /* QCOM_HARDWARE */
+         return win.reduce(exclude.getBounds());
+     }
+     return Region(win).subtract(exclude).getBounds();
+@@ -460,34 +446,9 @@ FloatRect Layer::computeCrop(const sp<const DisplayDevice>& hw) const {
+     return crop;
+ }
+ 
+-#ifndef QCOM_HARDWARE
+-void Layer::setGeometry(
+-    const sp<const DisplayDevice>& hw,
+-        HWComposer::HWCLayerInterface& layer)
+-#else /* QCOM_HARDWARE */
+ Transform Layer::computeBufferTransform(const sp<const DisplayDevice>& hw) const
+-#endif /* QCOM_HARDWARE */
+ {
+-#ifndef QCOM_HARDWARE
+-    layer.setDefaultState();
+-
+-    // enable this layer
+-    layer.setSkip(false);
+-
+-    if (isSecure() && !hw->isSecure()) {
+-        layer.setSkip(true);
+-    }
+-
+-    // this gives us only the "orientation" component of the transform
+-#endif /* ! QCOM_HARDWARE */
+     const State& s(getDrawingState());
+-#ifndef QCOM_HARDWARE
+-    if (!isOpaque(s) || s.alpha != 0xFF) {
+-        layer.setBlending(mPremultipliedAlpha ?
+-                HWC_BLENDING_PREMULT :
+-                HWC_BLENDING_COVERAGE);
+-    }
+-#endif /* ! QCOM_HARDWARE */
+ 
+     // apply the layer's transform, followed by the display's global transform
+     // here we're guaranteed that the layer's transform preserves rects
+@@ -516,12 +477,6 @@ Transform Layer::computeBufferTransform(const sp<const DisplayDevice>& hw) const
+     Rect frame(s.transform.transform(computeBounds(activeTransparentRegion)));
+     frame.intersect(hw->getViewport(), &frame);
+     const Transform& tr(hw->getTransform());
+-#ifndef QCOM_HARDWARE
+-    layer.setFrame(tr.transform(frame));
+-    layer.setCrop(computeCrop(hw));
+-    layer.setPlaneAlpha(s.alpha);
+-
+-#endif /* ! QCOM_HARDWARE */
+     /*
+      * Transformations are applied in this order:
+      * 1) buffer orientation/flip/mirror
+@@ -550,17 +505,12 @@ Transform Layer::computeBufferTransform(const sp<const DisplayDevice>& hw) const
+             if (is_h_flipped != is_v_flipped) {
+                 t_orientation ^= NATIVE_WINDOW_TRANSFORM_FLIP_V |
+                         NATIVE_WINDOW_TRANSFORM_FLIP_H;
+-#ifndef QCOM_HARDWARE
+-            }
+-#else /* QCOM_HARDWARE */
+         }
+ 
+-#endif /* QCOM_HARDWARE */
+         }
+         // and apply to the current transform
+         transform = Transform(t_orientation) * Transform(invTransform);
+     }
+-#ifdef QCOM_HARDWARE
+     return transform;
+ }
+ 
+@@ -628,7 +578,6 @@ void Layer::setGeometry(
+     layer.setPlaneAlpha(s.alpha);
+ 
+     Transform transform = computeBufferTransform(hw);
+-#endif /* QCOM_HARDWARE */
+ 
+     // this gives us only the "orientation" component of the transform
+     const uint32_t orientation = transform.getOrientation();
+@@ -640,10 +589,8 @@ void Layer::setGeometry(
+     }
+ }
+ 
+-#ifdef QCOM_HARDWARE
+ 
+ 
+-#endif /* QCOM_HARDWARE */
+ void Layer::setPerFrameData(const sp<const DisplayDevice>& hw,
+         HWComposer::HWCLayerInterface& layer) {
+     // we have to set the visible region on every frame because
+@@ -662,7 +609,6 @@ void Layer::setPerFrameData(const sp<const DisplayDevice>& hw,
+         // layer yet, or if we ran out of memory
+         layer.setBuffer(mActiveBuffer);
+     }
+-#ifdef QCOM_HARDWARE
+ 
+     Rect dirtyRect =  mSurfaceFlingerConsumer->getCurrentDirtyRect();
+     int bufferOrientation = computeBufferTransform(hw).getOrientation();
+@@ -713,7 +659,6 @@ void Layer::setPerFrameData(const sp<const DisplayDevice>& hw,
+     // NOTE: buffer can be NULL if the client never drew into this
+     // layer yet, or if we ran out of memory
+     layer.setBuffer(mActiveBuffer);
+-#endif /* QCOM_HARDWARE */
+ }
+ 
+ void Layer::setAcquireFence(const sp<const DisplayDevice>& /* hw */,
+@@ -723,12 +668,8 @@ void Layer::setAcquireFence(const sp<const DisplayDevice>& /* hw */,
+     // TODO: there is a possible optimization here: we only need to set the
+     // acquire fence the first time a new buffer is acquired on EACH display.
+ 
+-#ifndef QCOM_HARDWARE
+-    if (layer.getCompositionType() == HWC_OVERLAY || layer.getCompositionType() == HWC_CURSOR_OVERLAY) {
+-#else /* QCOM_HARDWARE */
+     if (layer.getCompositionType() == HWC_OVERLAY || layer.getCompositionType() == HWC_CURSOR_OVERLAY ||
+             layer.getCompositionType() == HWC_BLIT) {
+-#endif /* QCOM_HARDWARE */
+         sp<Fence> fence = mSurfaceFlingerConsumer->getCurrentFence();
+         if (fence->isValid()) {
+             fenceFd = fence->dup();
+@@ -819,7 +760,6 @@ void Layer::onDraw(const sp<const DisplayDevice>& hw, const Region& clip,
+         // is probably going to have something visibly wrong.
+     }
+ 
+-#ifdef QCOM_HARDWARE
+     bool canAllowGPU = false;
+ #ifdef QCOM_BSP
+     if(isProtected()) {
+@@ -832,16 +772,11 @@ void Layer::onDraw(const sp<const DisplayDevice>& hw, const Region& clip,
+     }
+ #endif
+ 
+-#endif /* QCOM_HARDWARE */
+     bool blackOutLayer = isProtected() || (isSecure() && !hw->isSecure());
+ 
+     RenderEngine& engine(mFlinger->getRenderEngine());
+ 
+-#ifndef QCOM_HARDWARE
+-    if (!blackOutLayer) {
+-#else /* QCOM_HARDWARE */
+     if (!blackOutLayer || (canAllowGPU)) {
+-#endif /* QCOM_HARDWARE */
+         // TODO: we could be more subtle with isFixedSize()
+         const bool useFiltering = getFiltering() || needsFiltering(hw) || isFixedSize();
+ 
+@@ -914,24 +849,6 @@ void Layer::drawWithOpenGL(const sp<const DisplayDevice>& hw,
+ 
+     computeGeometry(hw, mMesh, useIdentityTransform);
+ 
+-#ifndef QCOM_HARDWARE
+-    /*
+-     * NOTE: the way we compute the texture coordinates here produces
+-     * different results than when we take the HWC path -- in the later case
+-     * the "source crop" is rounded to texel boundaries.
+-     * This can produce significantly different results when the texture
+-     * is scaled by a large amount.
+-     *
+-     * The GL code below is more logical (imho), and the difference with
+-     * HWC is due to a limitation of the HWC API to integers -- a question
+-     * is suspend is whether we should ignore this problem or revert to
+-     * GL composition when a buffer scaling is applied (maybe with some
+-     * minimal value)? Or, we could make GL behave like HWC -- but this feel
+-     * like more of a hack.
+-     */
+-    const Rect win(computeBounds());
+-
+-#else /* QCOM_HARDWARE */
+     // Compute the crops exactly in the way we are doing
+     // for HWC & program texture coordinates for the clipped
+     // source after transformation.
+@@ -948,7 +865,6 @@ void Layer::drawWithOpenGL(const sp<const DisplayDevice>& hw,
+ #else
+     win = reduce(win, s.activeTransparentRegion);
+ #endif
+-#endif /* QCOM_HARDWARE */
+     float left   = float(win.left)   / float(s.active.w);
+     float top    = float(win.top)    / float(s.active.h);
+     float right  = float(win.right)  / float(s.active.w);
+@@ -1016,18 +932,13 @@ void Layer::computeGeometry(const sp<const DisplayDevice>& hw, Mesh& mesh,
+         bool useIdentityTransform) const
+ {
+     const Layer::State& s(getDrawingState());
+-#ifndef QCOM_HARDWARE
+-    const Transform tr(useIdentityTransform ?
+-#else /* QCOM_HARDWARE */
+     Transform tr(useIdentityTransform ?
+-#endif /* QCOM_HARDWARE */
+             hw->getTransform() : hw->getTransform() * s.transform);
+     const uint32_t hw_h = hw->getHeight();
+     Rect win(s.active.w, s.active.h);
+     if (!s.active.crop.isEmpty()) {
+         win.intersect(s.active.crop, &win);
+     }
+-#ifdef QCOM_HARDWARE
+ 
+ #ifdef QCOM_BSP
+     win = s.transform.transform(win);
+@@ -1052,10 +963,6 @@ void Layer::computeGeometry(const sp<const DisplayDevice>& hw, Mesh& mesh,
+     // subtract the transparent region and snap to the bounds
+     win = reduce(win, s.activeTransparentRegion);
+ #endif
+-#else /* QCOM_HARDWARE */
+-    // subtract the transparent region and snap to the bounds
+-    win = reduce(win, s.activeTransparentRegion);
+-#endif /* QCOM_HARDWARE */
+ 
+     Mesh::VertexArray<vec2> position(mesh.getPositionArray<vec2>());
+     position[0] = tr.transform(win.left,  win.top);
+@@ -1352,12 +1259,8 @@ void Layer::onPostComposition() {
+ 
+ bool Layer::isVisible() const {
+     const Layer::State& s(mDrawingState);
+-#ifndef QCOM_HARDWARE
+-    return !(s.flags & layer_state_t::eLayerHidden) && s.alpha
+-#else /* QCOM_HARDWARE */
+     return !(s.flags & layer_state_t::eLayerHidden) &&
+             !(s.flags & layer_state_t::eLayerTransparent) && s.alpha
+-#endif /* QCOM_HARDWARE */
+             && (mActiveBuffer != NULL || mSidebandStream != NULL);
+ }
+ 
+@@ -1592,11 +1495,7 @@ uint32_t Layer::getEffectiveUsage(uint32_t usage) const
+     return usage;
+ }
+ 
+-#ifndef QCOM_HARDWARE
+-void Layer::updateTransformHint(const sp<const DisplayDevice>& hw) const {
+-#else /* QCOM_HARDWARE */
+ void Layer::updateTransformHint(const sp<const DisplayDevice>& hw) {
+-#endif /* QCOM_HARDWARE */
+     uint32_t orientation = 0;
+     if (!mFlinger->mDebugDisableTransformHint) {
+         // The transform hint is used to improve performance, but we can
+@@ -1609,9 +1508,7 @@ void Layer::updateTransformHint(const sp<const DisplayDevice>& hw) {
+         }
+     }
+     mSurfaceFlingerConsumer->setTransformHint(orientation);
+-#ifdef QCOM_HARDWARE
+     mTransformHint = orientation;
+-#endif /* QCOM_HARDWARE */
+ }
+ 
+ // ----------------------------------------------------------------------------
+@@ -1693,7 +1590,6 @@ Layer::LayerCleaner::~LayerCleaner() {
+     // destroy client resources
+     mFlinger->onLayerDestroyed(mLayer);
+ }
+-#ifdef QCOM_HARDWARE
+ 
+ #ifdef QCOM_BSP
+ bool Layer::hasNewFrame() const {
+@@ -1748,7 +1644,6 @@ bool Layer::isYuvLayer() const {
+     return false;
+ }
+ #endif
+-#endif /* QCOM_HARDWARE */
+ 
+ // ---------------------------------------------------------------------------
+ }; // namespace android
+diff --git a/services/surfaceflinger/Layer.h b/services/surfaceflinger/Layer.h
+index bdd3279..ef3f437 100644
+--- a/services/surfaceflinger/Layer.h
++++ b/services/surfaceflinger/Layer.h
+@@ -276,9 +276,6 @@ public:
+ 
+     // Updates the transform hint in our SurfaceFlingerConsumer to match
+     // the current orientation of the display device.
+-#ifndef QCOM_HARDWARE
+-    void updateTransformHint(const sp<const DisplayDevice>& hw) const;
+-#else /* QCOM_HARDWARE */
+     void updateTransformHint(const sp<const DisplayDevice>& hw);
+ #ifdef QCOM_BSP
+     virtual bool isExtOnly() const;
+@@ -286,7 +283,6 @@ public:
+     virtual bool isSecureDisplay() const;
+     virtual bool isYuvLayer() const;
+ #endif
+-#endif /* QCOM_HARDWARE */
+ 
+     /*
+      * returns the rectangle that crops the content of the layer and scales it
+@@ -320,13 +316,11 @@ public:
+     void logFrameStats();
+     void getFrameStats(FrameStats* outStats) const;
+ 
+-#ifdef QCOM_HARDWARE
+ #ifdef QCOM_BSP
+     //GPUTileRect : Return true if the layer has been updated in this frame.
+     bool hasNewFrame() const;
+ #endif
+ 
+-#endif /* QCOM_HARDWARE */
+ protected:
+     // constant
+     sp<SurfaceFlinger> mFlinger;
+@@ -362,9 +356,7 @@ private:
+     FloatRect computeCrop(const sp<const DisplayDevice>& hw) const;
+     bool isCropped() const;
+     static bool getOpacityForFormat(uint32_t format);
+-#ifdef QCOM_HARDWARE
+     Transform computeBufferTransform(const sp<const DisplayDevice>& hw) const;
+-#endif /* QCOM_HARDWARE */
+ 
+     // drawing
+     void clearWithOpenGL(const sp<const DisplayDevice>& hw, const Region& clip,
+@@ -431,11 +423,9 @@ private:
+     // Local copy of the queued contents of the incoming BufferQueue
+     mutable Mutex mQueueItemLock;
+     Vector<BufferItem> mQueueItems;
+-#ifdef QCOM_HARDWARE
+ 
+     // Transform hint assigned for the layer
+     uint32_t mTransformHint;
+-#endif /* QCOM_HARDWARE */
+ };
+ 
+ // ---------------------------------------------------------------------------
+diff --git a/services/surfaceflinger/RenderEngine/GLES20RenderEngine.cpp b/services/surfaceflinger/RenderEngine/GLES20RenderEngine.cpp
+index 3e5a382..13c2967 100644
+--- a/services/surfaceflinger/RenderEngine/GLES20RenderEngine.cpp
++++ b/services/surfaceflinger/RenderEngine/GLES20RenderEngine.cpp
+@@ -183,7 +183,6 @@ void GLES20RenderEngine::disableBlending() {
+     glDisable(GL_BLEND);
+ }
+ 
+-#ifdef QCOM_HARDWARE
+ #ifdef QCOM_BSP
+ void GLES20RenderEngine::startTileComposition(int x , int y, int width,
+                                             int height, bool preserve) {
+@@ -196,7 +195,6 @@ void GLES20RenderEngine::endTileComposition(unsigned int preserveMask) {
+ }
+ #endif
+ 
+-#endif /* QCOM_HARDWARE */
+ 
+ void GLES20RenderEngine::bindImageAsFramebuffer(EGLImageKHR image,
+         uint32_t* texName, uint32_t* fbName, uint32_t* status,
+diff --git a/services/surfaceflinger/RenderEngine/GLES20RenderEngine.h b/services/surfaceflinger/RenderEngine/GLES20RenderEngine.h
+index 6ead5f6..92dfc03 100644
+--- a/services/surfaceflinger/RenderEngine/GLES20RenderEngine.h
++++ b/services/surfaceflinger/RenderEngine/GLES20RenderEngine.h
+@@ -75,13 +75,11 @@ protected:
+     virtual void setupFillWithColor(float r, float g, float b, float a);
+     virtual void disableTexturing();
+     virtual void disableBlending();
+-#ifdef QCOM_HARDWARE
+ #ifdef QCOM_BSP
+     virtual void startTileComposition(int x , int y, int width,
+           int height,bool preserve );
+     virtual void endTileComposition(unsigned int preserveMask);
+ #endif
+-#endif /* QCOM_HARDWARE */
+ 
+     virtual void drawMesh(const Mesh& mesh);
+ 
+diff --git a/services/surfaceflinger/RenderEngine/RenderEngine.h b/services/surfaceflinger/RenderEngine/RenderEngine.h
+index e23bea0..30bb92a 100644
+--- a/services/surfaceflinger/RenderEngine/RenderEngine.h
++++ b/services/surfaceflinger/RenderEngine/RenderEngine.h
+@@ -102,14 +102,12 @@ public:
+ 
+     virtual void disableTexturing() = 0;
+     virtual void disableBlending() = 0;
+-#ifdef QCOM_HARDWARE
+ #ifdef QCOM_BSP
+     virtual void startTileComposition(int x, int y, int width,
+           int height, bool preserve){}
+     virtual void endTileComposition(unsigned int) {}
+ #endif
+ 
+-#endif /* QCOM_HARDWARE */
+ 
+     // drawing
+     virtual void drawMesh(const Mesh& mesh) = 0;
+diff --git a/services/surfaceflinger/SurfaceFlinger.cpp b/services/surfaceflinger/SurfaceFlinger.cpp
+index 4ee3f04..ce7ea8b 100644
+--- a/services/surfaceflinger/SurfaceFlinger.cpp
++++ b/services/surfaceflinger/SurfaceFlinger.cpp
+@@ -77,7 +77,6 @@
+ 
+ #include "RenderEngine/RenderEngine.h"
+ #include <cutils/compiler.h>
+-#ifdef QCOM_HARDWARE
+ #ifdef QCOM_BSP
+ #include <gralloc_priv.h>
+ #endif
+@@ -85,7 +84,6 @@
+ #ifdef QCOM_BSP
+ #include <display_config.h>
+ #endif
+-#endif /* QCOM_HARDWARE */
+ 
+ #define DISPLAY_COUNT       1
+ 
+@@ -132,12 +130,10 @@ const String16 sReadFramebuffer("android.permission.READ_FRAME_BUFFER");
+ const String16 sDump("android.permission.DUMP");
+ 
+ // ---------------------------------------------------------------------------
+-#ifdef QCOM_HARDWARE
+ // Initialize extendedMode to false
+ #ifdef QCOM_BSP
+ bool SurfaceFlinger::sExtendedMode = false;
+ #endif
+-#endif /* QCOM_HARDWARE */
+ 
+ SurfaceFlinger::SurfaceFlinger()
+     :   BnSurfaceComposer(),
+@@ -160,9 +156,7 @@ SurfaceFlinger::SurfaceFlinger()
+         mDebugInTransaction(0),
+         mLastTransactionTime(0),
+         mBootFinished(false),
+-#ifdef QCOM_HARDWARE
+         mGpuTileRenderEnable(false),
+-#endif /* QCOM_HARDWARE */
+         mPrimaryHWVsyncEnabled(false),
+         mHWVsyncAvailable(false),
+         mDaltonize(false),
+@@ -187,7 +181,6 @@ SurfaceFlinger::SurfaceFlinger()
+             mDebugDDMS = 0;
+         }
+     }
+-#ifdef QCOM_HARDWARE
+ #ifdef QCOM_BSP
+     mCanUseGpuTileRender = false;
+     property_get("debug.sf.gpu_comp_tiling", value, "0");
+@@ -200,7 +193,6 @@ SurfaceFlinger::SurfaceFlinger()
+     mDisableExtAnimation = atoi(value) ? true : false;
+ #endif
+ 
+-#endif /* QCOM_HARDWARE */
+     ALOGI_IF(mDebugRegion, "showupdates enabled");
+     ALOGI_IF(mDebugDDMS, "DDMS debugging enabled");
+ }
+@@ -286,22 +278,13 @@ void SurfaceFlinger::destroyDisplay(const sp<IBinder>& display) {
+     setTransactionFlags(eDisplayTransactionNeeded);
+ }
+ 
+-#ifndef QCOM_HARDWARE
+-void SurfaceFlinger::createBuiltinDisplayLocked(DisplayDevice::DisplayType type) {
+-#else /* QCOM_HARDWARE */
+ void SurfaceFlinger::createBuiltinDisplayLocked(DisplayDevice::DisplayType type,
+                                                 bool secure) {
+-#endif /* QCOM_HARDWARE */
+     ALOGW_IF(mBuiltinDisplays[type],
+             "Overwriting display token for display type %d", type);
+     mBuiltinDisplays[type] = new BBinder();
+     DisplayDeviceState info(type);
+-#ifndef QCOM_HARDWARE
+-    // All non-virtual displays are currently considered secure.
+-    info.isSecure = true;
+-#else /* QCOM_HARDWARE */
+     info.isSecure = secure;
+-#endif /* QCOM_HARDWARE */
+     mCurrentState.displays.add(mBuiltinDisplays[type], info);
+ }
+ 
+@@ -432,14 +415,12 @@ void SurfaceFlinger::init() {
+     status_t err;
+     Mutex::Autolock _l(mStateLock);
+ 
+-#ifdef QCOM_HARDWARE
+     /* Set the mask bit of the sigset to block the SIGPIPE signal */
+     sigset_t sigMask;
+     sigemptyset (&sigMask);
+     sigaddset(&sigMask, SIGPIPE);
+     sigprocmask(SIG_BLOCK, &sigMask, NULL);
+ 
+-#endif /* QCOM_HARDWARE */
+     // initialize EGL for the default display
+     mEGLDisplay = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+     eglInitialize(mEGLDisplay, NULL, NULL);
+@@ -463,15 +444,9 @@ void SurfaceFlinger::init() {
+         DisplayDevice::DisplayType type((DisplayDevice::DisplayType)i);
+         // set-up the displays that are already connected
+         if (mHwc->isConnected(i) || type==DisplayDevice::DISPLAY_PRIMARY) {
+-#ifndef QCOM_HARDWARE
+-            // All non-virtual displays are currently considered secure.
+-            bool isSecure = true;
+-            createBuiltinDisplayLocked(type);
+-#else /* QCOM_HARDWARE */
+             // query from hwc if the non-virtual display is secure.
+             bool isSecure = mHwc->isSecure(i);;
+             createBuiltinDisplayLocked(type, isSecure);
+-#endif /* QCOM_HARDWARE */
+             wp<IBinder> token = mBuiltinDisplays[i];
+ 
+             sp<IGraphicBufferProducer> producer;
+@@ -559,11 +534,7 @@ bool SurfaceFlinger::authenticateSurfaceTexture(
+ 
+ status_t SurfaceFlinger::getDisplayConfigs(const sp<IBinder>& display,
+         Vector<DisplayInfo>* configs) {
+-#ifndef QCOM_HARDWARE
+-    if (configs == NULL) {
+-#else /* QCOM_HARDWARE */
+     if ((configs == NULL) || (display.get() == NULL)) {
+-#endif /* QCOM_HARDWARE */
+         return BAD_VALUE;
+     }
+ 
+@@ -667,13 +638,8 @@ status_t SurfaceFlinger::getDisplayConfigs(const sp<IBinder>& display,
+         info.presentationDeadline =
+                 hwConfig.refresh - SF_VSYNC_EVENT_PHASE_OFFSET_NS + 1000000;
+ 
+-#ifndef QCOM_HARDWARE
+-        // All non-virtual displays are currently considered secure.
+-        info.secure = true;
+-#else /* QCOM_HARDWARE */
+         // set secure info based on the hwcConfig
+         info.secure = hwConfig.secure;
+-#endif /* QCOM_HARDWARE */
+ 
+         configs->push_back(info);
+     }
+@@ -714,15 +680,10 @@ void SurfaceFlinger::setActiveConfigInternal(const sp<DisplayDevice>& hw, int mo
+         return;
+     }
+ 
+-#ifndef QCOM_HARDWARE
+-    hw->setActiveConfig(mode);
+-    getHwComposer().setActiveConfig(type, mode);
+-#else /* QCOM_HARDWARE */
+     status_t status = getHwComposer().setActiveConfig(type, mode);
+     if (status == NO_ERROR) {
+         hw->setActiveConfig(mode);
+     }
+-#endif /* QCOM_HARDWARE */
+ }
+ 
+ status_t SurfaceFlinger::setActiveConfig(const sp<IBinder>& display, int mode) {
+@@ -891,17 +852,12 @@ void SurfaceFlinger::onHotplugReceived(int type, bool connected) {
+     if (uint32_t(type) < DisplayDevice::NUM_BUILTIN_DISPLAY_TYPES) {
+         Mutex::Autolock _l(mStateLock);
+         if (connected) {
+-#ifndef QCOM_HARDWARE
+-            createBuiltinDisplayLocked((DisplayDevice::DisplayType)type);
+-#else /* QCOM_HARDWARE */
+             // query from hwc if the connected display is secure
+             bool secure = mHwc->isSecure(type);;
+             createBuiltinDisplayLocked((DisplayDevice::DisplayType)type, secure);
+-#endif /* QCOM_HARDWARE */
+         } else {
+             mCurrentState.displays.removeItem(mBuiltinDisplays[type]);
+             mBuiltinDisplays[type].clear();
+-#ifdef QCOM_HARDWARE
+ #ifdef QCOM_BSP
+             // if extended_mode is set, and set mVisibleRegionsDirty
+             // as we need to rebuildLayerStack
+@@ -909,7 +865,6 @@ void SurfaceFlinger::onHotplugReceived(int type, bool connected) {
+                 mVisibleRegionsDirty = true;
+             }
+ #endif
+-#endif /* QCOM_HARDWARE */
+         }
+         setTransactionFlags(eDisplayTransactionNeeded);
+ 
+@@ -962,7 +917,6 @@ bool SurfaceFlinger::handleMessageInvalidate() {
+     return handlePageFlip();
+ }
+ 
+-#ifdef QCOM_HARDWARE
+ #ifdef QCOM_BSP
+ /* Compute DirtyRegion, if DR optimization for GPU comp optimization
+  * is ON & and no external device is connected.*/
+@@ -973,63 +927,19 @@ void SurfaceFlinger::setUpTiledDr() {
+     }
+ }
+ #endif
+-#endif /* QCOM_HARDWARE */
+ void SurfaceFlinger::handleMessageRefresh() {
+     ATRACE_CALL();
+     preComposition();
+     rebuildLayerStacks();
+     setUpHWComposer();
+-#ifdef QCOM_HARDWARE
+ #ifdef QCOM_BSP
+     setUpTiledDr();
+ #endif
+-#endif /* QCOM_HARDWARE */
+     doDebugFlashRegions();
+     doComposition();
+     postComposition();
+ }
+ 
+-#ifndef QCOM_HARDWARE
+-void SurfaceFlinger::doDebugFlashRegions()
+-{
+-    // is debugging enabled
+-    if (CC_LIKELY(!mDebugRegion))
+-        return;
+-
+-    const bool repaintEverything = mRepaintEverything;
+-    for (size_t dpy=0 ; dpy<mDisplays.size() ; dpy++) {
+-        const sp<DisplayDevice>& hw(mDisplays[dpy]);
+-        if (hw->isDisplayOn()) {
+-            // transform the dirty region into this screen's coordinate space
+-            const Region dirtyRegion(hw->getDirtyRegion(repaintEverything));
+-            if (!dirtyRegion.isEmpty()) {
+-                // redraw the whole screen
+-                doComposeSurfaces(hw, Region(hw->bounds()));
+-
+-                // and draw the dirty region
+-                const int32_t height = hw->getHeight();
+-                RenderEngine& engine(getRenderEngine());
+-                engine.fillRegionWithColor(dirtyRegion, height, 1, 0, 1, 1);
+-
+-                hw->compositionComplete();
+-                hw->swapBuffers(getHwComposer());
+-            }
+-        }
+-    }
+-
+-    postFramebuffer();
+-
+-    if (mDebugRegion > 1) {
+-        usleep(mDebugRegion * 1000);
+-    }
+-
+-    HWComposer& hwc(getHwComposer());
+-    if (hwc.initCheck() == NO_ERROR) {
+-        status_t err = hwc.prepare();
+-        ALOGE_IF(err, "HWComposer::prepare failed (%s)", strerror(-err));
+-    }
+-}
+-#else
+ void SurfaceFlinger::doDebugFlashRegions()
+ {
+     // is debugging enabled
+@@ -1094,7 +1004,6 @@ void SurfaceFlinger::doDebugFlashRegions()
+         ALOGE_IF(err, "HWComposer::prepare failed (%s)", strerror(-err));
+     }
+ }
+-#endif
+ 
+ void SurfaceFlinger::preComposition()
+ {
+@@ -1153,13 +1062,11 @@ void SurfaceFlinger::postComposition()
+ }
+ 
+ void SurfaceFlinger::rebuildLayerStacks() {
+-#ifdef QCOM_HARDWARE
+ #ifdef QCOM_BSP
+     char prop[PROPERTY_VALUE_MAX];
+     property_get("sys.extended_mode", prop, "0");
+     sExtendedMode = atoi(prop) ? true : false;
+ #endif
+-#endif /* QCOM_HARDWARE */
+     // rebuild the visible layer list per screen
+     if (CC_UNLIKELY(mVisibleRegionsDirty)) {
+         ATRACE_CALL();
+@@ -1174,36 +1081,20 @@ void SurfaceFlinger::rebuildLayerStacks() {
+             const sp<DisplayDevice>& hw(mDisplays[dpy]);
+             const Transform& tr(hw->getTransform());
+             const Rect bounds(hw->getBounds());
+-#ifdef QCOM_HARDWARE
+             int dpyId = hw->getHwcDisplayId();
+-#endif /* QCOM_HARDWARE */
+             if (hw->isDisplayOn()) {
+-#ifndef QCOM_HARDWARE
+-                SurfaceFlinger::computeVisibleRegions(layers,
+-#else /* QCOM_HARDWARE */
+                 SurfaceFlinger::computeVisibleRegions(dpyId, layers,
+-#endif /* QCOM_HARDWARE */
+                         hw->getLayerStack(), dirtyRegion, opaqueRegion);
+ 
+                 const size_t count = layers.size();
+                 for (size_t i=0 ; i<count ; i++) {
+                     const sp<Layer>& layer(layers[i]);
+                     const Layer::State& s(layer->getDrawingState());
+-#ifndef QCOM_HARDWARE
+-                    if (s.layerStack == hw->getLayerStack()) {
+-                        Region drawRegion(tr.transform(
+-                                layer->visibleNonTransparentRegion));
+-                        drawRegion.andSelf(bounds);
+-                        if (!drawRegion.isEmpty()) {
+-                            layersSortedByZ.add(layer);
+-                        }
+-#else /* QCOM_HARDWARE */
+                     Region drawRegion(tr.transform(
+                             layer->visibleNonTransparentRegion));
+                     drawRegion.andSelf(bounds);
+                     if (!drawRegion.isEmpty()) {
+                         layersSortedByZ.add(layer);
+-#endif /* QCOM_HARDWARE */
+                     }
+                 }
+             }
+@@ -1277,7 +1168,6 @@ void SurfaceFlinger::setUpHWComposer() {
+             sp<const DisplayDevice> hw(mDisplays[dpy]);
+             const int32_t id = hw->getHwcDisplayId();
+             if (id >= 0) {
+-#ifdef QCOM_HARDWARE
+                 // Get the layers in the current drawying state
+                 const LayerVector& layers(mDrawingState.layersSortedByZ);
+ #ifdef QCOM_BSP
+@@ -1303,7 +1193,6 @@ void SurfaceFlinger::setUpHWComposer() {
+                     }
+                 }
+ #endif
+-#endif /* QCOM_HARDWARE */
+                 const Vector< sp<Layer> >& currentLayers(
+                     hw->getVisibleLayersSortedByZ());
+                 const size_t count = currentLayers.size();
+@@ -1316,7 +1205,6 @@ void SurfaceFlinger::setUpHWComposer() {
+                      */
+                     const sp<Layer>& layer(currentLayers[i]);
+                     layer->setPerFrameData(hw, *cur);
+-#ifdef QCOM_HARDWARE
+ #ifdef QCOM_BSP
+                     if(freezeSurfacePresent) {
+                         // if freezeSurfacePresent, set ANIMATING flag
+@@ -1335,7 +1223,6 @@ void SurfaceFlinger::setUpHWComposer() {
+                         }
+                     }
+ #endif
+-#endif /* QCOM_HARDWARE */
+                 }
+             }
+         }
+@@ -1473,7 +1360,6 @@ void SurfaceFlinger::handleTransaction(uint32_t transactionFlags)
+     // here the transaction has been committed
+ }
+ 
+-#ifdef QCOM_HARDWARE
+ void SurfaceFlinger::setVirtualDisplayData(
+     int32_t hwcDisplayId,
+     const sp<IGraphicBufferProducer>& sink)
+@@ -1574,7 +1460,6 @@ void SurfaceFlinger::configureVirtualDisplay(int32_t &hwcDisplayId,
+         }
+     }
+ }
+-#endif /* QCOM_HARDWARE */
+ 
+ void SurfaceFlinger::handleTransactionLocked(uint32_t transactionFlags)
+ {
+@@ -1664,7 +1549,6 @@ void SurfaceFlinger::handleTransactionLocked(uint32_t transactionFlags)
+                                 || (state.viewport != draw[i].viewport)
+                                 || (state.frame != draw[i].frame))
+                         {
+-#if defined(QCOM_BSP) && defined(QCOM_HARDWARE)
+                             int orient = state.orientation;
+                             // Honor the orientation change after boot
+                             // animation completes and make sure boot
+@@ -1674,6 +1558,7 @@ void SurfaceFlinger::handleTransactionLocked(uint32_t transactionFlags)
+                                         state.viewport, state.frame);
+                                 orient = state.orientation;
+                             }
++#ifdef QCOM_BSP
+                             else{
+                                 char property[PROPERTY_VALUE_MAX];
+                                 int panelOrientation =
+@@ -1695,15 +1580,6 @@ void SurfaceFlinger::handleTransactionLocked(uint32_t transactionFlags)
+                                     state.frame.right, state.frame.bottom);
+                             }
+ #else
+-                            // Honor the orientation change after boot
+-                            // animation completes or the new orientation is
+-                            // same as panel orientation..
+-                            if(mBootFinished ||
+-                               state.orientation == disp->getOrientation()) {
+-                                disp->setProjection(state.orientation,
+-                                        state.viewport, state.frame);
+-                            }
+-#endif
+                         }
+                         if (state.width != draw[i].width || state.height != draw[i].height) {
+                             disp->setDisplaySize(state.width, state.height);
+@@ -1731,35 +1607,9 @@ void SurfaceFlinger::handleTransactionLocked(uint32_t transactionFlags)
+                         // they have external state (layer stack, projection,
+                         // etc.) but no internal state (i.e. a DisplayDevice).
+                         if (state.surface != NULL) {
+-#ifndef QCOM_HARDWARE
+-
+-                            int width = 0;
+-                            int status = state.surface->query(
+-                                    NATIVE_WINDOW_WIDTH, &width);
+-                            ALOGE_IF(status != NO_ERROR,
+-                                    "Unable to query width (%d)", status);
+-                            int height = 0;
+-                            status = state.surface->query(
+-                                    NATIVE_WINDOW_HEIGHT, &height);
+-                            ALOGE_IF(status != NO_ERROR,
+-                                    "Unable to query height (%d)", status);
+-                            if (MAX_VIRTUAL_DISPLAY_DIMENSION == 0 ||
+-                                    (width <= MAX_VIRTUAL_DISPLAY_DIMENSION &&
+-                                     height <= MAX_VIRTUAL_DISPLAY_DIMENSION)) {
+-                                hwcDisplayId = allocateHwcDisplayId(state.type);
+-                            }
+-
+-                            sp<VirtualDisplaySurface> vds = new VirtualDisplaySurface(
+-                                    *mHwc, hwcDisplayId, state.surface,
+-                                    bqProducer, bqConsumer, state.displayName);
+-
+-                            dispSurface = vds;
+-                            producer = vds;
+-#else /* QCOM_HARDWARE */
+                             configureVirtualDisplay(hwcDisplayId,
+                                     dispSurface, producer, state, bqProducer,
+                                     bqConsumer);
+-#endif /* QCOM_HARDWARE */
+                         }
+                     } else {
+                         ALOGE_IF(state.surface!=NULL,
+@@ -1775,11 +1625,7 @@ void SurfaceFlinger::handleTransactionLocked(uint32_t transactionFlags)
+                     }
+ 
+                     const wp<IBinder>& display(curr.keyAt(i));
+-#ifndef QCOM_HARDWARE
+-                    if (dispSurface != NULL) {
+-#else /* QCOM_HARDWARE */
+                     if (dispSurface != NULL && producer != NULL) {
+-#endif /* QCOM_HARDWARE */
+                         sp<DisplayDevice> hw = new DisplayDevice(this,
+                                 state.type, hwcDisplayId,
+                                 mHwc->getFormat(hwcDisplayId), state.isSecure,
+@@ -1789,7 +1635,6 @@ void SurfaceFlinger::handleTransactionLocked(uint32_t transactionFlags)
+                         hw->setProjection(state.orientation,
+                                 state.viewport, state.frame);
+                         hw->setDisplayName(state.displayName);
+-#ifdef QCOM_HARDWARE
+                         // When a new display device is added update the active
+                         // config by querying HWC otherwise the default config
+                         // (config 0) will be used.
+@@ -1797,7 +1642,6 @@ void SurfaceFlinger::handleTransactionLocked(uint32_t transactionFlags)
+                         if (activeConfig >= 0) {
+                             hw->setActiveConfig(activeConfig);
+                         }
+-#endif /* QCOM_HARDWARE */
+                         mDisplays.add(display, hw);
+                         if (state.isVirtualDisplay()) {
+                             if (hwcDisplayId >= 0) {
+@@ -1956,11 +1800,7 @@ void SurfaceFlinger::commitTransaction()
+     mTransactionCV.broadcast();
+ }
+ 
+-#ifndef QCOM_HARDWARE
+-void SurfaceFlinger::computeVisibleRegions(
+-#else /* QCOM_HARDWARE */
+ void SurfaceFlinger::computeVisibleRegions(size_t dpy,
+-#endif /* QCOM_HARDWARE */
+         const LayerVector& currentLayers, uint32_t layerStack,
+         Region& outDirtyRegion, Region& outOpaqueRegion)
+ {
+@@ -1971,14 +1811,9 @@ void SurfaceFlinger::computeVisibleRegions(size_t dpy,
+     Region dirty;
+ 
+     outDirtyRegion.clear();
+-#ifndef QCOM_HARDWARE
+-
+-#else /* QCOM_HARDWARE */
+     bool bIgnoreLayers = false;
+     int indexLOI = -1;
+-#endif /* QCOM_HARDWARE */
+     size_t i = currentLayers.size();
+-#ifdef QCOM_HARDWARE
+ #ifdef QCOM_BSP
+     while (i--) {
+         const sp<Layer>& layer = currentLayers[i];
+@@ -2001,18 +1836,12 @@ void SurfaceFlinger::computeVisibleRegions(size_t dpy,
+     }
+     i = currentLayers.size();
+ #endif
+-#endif /* QCOM_HARDWARE */
+     while (i--) {
+         const sp<Layer>& layer = currentLayers[i];
+ 
+         // start with the whole surface at its current location
+         const Layer::State& s(layer->getDrawingState());
+ 
+-#ifndef QCOM_HARDWARE
+-        // only consider the layers on the given layer stack
+-        if (s.layerStack != layerStack)
+-            continue;
+-#else /* QCOM_HARDWARE */
+ #ifdef QCOM_BSP
+         // Only add the layer marked as "external_only" or yuvLayer
+         // (extended_mode) to external list and
+@@ -2044,8 +1873,6 @@ void SurfaceFlinger::computeVisibleRegions(size_t dpy,
+             layer->setVisibleNonTransparentRegion(visibleNonTransRegion);
+             continue;
+         }
+-#endif /* QCOM_HARDWARE */
+-
+         /*
+          * opaqueRegion: area of a surface that is fully opaque.
+          */
+@@ -2282,7 +2109,6 @@ void SurfaceFlinger::doDisplayComposition(const sp<const DisplayDevice>& hw,
+     hw->swapBuffers(getHwComposer());
+ }
+ 
+-#ifdef QCOM_HARDWARE
+ #ifdef QCOM_BSP
+ bool SurfaceFlinger::computeTiledDr(const sp<const DisplayDevice>& hw) {
+     int fbWidth= hw->getWidth();
+@@ -2301,7 +2127,6 @@ bool SurfaceFlinger::computeTiledDr(const sp<const DisplayDevice>& hw) {
+ }
+ #endif
+ 
+-#endif /* QCOM_HARDWARE */
+ bool SurfaceFlinger::doComposeSurfaces(const sp<const DisplayDevice>& hw, const Region& dirty)
+ {
+     RenderEngine& engine(getRenderEngine());
+@@ -2310,13 +2135,9 @@ bool SurfaceFlinger::doComposeSurfaces(const sp<const DisplayDevice>& hw, const
+     HWComposer::LayerListIterator cur = hwc.begin(id);
+     const HWComposer::LayerListIterator end = hwc.end(id);
+ 
+-#ifdef QCOM_HARDWARE
+     Region clearRegion;
+-#endif /* QCOM_HARDWARE */
+     bool hasGlesComposition = hwc.hasGlesComposition(id);
+-#ifdef QCOM_HARDWARE
+     const bool hasHwcComposition = hwc.hasHwcComposition(id);
+-#endif /* QCOM_HARDWARE */
+     if (hasGlesComposition) {
+         if (!hw->makeCurrent(mEGLDisplay, mEGLContext)) {
+             ALOGW("DisplayDevice::makeCurrent failed. Aborting surface composition for display %s",
+@@ -2329,21 +2150,14 @@ bool SurfaceFlinger::doComposeSurfaces(const sp<const DisplayDevice>& hw, const
+         }
+ 
+         // Never touch the framebuffer if we don't have any framebuffer layers
+-#ifndef QCOM_HARDWARE
+-        const bool hasHwcComposition = hwc.hasHwcComposition(id);
+-#endif /* ! QCOM_HARDWARE */
+         if (hasHwcComposition) {
+             // when using overlays, we assume a fully transparent framebuffer
+             // NOTE: we could reduce how much we need to clear, for instance
+             // remove where there are opaque FB layers. however, on some
+             // GPUs doing a "clean slate" clear might be more efficient.
+             // We'll revisit later if needed.
+-#ifndef QCOM_HARDWARE
+-            engine.clearWithColor(0, 0, 0, 0);
+-#else /* QCOM_HARDWARE */
+             if(!(mGpuTileRenderEnable && (mDisplays.size()==1)))
+                 engine.clearWithColor(0, 0, 0, 0);
+-#endif /* QCOM_HARDWARE */
+         } else {
+             // we start with the whole screen area
+             const Region bounds(hw->getBounds());
+@@ -2359,15 +2173,8 @@ bool SurfaceFlinger::doComposeSurfaces(const sp<const DisplayDevice>& hw, const
+             // but limit it to the dirty region
+             region.andSelf(dirty);
+ 
+-#ifdef QCOM_HARDWARE
+ 
+-#endif /* QCOM_HARDWARE */
+             // screen is already cleared here
+-#ifndef QCOM_HARDWARE
+-            if (!region.isEmpty()) {
+-                // can happen with SurfaceView
+-                drawWormhole(hw, region);
+-#else /* QCOM_HARDWARE */
+ #ifdef QCOM_BSP
+             clearRegion.clear();
+             if(mGpuTileRenderEnable && (mDisplays.size()==1)) {
+@@ -2391,7 +2198,6 @@ bool SurfaceFlinger::doComposeSurfaces(const sp<const DisplayDevice>& hw, const
+                     } else
+                         drawWormhole(hw, region);
+                 }
+-#endif /* QCOM_HARDWARE */
+             }
+         }
+ 
+@@ -2423,7 +2229,6 @@ bool SurfaceFlinger::doComposeSurfaces(const sp<const DisplayDevice>& hw, const
+     const Transform& tr = hw->getTransform();
+     if (cur != end) {
+         // we're using h/w composer
+-#ifdef QCOM_HARDWARE
+ #ifdef QCOM_BSP
+         int fbWidth= hw->getWidth();
+         int fbHeight= hw->getHeight();
+@@ -2465,7 +2270,6 @@ bool SurfaceFlinger::doComposeSurfaces(const sp<const DisplayDevice>& hw, const
+         }
+ #endif
+ 
+-#endif /* QCOM_HARDWARE */
+         for (size_t i=0 ; i<count && cur!=end ; ++i, ++cur) {
+             const sp<Layer>& layer(layers[i]);
+             const Region clip(dirty.intersect(tr.transform(layer->visibleRegion)));
+@@ -2488,11 +2292,9 @@ bool SurfaceFlinger::doComposeSurfaces(const sp<const DisplayDevice>& hw, const
+                         layer->draw(hw, clip);
+                         break;
+                     }
+-#ifdef QCOM_HARDWARE
+                     case HWC_BLIT:
+                         //Do nothing
+                         break;
+-#endif /* QCOM_HARDWARE */
+                     case HWC_FRAMEBUFFER_TARGET: {
+                         // this should not happen as the iterator shouldn't
+                         // let us get there.
+@@ -2503,7 +2305,6 @@ bool SurfaceFlinger::doComposeSurfaces(const sp<const DisplayDevice>& hw, const
+             }
+             layer->setAcquireFence(hw, *cur);
+         }
+-#ifdef QCOM_HARDWARE
+ 
+ #ifdef QCOM_BSP
+         // call EndTile, if starTile has been called in this cycle.
+@@ -2513,7 +2314,6 @@ bool SurfaceFlinger::doComposeSurfaces(const sp<const DisplayDevice>& hw, const
+             }
+         }
+ #endif
+-#endif /* QCOM_HARDWARE */
+     } else {
+         // we're not using h/w composer
+         for (size_t i=0 ; i<count ; ++i) {
+@@ -2585,7 +2385,6 @@ void SurfaceFlinger::setTransactionState(
+         uint32_t flags)
+ {
+     ATRACE_CALL();
+-#ifdef QCOM_HARDWARE
+     size_t count = displays.size();
+ #ifdef QCOM_BSP
+     // Delay the display projection transaction by 50ms only when the disable
+@@ -2609,7 +2408,6 @@ void SurfaceFlinger::setTransactionState(
+         }
+     }
+ #endif
+-#endif /* QCOM_HARDWARE */
+     Mutex::Autolock _l(mStateLock);
+     uint32_t transactionFlags = 0;
+ 
+@@ -2629,9 +2427,6 @@ void SurfaceFlinger::setTransactionState(
+         }
+     }
+ 
+-#ifndef QCOM_HARDWARE
+-    size_t count = displays.size();
+-#endif /* ! QCOM_HARDWARE */
+     for (size_t i=0 ; i<count ; i++) {
+         const DisplayState& s(displays[i]);
+         transactionFlags |= setDisplayStateLocked(s);
+@@ -2775,12 +2570,8 @@ uint32_t SurfaceFlinger::setClientStateLocked(
+                 flags |= eTraversalNeeded;
+         }
+         if ((what & layer_state_t::eVisibilityChanged) ||
+-#ifndef QCOM_HARDWARE
+-                (what & layer_state_t::eOpacityChanged)) {
+-#else /* QCOM_HARDWARE */
+                 (what & layer_state_t::eOpacityChanged) ||
+                 (what & layer_state_t::eTransparencyChanged)) {
+-#endif /* QCOM_HARDWARE */
+             // TODO: should we just use an eFlagsChanged for this?
+             if (layer->setFlags(s.flags, s.mask))
+                 flags |= eTraversalNeeded;
+@@ -3780,14 +3571,12 @@ void SurfaceFlinger::renderScreenImplLocked(
+     // make sure to clear all GL error flags
+     engine.checkErrors();
+ 
+-#ifdef QCOM_HARDWARE
+     if (DisplayDevice::DISPLAY_PRIMARY == hw->getDisplayType() &&
+                 hw->isPanelInverseMounted()) {
+         rotation = (Transform::orientation_flags)
+                 (rotation ^ Transform::ROT_180);
+     }
+ 
+-#endif /* QCOM_HARDWARE */
+     // set-up our viewport
+     engine.setViewportAndProjection(
+         reqWidth, reqHeight, sourceCrop, hw_h, yswap, rotation);
+@@ -3803,7 +3592,6 @@ void SurfaceFlinger::renderScreenImplLocked(
+         const Layer::State& state(layer->getDrawingState());
+         if (state.layerStack == hw->getLayerStack()) {
+             if (state.z >= minLayerZ && state.z <= maxLayerZ) {
+-#ifdef QCOM_HARDWARE
+ #ifdef QCOM_BSP
+                 // dont render the secure Display Layer
+                 if(layer->isSecureDisplay()) {
+@@ -3821,16 +3609,9 @@ void SurfaceFlinger::renderScreenImplLocked(
+ #else
+                 if (layer->isVisible()) {
+ #endif
+-#else /* QCOM_HARDWARE */
+-                if (layer->isVisible()) {
+-#endif /* QCOM_HARDWARE */
+                     if (filtering) layer->setFiltering(true);
+-#ifndef QCOM_HARDWARE
+-                    layer->draw(hw, useIdentityTransform);
+-#else /* QCOM_HARDWARE */
+                     if(!layer->isProtected())
+                            layer->draw(hw, useIdentityTransform);
+-#endif /* QCOM_HARDWARE */
+                     if (filtering) layer->setFiltering(false);
+                 }
+             }
+@@ -3889,9 +3670,6 @@ status_t SurfaceFlinger::captureScreenImplLocked(
+              */
+             result = native_window_dequeue_buffer_and_wait(window,  &buffer);
+             if (result == NO_ERROR) {
+-#ifndef QCOM_HARDWARE
+-                int syncFd = -1;
+-#endif /* ! QCOM_HARDWARE */
+                 // create an EGLImage from the buffer so we can later
+                 // turn it into a texture
+                 EGLImageKHR image = eglCreateImageKHR(mEGLDisplay, EGL_NO_CONTEXT,
+@@ -3921,54 +3699,21 @@ status_t SurfaceFlinger::captureScreenImplLocked(
+                             sync = EGL_NO_SYNC_KHR;
+                         }
+                         if (sync != EGL_NO_SYNC_KHR) {
+-#ifndef QCOM_HARDWARE
+-                            // get the sync fd
+-                            syncFd = eglDupNativeFenceFDANDROID(mEGLDisplay, sync);
+-                            if (syncFd == EGL_NO_NATIVE_FENCE_FD_ANDROID) {
+-                                ALOGW("captureScreen: failed to dup sync khr object");
+-                                syncFd = -1;
+-                            }
+-                            eglDestroySyncKHR(mEGLDisplay, sync);
+-                        } else {
+-                            // fallback path
+-                            sync = eglCreateSyncKHR(mEGLDisplay, EGL_SYNC_FENCE_KHR, NULL);
+-                            if (sync != EGL_NO_SYNC_KHR) {
+-                                EGLint result = eglClientWaitSyncKHR(mEGLDisplay, sync,
+-#else /* QCOM_HARDWARE */
+                             EGLint result = eglClientWaitSyncKHR(mEGLDisplay, sync,
+-#endif /* QCOM_HARDWARE */
+                                     EGL_SYNC_FLUSH_COMMANDS_BIT_KHR, 2000000000 /*2 sec*/);
+-#ifndef QCOM_HARDWARE
+-                                EGLint eglErr = eglGetError();
+-                                if (result == EGL_TIMEOUT_EXPIRED_KHR) {
+-                                    ALOGW("captureScreen: fence wait timed out");
+-                                } else {
+-                                    ALOGW_IF(eglErr != EGL_SUCCESS,
+-                                            "captureScreen: error waiting on EGL fence: %#x", eglErr);
+-                                }
+-                                eglDestroySyncKHR(mEGLDisplay, sync);
+-#else /* QCOM_HARDWARE */
+                             EGLint eglErr = eglGetError();
+                             eglDestroySyncKHR(mEGLDisplay, sync);
+                             if (result == EGL_TIMEOUT_EXPIRED_KHR) {
+                                 ALOGW("captureScreen: fence wait timed out");
+-#endif /* QCOM_HARDWARE */
+                             } else {
+-#ifndef QCOM_HARDWARE
+-                                ALOGW("captureScreen: error creating EGL fence: %#x", eglGetError());
+-#else /* QCOM_HARDWARE */
+                                 ALOGW_IF(eglErr != EGL_SUCCESS,
+                                         "captureScreen: error waiting on EGL fence: %#x", eglErr);
+-#endif /* QCOM_HARDWARE */
+                             }
+-#ifdef QCOM_HARDWARE
+                         } else {
+                             ALOGW("captureScreen: error creating EGL fence: %#x", eglGetError());
+                             // not fatal
+-#endif /* QCOM_HARDWARE */
+                         }
+ 
+-#ifndef QCOM_HARDWARE
+                         if (useReadPixels) {
+                             sp<GraphicBuffer> buf = static_cast<GraphicBuffer*>(buffer);
+                             void* vaddr;
+@@ -3977,7 +3722,6 @@ status_t SurfaceFlinger::captureScreenImplLocked(
+                                 buf->unlock();
+                             }
+                         }
+-#endif /* QCOM_HARDWARE */
+ 
+                         if (DEBUG_SCREENSHOTS) {
+                             uint32_t* pixels = new uint32_t[reqWidth*reqHeight];
+@@ -3996,12 +3740,7 @@ status_t SurfaceFlinger::captureScreenImplLocked(
+                 } else {
+                     result = BAD_VALUE;
+                 }
+-#ifndef QCOM_HARDWARE
+-                // queueBuffer takes ownership of syncFd
+-                window->queueBuffer(window, buffer, syncFd);
+-#else /* QCOM_HARDWARE */
+                 window->queueBuffer(window, buffer, -1);
+-#endif /* QCOM_HARDWARE */
+             }
+         } else {
+             result = BAD_VALUE;
+diff --git a/services/surfaceflinger/SurfaceFlinger.h b/services/surfaceflinger/SurfaceFlinger.h
+index f9a8b19..10a7153 100644
+--- a/services/surfaceflinger/SurfaceFlinger.h
++++ b/services/surfaceflinger/SurfaceFlinger.h
+@@ -42,9 +42,7 @@
+ 
+ #include <gui/ISurfaceComposer.h>
+ #include <gui/ISurfaceComposerClient.h>
+-#ifdef QCOM_HARDWARE
+ #include <gui/BufferQueue.h>
+-#endif /* QCOM_HARDWARE */
+ 
+ #include <hardware/hwcomposer_defs.h>
+ 
+@@ -100,12 +98,8 @@ public:
+     void run() ANDROID_API;
+ 
+     enum {
+-#ifndef QCOM_HARDWARE
+-        EVENT_VSYNC = HWC_EVENT_VSYNC
+-#else /* QCOM_HARDWARE */
+         EVENT_VSYNC = HWC_EVENT_VSYNC,
+         EVENT_ORIENTATION = HWC_EVENT_ORIENTATION
+-#endif /* QCOM_HARDWARE */
+     };
+ 
+     // post an asynchronous message to the main thread
+@@ -141,14 +135,12 @@ public:
+     RenderEngine& getRenderEngine() const {
+         return *mRenderEngine;
+     }
+-#ifdef QCOM_HARDWARE
+ #ifdef QCOM_BSP
+     // Extended Mode - No video on primary and it will be shown full
+     // screen on External
+     static bool sExtendedMode;
+     static bool isExtendedMode() { return sExtendedMode; };
+ #endif
+-#endif /* QCOM_HARDWARE */
+ private:
+     friend class Client;
+     friend class DisplayEventConnection;
+@@ -276,7 +268,6 @@ private:
+ 
+     void updateCursorAsync();
+ 
+-#ifdef QCOM_HARDWARE
+     // Read virtual display properties
+     void setVirtualDisplayData( int32_t hwcDisplayId,
+                                 const sp<IGraphicBufferProducer>& sink);
+@@ -290,7 +281,6 @@ private:
+             sp<IGraphicBufferProducer> bqProducer,
+             sp<IGraphicBufferConsumer> bqConsumer);
+ 
+-#endif /* QCOM_HARDWARE */
+     /* handlePageFlip - latch a new buffer if available and compute the dirty
+      * region. Returns whether a new buffer has been latched, i.e., whether it
+      * is necessary to perform a refresh during this vsync.
+@@ -374,12 +364,8 @@ private:
+     void initializeDisplays();
+ 
+     // Create an IBinder for a builtin display and add it to current state
+-#ifndef QCOM_HARDWARE
+-    void createBuiltinDisplayLocked(DisplayDevice::DisplayType type);
+-#else /* QCOM_HARDWARE */
+     void createBuiltinDisplayLocked(DisplayDevice::DisplayType type,
+                                     bool secure);
+-#endif /* QCOM_HARDWARE */
+ 
+     // NOTE: can only be called from the main thread or with mStateLock held
+     sp<const DisplayDevice> getDisplayDevice(const wp<IBinder>& dpy) const {
+@@ -408,11 +394,7 @@ private:
+      * Compositing
+      */
+     void invalidateHwcGeometry();
+-#ifndef QCOM_HARDWARE
+-    static void computeVisibleRegions(
+-#else /* QCOM_HARDWARE */
+     static void computeVisibleRegions(size_t dpy,
+-#endif /* QCOM_HARDWARE */
+             const LayerVector& currentLayers, uint32_t layerStack,
+             Region& dirtyRegion, Region& opaqueRegion);
+ 
+@@ -511,7 +493,6 @@ private:
+     nsecs_t mLastTransactionTime;
+     bool mBootFinished;
+ 
+-#ifdef QCOM_HARDWARE
+     // Set if the Gpu Tile render DR optimization enabled
+     bool mGpuTileRenderEnable;
+     bool mCanUseGpuTileRender;
+@@ -529,7 +510,6 @@ private:
+     };
+ #endif
+ 
+-#endif /* QCOM_HARDWARE */
+     // these are thread safe
+     mutable MessageQueue mEventQueue;
+     FrameTracker mAnimFrameTracker;
+@@ -553,12 +533,10 @@ private:
+ 
+     mat4 mColorMatrix;
+     bool mHasColorMatrix;
+-#ifdef QCOM_HARDWARE
+ #ifdef QCOM_BSP
+     // Flag to disable external rotation animation feature.
+     bool mDisableExtAnimation;
+ #endif
+-#endif /* QCOM_HARDWARE */
+ };
+ 
+ }; // namespace android
+-- 
+2.5.0
+

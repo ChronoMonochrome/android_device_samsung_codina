@@ -1,0 +1,30 @@
+From a9b300f32323025ff4789aca18bbf0e4064895ae Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Tue, 9 Feb 2016 04:05:13 +0700
+Subject: [PATCH 11/19] frameworks-native_W1-Fix-media-GraphicBuffer.patch
+
+Change-Id: I2f8ff70ee6f03e37f8ff99b3dccd3a1b170f01b1
+---
+ libs/gui/BufferQueueProducer.cpp | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/libs/gui/BufferQueueProducer.cpp b/libs/gui/BufferQueueProducer.cpp
+index 05414f5..316d6b8 100644
+--- a/libs/gui/BufferQueueProducer.cpp
++++ b/libs/gui/BufferQueueProducer.cpp
+@@ -204,7 +204,12 @@ status_t BufferQueueProducer::waitForFreeSlotThenRelock(const char* caller,
+             const int newUndequeuedCount =
+                 maxBufferCount - (dequeuedCount + 1);
+             const int minUndequeuedCount =
++#ifdef STE_HARDWARE
++                // HACK: for some reason, we need to reduce min undequeue for screen recording
++                mCore->getMinUndequeuedBufferCountLocked(false);
++#else
+                 mCore->getMinUndequeuedBufferCountLocked(async);
++#endif
+             if (newUndequeuedCount < minUndequeuedCount) {
+                 BQ_LOGE("%s: min undequeued buffer count (%d) exceeded "
+                         "(dequeued=%d undequeued=%d)",
+-- 
+2.5.0
+

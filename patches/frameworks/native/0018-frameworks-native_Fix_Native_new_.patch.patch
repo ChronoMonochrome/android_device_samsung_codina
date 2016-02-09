@@ -1,0 +1,30 @@
+From df78c87a499f57033aebe49f1de248190d1bc073 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Tue, 9 Feb 2016 04:05:12 +0700
+Subject: [PATCH 18/19] frameworks-native_Fix_Native_new_.patch
+
+Change-Id: I18014439f351175a251990221f4fdb90d8c59d58
+---
+ libs/gui/SyncFeatures.cpp | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/libs/gui/SyncFeatures.cpp b/libs/gui/SyncFeatures.cpp
+index e5804a7..5bcf595 100644
+--- a/libs/gui/SyncFeatures.cpp
++++ b/libs/gui/SyncFeatures.cpp
+@@ -78,10 +78,11 @@ bool SyncFeatures::useFenceSync() const {
+     // on some devices it's better to not use EGL_KHR_fence_sync
+     // even if they have it
+     return false;
+-#endif
++#else
+     // currently we shall only attempt to use EGL_KHR_fence_sync if
+     // USE_FENCE_SYNC is set in our makefile
+     return !mHasNativeFenceSync && mHasFenceSync;
++#endif
+ }
+ bool SyncFeatures::useWaitSync() const {
+     return (useNativeFenceSync() || useFenceSync()) && mHasWaitSync;
+-- 
+2.5.0
+

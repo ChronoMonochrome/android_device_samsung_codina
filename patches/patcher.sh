@@ -1,6 +1,6 @@
 LOCAL_PATH=../../../..
 
-PATCHES="art bionic build external/bluetooth/bluedroid external/dhcpcd \
+PATCHES="art bionic bootable/recovery build external/bluetooth/bluedroid external/dhcpcd \
 	frameworks/av frameworks/base/ frameworks/native/ frameworks/opt/net/wifi/ \
         hardware/libhardware \
         frameworks/opt/telephony/ libcore $(find packages/apps/ -type d) \
