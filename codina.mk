@@ -127,7 +127,6 @@ PRODUCT_COPY_FILES += \
 # prebuilts
 PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/prebuilt/libaudioflinger.so:system/lib/libaudioflinger.so \
-    $(LOCAL_PATH)/prebuilt/libmediaplayerservice.so:system/lib/libmediaplayerservice.so \
     $(LOCAL_PATH)/prebuilt/libstagefright.so:system/lib/libstagefright.so \
     $(LOCAL_PATH)/prebuilt/mediaserver:system/bin/mediaserver \
     $(LOCAL_PATH)/prebuilt/netd:system/bin/netd \
