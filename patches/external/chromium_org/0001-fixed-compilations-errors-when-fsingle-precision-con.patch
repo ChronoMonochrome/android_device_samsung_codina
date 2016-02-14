@@ -1,0 +1,126 @@
+From 7ca587990af74631565c908c038171a69608eab0 Mon Sep 17 00:00:00 2001
+From: Maxime Poulain <maxime.poulain@student.uclouvain.be>
+Date: Tue, 31 Mar 2015 20:15:35 +0200
+Subject: [PATCH] fixed compilations errors when fsingle-precision-constant is
+ on
+
+---
+ cc/base/math_util.cc                 | 2 +-
+ ui/gfx/animation/linear_animation.cc | 2 +-
+ ui/gfx/color_utils.cc                | 2 +-
+ ui/gfx/geometry/cubic_bezier.cc      | 6 +++---
+ ui/gfx/interpolated_transform.cc     | 2 +-
+ ui/gfx/skbitmap_operations.cc        | 2 +-
+ ui/gfx/transform_util.cc             | 6 +++---
+ 7 files changed, 11 insertions(+), 11 deletions(-)
+
+diff --git a/cc/base/math_util.cc b/cc/base/math_util.cc
+index 5b01da9..acd9bf6 100644
+--- a/cc/base/math_util.cc
++++ b/cc/base/math_util.cc
+@@ -677,7 +677,7 @@ float MathUtil::SmallestAngleBetweenVectors(const gfx::Vector2dF& v1,
+                                             const gfx::Vector2dF& v2) {
+   double dot_product = gfx::DotProduct(v1, v2) / v1.Length() / v2.Length();
+   // Clamp to compensate for rounding errors.
+-  dot_product = std::max(-1.0, std::min(1.0, dot_product));
++  dot_product = std::max((double)-1.0, std::min((double)1.0, dot_product));
+   return static_cast<float>(Rad2Deg(std::acos(dot_product)));
+ }
+ 
+diff --git a/ui/gfx/animation/linear_animation.cc b/ui/gfx/animation/linear_animation.cc
+index b3f3df0..a1069d6 100644
+--- a/ui/gfx/animation/linear_animation.cc
++++ b/ui/gfx/animation/linear_animation.cc
+@@ -46,7 +46,7 @@ double LinearAnimation::GetCurrentValue() const {
+ }
+ 
+ void LinearAnimation::SetCurrentValue(double new_value) {
+-  new_value = std::max(0.0, std::min(1.0, new_value));
++  new_value = std::max((double)0.0, std::min((double)1.0, new_value));
+   base::TimeDelta time_delta = base::TimeDelta::FromMicroseconds(
+       duration_.InMicroseconds() * (new_value - state_));
+   SetStartTime(start_time() - time_delta);
+diff --git a/ui/gfx/color_utils.cc b/ui/gfx/color_utils.cc
+index ffdbec5..53911c6 100644
+--- a/ui/gfx/color_utils.cc
++++ b/ui/gfx/color_utils.cc
+@@ -51,7 +51,7 @@ int calcHue(double temp1, double temp2, double hue) {
+ double ConvertSRGB(double eight_bit_component) {
+   const double component = eight_bit_component / 255.0;
+   return (component <= 0.03928) ?
+-      (component / 12.92) : pow((component + 0.055) / 1.055, 2.4);
++      (component / 12.92) : pow(((double)(component + 0.055) / 1.055), ((double)2.4));
+ }
+ 
+ SkColor LumaInvertColor(SkColor color) {
+diff --git a/ui/gfx/geometry/cubic_bezier.cc b/ui/gfx/geometry/cubic_bezier.cc
+index f9f786e..3912514 100644
+--- a/ui/gfx/geometry/cubic_bezier.cc
++++ b/ui/gfx/geometry/cubic_bezier.cc
+@@ -42,9 +42,9 @@ static double bezier_interp(double x1,
+   DCHECK_GE(1.0, x2);
+   DCHECK_LE(0.0, x2);
+ 
+-  x1 = std::min(std::max(x1, 0.0), 1.0);
+-  x2 = std::min(std::max(x2, 0.0), 1.0);
+-  x = std::min(std::max(x, 0.0), 1.0);
++  x1 = std::min(std::max(x1, (double)0.0), (double)1.0);
++  x2 = std::min(std::max(x2, (double)0.0),(double)1.0);
++  x = std::min(std::max(x, (double)0.0), (double)1.0);
+ 
+   // We're just going to do bisection for now (for simplicity), but we could
+   // easily do some newton steps if this turns out to be a bottleneck.
+diff --git a/ui/gfx/interpolated_transform.cc b/ui/gfx/interpolated_transform.cc
+index 4c807f1..4c41c24 100644
+--- a/ui/gfx/interpolated_transform.cc
++++ b/ui/gfx/interpolated_transform.cc
+@@ -18,7 +18,7 @@ namespace {
+ static const double EPSILON = 1e-6;
+ 
+ bool IsMultipleOfNinetyDegrees(double degrees) {
+-  double remainder = fabs(fmod(degrees, 90.0));
++  double remainder = fabs(fmod(degrees, (double)90.0));
+   return remainder < EPSILON || 90.0 - remainder < EPSILON;
+ }
+ 
+diff --git a/ui/gfx/skbitmap_operations.cc b/ui/gfx/skbitmap_operations.cc
+index d1f255e..80992fb 100644
+--- a/ui/gfx/skbitmap_operations.cc
++++ b/ui/gfx/skbitmap_operations.cc
+@@ -169,7 +169,7 @@ SkBitmap SkBitmapOperations::CreateButtonBackground(SkColor color,
+       double mask_a = static_cast<double>(SkColorGetA(mask_row[x])) / 255.0;
+ 
+       dst_row[x] = SkColorSetARGB(
+-          static_cast<int>(std::min(255.0, bg_a + img_a) * mask_a),
++          static_cast<int>(std::min((double)255.0, bg_a + img_a) * mask_a),
+           static_cast<int>(((bg_r * img_inv) + (img_r * img_alpha)) * mask_a),
+           static_cast<int>(((bg_g * img_inv) + (img_g * img_alpha)) * mask_a),
+           static_cast<int>(((bg_b * img_inv) + (img_b * img_alpha)) * mask_a));
+diff --git a/ui/gfx/transform_util.cc b/ui/gfx/transform_util.cc
+index 655ce57..487bfd5 100644
+--- a/ui/gfx/transform_util.cc
++++ b/ui/gfx/transform_util.cc
+@@ -68,7 +68,7 @@ bool Slerp(SkMScalar out[4],
+   double product = Dot<4>(q1, q2);
+ 
+   // Clamp product to -1.0 <= product <= 1.0.
+-  product = std::min(std::max(product, -1.0), 1.0);
++  product = std::min(std::max(product, (double)-1.0), (double)1.0);
+ 
+   // Interpolate angles along the shortest path. For example, to interpolate
+   // between a 175 degree angle and a 185 degree angle, interpolate along the
+@@ -90,9 +90,9 @@ bool Slerp(SkMScalar out[4],
+     return true;
+   }
+ 
+-  double denom = std::sqrt(1.0 - product * product);
++  double denom = std::sqrt((double)1.0 - product * product);
+   double theta = std::acos(product);
+-  double w = std::sin(progress * theta) * (1.0 / denom);
++  double w = std::sin(progress * theta) * ((double)1.0 / denom);
+ 
+   scale1 *= std::cos(progress * theta) - product * w;
+   double scale2 = w;
+-- 
+2.5.0
+

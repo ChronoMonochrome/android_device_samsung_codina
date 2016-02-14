@@ -1,0 +1,170 @@
+From 9a8eeec0c5c0c83c791683a6b650559cf4c215af Mon Sep 17 00:00:00 2001
+From: Maxime Poulain <maxime.poulain@student.uclouvain.be>
+Date: Tue, 31 Mar 2015 20:18:57 +0200
+Subject: [PATCH 1/2] fixed compilations errors when fsingle-precision-constant
+ is on
+
+---
+ Source/core/html/HTMLDimension.cpp                | 2 +-
+ Source/core/html/HTMLMediaElement.cpp             | 4 ++--
+ Source/core/html/HTMLMeterElement.cpp             | 2 +-
+ Source/core/html/HTMLProgressElement.cpp          | 2 +-
+ Source/core/html/MediaController.cpp              | 6 +++---
+ Source/core/html/track/vtt/VTTRegion.cpp          | 2 +-
+ Source/core/rendering/RenderFrameSet.cpp          | 2 +-
+ Source/core/rendering/svg/SVGRenderTreeAsText.cpp | 4 ++--
+ Source/wtf/MathExtras.h                           | 2 +-
+ 9 files changed, 13 insertions(+), 13 deletions(-)
+
+diff --git a/Source/core/html/HTMLDimension.cpp b/Source/core/html/HTMLDimension.cpp
+index 18b3bf1..f42e8d6 100644
+--- a/Source/core/html/HTMLDimension.cpp
++++ b/Source/core/html/HTMLDimension.cpp
+@@ -73,7 +73,7 @@ static HTMLDimension parseDimension(const CharacterType* characters, size_t last
+                 double fractionValue = charactersToUIntStrict(fractionNumbers.data(), fractionNumbers.size(), &ok);
+                 ASSERT(ok);
+ 
+-                value += fractionValue / pow(10., static_cast<double>(fractionNumbers.size()));
++                value += fractionValue / pow((double)10., static_cast<double>(fractionNumbers.size()));
+             }
+         }
+     }
+diff --git a/Source/core/html/HTMLMediaElement.cpp b/Source/core/html/HTMLMediaElement.cpp
+index 19dac8a..81f0f6a 100644
+--- a/Source/core/html/HTMLMediaElement.cpp
++++ b/Source/core/html/HTMLMediaElement.cpp
+@@ -1977,7 +1977,7 @@ void HTMLMediaElement::seek(double time)
+     time = std::min(time, duration());
+ 
+     // 7 - If the new playback position is less than the earliest possible position, let it be that position instead.
+-    time = std::max(time, 0.0);
++    time = std::max(time, (double)0.0);
+ 
+     // Ask the media engine for the time value in the movie's time scale before comparing with current time. This
+     // is necessary because if the seek time is not equal to currentTime but the delta is less than the movie's
+@@ -2359,7 +2359,7 @@ void HTMLMediaElement::setVolume(double vol, ExceptionState& exceptionState)
+         return;
+ 
+     if (vol < 0.0f || vol > 1.0f) {
+-        exceptionState.throwDOMException(IndexSizeError, ExceptionMessages::indexOutsideRange("volume", vol, 0.0, ExceptionMessages::InclusiveBound, 1.0, ExceptionMessages::InclusiveBound));
++        exceptionState.throwDOMException(IndexSizeError, ExceptionMessages::indexOutsideRange("volume", vol, (double)0.0, ExceptionMessages::InclusiveBound, (double)1.0, ExceptionMessages::InclusiveBound));
+         return;
+     }
+ 
+diff --git a/Source/core/html/HTMLMeterElement.cpp b/Source/core/html/HTMLMeterElement.cpp
+index e044c61..b7daf78 100644
+--- a/Source/core/html/HTMLMeterElement.cpp
++++ b/Source/core/html/HTMLMeterElement.cpp
+@@ -94,7 +94,7 @@ void HTMLMeterElement::setMin(double min)
+ 
+ double HTMLMeterElement::max() const
+ {
+-    return std::max(getFloatingPointAttribute(maxAttr, std::max(1.0, min())), min());
++    return std::max(getFloatingPointAttribute(maxAttr, std::max((double)1.0, min())), min());
+ }
+ 
+ void HTMLMeterElement::setMax(double max)
+diff --git a/Source/core/html/HTMLProgressElement.cpp b/Source/core/html/HTMLProgressElement.cpp
+index 3c078f6..6a35282 100644
+--- a/Source/core/html/HTMLProgressElement.cpp
++++ b/Source/core/html/HTMLProgressElement.cpp
+@@ -106,7 +106,7 @@ double HTMLProgressElement::value() const
+ 
+ void HTMLProgressElement::setValue(double value)
+ {
+-    setFloatingPointAttribute(valueAttr, std::max(value, 0.));
++    setFloatingPointAttribute(valueAttr, std::max(value, (double)0.));
+ }
+ 
+ double HTMLProgressElement::max() const
+diff --git a/Source/core/html/MediaController.cpp b/Source/core/html/MediaController.cpp
+index 0a72d6f..4ae28dc 100644
+--- a/Source/core/html/MediaController.cpp
++++ b/Source/core/html/MediaController.cpp
+@@ -150,7 +150,7 @@ double MediaController::currentTime() const
+ 
+     if (m_position == MediaPlayer::invalidTime()) {
+         // Some clocks may return times outside the range of [0..duration].
+-        m_position = std::max(0.0, std::min(duration(), m_clock->currentTime()));
++        m_position = std::max((double)0.0, std::min(duration(), m_clock->currentTime()));
+         m_clearPositionTimer.startOneShot(0, FROM_HERE);
+     }
+ 
+@@ -162,7 +162,7 @@ void MediaController::setCurrentTime(double time)
+     // When the user agent is to seek the media controller to a particular new playback position,
+     // it must follow these steps:
+     // If the new playback position is less than zero, then set it to zero.
+-    time = std::max(0.0, time);
++    time = std::max((double)0.0, time);
+ 
+     // If the new playback position is greater than the media controller duration, then set it
+     // to the media controller duration.
+@@ -260,7 +260,7 @@ void MediaController::setVolume(double level, ExceptionState& exceptionState)
+     // If the new value is outside the range 0.0 to 1.0 inclusive, then, on setting, an
+     // IndexSizeError exception must be raised instead.
+     if (level < 0 || level > 1) {
+-        exceptionState.throwDOMException(IndexSizeError, ExceptionMessages::indexOutsideRange("volume", level, 0.0, ExceptionMessages::InclusiveBound, 1.0, ExceptionMessages::InclusiveBound));
++        exceptionState.throwDOMException(IndexSizeError, ExceptionMessages::indexOutsideRange("volume", level, (double)0.0, ExceptionMessages::InclusiveBound, (double)1.0, ExceptionMessages::InclusiveBound));
+         return;
+     }
+ 
+diff --git a/Source/core/html/track/vtt/VTTRegion.cpp b/Source/core/html/track/vtt/VTTRegion.cpp
+index 0001871..9b772b7 100644
+--- a/Source/core/html/track/vtt/VTTRegion.cpp
++++ b/Source/core/html/track/vtt/VTTRegion.cpp
+@@ -72,7 +72,7 @@ static const float scrollTime = 0.433;
+ static bool isNonPercentage(double value, const char* method, ExceptionState& exceptionState)
+ {
+     if (value < 0 || value > 100) {
+-        exceptionState.throwDOMException(IndexSizeError, ExceptionMessages::indexOutsideRange("value", value, 0.0, ExceptionMessages::InclusiveBound, 100.0, ExceptionMessages::InclusiveBound));
++        exceptionState.throwDOMException(IndexSizeError, ExceptionMessages::indexOutsideRange("value", value, (double)0.0, ExceptionMessages::InclusiveBound, (double)100.0, ExceptionMessages::InclusiveBound));
+         return true;
+     }
+     return false;
+diff --git a/Source/core/rendering/RenderFrameSet.cpp b/Source/core/rendering/RenderFrameSet.cpp
+index 8711d0b..3137508 100644
+--- a/Source/core/rendering/RenderFrameSet.cpp
++++ b/Source/core/rendering/RenderFrameSet.cpp
+@@ -267,7 +267,7 @@ void RenderFrameSet::layOutAxis(GridAxis& axis, const Vector<HTMLDimension>& gri
+ 
+         for (int i = 0; i < gridLen; ++i) {
+             if (grid[i].isRelative()) {
+-                gridLayout[i] = (max(grid[i].value(), 1.) * remainingRelative) / totalRelative;
++                gridLayout[i] = (max(grid[i].value(), (double)1.) * remainingRelative) / totalRelative;
+                 remainingLen -= gridLayout[i];
+                 lastRelative = i;
+             }
+diff --git a/Source/core/rendering/svg/SVGRenderTreeAsText.cpp b/Source/core/rendering/svg/SVGRenderTreeAsText.cpp
+index dc1971e..9d40aa2 100644
+--- a/Source/core/rendering/svg/SVGRenderTreeAsText.cpp
++++ b/Source/core/rendering/svg/SVGRenderTreeAsText.cpp
+@@ -299,11 +299,11 @@ static void writeStyle(TextStream& ts, const RenderObject& object)
+                 dashArray.append(it->value(lengthContext));
+ 
+             writeIfNotDefault(ts, "opacity", svgStyle.strokeOpacity(), 1.0f);
+-            writeIfNotDefault(ts, "stroke width", strokeWidth, 1.0);
++            writeIfNotDefault(ts, "stroke width", strokeWidth, (double)1.0);
+             writeIfNotDefault(ts, "miter limit", svgStyle.strokeMiterLimit(), 4.0f);
+             writeIfNotDefault(ts, "line cap", svgStyle.capStyle(), ButtCap);
+             writeIfNotDefault(ts, "line join", svgStyle.joinStyle(), MiterJoin);
+-            writeIfNotDefault(ts, "dash offset", dashOffset, 0.0);
++            writeIfNotDefault(ts, "dash offset", dashOffset, (double)0.0);
+             if (!dashArray.isEmpty())
+                 writeNameValuePair(ts, "dash array", dashArray);
+ 
+diff --git a/Source/wtf/MathExtras.h b/Source/wtf/MathExtras.h
+index 5925ca5..9d0461e 100644
+--- a/Source/wtf/MathExtras.h
++++ b/Source/wtf/MathExtras.h
+@@ -302,7 +302,7 @@ inline void doubleToInteger(double d, unsigned long long& value)
+         value = 0;
+     else {
+         // -2^{64} < fmodValue < 2^{64}.
+-        double fmodValue = fmod(trunc(d), std::numeric_limits<unsigned long long>::max() + 1.0);
++        double fmodValue = fmod(trunc(d), std::numeric_limits<unsigned long long>::max() + (unsigned long long)1.0);
+         if (fmodValue >= 0) {
+             // 0 <= fmodValue < 2^{64}.
+             // 0 <= value < 2^{64}. This cast causes no loss.
+-- 
+2.5.0
+

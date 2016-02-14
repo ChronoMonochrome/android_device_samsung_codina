@@ -234,3 +234,4 @@ TARGET_BOOTANIMATION_USE_RGB565 := true
 # Enable position-independent code for odex files
 #WITH_DEXPREOPT_PIC := true
 
+FFAST_MATH := true
