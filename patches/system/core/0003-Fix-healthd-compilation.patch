@@ -1,0 +1,26 @@
+From 32784ed2f7bf19bcf3fb8bb3ff3bdb6f2e93f191 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Sun, 14 Feb 2016 11:28:23 +0700
+Subject: [PATCH 3/3] Fix healthd compilation
+
+Change-Id: I333e69ecfc47000a7c9e88cb76dd67a889523817
+---
+ healthd/healthd_mode_charger.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/healthd/healthd_mode_charger.cpp b/healthd/healthd_mode_charger.cpp
+index c828cd6..6fed3f6 100644
+--- a/healthd/healthd_mode_charger.cpp
++++ b/healthd/healthd_mode_charger.cpp
+@@ -44,7 +44,7 @@
+ #include <suspend/autosuspend.h>
+ #endif
+ 
+-#include "minui/minui.h"
++#include "../../../bootable/recovery/minui/minui.h"
+ 
+ #include "healthd.h"
+ 
+-- 
+2.5.0
+

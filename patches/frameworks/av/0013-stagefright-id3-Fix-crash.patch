@@ -1,0 +1,29 @@
+From e5c86abd04d56bf0f3dd6065279d1b6cd87d400c Mon Sep 17 00:00:00 2001
+From: Kyle Repinski <repinski23@gmail.com>
+Date: Mon, 4 May 2015 05:15:10 -0500
+Subject: [PATCH 13/13] stagefright: id3: Fix crash.
+
+Change-Id: Iecda065c2471f99ba4a05cb0dd805c4e337684ba
+
+Conflicts:
+	media/libstagefright/id3/ID3.cpp
+---
+ media/libstagefright/id3/ID3.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/media/libstagefright/id3/ID3.cpp b/media/libstagefright/id3/ID3.cpp
+index d97a723..dc6fd13 100644
+--- a/media/libstagefright/id3/ID3.cpp
++++ b/media/libstagefright/id3/ID3.cpp
+@@ -483,7 +483,7 @@ void ID3::Iterator::getString(String8 *id, String8 *comment) const {
+ // comment fields (COM/COMM) contain an initial short descriptor, followed by \0,
+ // followed by more data. The data following the \0 can be retrieved by setting
+ // "otherdata" to true.
+-void ID3::Iterator::getstring(String8 *id, bool otherdata) const {
++void __attribute__((optimize("no-tree-vectorize"))) ID3::Iterator::getstring(String8 *id, bool otherdata) const {
+     id->setTo("");
+ 
+     const uint8_t *frameData = mFrameData;
+-- 
+2.5.0
+
