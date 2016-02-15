@@ -1,7 +1,7 @@
-From 4d4bc28fe55513334f166a436df690287b3aba62 Mon Sep 17 00:00:00 2001
+From 22d1a9d2d0432bff29a9c43a1382b4bf86a2b666 Mon Sep 17 00:00:00 2001
 From: Shilin Victor <chrono.monochrome@gmail.com>
 Date: Mon, 8 Feb 2016 22:47:34 +0100
-Subject: [PATCH 16/95] StagefrightRecorder: switch back to SurfaceMediaSource
+Subject: [PATCH] StagefrightRecorder: switch back to SurfaceMediaSource
 
 In order to fix video recording bug on STE hardware,
 use SurfaceMediaSource (like on KK) instead of MediaCodecSource.
@@ -16,17 +16,17 @@ Signed-off-by: Shilin Victor <chrono.monochrome@gmail.com>
 ---
  include/media/mediarecorder.h                      |   2 +-
  .../libmediaplayerservice/MediaRecorderClient.cpp  |   4 +-
- .../libmediaplayerservice/StagefrightRecorder.cpp  | 146 ++++++++++++---------
+ .../libmediaplayerservice/StagefrightRecorder.cpp  | 151 +++++++++++----------
  media/libmediaplayerservice/StagefrightRecorder.h  |   4 +
- media/libstagefright/MPEG4Writer.cpp               |  14 +-
+ media/libstagefright/MPEG4Writer.cpp               |  17 +--
  .../tests/SurfaceMediaSource_test.cpp              |   9 +-
- 6 files changed, 104 insertions(+), 75 deletions(-)
+ 6 files changed, 104 insertions(+), 83 deletions(-)
 
 diff --git a/include/media/mediarecorder.h b/include/media/mediarecorder.h
-index b0a62a7..2ff1a97 100644
+index bd29d74..a4c935f 100755
 --- a/include/media/mediarecorder.h
 +++ b/include/media/mediarecorder.h
-@@ -39,7 +39,7 @@ typedef void (*media_completion_f)(status_t status, void *cookie);
+@@ -40,7 +40,7 @@ typedef void (*media_completion_f)(status_t status, void *cookie);
  enum video_source {
      VIDEO_SOURCE_DEFAULT = 0,
      VIDEO_SOURCE_CAMERA = 1,
@@ -36,7 +36,7 @@ index b0a62a7..2ff1a97 100644
      VIDEO_SOURCE_LIST_END  // must be last - used to validate audio source type
  };
 diff --git a/media/libmediaplayerservice/MediaRecorderClient.cpp b/media/libmediaplayerservice/MediaRecorderClient.cpp
-index 194abbb..7e1ee44 100644
+index 8c34a47..de52bdd 100644
 --- a/media/libmediaplayerservice/MediaRecorderClient.cpp
 +++ b/media/libmediaplayerservice/MediaRecorderClient.cpp
 @@ -95,8 +95,8 @@ status_t MediaRecorderClient::setPreviewSurface(const sp<IGraphicBufferProducer>
@@ -51,16 +51,17 @@ index 194abbb..7e1ee44 100644
      }
      Mutex::Autolock lock(mLock);
 diff --git a/media/libmediaplayerservice/StagefrightRecorder.cpp b/media/libmediaplayerservice/StagefrightRecorder.cpp
-index 3d093fa..fcfc1bd 100644
+index 90d4a25..f5eff28 100644
 --- a/media/libmediaplayerservice/StagefrightRecorder.cpp
 +++ b/media/libmediaplayerservice/StagefrightRecorder.cpp
-@@ -41,11 +41,13 @@
+@@ -42,12 +42,14 @@
  #include <media/stagefright/MediaDefs.h>
  #include <media/stagefright/MetaData.h>
  #include <media/stagefright/MediaCodecSource.h>
 +#include <media/stagefright/SurfaceMediaSource.h>
  #include <media/stagefright/OMXClient.h>
  #include <media/stagefright/OMXCodec.h>
+ #include <media/stagefright/WAVEWriter.h>
  #include <media/MediaProfiles.h>
  #include <camera/ICamera.h>
  #include <camera/CameraParameters.h>
@@ -68,17 +69,17 @@ index 3d093fa..fcfc1bd 100644
  
  #include <utils/Errors.h>
  #include <sys/types.h>
-@@ -75,7 +77,8 @@ StagefrightRecorder::StagefrightRecorder()
-       mAudioSource(AUDIO_SOURCE_CNT),
+@@ -90,7 +92,8 @@ StagefrightRecorder::StagefrightRecorder()
        mVideoSource(VIDEO_SOURCE_LIST_END),
        mCaptureTimeLapse(false),
--      mStarted(false) {
-+      mStarted(false),
+       mStarted(false),
+-      mRecPaused(false) {
++      mRecPaused(false),
 +      mSurfaceMediaSource(NULL) {
  
      ALOGV("Constructor");
      reset();
-@@ -105,7 +108,7 @@ status_t StagefrightRecorder::init() {
+@@ -123,7 +126,7 @@ status_t StagefrightRecorder::init() {
  // while encoding GL Frames
  sp<IGraphicBufferProducer> StagefrightRecorder::querySurfaceMediaSource() const {
      ALOGV("Get SurfaceMediaSource");
@@ -87,7 +88,7 @@ index 3d093fa..fcfc1bd 100644
  }
  
  status_t StagefrightRecorder::setAudioSource(audio_source_t as) {
-@@ -794,9 +797,6 @@ status_t StagefrightRecorder::prepareInternal() {
+@@ -868,9 +871,6 @@ status_t StagefrightRecorder::prepareInternal() {
  }
  
  status_t StagefrightRecorder::prepare() {
@@ -97,8 +98,8 @@ index 3d093fa..fcfc1bd 100644
      return OK;
  }
  
-@@ -809,11 +809,9 @@ status_t StagefrightRecorder::start() {
- 
+@@ -903,11 +903,9 @@ status_t StagefrightRecorder::start() {
+     }
      status_t status = OK;
  
 -    if (mVideoSource != VIDEO_SOURCE_SURFACE) {
@@ -111,8 +112,8 @@ index 3d093fa..fcfc1bd 100644
 +        return status;
      }
  
-     if (mWriter == NULL) {
-@@ -1375,14 +1373,49 @@ status_t StagefrightRecorder::setupMediaSource(
+     if (mAudioSource != AUDIO_SOURCE_CNT) {
+@@ -1554,14 +1552,49 @@ status_t StagefrightRecorder::setupMediaSource(
              return err;
          }
          *mediaSource = cameraSource;
@@ -163,9 +164,9 @@ index 3d093fa..fcfc1bd 100644
 +
  status_t StagefrightRecorder::setupCameraSource(
          sp<CameraSource> *cameraSource) {
-     status_t err = OK;
-@@ -1449,23 +1482,25 @@ status_t StagefrightRecorder::setupVideoEncoder(
-         sp<MediaSource> *source) {
+     ExtendedStats::AutoProfile autoProfile(
+@@ -1634,23 +1667,25 @@ status_t StagefrightRecorder::setupVideoEncoder(
+ 
      source->clear();
  
 -    sp<AMessage> format = new AMessage();
@@ -194,8 +195,8 @@ index 3d093fa..fcfc1bd 100644
 +            enc_meta->setCString(kKeyMIMEType, MEDIA_MIMETYPE_VIDEO_VP8);
              break;
  
-         default:
-@@ -1483,55 +1518,51 @@ status_t StagefrightRecorder::setupVideoEncoder(
+         case VIDEO_ENCODER_H265:
+@@ -1672,36 +1707,27 @@ status_t StagefrightRecorder::setupVideoEncoder(
          CHECK(meta->findInt32(kKeySliceHeight, &sliceHeight));
          CHECK(meta->findInt32(kKeyColorFormat, &colorFormat));
  
@@ -246,6 +247,11 @@ index 3d093fa..fcfc1bd 100644
 -        format->setInt32("time-scale", mVideoTimeScale);
 +        enc_meta->setInt32(kKeyTimeScale, mVideoTimeScale);
      }
+ 
+     if (cameraSource != NULL) {
+@@ -1717,26 +1743,28 @@ status_t StagefrightRecorder::setupVideoEncoder(
+             mVideoEncoderProfile, mVideoEncoderLevel);
+ 
      if (mVideoEncoderProfile != -1) {
 -        format->setInt32("profile", mVideoEncoderProfile);
 +        enc_meta->setInt32(kKeyVideoProfile, mVideoEncoderProfile);
@@ -271,6 +277,9 @@ index 3d093fa..fcfc1bd 100644
 +        encoder_flags |= OMXCodec::kOnlySubmitOneInputBufferAtOneTime;
      }
  
+-    if (mRecorderExtendedStats != NULL) {
+-        format->setObject(MEDIA_EXTENDED_STATS, mRecorderExtendedStats);
+-    }
 -    sp<MediaCodecSource> encoder =
 -            MediaCodecSource::Create(mLooper, format, cameraSource, flags);
 +    sp<MediaSource> encoder = OMXCodec::Create(
@@ -280,7 +289,7 @@ index 3d093fa..fcfc1bd 100644
      if (encoder == NULL) {
          ALOGE("Failed to create video encoder");
          // When the encoder fails to be created, we need
-@@ -1543,10 +1574,6 @@ status_t StagefrightRecorder::setupVideoEncoder(
+@@ -1748,12 +1776,6 @@ status_t StagefrightRecorder::setupVideoEncoder(
          return UNKNOWN_ERROR;
      }
  
@@ -288,10 +297,12 @@ index 3d093fa..fcfc1bd 100644
 -        mGraphicBufferProducer = encoder->getGraphicBufferProducer();
 -    }
 -
+-    mVideoSourceNode = cameraSource;
+-    mVideoEncoderOMX = encoder;
      *source = encoder;
  
      return OK;
-@@ -1637,13 +1664,8 @@ status_t StagefrightRecorder::setupMPEG4orWEBMRecording() {
+@@ -1851,13 +1873,8 @@ status_t StagefrightRecorder::setupMPEG4orWEBMRecording() {
      if (mMaxFileSizeBytes != 0) {
          writer->setMaxFileSize(mMaxFileSizeBytes);
      }
@@ -307,7 +318,7 @@ index 3d093fa..fcfc1bd 100644
      if (mStartTimeOffsetMs > 0) {
          writer->setStartTimeOffsetMs(mStartTimeOffsetMs);
      }
-@@ -1711,8 +1733,6 @@ status_t StagefrightRecorder::stop() {
+@@ -1953,8 +1970,6 @@ status_t StagefrightRecorder::stop() {
          mWriter.clear();
      }
  
@@ -317,18 +328,18 @@ index 3d093fa..fcfc1bd 100644
          ::close(mOutputFd);
          mOutputFd = -1;
 diff --git a/media/libmediaplayerservice/StagefrightRecorder.h b/media/libmediaplayerservice/StagefrightRecorder.h
-index 54c38d3..ca0151b 100644
+index 527b645..e446caa 100644
 --- a/media/libmediaplayerservice/StagefrightRecorder.h
 +++ b/media/libmediaplayerservice/StagefrightRecorder.h
-@@ -125,6 +125,7 @@ private:
+@@ -141,6 +141,7 @@ private:
      // will be sent to the client side using which the
      // frame buffers will be queued and dequeued
      sp<IGraphicBufferProducer> mGraphicBufferProducer;
 +    sp<SurfaceMediaSource> mSurfaceMediaSource;
      sp<ALooper> mLooper;
  
-     status_t prepareInternal();
-@@ -144,6 +145,9 @@ private:
+     sp<RecorderExtendedStats> mRecorderExtendedStats;
+@@ -162,6 +163,9 @@ private:
      // depending on the videosource type
      status_t setupMediaSource(sp<MediaSource> *mediaSource);
      status_t setupCameraSource(sp<CameraSource> *cameraSource);
@@ -339,10 +350,10 @@ index 54c38d3..ca0151b 100644
      status_t setupVideoEncoder(sp<MediaSource> cameraSource, sp<MediaSource> *source);
  
 diff --git a/media/libstagefright/MPEG4Writer.cpp b/media/libstagefright/MPEG4Writer.cpp
-index 9f20b1d..059ca81 100644
+index b94e334..13d5992 100644
 --- a/media/libstagefright/MPEG4Writer.cpp
 +++ b/media/libstagefright/MPEG4Writer.cpp
-@@ -1777,7 +1777,7 @@ status_t MPEG4Writer::Track::pause() {
+@@ -1839,7 +1839,7 @@ status_t MPEG4Writer::Track::pause() {
  }
  
  status_t MPEG4Writer::Track::stop() {
@@ -351,7 +362,7 @@ index 9f20b1d..059ca81 100644
      if (!mStarted) {
          ALOGE("Stop() called but track is not started");
          return ERROR_END_OF_STREAM;
-@@ -1788,14 +1788,18 @@ status_t MPEG4Writer::Track::stop() {
+@@ -1850,18 +1850,19 @@ status_t MPEG4Writer::Track::stop() {
      }
      mDone = true;
  
@@ -363,17 +374,21 @@ index 9f20b1d..059ca81 100644
      pthread_join(mThread, &dummy);
      status_t err = static_cast<status_t>(reinterpret_cast<uintptr_t>(dummy));
  
+-    if (mOwner->exceedsFileSizeLimit() && mStszTableEntries->count() == 0) {
+-        ALOGE(" Filesize limit exceeded and zero samples written ");
+-        return ERROR_END_OF_STREAM;
 +    ALOGD("Stopping %s track source", mIsAudio? "Audio": "Video");
 +    {
 +        status_t status = mSource->stop();
 +        if (err == OK && status != OK && status != ERROR_END_OF_STREAM) {
 +            err = status;
 +        }
-+    }
+     }
 +
-     ALOGD("%s track stopped", mIsAudio? "Audio": "Video");
++    ALOGD("%s track stopped", mIsAudio? "Audio": "Video");
      return err;
  }
+ 
 diff --git a/media/libstagefright/tests/SurfaceMediaSource_test.cpp b/media/libstagefright/tests/SurfaceMediaSource_test.cpp
 index fd889f9..6778a47 100644
 --- a/media/libstagefright/tests/SurfaceMediaSource_test.cpp
