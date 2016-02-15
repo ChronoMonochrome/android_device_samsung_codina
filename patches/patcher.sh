@@ -36,20 +36,47 @@ pre_clean() {
     out=$( repo sync -fl $1 )
 }
 
+am_quiet_() {
+   S=`echo $1 | cut -d / -f7`;
+   git am $S | head -n 1;
+}
+
+
+am_quiet()
+{
+    am_quiet_ $@ 2>.tmp
+    #if cat .tmp | grep -i "error" >/dev/null ; then
+    #    cat .tmp
+    #fi
+    rm .tmp
+}
+
+commit_quiet_()
+{
+   git commit -am "$@" | head -n 1;
+}
+
+commit_quiet()
+{
+  commit_quiet_ "$@"2>.tmp;
+  rm .tmp
+}
+
 apply() {
     out=$( patch -p1 -i $1 )
     fail=$( echo $out | grep -ic "FAILED" )
     ign=$( echo $out | grep -ic "ignore" )
 
     if [ "$fail" == "0" ]  ; then
-         git commit -am "$1"
+         commit_quiet "$1"
          if [ "$ign" != "0" ]  ; then
              echo -e $CL_RED"some hunks of patch $1 has been ignored"$CL_RST
              #echo -e $CL_RED$out$CL_RST | tr '.' '\n'
          fi
     else 
          echo -e $CL_RED"patch $1 applies with errors -> reject"$CL_RST
-	 git reset --hard
+	 git reset --hard > /dev/null 2>&1
+
          #echo -e $CL_RED$l$CL_RST | tr '.' '\n'
     fi;
     for i in $(find . -name "*.rej" -o -name "*.orig"); do rm $i; done
