@@ -1,18 +1,19 @@
- Stop sleeping in waitUntilAllThreadsStopped spin instead.
+From e8829b2983b43fb2d2d53bc975058427e2864de6 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Tue, 9 Feb 2016 04:05:14 +0700
+Subject: [PATCH 03/13] 
+ libcore_Stop-sleeping-in-waitUntilAllThreadsStopped.patch
 
-We occasionally have to wait for threads to finish
-but 10ms seems too long and is a significant part of
-total time of Zygote fork (up to 15-20%).
-
-It turns out that all Java threads are already stopped
-but we're still waiting for their OS counterparts to finish.
-This shouldn't take much time so we can just spin here.
+Change-Id: I9c8ac96490b7528a4e29e2b403f905a0cf888e04
+---
+ dalvik/src/main/java/dalvik/system/ZygoteHooks.java | 9 +++------
+ 1 file changed, 3 insertions(+), 6 deletions(-)
 
 diff --git a/dalvik/src/main/java/dalvik/system/ZygoteHooks.java b/dalvik/src/main/java/dalvik/system/ZygoteHooks.java
-index de40800..1391772 100644
+index 11ea286..e064ba5 100644
 --- a/dalvik/src/main/java/dalvik/system/ZygoteHooks.java
 +++ b/dalvik/src/main/java/dalvik/system/ZygoteHooks.java
-@@ -68,13 +68,10 @@ private static native void nativePostForkChild(long token, int debugFlags,
+@@ -68,13 +68,10 @@ public final class ZygoteHooks {
       */
      private static void waitUntilAllThreadsStopped() {
          File tasks = new File("/proc/self/task");
@@ -29,3 +30,6 @@ index de40800..1391772 100644
          }
      }
  }
+-- 
+2.5.0
+

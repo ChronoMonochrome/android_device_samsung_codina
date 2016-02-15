@@ -1,0 +1,65 @@
+From 8f724ff678c0b2f5882fb8dc15990742a105017f Mon Sep 17 00:00:00 2001
+From: Narayan Kamath <narayan@google.com>
+Date: Fri, 3 Apr 2015 15:51:05 +0100
+Subject: [PATCH 09/13] GZIPInputStream: Correctly handle extras in gzip
+ headers.
+
+We were peeking into the wrong field for the extra length.
+
+bug: https://code.google.com/p/android/issues/detail?id=159340
+Change-Id: Ib7ed400e3e119b1d6c95be49d25812c5c7f366b9
+---
+ luni/src/main/java/java/util/zip/GZIPInputStream.java    |  2 +-
+ .../java/libcore/java/util/zip/GZIPInputStreamTest.java  | 16 ++++++++++++++++
+ 2 files changed, 17 insertions(+), 1 deletion(-)
+
+diff --git a/luni/src/main/java/java/util/zip/GZIPInputStream.java b/luni/src/main/java/java/util/zip/GZIPInputStream.java
+index afbbafe..925e8c4 100644
+--- a/luni/src/main/java/java/util/zip/GZIPInputStream.java
++++ b/luni/src/main/java/java/util/zip/GZIPInputStream.java
+@@ -222,7 +222,7 @@ public class GZIPInputStream extends InflaterInputStream {
+             if (hcrc) {
+                 crc.update(header, 0, 2);
+             }
+-            int length = Memory.peekShort(scratch, 0, ByteOrder.LITTLE_ENDIAN) & 0xffff;
++            int length = Memory.peekShort(header, 0, ByteOrder.LITTLE_ENDIAN) & 0xffff;
+             while (length > 0) {
+                 int max = length > scratch.length ? scratch.length : length;
+                 int result = in.read(scratch, 0, max);
+diff --git a/luni/src/test/java/libcore/java/util/zip/GZIPInputStreamTest.java b/luni/src/test/java/libcore/java/util/zip/GZIPInputStreamTest.java
+index 153f324..5813753 100644
+--- a/luni/src/test/java/libcore/java/util/zip/GZIPInputStreamTest.java
++++ b/luni/src/test/java/libcore/java/util/zip/GZIPInputStreamTest.java
+@@ -51,6 +51,18 @@ public final class GZIPInputStreamTest extends TestCase {
+         -13, 72, -51, -55, -55, 87, 8, -49, 47, -54, 73, 1, 0, 86, -79, 23, 74, 11, 0, 0, 0  // data
+     };
+ 
++    /*(
++     * This is the same as {@code HELLO_WORLD_GZIPPED} except that the 4th header byte is 4
++     * (FEXTRA flag) and that the 8 bytes after the header make up the extra.
++     *
++     * Constructed manually because none of the commonly used tools appear to emit header CRCs.
++     */
++    private static final byte[] HELLO_WORLD_GZIPPED_WITH_EXTRA = new byte[] {
++        31, -117, 8, 4, 0, 0, 0, 0, 0, 0,  // 10 byte header
++        6, 0, 4, 2, 4, 2, 4, 2,  // 2 byte extra length + 6 byte extra.
++        -13, 72, -51, -55, -55, 87, 8, -49, 47, -54, 73, 1, 0, 86, -79, 23, 74, 11, 0, 0, 0  // data
++    };
++
+     public void testShortMessage() throws IOException {
+         assertEquals("Hello World", new String(gunzip(HELLO_WORLD_GZIPPED), "UTF-8"));
+     }
+@@ -59,6 +71,10 @@ public final class GZIPInputStreamTest extends TestCase {
+         assertEquals("Hello World", new String(gunzip(HELLO_WORLD_GZIPPED_WITH_HEADER_CRC), "UTF-8"));
+     }
+ 
++    public void testShortMessageWithHeaderExtra() throws IOException {
++        assertEquals("Hello World", new String(gunzip(HELLO_WORLD_GZIPPED_WITH_EXTRA), "UTF-8"));
++    }
++
+     public void testLongMessage() throws IOException {
+         byte[] data = new byte[1024 * 1024];
+         new Random().nextBytes(data);
+-- 
+2.5.0
+

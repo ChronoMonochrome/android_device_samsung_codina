@@ -1,0 +1,69 @@
+From b3e45b9c9ed36b2a5c1af584821c42bebf3c1e84 Mon Sep 17 00:00:00 2001
+From: Elliott Hughes <enh@google.com>
+Date: Thu, 8 Jan 2015 16:16:39 -0800
+Subject: [PATCH 07/13] More FileDescriptor.isSocket cleanup.
+
+Rename isSocket to isSocket$ since it's public @hide.
+
+Make isSocket$ final, even though the class is final, so it's obvious from
+grep that you can't accidentally override this. (The other public @hide
+methods in this class were already explicitly marked final.)
+
+Change-Id: I90563ca567857fa7d38b7ee8006f8abe6ca2db9a
+---
+ luni/src/main/java/java/io/FileDescriptor.java             | 2 +-
+ luni/src/main/java/libcore/io/BlockGuardOs.java            | 2 +-
+ luni/src/test/java/libcore/java/io/FileDescriptorTest.java | 6 +++---
+ 3 files changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/luni/src/main/java/java/io/FileDescriptor.java b/luni/src/main/java/java/io/FileDescriptor.java
+index eba0e4d..be94c52 100644
+--- a/luni/src/main/java/java/io/FileDescriptor.java
++++ b/luni/src/main/java/java/io/FileDescriptor.java
+@@ -108,7 +108,7 @@ public final class FileDescriptor {
+     /**
+      * @hide internal use only
+      */
+-    public boolean isSocket() {
++    public final boolean isSocket$() {
+         return isSocket(descriptor);
+     }
+ 
+diff --git a/luni/src/main/java/libcore/io/BlockGuardOs.java b/luni/src/main/java/libcore/io/BlockGuardOs.java
+index b3dc74b..532493a 100644
+--- a/luni/src/main/java/libcore/io/BlockGuardOs.java
++++ b/luni/src/main/java/libcore/io/BlockGuardOs.java
+@@ -83,7 +83,7 @@ public class BlockGuardOs extends ForwardingOs {
+             // The usual case is that this _isn't_ a socket, so the getsockopt(2) call in
+             // isLingerSocket will throw, and that's really expensive. Try to avoid asking
+             // if we don't care.
+-            if (fd.isSocket()) {
++            if (fd.isSocket$()) {
+                 if (isLingerSocket(fd)) {
+                     // If the fd is a socket with SO_LINGER set, we might block indefinitely.
+                     // We allow non-linger sockets so that apps can close their network
+diff --git a/luni/src/test/java/libcore/java/io/FileDescriptorTest.java b/luni/src/test/java/libcore/java/io/FileDescriptorTest.java
+index 39472df..e2780c9 100644
+--- a/luni/src/test/java/libcore/java/io/FileDescriptorTest.java
++++ b/luni/src/test/java/libcore/java/io/FileDescriptorTest.java
+@@ -30,14 +30,14 @@ public class FileDescriptorTest extends TestCase {
+     new RandomAccessFile(f, "r").getFD().sync();
+   }
+ 
+-  public void test_isSocket() throws Exception {
++  public void test_isSocket$() throws Exception {
+     File f = new File("/dev/null");
+     FileInputStream fis = new FileInputStream(f);
+-    assertFalse(fis.getFD().isSocket());
++    assertFalse(fis.getFD().isSocket$());
+     fis.close();
+ 
+     ServerSocket s = new ServerSocket();
+-    assertTrue(s.getImpl$().getFD$().isSocket());
++    assertTrue(s.getImpl$().getFD$().isSocket$());
+     s.close();
+   }
+ }
+-- 
+2.5.0
+

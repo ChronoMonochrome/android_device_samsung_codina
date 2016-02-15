@@ -1,0 +1,35 @@
+From 3564e86aa1efd1cbb91d2dbb8a110b8da302453b Mon Sep 17 00:00:00 2001
+From: Narayan Kamath <narayan@google.com>
+Date: Wed, 26 Nov 2014 13:05:57 +0000
+Subject: [PATCH 06/13] Fix CharsetEncoder.canEncode for ignorable code points.
+
+We should check that the output buffer has at least a single
+byte.
+
+bug: 18474439
+
+Change-Id: Iec8042f54133c77d962ed2c5c5ace25a8ce6dad2
+---
+ luni/src/main/java/java/nio/charset/CharsetEncoder.java | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/luni/src/main/java/java/nio/charset/CharsetEncoder.java b/luni/src/main/java/java/nio/charset/CharsetEncoder.java
+index 9217bba..84373c5 100644
+--- a/luni/src/main/java/java/nio/charset/CharsetEncoder.java
++++ b/luni/src/main/java/java/nio/charset/CharsetEncoder.java
+@@ -199,8 +199,10 @@ public abstract class CharsetEncoder {
+         onMalformedInput(CodingErrorAction.REPORT);
+         onUnmappableCharacter(CodingErrorAction.REPORT);
+         try {
+-            encode(cb);
+-            return true;
++            ByteBuffer buf = encode(cb);
++            // b/18474439: ICU will return U_ZERO_ERROR but produce an output buffer
++            // of size zero when it encounters an ignorable codepoint.
++            return buf.hasRemaining();
+         } catch (CharacterCodingException e) {
+             return false;
+         } finally {
+-- 
+2.5.0
+

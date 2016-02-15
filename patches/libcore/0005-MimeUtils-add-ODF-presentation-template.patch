@@ -1,0 +1,29 @@
+From 3c72b93e0ffb6523579bbd68613d4df8a7ba91e0 Mon Sep 17 00:00:00 2001
+From: Miklos Vajna <vmiklos@vmiklos.hu>
+Date: Tue, 16 Dec 2014 10:24:49 +0100
+Subject: [PATCH 05/13] MimeUtils: add ODF presentation (template)
+
+If ODF text, spreadsheet and graphics is there, then leaving out
+presentation makes little sense.
+
+Change-Id: I676546a51700cbafb31f1b394ea32a66603422af
+---
+ luni/src/main/java/libcore/net/MimeUtils.java | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/luni/src/main/java/libcore/net/MimeUtils.java b/luni/src/main/java/libcore/net/MimeUtils.java
+index 125ea87..7884037 100644
+--- a/luni/src/main/java/libcore/net/MimeUtils.java
++++ b/luni/src/main/java/libcore/net/MimeUtils.java
+@@ -73,6 +73,8 @@ public final class MimeUtils {
+         add("application/vnd.oasis.opendocument.graphics", "odg");
+         add("application/vnd.oasis.opendocument.graphics-template", "otg");
+         add("application/vnd.oasis.opendocument.image", "odi");
++        add("application/vnd.oasis.opendocument.presentation", "odp");
++        add("application/vnd.oasis.opendocument.presentation-template", "otp");
+         add("application/vnd.oasis.opendocument.spreadsheet", "ods");
+         add("application/vnd.oasis.opendocument.spreadsheet-template", "ots");
+         add("application/vnd.oasis.opendocument.text", "odt");
+-- 
+2.5.0
+

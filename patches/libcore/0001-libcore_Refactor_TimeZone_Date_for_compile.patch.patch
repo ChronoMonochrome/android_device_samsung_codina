@@ -1,20 +1,44 @@
- Libcore: Refactor TimeZone for compile-time initialization
+From cc279997f4c74039d49d2ccf588d3fdfb729d2cc Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Tue, 9 Feb 2016 04:05:14 +0700
+Subject: [PATCH 01/13] libcore_Refactor_TimeZone_Date_for_compile.patch
 
-Introduce a private inner class for custom-time-zone parsing. This
-moves the Pattern field which cannot be compile-time initialized.
+Change-Id: I2a177b223854329b23beca94779ac3eabdf9e4ec
+---
+ luni/src/main/java/java/util/Date.java     |  7 ++-
+ luni/src/main/java/java/util/TimeZone.java | 82 +++++++++++++++++-------------
+ 2 files changed, 51 insertions(+), 38 deletions(-)
 
-As a result, TimeZone, SimpleTimeZone & ZoneInfo can be initialized
-in the boot image.
-
- Libcore: Make Date compile-time initializable
-
-Move CREATION_YEAR to a static inner class.
-
+diff --git a/luni/src/main/java/java/util/Date.java b/luni/src/main/java/java/util/Date.java
+index b4de055..d45c971 100644
+--- a/luni/src/main/java/java/util/Date.java
++++ b/luni/src/main/java/java/util/Date.java
+@@ -47,7 +47,10 @@ public class Date implements Serializable, Cloneable, Comparable<Date> {
+     private static final long serialVersionUID = 7523967970034938905L;
+ 
+     // Used by parse()
+-    private static final int CREATION_YEAR = new Date().getYear();
++    // Keep in a static inner class to allow compile-time initialization of Date.
++    private static class CreationYear {
++        private static final int VALUE = new Date().getYear();
++    }
+ 
+     private transient long milliseconds;
+ 
+@@ -539,7 +542,7 @@ public class Date implements Serializable, Cloneable, Comparable<Date> {
+             if (second == -1) {
+                 second = 0;
+             }
+-            if (year < (CREATION_YEAR - 80)) {
++            if (year < (CreationYear.VALUE - 80)) {
+                 year += 2000;
+             } else if (year < 100) {
+                 year += 1900;
 diff --git a/luni/src/main/java/java/util/TimeZone.java b/luni/src/main/java/java/util/TimeZone.java
-index de40601..1391772 100644
+index 854a4a6..d7adbf2 100644
 --- a/luni/src/main/java/java/util/TimeZone.java
 +++ b/luni/src/main/java/java/util/TimeZone.java
-@@ -68,7 +68,51 @@
+@@ -68,7 +68,51 @@ import org.apache.harmony.luni.internal.util.TimezoneGetter;
  public abstract class TimeZone implements Serializable, Cloneable {
      private static final long serialVersionUID = 3581463369166924961L;
  
@@ -67,7 +91,7 @@ index de40601..1391772 100644
  
      /**
       * The short display name style, such as {@code PDT}. Requests for this
-@@ -368,7 +412,7 @@ public static synchronized TimeZone getTimeZone(String id) {
+@@ -368,7 +412,7 @@ public abstract class TimeZone implements Serializable, Cloneable {
  
          // Custom time zone?
          if (zone == null && id.length() > 3 && id.startsWith("GMT")) {
@@ -76,7 +100,7 @@ index de40601..1391772 100644
          }
  
          // We never return null; on failure we return the equivalent of "GMT".
-@@ -376,40 +420,6 @@ public static synchronized TimeZone getTimeZone(String id) {
+@@ -376,40 +420,6 @@ public abstract class TimeZone implements Serializable, Cloneable {
      }
  
      /**
@@ -117,28 +141,6 @@ index de40601..1391772 100644
       * Returns true if {@code timeZone} has the same rules as this time zone.
       *
       * <p>The base implementation returns true if both time zones have the same
-diff --git a/luni/src/main/java/java/util/Date.java b/luni/src/main/java/java/util/Date.java
-index de40702..1391772 100644
---- a/luni/src/main/java/java/util/Date.java
-+++ b/luni/src/main/java/java/util/Date.java
-@@ -47,7 +47,10 @@
-     private static final long serialVersionUID = 7523967970034938905L;
- 
-     // Used by parse()
--    private static final int CREATION_YEAR = new Date().getYear();
-+    // Keep in a static inner class to allow compile-time initialization of Date.
-+    private static class CreationYear {
-+        private static final int VALUE = new Date().getYear();
-+    }
- 
-     private transient long milliseconds;
- 
-@@ -539,7 +542,7 @@ public static long parse(String string) {
-             if (second == -1) {
-                 second = 0;
-             }
--            if (year < (CREATION_YEAR - 80)) {
-+            if (year < (CreationYear.VALUE - 80)) {
-                 year += 2000;
-             } else if (year < 100) {
-                 year += 1900;
+-- 
+2.5.0
+

@@ -1,5 +1,15 @@
+From 09241f553f64a9af979e00af927fd6e343fa3956 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Tue, 9 Feb 2016 04:05:14 +0700
+Subject: [PATCH 02/13] libcore_Remove_forced_alignment_code.patch
+
+Change-Id: Ib65a69dd998ff4924dd2c4758d92c2eecf4b87be
+---
+ luni/src/main/native/libcore_io_Memory.cpp | 105 ++++++-----------------------
+ 1 file changed, 21 insertions(+), 84 deletions(-)
+
 diff --git a/luni/src/main/native/libcore_io_Memory.cpp b/luni/src/main/native/libcore_io_Memory.cpp
-index de4050a..1391772 100644
+index 9edbfb8..69422b8 100644
 --- a/luni/src/main/native/libcore_io_Memory.cpp
 +++ b/luni/src/main/native/libcore_io_Memory.cpp
 @@ -28,25 +28,6 @@
@@ -153,3 +163,6 @@ index de4050a..1391772 100644
  }
  
  static void unsafeBulkCopy(jbyte* dst, const jbyte* src, jint byteCount,
+-- 
+2.5.0
+

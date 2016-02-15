@@ -1,0 +1,70 @@
+From e016b0aa74b0f31da2375ccf9712dc0a2ad79eb8 Mon Sep 17 00:00:00 2001
+From: Narayan Kamath <narayan@google.com>
+Date: Fri, 3 Apr 2015 16:25:49 +0100
+Subject: [PATCH 08/13] GZIPInputStream: Fix handling of header CRCs.
+
+This is the same mistake as public bug 159340, we were peeking
+in the wrong buffer for the CRC.
+
+Note that this is different from the member CRC, the latter is
+the CRC of the actual data (not the header) and is mandatory.
+
+Change-Id: I98d49bdd9d5ea93fe982783c8077531764ee5347
+---
+ .../src/main/java/java/util/zip/GZIPInputStream.java |  2 +-
+ .../libcore/java/util/zip/GZIPInputStreamTest.java   | 20 ++++++++++++++++++--
+ 2 files changed, 19 insertions(+), 3 deletions(-)
+
+diff --git a/luni/src/main/java/java/util/zip/GZIPInputStream.java b/luni/src/main/java/java/util/zip/GZIPInputStream.java
+index 1bfc496..afbbafe 100644
+--- a/luni/src/main/java/java/util/zip/GZIPInputStream.java
++++ b/luni/src/main/java/java/util/zip/GZIPInputStream.java
+@@ -243,7 +243,7 @@ public class GZIPInputStream extends InflaterInputStream {
+         }
+         if (hcrc) {
+             Streams.readFully(in, header, 0, 2);
+-            short crc16 = Memory.peekShort(scratch, 0, ByteOrder.LITTLE_ENDIAN);
++            short crc16 = Memory.peekShort(header, 0, ByteOrder.LITTLE_ENDIAN);
+             if ((short) crc.getValue() != crc16) {
+                 throw new IOException("CRC mismatch");
+             }
+diff --git a/luni/src/test/java/libcore/java/util/zip/GZIPInputStreamTest.java b/luni/src/test/java/libcore/java/util/zip/GZIPInputStreamTest.java
+index 494520a..153f324 100644
+--- a/luni/src/test/java/libcore/java/util/zip/GZIPInputStreamTest.java
++++ b/luni/src/test/java/libcore/java/util/zip/GZIPInputStreamTest.java
+@@ -35,14 +35,30 @@ import libcore.io.Streams;
+ public final class GZIPInputStreamTest extends TestCase {
+ 
+     private static final byte[] HELLO_WORLD_GZIPPED = new byte[] {
+-        31, -117, 8, 0, 0, 0, 0, 0, 0, 0, -13, 72, -51, -55, -55, 87, 8, -49,
+-        47, -54, 73, 1, 0, 86, -79, 23, 74, 11, 0, 0, 0
++        31, -117, 8, 0, 0, 0, 0, 0, 0, 0,  // 10 byte header
++        -13, 72, -51, -55, -55, 87, 8, -49, 47, -54, 73, 1, 0, 86, -79, 23, 74, 11, 0, 0, 0  // data
++    };
++
++    /**
++     * This is the same as the above, except that the 4th header byte is 2 (FHCRC flag)
++     * and the 2 bytes after the header make up the CRC.
++     *
++     * Constructed manually because none of the commonly used tools appear to emit header CRCs.
++     */
++    private static final byte[] HELLO_WORLD_GZIPPED_WITH_HEADER_CRC = new byte[] {
++        31, -117, 8, 2, 0, 0, 0, 0, 0, 0,  // 10 byte header
++        29, 38, // 2 byte CRC.
++        -13, 72, -51, -55, -55, 87, 8, -49, 47, -54, 73, 1, 0, 86, -79, 23, 74, 11, 0, 0, 0  // data
+     };
+ 
+     public void testShortMessage() throws IOException {
+         assertEquals("Hello World", new String(gunzip(HELLO_WORLD_GZIPPED), "UTF-8"));
+     }
+ 
++    public void testShortMessageWithCrc() throws IOException {
++        assertEquals("Hello World", new String(gunzip(HELLO_WORLD_GZIPPED_WITH_HEADER_CRC), "UTF-8"));
++    }
++
+     public void testLongMessage() throws IOException {
+         byte[] data = new byte[1024 * 1024];
+         new Random().nextBytes(data);
+-- 
+2.5.0
+

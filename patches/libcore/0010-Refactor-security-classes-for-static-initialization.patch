@@ -1,0 +1,136 @@
+From 2d5ec2cb715e1c878d4031529ba506ddc2d760a6 Mon Sep 17 00:00:00 2001
+From: Kenny Root <kroot@google.com>
+Date: Fri, 27 Feb 2015 09:04:33 -0800
+Subject: [PATCH 10/13] Refactor security classes for static initialization
+
+Split out security.properties I/O to a separate method returning
+a Reader. This method can be intercepted at compile-time and
+provide a StringReader with the content of the file. A reader is
+necessary as Properties interally uses a reader and requires a
+Charset to translate from an input-stream.
+
+Refactor Services provider loading to first try the boot classpath
+loader instead of the system class-loader. The former is accessible
+during compile-time initialization and functionally equivalent.
+
+Bug: 19498458
+Bug: 19542228
+Change-Id: I853952b83ca99006907c070734f767259c975517
+---
+ luni/src/main/java/java/security/Security.java     | 22 +++++++++++--
+ .../apache/harmony/security/fortress/Services.java | 36 ++++++++++++++++------
+ 2 files changed, 45 insertions(+), 13 deletions(-)
+
+diff --git a/luni/src/main/java/java/security/Security.java b/luni/src/main/java/java/security/Security.java
+index b859f9a..aeb189f 100644
+--- a/luni/src/main/java/java/security/Security.java
++++ b/luni/src/main/java/java/security/Security.java
+@@ -19,6 +19,8 @@ package java.security;
+ 
+ import java.io.BufferedInputStream;
+ import java.io.InputStream;
++import java.io.InputStreamReader;
++import java.io.Reader;
+ import java.util.ArrayList;
+ import java.util.Enumeration;
+ import java.util.HashMap;
+@@ -47,16 +49,25 @@ public final class Security {
+     // - load security properties files
+     // - load statically registered providers
+     // - if no provider description file found then load default providers
++    // Note: Getting the input stream for the security.properties file is factored into its own
++    //       function, which will be intercepted during boot image creation.
+     static {
+         boolean loaded = false;
++        Reader input = null;
+         try {
+-            InputStream configStream = Security.class.getResourceAsStream("security.properties");
+-            InputStream input = new BufferedInputStream(configStream);
++            input = getSecurityPropertiesReader();
+             secprops.load(input);
+             loaded = true;
+-            configStream.close();
+         } catch (Exception ex) {
+             System.logE("Could not load 'security.properties'", ex);
++        } finally {
++            if (input != null) {
++                try {
++                    input.close();
++                } catch (Exception ex) {
++                    System.logW("Could not close 'security.properties'", ex);
++                }
++            }
+         }
+         if (!loaded) {
+             registerDefaultProviders();
+@@ -64,6 +75,11 @@ public final class Security {
+         Engine.door = new SecurityDoor();
+     }
+ 
++    private static Reader getSecurityPropertiesReader() throws Exception {
++        InputStream configStream = Security.class.getResourceAsStream("security.properties");
++        return new InputStreamReader(new BufferedInputStream(configStream), "ISO-8859-1");
++    }
++
+     /**
+      * This class can't be instantiated.
+      */
+diff --git a/luni/src/main/java/org/apache/harmony/security/fortress/Services.java b/luni/src/main/java/org/apache/harmony/security/fortress/Services.java
+index 30f4839..c81bf6b 100644
+--- a/luni/src/main/java/org/apache/harmony/security/fortress/Services.java
++++ b/luni/src/main/java/org/apache/harmony/security/fortress/Services.java
+@@ -63,6 +63,24 @@ public class Services {
+     private static final ArrayList<Provider> providers = new ArrayList<Provider>(20);
+ 
+     /**
++     * Try to load and register a provider by name from the given class-loader.
++     */
++    private static boolean initProvider(String providerClassName, ClassLoader classLoader) {
++        try {
++            Class<?> providerClass = Class.forName(providerClassName.trim(), true, classLoader);
++            Provider p = (Provider) providerClass.newInstance();
++            providers.add(p);
++            providersNames.put(p.getName(), p);
++            initServiceInfo(p);
++            return true;
++        } catch (ClassNotFoundException ignored) {
++        } catch (IllegalAccessException ignored) {
++        } catch (InstantiationException ignored) {
++        }
++        return false;
++    }
++
++    /**
+      * Hash for quick provider access by name.
+      */
+     private static final HashMap<String, Provider> providersNames
+@@ -70,18 +88,16 @@ public class Services {
+     static {
+         String providerClassName = null;
+         int i = 1;
+-        ClassLoader cl = ClassLoader.getSystemClassLoader();
++        ClassLoader cl = Services.class.getClassLoader();
+ 
+         while ((providerClassName = Security.getProperty("security.provider." + i++)) != null) {
+-            try {
+-                Class<?> providerClass = Class.forName(providerClassName.trim(), true, cl);
+-                Provider p = (Provider) providerClass.newInstance();
+-                providers.add(p);
+-                providersNames.put(p.getName(), p);
+-                initServiceInfo(p);
+-            } catch (ClassNotFoundException ignored) {
+-            } catch (IllegalAccessException ignored) {
+-            } catch (InstantiationException ignored) {
++            if (!initProvider(providerClassName, cl)) {
++                // Not on the boot classpath. Try the system class-loader.
++                // Note: DO NOT USE A LOCAL FOR GETSYSTEMCLASSLOADER! This will break compile-time
++                //       initialization.
++                if (!initProvider(providerClassName, ClassLoader.getSystemClassLoader())) {
++                    // TODO: Logging?
++                }
+             }
+         }
+         Engine.door.renumProviders();
+-- 
+2.5.0
+

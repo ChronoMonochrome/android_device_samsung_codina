@@ -1,0 +1,49 @@
+From 6daf970dc79593b68f60b3279fef9c851dc9a25c Mon Sep 17 00:00:00 2001
+From: Narayan Kamath <narayan@google.com>
+Date: Wed, 22 Apr 2015 09:27:57 +0100
+Subject: [PATCH 12/13] Remove unnecessary code from
+ InputStreamReader/OutputStreamWriter.init.
+
+Explicitly check that the decoder/encoder isn't null instead.
+
+bug: 20452644
+Change-Id: Ia43be6b03842af4e5c8945c8854db618b6ec357a
+---
+ luni/src/main/java/java/io/InputStreamReader.java  | 4 +++-
+ luni/src/main/java/java/io/OutputStreamWriter.java | 5 ++++-
+ 2 files changed, 7 insertions(+), 2 deletions(-)
+
+diff --git a/luni/src/main/java/java/io/InputStreamReader.java b/luni/src/main/java/java/io/InputStreamReader.java
+index d57b916..a4cacf2 100644
+--- a/luni/src/main/java/java/io/InputStreamReader.java
++++ b/luni/src/main/java/java/io/InputStreamReader.java
+@@ -101,7 +101,9 @@ public class InputStreamReader extends Reader {
+      */
+     public InputStreamReader(InputStream in, CharsetDecoder dec) {
+         super(in);
+-        dec.averageCharsPerByte();
++        if (dec == null) {
++            throw new NullPointerException("dec == null");
++        }
+         this.in = in;
+         decoder = dec;
+         bytes.limit(0);
+diff --git a/luni/src/main/java/java/io/OutputStreamWriter.java b/luni/src/main/java/java/io/OutputStreamWriter.java
+index bc8710d..8a639e7 100644
+--- a/luni/src/main/java/java/io/OutputStreamWriter.java
++++ b/luni/src/main/java/java/io/OutputStreamWriter.java
+@@ -116,7 +116,10 @@ public class OutputStreamWriter extends Writer {
+      */
+     public OutputStreamWriter(OutputStream out, CharsetEncoder charsetEncoder) {
+         super(out);
+-        charsetEncoder.charset();
++        if (charsetEncoder == null) {
++            throw new NullPointerException("charsetEncoder == null");
++        }
++
+         this.out = out;
+         encoder = charsetEncoder;
+     }
+-- 
+2.5.0
+

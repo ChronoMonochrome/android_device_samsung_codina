@@ -1,0 +1,28 @@
+From 79b79f850b53b5f455c6dc4caec88538877d8af7 Mon Sep 17 00:00:00 2001
+From: Calin Juravle <calin@google.com>
+Date: Fri, 12 Dec 2014 13:25:11 +0000
+Subject: [PATCH 04/13] Use EMPTY_ITERATOR for EmptyList
+
+Change-Id: Ic286c8fa6b01ba21211c0bedac66fb1b15221b1a
+---
+ luni/src/main/java/java/util/Collections.java | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/luni/src/main/java/java/util/Collections.java b/luni/src/main/java/java/util/Collections.java
+index 4541d64..1446faa 100644
+--- a/luni/src/main/java/java/util/Collections.java
++++ b/luni/src/main/java/java/util/Collections.java
+@@ -102,6 +102,10 @@ public class Collections {
+             throw new IndexOutOfBoundsException();
+         }
+ 
++        @Override public Iterator iterator() {
++            return EMPTY_ITERATOR;
++        }
++
+         private Object readResolve() {
+             return Collections.EMPTY_LIST;
+         }
+-- 
+2.5.0
+
