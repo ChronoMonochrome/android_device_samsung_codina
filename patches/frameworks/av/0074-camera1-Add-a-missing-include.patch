@@ -1,0 +1,26 @@
+From d977c9d921b57d1e06c2d5933f1fb15c95e88cab Mon Sep 17 00:00:00 2001
+From: Steve Kondik <steve@cyngn.com>
+Date: Wed, 1 Apr 2015 15:24:29 -0700
+Subject: [PATCH 74/95] camera1: Add a missing include
+
+Change-Id: Id0182ba89a5c2961053950dfd439217faaad6b53
+---
+ services/camera/libcameraservice/device1/CameraHardwareInterface.h | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/services/camera/libcameraservice/device1/CameraHardwareInterface.h b/services/camera/libcameraservice/device1/CameraHardwareInterface.h
+index e88bebb..d671e1b 100644
+--- a/services/camera/libcameraservice/device1/CameraHardwareInterface.h
++++ b/services/camera/libcameraservice/device1/CameraHardwareInterface.h
+@@ -30,6 +30,8 @@
+ #include <binder/MemoryHeapIon.h>
+ #endif
+ 
++#include "CameraService.h"
++
+ namespace android {
+ 
+ typedef void (*notify_callback)(int32_t msgType,
+-- 
+2.5.0
+

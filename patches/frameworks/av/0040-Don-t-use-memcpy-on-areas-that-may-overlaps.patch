@@ -1,0 +1,26 @@
+From a3329ef0102cb0fdffe9dd85ec83cf643c9ce0fb Mon Sep 17 00:00:00 2001
+From: Chet Kener <Cl3Kener@gmail.com>
+Date: Fri, 21 Nov 2014 14:24:37 -0500
+Subject: [PATCH 40/95] Don't use memcpy on areas that may overlaps
+
+Signed-off-by: Chet Kener <Cl3Kener@gmail.com>
+---
+ media/libeffects/downmix/EffectDownmix.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/media/libeffects/downmix/EffectDownmix.c b/media/libeffects/downmix/EffectDownmix.c
+index 1e0bbf4..fe3f444 100644
+--- a/media/libeffects/downmix/EffectDownmix.c
++++ b/media/libeffects/downmix/EffectDownmix.c
+@@ -618,7 +618,7 @@ int Downmix_Configure(downmix_module_t *pDwmModule, effect_config_t *pConfig, bo
+     }
+ 
+     if (&pDwmModule->config != pConfig) {
+-        memcpy(&pDwmModule->config, pConfig, sizeof(effect_config_t));
++        memmove(&pDwmModule->config, pConfig, sizeof(effect_config_t));
+     }
+ 
+     if (init) {
+-- 
+2.5.0
+

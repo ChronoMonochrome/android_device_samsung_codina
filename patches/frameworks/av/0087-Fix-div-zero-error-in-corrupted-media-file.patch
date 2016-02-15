@@ -1,0 +1,45 @@
+From a4ce438bf75a4027d20bbd44a8b2e6983bd66630 Mon Sep 17 00:00:00 2001
+From: Dan Liang <dan.liang@intel.com>
+Date: Tue, 7 Apr 2015 17:03:56 +0800
+Subject: [PATCH 87/95] Fix div zero error in corrupted media file
+
+Some corrupted media file has timescale value as zero and shouldn't be used.
+
+Change-Id: I8f6a347f8651cdc7e8c370ab1881e1a5fcb30839
+Signed-off-by: Dan Liang <dan.liang@intel.com>
+Signed-off-by: Chet Kener <Cl3Kener@gmail.com>
+---
+ media/libstagefright/MPEG4Extractor.cpp | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+diff --git a/media/libstagefright/MPEG4Extractor.cpp b/media/libstagefright/MPEG4Extractor.cpp
+index a75da2a..a3f87cc 100644
+--- a/media/libstagefright/MPEG4Extractor.cpp
++++ b/media/libstagefright/MPEG4Extractor.cpp
+@@ -1176,6 +1176,11 @@ status_t MPEG4Extractor::parseChunk(off64_t *offset, int depth) {
+                 return ERROR_IO;
+             }
+ 
++            if (!timescale) {
++                ALOGE("timescale should not be ZERO.");
++                return ERROR_MALFORMED;
++            }
++
+             mLastTrack->timescale = ntohl(timescale);
+ 
+             // 14496-12 says all ones means indeterminate, but some files seem to use
+@@ -2669,6 +2674,11 @@ status_t MPEG4Extractor::verifyTrack(Track *track) {
+         return ERROR_MALFORMED;
+     }
+ 
++    if (track->timescale == 0) {
++        ALOGE("timescale invalid.");
++        return ERROR_MALFORMED;
++    }
++
+     return OK;
+ }
+ 
+-- 
+2.5.0
+

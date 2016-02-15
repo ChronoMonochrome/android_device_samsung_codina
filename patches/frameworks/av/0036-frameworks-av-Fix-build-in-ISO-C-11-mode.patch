@@ -1,0 +1,66 @@
+From c3f795ae33a4acfddbf95676f2211ab820c25b98 Mon Sep 17 00:00:00 2001
+From: Bernhard Rosenkraenzer <Bernhard.Rosenkranzer@linaro.org>
+Date: Fri, 24 Aug 2012 12:12:24 +0200
+Subject: [PATCH 36/95] frameworks/av: Fix build in ISO C++ 11 mode
+
+Fix build in ISO C++ 11 mode: constructs that are being interpreted as
+new string literals and const vs. constexpr
+
+Change-Id: Ibdf4867da37b819b1a499180edcf7ad480b6b9de
+Signed-off-by: Bernhard Rosenkraenzer <Bernhard.Rosenkranzer@linaro.org>
+Signed-off-by: Chet Kener <Cl3Kener@gmail.com>
+
+Conflicts:
+	media/libstagefright/OMXCodec.cpp
+
+Signed-off-by: Chet Kener <Cl3Kener@gmail.com>
+---
+ include/media/ToneGenerator.h | 18 +++++++++++-------
+ 1 file changed, 11 insertions(+), 7 deletions(-)
+
+diff --git a/include/media/ToneGenerator.h b/include/media/ToneGenerator.h
+index 898b743..24ad44f 100644
+--- a/include/media/ToneGenerator.h
++++ b/include/media/ToneGenerator.h
+@@ -24,6 +24,10 @@
+ #include <utils/RefBase.h>
+ #include <utils/threads.h>
+ 
++#if __cplusplus < 201103L && !defined(__GXX_EXPERIMENTAL_CXX0X__) && !defined(constexpr)
++#define constexpr const
++#endif
++
+ namespace android {
+ 
+ class ToneGenerator {
+@@ -205,10 +209,10 @@ private:
+ 
+     static const unsigned char sToneMappingTable[NUM_REGIONS-1][NUM_SUP_TONES];
+ 
+-    static const unsigned int TONEGEN_MAX_WAVES = 3;     // Maximun number of sine waves in a tone segment
+-    static const unsigned int TONEGEN_MAX_SEGMENTS = 12;  // Maximun number of segments in a tone descriptor
+-    static const unsigned int TONEGEN_INF = 0xFFFFFFFF;  // Represents infinite time duration
+-    static const float TONEGEN_GAIN = 0.9;  // Default gain passed to  WaveGenerator().
++    static constexpr unsigned int TONEGEN_MAX_WAVES = 3;     // Maximun number of sine waves in a tone segment
++    static constexpr unsigned int TONEGEN_MAX_SEGMENTS = 12;  // Maximun number of segments in a tone descriptor
++    static constexpr unsigned int TONEGEN_INF = 0xFFFFFFFF;  // Represents infinite time duration
++    static constexpr float TONEGEN_GAIN = 0.9;  // Default gain passed to  WaveGenerator().
+ 
+     // ToneDescriptor class contains all parameters needed to generate a tone:
+     //    - The array waveFreq[]:
+@@ -298,9 +302,9 @@ private:
+                 unsigned int command);
+ 
+     private:
+-        static const short GEN_AMP = 32000;  // amplitude of generator
+-        static const short S_Q14 = 14;  // shift for Q14
+-        static const short S_Q15 = 15;  // shift for Q15
++        static constexpr short GEN_AMP = 32000;  // amplitude of generator
++        static constexpr short S_Q14 = 14;  // shift for Q14
++        static constexpr short S_Q15 = 15;  // shift for Q15
+ 
+         short mA1_Q14;  // Q14 coefficient
+         // delay line of full amplitude generator
+-- 
+2.5.0
+

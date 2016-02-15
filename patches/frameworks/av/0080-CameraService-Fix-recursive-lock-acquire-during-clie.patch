@@ -1,0 +1,37 @@
+From ad7efd43a7b985b6148c7c6359d2359e5b5251c0 Mon Sep 17 00:00:00 2001
+From: Sai Kumar Sanagavarapu <ssanagav@codeaurora.org>
+Date: Wed, 8 Apr 2015 11:58:49 +0530
+Subject: [PATCH 80/95] CameraService: Fix recursive lock acquire during client
+ destruction.
+
+While trying to remove stale clients, service lock will be acquired
+recursively due to which deadlock will happen and eventually
+framework reboot. So, remove this logic.
+
+Change-Id: I93b64cf075d339180aa426d985123878975a0abb
+---
+ services/camera/libcameraservice/CameraService.cpp | 8 +-------
+ 1 file changed, 1 insertion(+), 7 deletions(-)
+
+diff --git a/services/camera/libcameraservice/CameraService.cpp b/services/camera/libcameraservice/CameraService.cpp
+index 76428da..18f24fd 100644
+--- a/services/camera/libcameraservice/CameraService.cpp
++++ b/services/camera/libcameraservice/CameraService.cpp
+@@ -1222,13 +1222,7 @@ sp<CameraService::BasicClient> CameraService::findClientUnsafe(
+         // Client::~Client() -> disconnect() -> removeClientByRemote().
+         client = mClient[i].promote();
+ 
+-        // Clean up stale client entry
+-        if (client == NULL) {
+-            mClient[i].clear();
+-            continue;
+-        }
+-
+-        if (cameraClient == client->getRemote()) {
++        if ((client != NULL) && (cameraClient == client->getRemote())) {
+             // Found our camera
+             outIndex = i;
+             return client;
+-- 
+2.5.0
+

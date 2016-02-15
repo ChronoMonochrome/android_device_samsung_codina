@@ -1,0 +1,45 @@
+From a1c4034e3979fbbbc1f1b66d406a8abe58470726 Mon Sep 17 00:00:00 2001
+From: Surajit Podder <spodder@codeaurora.org>
+Date: Wed, 10 Dec 2014 14:55:52 +0530
+Subject: [PATCH 63/95] libstagefright: Explicitly disconnect HTTP connection
+
+The HTTP connection created by StagefrightMetadataRetriever
+is not closed explicitly, and tcp activity continues even
+after metadata retriever is destroyed
+
+Explicitly disconnect HTTP connection in StagefrightMetadataRetriever
+
+Change-Id: I261d369e8dcff1bc0a3c7225243e865858b4fc7c
+CRs-Fixed: 754684
+---
+ media/libstagefright/StagefrightMetadataRetriever.cpp | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/media/libstagefright/StagefrightMetadataRetriever.cpp b/media/libstagefright/StagefrightMetadataRetriever.cpp
+index 101fc8a..2eaa4d8 100644
+--- a/media/libstagefright/StagefrightMetadataRetriever.cpp
++++ b/media/libstagefright/StagefrightMetadataRetriever.cpp
+@@ -22,6 +22,7 @@
+ #include <utils/Log.h>
+ 
+ #include "include/StagefrightMetadataRetriever.h"
++#include "include/HTTPBase.h"
+ 
+ #include <media/IMediaHTTPService.h>
+ #include <media/stagefright/foundation/ADebug.h>
+@@ -52,6 +53,12 @@ StagefrightMetadataRetriever::~StagefrightMetadataRetriever() {
+     mAlbumArt = NULL;
+ 
+     mClient.disconnect();
++
++    if (mSource != NULL &&
++        (mSource->flags() & DataSource::kIsHTTPBasedSource)) {
++        mExtractor.clear();
++        static_cast<HTTPBase *>(mSource.get())->disconnect();
++    }
+ }
+ 
+ status_t StagefrightMetadataRetriever::setDataSource(
+-- 
+2.5.0
+

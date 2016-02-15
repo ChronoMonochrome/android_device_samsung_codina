@@ -1,0 +1,32 @@
+From 6295c82050b248d039d67147b25efb03ecd206b8 Mon Sep 17 00:00:00 2001
+From: Bernhard Rosenkraenzer <Bernhard.Rosenkranzer@linaro.org>
+Date: Sat, 4 Oct 2014 00:48:31 +0200
+Subject: [PATCH 71/95] Remove check for an impossible condition
+
+offset_for_ref_frame is an array rather than a pointer - it can't be
+NULL (and the check causes a warning in clang).
+
+Change-Id: I9b96e1e723e3b8caebd41821137ed6fb669d8cd4
+Signed-off-by: Bernhard Rosenkraenzer <Bernhard.Rosenkranzer@linaro.org>
+---
+ media/libstagefright/codecs/avc/enc/src/init.cpp | 4 ----
+ 1 file changed, 4 deletions(-)
+
+diff --git a/media/libstagefright/codecs/avc/enc/src/init.cpp b/media/libstagefright/codecs/avc/enc/src/init.cpp
+index c258b57..6e1413a 100644
+--- a/media/libstagefright/codecs/avc/enc/src/init.cpp
++++ b/media/libstagefright/codecs/avc/enc/src/init.cpp
+@@ -177,10 +177,6 @@ AVCEnc_Status  SetEncodeParam(AVCHandle* avcHandle, AVCEncParams* encParam,
+             seqParam->offset_for_non_ref_pic = extS->offset_for_non_ref_pic;
+             seqParam->offset_for_top_to_bottom_field = extS->offset_for_top_to_bottom_field;
+             seqParam->num_ref_frames_in_pic_order_cnt_cycle = extS->num_ref_frames_in_pic_order_cnt_cycle;
+-            if (extS->offset_for_ref_frame == NULL)
+-            {
+-                return AVCENC_ENCPARAM_MEM_FAIL;
+-            }
+             for (ii = 0; ii < (int) extS->num_ref_frames; ii++)
+             {
+                 seqParam->offset_for_ref_frame[ii] = extS->offset_for_ref_frame[ii];
+-- 
+2.5.0
+

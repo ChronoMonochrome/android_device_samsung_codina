@@ -1,7 +1,7 @@
 From 70d3d80398da76e5c39f780eb262dc354c326682 Mon Sep 17 00:00:00 2001
 From: Stefan Berger <s.berger81@gmail.com>
 Date: Wed, 11 Mar 2015 23:47:09 +0100
-Subject: [PATCH 13/17] av: Support for HOTWORD - OK Google
+Subject: [PATCH 13/95] av: Support for HOTWORD - OK Google
 
 Change-Id: I3a5cc79dcb642d3802847b405790bf326495964e
 ---

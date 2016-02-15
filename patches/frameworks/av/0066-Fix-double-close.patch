@@ -1,0 +1,56 @@
+From 2a94c05bfc8374f605e1d62456c53d67fc5b46f0 Mon Sep 17 00:00:00 2001
+From: Bao Haojun <baohaojun@gmail.com>
+Date: Fri, 16 May 2014 13:20:19 +0800
+Subject: [PATCH 66/95] Fix double close.
+
+This patch will fix the double close issue in SoundPool::doLoad():
+
+        status = MediaPlayer::decode(mFd, mOffset, mLength, &sampleRate, &numChannels, &format,
+                                     mHeap, &mSize);
+        ALOGV("close(%d)", mFd);
+        ::close(mFd);
+        mFd = -1;
+
+In MediaPlayerService::decode() which is called directly by
+MediaPlayer::decode(), the fd will be closed, and after it return, the
+mFd will be closed again.
+
+When the system is idle, the second close will fail with EBADFD, but if
+the system is busy, the mFd will be reused with another open/socket/pipe
+system call, and the second close will cause errors.
+
+Change-Id: If709515392cd490fea569658202524c51f8df785
+Signed-off-by: Bao Haojun <baohaojun@gmail.com>
+Signed-off-by: Wang Liang <wangliang@smartisan.cn>
+---
+ media/libmedia/IMediaPlayerService.cpp             | 1 +
+ media/libmediaplayerservice/MediaPlayerService.cpp | 1 -
+ 2 files changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/media/libmedia/IMediaPlayerService.cpp b/media/libmedia/IMediaPlayerService.cpp
+index 2e02d17..573c87f 100644
+--- a/media/libmedia/IMediaPlayerService.cpp
++++ b/media/libmedia/IMediaPlayerService.cpp
+@@ -261,6 +261,7 @@ status_t BnMediaPlayerService::onTransact(
+             size_t size;
+             status_t status = decode(fd, offset, length, &sampleRate, &numChannels, &format,
+                                      heap, &size);
++            ::close(fd);
+             reply->writeInt32(status);
+             if (status == NO_ERROR) {
+                 reply->writeInt32(sampleRate);
+diff --git a/media/libmediaplayerservice/MediaPlayerService.cpp b/media/libmediaplayerservice/MediaPlayerService.cpp
+index d461af3..e41e956 100644
+--- a/media/libmediaplayerservice/MediaPlayerService.cpp
++++ b/media/libmediaplayerservice/MediaPlayerService.cpp
+@@ -1399,7 +1399,6 @@ status_t MediaPlayerService::decode(int fd, int64_t offset, int64_t length,
+ 
+ Exit:
+     if (player != 0) player->reset();
+-    ::close(fd);
+     return status;
+ }
+ 
+-- 
+2.5.0
+

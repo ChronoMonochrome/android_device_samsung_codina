@@ -1,0 +1,25 @@
+From 986b1fac40d10bda41fb2271738cb39e9d77331d Mon Sep 17 00:00:00 2001
+From: Chet Kener <Cl3Kener@gmail.com>
+Date: Sun, 14 Dec 2014 00:53:54 -0500
+Subject: [PATCH 47/95] Disable Strict Aliasing on libeffects
+
+Signed-off-by: Chet Kener <Cl3Kener@gmail.com>
+---
+ media/libeffects/downmix/Android.mk | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/media/libeffects/downmix/Android.mk b/media/libeffects/downmix/Android.mk
+index e0ca8af..3da9ff5 100644
+--- a/media/libeffects/downmix/Android.mk
++++ b/media/libeffects/downmix/Android.mk
+@@ -19,6 +19,6 @@ LOCAL_C_INCLUDES := \
+ 	$(call include-path-for, audio-effects) \
+ 	$(call include-path-for, audio-utils)
+ 
+-LOCAL_CFLAGS += -fvisibility=hidden
++LOCAL_CFLAGS += -fvisibility=hidden -fno-strict-aliasing
+ 
+ include $(BUILD_SHARED_LIBRARY)
+-- 
+2.5.0
+

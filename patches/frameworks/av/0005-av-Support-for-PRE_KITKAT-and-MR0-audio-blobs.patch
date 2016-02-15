@@ -1,7 +1,7 @@
 From 3209fe35be1b2f8438b38da20b45ae372607afa4 Mon Sep 17 00:00:00 2001
 From: Stefan Berger <s.berger81@gmail.com>
 Date: Wed, 11 Mar 2015 23:36:59 +0100
-Subject: [PATCH 05/17] av: Support for PRE_KITKAT and MR0 audio blobs
+Subject: [PATCH 05/95] av: Support for PRE_KITKAT and MR0 audio blobs
 
 Change-Id: Idd224a91ec60b384081ba99c6dc802b6ddeeb4b2
 ---

@@ -1,7 +1,7 @@
 From 162cacb9225d065aeed1341e645af1e5c3254ed5 Mon Sep 17 00:00:00 2001
 From: Shilin Victor <chrono.monochrome@gmail.com>
 Date: Tue, 9 Feb 2016 08:54:17 +0700
-Subject: [PATCH 17/17] frameworks-av_WW009-Fix-media-GraphicBuffer.patch
+Subject: [PATCH 17/95] frameworks-av_WW009-Fix-media-GraphicBuffer.patch
 
 Change-Id: I9d727b2fab5405c4189c14394a9c022a5fb479c4
 ---

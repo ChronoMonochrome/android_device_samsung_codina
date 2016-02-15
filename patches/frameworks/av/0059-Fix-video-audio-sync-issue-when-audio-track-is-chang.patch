@@ -1,0 +1,33 @@
+From 1ea754cf4e76ada7fd9334c7505e31efbed0f7b6 Mon Sep 17 00:00:00 2001
+From: Zhongli Wang <zhongli.wang@sonymobile.com>
+Date: Tue, 8 Jul 2014 11:07:53 +0200
+Subject: [PATCH 59/95] Fix video/audio sync issue when audio track is changed
+
+After user resumes playback in short period of time after audio track
+switching, audio decoder will be null due to failure of fetching
+stream type. However current routine is to resume video playback even
+though audio decoder is null, which causes video/audio sync problem.
+
+Change-Id: I4efeff18f55d46daa34ead71f77dbfa1016798a2
+---
+ media/libmediaplayerservice/nuplayer/NuPlayerRenderer.cpp | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/media/libmediaplayerservice/nuplayer/NuPlayerRenderer.cpp b/media/libmediaplayerservice/nuplayer/NuPlayerRenderer.cpp
+index 25225a8..2df1f46 100644
+--- a/media/libmediaplayerservice/nuplayer/NuPlayerRenderer.cpp
++++ b/media/libmediaplayerservice/nuplayer/NuPlayerRenderer.cpp
+@@ -1288,6 +1288,10 @@ void NuPlayer::Renderer::onResume() {
+ 
+     if (!mAudioQueue.empty()) {
+         postDrainAudioQueue_l();
++    } else if (mHasAudio) {
++        // Audio decoder is not ready when resuming playback after
++        // changing audio track. Queue synching is needed.
++        mSyncQueues = true;
+     }
+ 
+     if (!mVideoQueue.empty()) {
+-- 
+2.5.0
+

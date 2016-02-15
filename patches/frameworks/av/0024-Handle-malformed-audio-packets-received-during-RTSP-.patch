@@ -1,0 +1,38 @@
+From d7d140dff4d7c8143a960bfa67d40cfe1849c1cd Mon Sep 17 00:00:00 2001
+From: Sunil Shah <sunil.shah@sonyericsson.com>
+Date: Tue, 19 Apr 2011 12:33:44 +0200
+Subject: [PATCH 24/95] Handle malformed audio packets received during RTSP
+ stream switching
+
+During RTSP stream switching (for example channel switching in a
+Mobile TV application) we occasionally receive packets that
+don't contain valid data, so we cannot remove LATM framing (as per
+the MPEG4 Audio Assembler).  This fix allows the frame remover
+to exit gracefully (instead of crashing), when such frames are
+encountered, and as a consequence, Mobile TV apps can change
+channels properly.
+
+Change-Id: Ie4c3d2766c87b43f31624192de96bc47180ca514
+---
+ media/libstagefright/rtsp/AMPEG4AudioAssembler.cpp | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/media/libstagefright/rtsp/AMPEG4AudioAssembler.cpp b/media/libstagefright/rtsp/AMPEG4AudioAssembler.cpp
+index 851805f..286ff52 100644
+--- a/media/libstagefright/rtsp/AMPEG4AudioAssembler.cpp
++++ b/media/libstagefright/rtsp/AMPEG4AudioAssembler.cpp
+@@ -379,7 +379,10 @@ sp<ABuffer> AMPEG4AudioAssembler::removeLATMFraming(const sp<ABuffer> &buffer) {
+                 unsigned muxSlotLengthBytes = 0;
+                 unsigned tmp;
+                 do {
+-                    CHECK_LT(offset, buffer->size());
++                    if (offset >= buffer->size()) {
++                        ALOGW("Malformed buffer received");
++                        return out;
++                    }
+                     tmp = ptr[offset++];
+                     muxSlotLengthBytes += tmp;
+                 } while (tmp == 0xff);
+-- 
+2.5.0
+

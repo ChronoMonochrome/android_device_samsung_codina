@@ -1,7 +1,7 @@
 From 9df391ec31a1b8e1f1b71c2ed5ebb39a371ca9c8 Mon Sep 17 00:00:00 2001
 From: Meticulus <theonejohnnyd@gmail.com>
 Date: Wed, 5 Nov 2014 22:57:06 +0100
-Subject: [PATCH 04/17] STE Multimedia Fix
+Subject: [PATCH 04/95] STE Multimedia Fix
 
 Change-Id: I41b1993023dcdae651a2171208524018e2381bd8
 ---

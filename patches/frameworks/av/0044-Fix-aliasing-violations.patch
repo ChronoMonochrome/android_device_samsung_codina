@@ -1,0 +1,37 @@
+From b78e4090fa1942ea8707a91e2eaa2595b4eea461 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Bernhard=20Rosenkr=C3=A4nzer?=
+ <Bernhard.Rosenkranzer@linaro.org>
+Date: Tue, 5 Nov 2013 16:16:15 +0100
+Subject: [PATCH 44/95] Fix aliasing violations
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Change-Id: I49035dbf5d95afb90345daa97dd21048ee458ba3
+Signed-off-by: Bernhard Rosenkränzer <Bernhard.Rosenkranzer@linaro.org>
+Signed-off-by: Chet Kener <Cl3Kener@gmail.com>
+---
+ media/libmedia/Visualizer.cpp | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
+
+diff --git a/media/libmedia/Visualizer.cpp b/media/libmedia/Visualizer.cpp
+index c46b965..0ea3e74 100644
+--- a/media/libmedia/Visualizer.cpp
++++ b/media/libmedia/Visualizer.cpp
+@@ -212,8 +212,11 @@ status_t Visualizer::setMeasurementMode(uint32_t mode) {
+ 
+     p->psize = sizeof(uint32_t);
+     p->vsize = sizeof(uint32_t);
+-    *(int32_t *)p->data = VISUALIZER_PARAM_MEASUREMENT_MODE;
+-    *((int32_t *)p->data + 1)= mode;
++    int32_t const vpmm = VISUALIZER_PARAM_MEASUREMENT_MODE;
++    memcpy(&p->data, &vpmm, sizeof(vpmm));
++    memcpy(&p->data+sizeof(vpmm), &mode, sizeof(mode));
++    //*(int32_t *)p->data = VISUALIZER_PARAM_MEASUREMENT_MODE;
++    //*((int32_t *)p->data + 1)= mode;
+     status_t status = setParameter(p);
+ 
+     ALOGV("setMeasurementMode mode %d  status %d p->status %d", mode, status, p->status);
+-- 
+2.5.0
+

@@ -1,0 +1,31 @@
+From f5a09bc7b6915453cad10b872f019c06d4ee591e Mon Sep 17 00:00:00 2001
+From: Kim Zhang <xiazhang@codeaurora.org>
+Date: Tue, 31 Mar 2015 13:56:10 +0800
+Subject: [PATCH 89/95] libstagefright: add NULL check in MediaCodecSource's
+ puller
+
+  When CameraSource/AudioSource is stopped, puller will read a NULL buffer
+  with success, so we should add NULL check before release it.
+
+Change-Id: I8924167fc79c7880e80115aafbb9cc7c3e9e885c
+CRs-Fixed: 813924
+---
+ media/libstagefright/MediaCodecSource.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/media/libstagefright/MediaCodecSource.cpp b/media/libstagefright/MediaCodecSource.cpp
+index c26e909..bb8bd8c 100644
+--- a/media/libstagefright/MediaCodecSource.cpp
++++ b/media/libstagefright/MediaCodecSource.cpp
+@@ -209,7 +209,7 @@ void MediaCodecSource::Puller::onMessageReceived(const sp<AMessage> &msg) {
+             status_t err = mSource->read(&mbuf);
+ 
+             if (mPaused) {
+-                if (err == OK) {
++                if (err == OK && (NULL != mbuf)) {
+                     mbuf->release();
+                     mbuf = NULL;
+                 }
+-- 
+2.5.0
+

@@ -1,7 +1,7 @@
 From 39afe36683bd4a2d94a9a9e069377974f214e4c5 Mon Sep 17 00:00:00 2001
 From: Arne Coucheron <arco68@gmail.com>
 Date: Fri, 26 Dec 2014 11:05:00 +0100
-Subject: [PATCH 06/17] camera: Fix inclusion of CameraParametersExtra.h
+Subject: [PATCH 06/95] camera: Fix inclusion of CameraParametersExtra.h
 
 Change-Id: If3a6484c7423063c984650f5170794d1bb0e20e9
 ---

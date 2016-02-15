@@ -1,0 +1,27 @@
+From fcac918eb8adeb7ccce30f7995b3cfa8aa554512 Mon Sep 17 00:00:00 2001
+From: Chet Kener <Cl3Kener@gmail.com>
+Date: Sun, 14 Dec 2014 00:17:43 -0500
+Subject: [PATCH 45/95] webm: No Strict Aliasing
+
+Signed-off-by: Chet Kener <Cl3Kener@gmail.com>
+---
+ media/libstagefright/webm/Android.mk | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/media/libstagefright/webm/Android.mk b/media/libstagefright/webm/Android.mk
+index 7081463..683b35c 100644
+--- a/media/libstagefright/webm/Android.mk
++++ b/media/libstagefright/webm/Android.mk
+@@ -2,7 +2,8 @@ LOCAL_PATH:= $(call my-dir)
+ include $(CLEAR_VARS)
+ 
+ LOCAL_CPPFLAGS += -D__STDINT_LIMITS \
+-                  -Werror
++                  -Werror \
++                  -fno-strict-aliasing
+ 
+ LOCAL_SRC_FILES:= EbmlUtil.cpp        \
+                   WebmElement.cpp     \
+-- 
+2.5.0
+

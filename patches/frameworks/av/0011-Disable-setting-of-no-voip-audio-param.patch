@@ -1,7 +1,7 @@
 From 0c837807a51843e6cd9b67aef5a6044cf116d043 Mon Sep 17 00:00:00 2001
 From: Meticulus <theonejohnnyd@gmail.com>
 Date: Thu, 15 Jan 2015 21:45:13 +0100
-Subject: [PATCH 11/17] Disable setting of no voip audio param
+Subject: [PATCH 11/95] Disable setting of no voip audio param
 
 Change-Id: Idbce147e9f4bbd1a7ce43a2ec4e06eb3f470b00e
 ---

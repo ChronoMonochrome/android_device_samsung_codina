@@ -1,0 +1,68 @@
+From 2f4e1a390a89426f97451bf059bec7d424ef1de3 Mon Sep 17 00:00:00 2001
+From: Martin Storsjo <martin@martin.st>
+Date: Thu, 27 Nov 2014 22:51:14 +0200
+Subject: [PATCH 81/95] Use define for drm property keys instead of defining as
+ char pointers
+
+When defined as char pointers, every compilation unit that includes
+the NdkMediaDrm.h header defines a new copy of the same global
+variables - leading to linker errors due to multiple definitions
+if more than one file includes it.
+
+By using a define, they don't generate any symbols. The NdkMediaFormat.h
+header uses extern const char* for a similar set of keys, but that
+can't be added after the actual platform has shipped. The other
+alternative would be to declare them as static const char*, which
+wouldn't generate global symbols, but which could trigger warnings
+about unused static symbols instead.
+
+Change-Id: I14ca81d94309b7f437b3bc144920c48a8b3f0261
+---
+ include/ndk/NdkMediaDrm.h | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/include/ndk/NdkMediaDrm.h b/include/ndk/NdkMediaDrm.h
+index 10afdd9..3c312a9 100644
+--- a/include/ndk/NdkMediaDrm.h
++++ b/include/ndk/NdkMediaDrm.h
+@@ -327,24 +327,24 @@ media_status_t AMediaDrm_releaseSecureStops(AMediaDrm *,
+ /**
+  * String property name: identifies the maker of the DRM engine plugin
+  */
+-const char *PROPERTY_VENDOR = "vendor";
++#define PROPERTY_VENDOR "vendor"
+ 
+ /**
+  * String property name: identifies the version of the DRM engine plugin
+  */
+-const char *PROPERTY_VERSION = "version";
++#define PROPERTY_VERSION "version"
+ 
+ /**
+  * String property name: describes the DRM engine plugin
+  */
+-const char *PROPERTY_DESCRIPTION = "description";
++#define PROPERTY_DESCRIPTION "description"
+ 
+ /**
+  * String property name: a comma-separated list of cipher and mac algorithms
+  * supported by CryptoSession.  The list may be empty if the DRM engine
+  * plugin does not support CryptoSession operations.
+  */
+-const char *PROPERTY_ALGORITHMS = "algorithms";
++#define PROPERTY_ALGORITHMS "algorithms"
+ 
+ /**
+  * Read a DRM engine plugin String property value, given the property name string.
+@@ -361,7 +361,7 @@ media_status_t AMediaDrm_getPropertyString(AMediaDrm *, const char *propertyName
+  * Byte array property name: the device unique identifier is established during
+  * device provisioning and provides a means of uniquely identifying each device.
+  */
+-const char *PROPERTY_DEVICE_UNIQUE_ID = "deviceUniqueId";
++#define PROPERTY_DEVICE_UNIQUE_ID "deviceUniqueId"
+ 
+ /**
+  * Read a DRM engine plugin byte array property value, given the property name string.
+-- 
+2.5.0
+

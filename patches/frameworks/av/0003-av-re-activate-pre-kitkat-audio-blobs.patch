@@ -1,7 +1,7 @@
 From 4b2d87235653fae944906a326855da62fa3106b0 Mon Sep 17 00:00:00 2001
 From: chrmhoffmann <chrmhoffmann@gmail.com>
 Date: Wed, 11 Mar 2015 23:21:22 +0100
-Subject: [PATCH 03/17] av: re-activate pre-kitkat audio blobs
+Subject: [PATCH 03/95] av: re-activate pre-kitkat audio blobs
 
 Change-Id: I8f566ea190d1442f9433c848b64944a33e6be76e
 ---

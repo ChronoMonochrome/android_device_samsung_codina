@@ -1,0 +1,92 @@
+From c4be7c7653b1501152577a3c9e5f02d62c2d77dc Mon Sep 17 00:00:00 2001
+From: Marco Nelissen <marcone@google.com>
+Date: Thu, 19 Feb 2015 11:03:19 -0800
+Subject: [PATCH 65/95] Fixes for GSM decoder
+
+Use larger buffer size, since otherwise it won't work with MediaExtractor
+which batches up GSM frames.
+Support reset and flush.
+
+Change-Id: I3a87e3744c088f7a40bbc428187fc44c073c63ec
+---
+ media/libstagefright/codecs/gsm/dec/SoftGSM.cpp | 28 ++++++++++++++++++++++---
+ media/libstagefright/codecs/gsm/dec/SoftGSM.h   |  3 +++
+ 2 files changed, 28 insertions(+), 3 deletions(-)
+
+diff --git a/media/libstagefright/codecs/gsm/dec/SoftGSM.cpp b/media/libstagefright/codecs/gsm/dec/SoftGSM.cpp
+index 4debc48..bd01a1a 100644
+--- a/media/libstagefright/codecs/gsm/dec/SoftGSM.cpp
++++ b/media/libstagefright/codecs/gsm/dec/SoftGSM.cpp
+@@ -34,6 +34,9 @@ static void InitOMXParams(T *params) {
+     params->nVersion.s.nStep = 0;
+ }
+ 
++// Microsoft WAV GSM encoding packs two GSM frames into 65 bytes.
++static const int kMSGSMFrameSize = 65;
++
+ SoftGSM::SoftGSM(
+         const char *name,
+         const OMX_CALLBACKTYPE *callbacks,
+@@ -64,7 +67,7 @@ void SoftGSM::initPorts() {
+     def.eDir = OMX_DirInput;
+     def.nBufferCountMin = kNumBuffers;
+     def.nBufferCountActual = def.nBufferCountMin;
+-    def.nBufferSize = sizeof(gsm_frame);
++    def.nBufferSize = 1024 / kMSGSMFrameSize * kMSGSMFrameSize;
+     def.bEnabled = OMX_TRUE;
+     def.bPopulated = OMX_FALSE;
+     def.eDomain = OMX_PortDomainAudio;
+@@ -207,8 +210,8 @@ void SoftGSM::onQueueFilled(OMX_U32 /* portIndex */) {
+             mSignalledError = true;
+         }
+ 
+-        if(((inHeader->nFilledLen / 65) * 65) != inHeader->nFilledLen) {
+-            ALOGE("input buffer not multiple of 65 (%d).", inHeader->nFilledLen);
++        if(((inHeader->nFilledLen / kMSGSMFrameSize) * kMSGSMFrameSize) != inHeader->nFilledLen) {
++            ALOGE("input buffer not multiple of %d (%d).", kMSGSMFrameSize, inHeader->nFilledLen);
+             notify(OMX_EventError, OMX_ErrorUndefined, 0, NULL);
+             mSignalledError = true;
+         }
+@@ -258,6 +261,25 @@ int SoftGSM::DecodeGSM(gsm handle,
+     return ret;
+ }
+ 
++void SoftGSM::onPortFlushCompleted(OMX_U32 portIndex) {
++    if (portIndex == 0) {
++        gsm_destroy(mGsm);
++        mGsm = gsm_create();
++        int msopt = 1;
++        gsm_option(mGsm, GSM_OPT_WAV49, &msopt);
++    }
++}
++
++void SoftGSM::onReset() {
++    gsm_destroy(mGsm);
++    mGsm = gsm_create();
++    int msopt = 1;
++    gsm_option(mGsm, GSM_OPT_WAV49, &msopt);
++    mSignalledError = false;
++}
++
++
++
+ 
+ }  // namespace android
+ 
+diff --git a/media/libstagefright/codecs/gsm/dec/SoftGSM.h b/media/libstagefright/codecs/gsm/dec/SoftGSM.h
+index 8ab6116..0303dea 100644
+--- a/media/libstagefright/codecs/gsm/dec/SoftGSM.h
++++ b/media/libstagefright/codecs/gsm/dec/SoftGSM.h
+@@ -43,6 +43,9 @@ protected:
+ 
+     virtual void onQueueFilled(OMX_U32 portIndex);
+ 
++    virtual void onPortFlushCompleted(OMX_U32 portIndex);
++    virtual void onReset();
++
+ private:
+     enum {
+         kNumBuffers = 4,
+-- 
+2.5.0
+

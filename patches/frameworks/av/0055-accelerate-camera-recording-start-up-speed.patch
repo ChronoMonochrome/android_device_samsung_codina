@@ -1,0 +1,44 @@
+From 850b0a3587c2b0caebe52473eb71558d86ab7cea Mon Sep 17 00:00:00 2001
+From: Guoliang Ji <guoliang.ji@intel.com>
+Date: Thu, 2 May 2013 16:43:52 +0800
+Subject: [PATCH 55/95] accelerate camera recording start up speed
+
+When do initial buffer submit, if do drainInputBuffers() first, it will always wait all input buffers reached,
+and then start fillOutputBuffers().During this time, nothing to do in level codec, all time is cost on waiting,
+it is especially severe for Camera recording case, for example, in 30fps case, If 3 input buffers are required,
+HW codec will wait at least 99ms to start video encoding, since no outport buffer ready at this
+time.
+
+After change call sequence, fillOutputBuffers() is done fast firstly, then do drainInputBuffers(),
+when receive one input buffer in HW codec, it can start working immediately, because the working condition is reached,
+both input port and out port buffers are ready.
+
+Change-Id: If74fd839f2bb0cae6c7d8ae0912d47abb2cdc045
+Signed-off-by: jiguoliang <guoliang.ji@intel.com>
+Signed-off-by: ywan171 <yi.a.wang@intel.com>
+---
+ media/libstagefright/OMXCodec.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/media/libstagefright/OMXCodec.cpp b/media/libstagefright/OMXCodec.cpp
+index bca211d..0ddd4e5 100644
+--- a/media/libstagefright/OMXCodec.cpp
++++ b/media/libstagefright/OMXCodec.cpp
+@@ -4012,13 +4012,13 @@ status_t OMXCodec::read(
+             mPaused = false;
+         }
+ 
+-        drainInputBuffers();
+ 
+         if (mState == EXECUTING) {
+             // Otherwise mState == RECONFIGURING and this code will trigger
+             // after the output port is reenabled.
+             fillOutputBuffers();
+         }
++        drainInputBuffers();
+     }
+ 
+     if (seeking) {
+-- 
+2.5.0
+

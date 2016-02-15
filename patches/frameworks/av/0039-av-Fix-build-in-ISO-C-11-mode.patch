@@ -1,0 +1,52 @@
+From 538f870c7ec23eb0a34ce0a084016021f1ad5563 Mon Sep 17 00:00:00 2001
+From: Bernhard Rosenkraenzer <Bernhard.Rosenkranzer@linaro.org>
+Date: Fri, 24 Aug 2012 21:17:22 +0200
+Subject: [PATCH 39/95] av: Fix build in ISO C++11 mode
+
+Change-Id: I461d8ce5b24afedee245a6441b600df286c76b63
+Signed-off-by: Bernhard Rosenkraenzer <Bernhard.Rosenkranzer@linaro.org>
+Signed-off-by: Chet Kener <Cl3Kener@gmail.com>
+
+Conflicts:
+	services/audioflinger/AudioResampler.h
+
+Signed-off-by: Chet Kener <Cl3Kener@gmail.com>
+---
+ services/audioflinger/AudioResampler.h | 10 +++++++---
+ 1 file changed, 7 insertions(+), 3 deletions(-)
+
+diff --git a/services/audioflinger/AudioResampler.h b/services/audioflinger/AudioResampler.h
+index cdc6d92..db92a33 100644
+--- a/services/audioflinger/AudioResampler.h
++++ b/services/audioflinger/AudioResampler.h
+@@ -24,6 +24,10 @@
+ #include <media/AudioBufferProvider.h>
+ #include <system/audio.h>
+ 
++#if __cplusplus < 201103L && !defined(__GXX_EXPERIMENTAL_CXX0X__) && !defined(constexpr)
++#define constexpr const
++#endif
++
+ namespace android {
+ // ----------------------------------------------------------------------------
+ 
+@@ -81,13 +85,13 @@ public:
+ 
+ protected:
+     // number of bits for phase fraction - 30 bits allows nearly 2x downsampling
+-    static const int kNumPhaseBits = 30;
++    static constexpr int kNumPhaseBits = 30;
+ 
+     // phase mask for fraction
+-    static const uint32_t kPhaseMask = (1LU<<kNumPhaseBits)-1;
++    static constexpr uint32_t kPhaseMask = (1LU<<kNumPhaseBits)-1;
+ 
+     // multiplier to calculate fixed point phase increment
+-    static const double kPhaseMultiplier;
++    static constexpr double kPhaseMultiplier;
+ 
+     AudioResampler(int inChannelCount, int32_t sampleRate, src_quality quality);
+ 
+-- 
+2.5.0
+

@@ -1,0 +1,46 @@
+From 39212efc64ed73f3f574d9d18b9afff68f060114 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Bernhard=20Rosenkr=C3=A4nzer?=
+ <Bernhard.Rosenkranzer@linaro.org>
+Date: Tue, 5 Nov 2013 15:45:44 +0100
+Subject: [PATCH 42/95] Use -fno-strict-aliasing
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Change-Id: Ib54afe176a6c86086d84970e3e5e549e64293345
+Signed-off-by: Bernhard Rosenkränzer <Bernhard.Rosenkranzer@linaro.org>
+Signed-off-by: Chet Kener <Cl3Kener@gmail.com>
+---
+ media/libeffects/loudness/Android.mk   | 2 +-
+ media/libeffects/visualizer/Android.mk | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/media/libeffects/loudness/Android.mk b/media/libeffects/loudness/Android.mk
+index edf964e..c15bbe9 100644
+--- a/media/libeffects/loudness/Android.mk
++++ b/media/libeffects/loudness/Android.mk
+@@ -7,7 +7,7 @@ LOCAL_SRC_FILES:= \
+ 	EffectLoudnessEnhancer.cpp \
+ 	dsp/core/dynamic_range_compression.cpp
+ 
+-LOCAL_CFLAGS+= -O2 -fvisibility=hidden
++LOCAL_CFLAGS+= -O2 -fvisibility=hidden -fno-strict-aliasing
+ 
+ LOCAL_SHARED_LIBRARIES := \
+ 	libcutils \
+diff --git a/media/libeffects/visualizer/Android.mk b/media/libeffects/visualizer/Android.mk
+index c92c543..3f7bc11 100644
+--- a/media/libeffects/visualizer/Android.mk
++++ b/media/libeffects/visualizer/Android.mk
+@@ -6,7 +6,7 @@ include $(CLEAR_VARS)
+ LOCAL_SRC_FILES:= \
+ 	EffectVisualizer.cpp
+ 
+-LOCAL_CFLAGS+= -O2 -fvisibility=hidden
++LOCAL_CFLAGS+= -O2 -fvisibility=hidden -fno-strict-aliasing
+ 
+ LOCAL_SHARED_LIBRARIES := \
+ 	libcutils \
+-- 
+2.5.0
+

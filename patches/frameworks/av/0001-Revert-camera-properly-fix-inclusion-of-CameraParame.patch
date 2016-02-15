@@ -1,7 +1,7 @@
 From f9dff68c07a152e7b593bddfce11f8bb46d3e4dd Mon Sep 17 00:00:00 2001
 From: Shilin Victor <chrono.monochrome@gmail.com>
 Date: Mon, 28 Sep 2015 11:21:10 +0300
-Subject: [PATCH 01/17] Revert "camera: properly fix inclusion of
+Subject: [PATCH 01/95] Revert "camera: properly fix inclusion of
  CameraParametersExtra.h"
 
 This reverts commit e5cfa2f44691a4e727550d39375ef04c30499af1.

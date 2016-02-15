@@ -1,7 +1,7 @@
 From e59361d9a1589b8cd79b21d48f544a350e0cbfdd Mon Sep 17 00:00:00 2001
 From: Agontuk <rifat662@gmail.com>
 Date: Sat, 3 Jan 2015 14:03:52 +0100
-Subject: [PATCH 09/17] Fix in-call audio
+Subject: [PATCH 09/95] Fix in-call audio
 
 Change-Id: I08f2df6276dc619ea58d72e968276aee9a0ea298
 ---

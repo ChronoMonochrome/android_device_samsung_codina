@@ -1,7 +1,7 @@
 From 4c85254f996d6e5035c0f1773b258cb147aac7fa Mon Sep 17 00:00:00 2001
 From: Haynes Mathew George <hgeorge@codeaurora.org>
 Date: Thu, 23 Jan 2014 15:03:44 -0800
-Subject: [PATCH 14/17] AudioFlinger: Introduce CBLK_STREAM_FATAL_ERROR flag
+Subject: [PATCH 14/95] AudioFlinger: Introduce CBLK_STREAM_FATAL_ERROR flag
 
 On a fatal error, PlaybackThread (or its derived classes)
 can opt to signal an error back to the AudioTrack using

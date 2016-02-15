@@ -1,7 +1,7 @@
 From 9277453c94374a0f1443b2eaafb1bdd172834c46 Mon Sep 17 00:00:00 2001
 From: Shilin Victor <chrono.monochrome@gmail.com>
 Date: Mon, 28 Sep 2015 11:21:22 +0300
-Subject: [PATCH 02/17] Revert "camera: allow device to append camera
+Subject: [PATCH 02/95] Revert "camera: allow device to append camera
  parameters"
 
 This reverts commit b393969c2e67fd247113e9549d7cc39c1e918855.

@@ -1,0 +1,58 @@
+From 698e041226a9fe7b84dc58182d665ed454e21c53 Mon Sep 17 00:00:00 2001
+From: John Lin <jolin@mozilla.com>
+Date: Mon, 2 Feb 2015 18:10:42 +0800
+Subject: [PATCH 76/95] camera2: fix various BpCameraDeviceUser methods to
+ return correct result.
+
+- submitRequest*(): res is the request ID and not always equals to NO_ERROR.
+- cancelRequest() and flush(): the result of reading last frame number should be put in resFrameNumber, not in res.
+
+Change-Id: Ic81c58f4ac14c05b3db4bdc5c99f48d00665d3fc
+Signed-off-by: John Lin <jolin@mozilla.com>
+---
+ camera/camera2/ICameraDeviceUser.cpp | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/camera/camera2/ICameraDeviceUser.cpp b/camera/camera2/ICameraDeviceUser.cpp
+index ff4a0c2..7d3807a 100644
+--- a/camera/camera2/ICameraDeviceUser.cpp
++++ b/camera/camera2/ICameraDeviceUser.cpp
+@@ -107,7 +107,7 @@ public:
+             }
+         }
+ 
+-	if ((res != NO_ERROR) || (resFrameNumber != NO_ERROR)) {
++	if ((res < NO_ERROR) || (resFrameNumber != NO_ERROR)) {
+             res = FAILED_TRANSACTION;
+         }
+         return res;
+@@ -147,7 +147,7 @@ public:
+                 resFrameNumber = reply.readInt64(lastFrameNumber);
+             }
+         }
+-        if ((res != NO_ERROR) || (resFrameNumber != NO_ERROR)) {
++        if ((res < NO_ERROR) || (resFrameNumber != NO_ERROR)) {
+             res = FAILED_TRANSACTION;
+         }
+         return res;
+@@ -167,7 +167,7 @@ public:
+         status_t resFrameNumber = BAD_VALUE;
+         if (reply.readInt32() != 0) {
+             if (lastFrameNumber != NULL) {
+-                res = reply.readInt64(lastFrameNumber);
++                resFrameNumber = reply.readInt64(lastFrameNumber);
+             }
+         }
+         if ((res != NO_ERROR) || (resFrameNumber != NO_ERROR)) {
+@@ -296,7 +296,7 @@ public:
+         status_t resFrameNumber = BAD_VALUE;
+         if (reply.readInt32() != 0) {
+             if (lastFrameNumber != NULL) {
+-                res = reply.readInt64(lastFrameNumber);
++                resFrameNumber = reply.readInt64(lastFrameNumber);
+             }
+         }
+         if ((res != NO_ERROR) || (resFrameNumber != NO_ERROR)) {
+-- 
+2.5.0
+

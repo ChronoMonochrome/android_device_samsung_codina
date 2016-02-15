@@ -1,7 +1,7 @@
 From 3a8bc2e6cfb9f2c94f3413a4a507a3633800775c Mon Sep 17 00:00:00 2001
 From: Shilin Victor <chrono.monochrome@gmail.com>
 Date: Sat, 21 Nov 2015 07:04:16 +0200
-Subject: [PATCH 15/17] ACodec: make stride and sliceheight tunable
+Subject: [PATCH 15/95] ACodec: make stride and sliceheight tunable
 
 Change-Id: I2b6357a2d5d1cd59f96fd89a73a9ab5cf18a117f
 ---

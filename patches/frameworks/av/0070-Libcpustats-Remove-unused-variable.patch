@@ -1,0 +1,27 @@
+From 5ade3eae24d4d15bf6674bf27d5cf0a14966ef2d Mon Sep 17 00:00:00 2001
+From: Andreas Gampe <agampe@google.com>
+Date: Mon, 24 Nov 2014 20:48:24 -0800
+Subject: [PATCH 70/95] Libcpustats: Remove unused variable
+
+For build-system CFLAGS clean-up, fix unused variable.
+
+Change-Id: I6aba5f011d47271fae0ac5eca1d35a398dd56856
+---
+ media/libcpustats/ThreadCpuUsage.cpp | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/media/libcpustats/ThreadCpuUsage.cpp b/media/libcpustats/ThreadCpuUsage.cpp
+index cfdcb51..7b5b661 100644
+--- a/media/libcpustats/ThreadCpuUsage.cpp
++++ b/media/libcpustats/ThreadCpuUsage.cpp
+@@ -74,7 +74,6 @@ bool ThreadCpuUsage::setEnabled(bool isEnabled)
+ 
+ bool ThreadCpuUsage::sampleAndEnable(double& ns)
+ {
+-    bool ret;
+     bool wasEverEnabled = mWasEverEnabled;
+     if (enable()) {
+         // already enabled, so add a new sample relative to previous
+-- 
+2.5.0
+

@@ -1,7 +1,7 @@
 From 99459dd3729b68231d0205bfb53fa4ed81711594 Mon Sep 17 00:00:00 2001
 From: Konsta <konsta09@gmail.com>
 Date: Sun, 4 Jan 2015 10:26:46 +0100
-Subject: [PATCH 10/17] camera: allow device to append camera parameters
+Subject: [PATCH 10/95] camera: allow device to append camera parameters
 
 Overload using include/camera/CameraParametersExtra.h in device
 tree to add device specific camera parameters.

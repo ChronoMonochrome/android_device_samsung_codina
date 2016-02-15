@@ -1,0 +1,25 @@
+From f37c863a28cdbe71eaceee92b49ca4e42e0e899a Mon Sep 17 00:00:00 2001
+From: Chet Kener <Cl3Kener@gmail.com>
+Date: Sun, 14 Dec 2014 00:41:54 -0500
+Subject: [PATCH 46/95] Disable Strict Aliasing on LibMedia
+
+Signed-off-by: Chet Kener <Cl3Kener@gmail.com>
+---
+ media/libmedia/Android.mk | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/media/libmedia/Android.mk b/media/libmedia/Android.mk
+index a2e0909..3ae1c8f 100644
+--- a/media/libmedia/Android.mk
++++ b/media/libmedia/Android.mk
+@@ -11,6 +11,7 @@ include $(BUILD_STATIC_LIBRARY)
+ 
+ include $(CLEAR_VARS)
+ 
++LOCAL_CPPFLAGS := -fno-strict-aliasing
+ LOCAL_SRC_FILES:= \
+     AudioTrack.cpp \
+     AudioTrackShared.cpp \
+-- 
+2.5.0
+

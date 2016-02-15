@@ -1,7 +1,7 @@
 From 7d5b9b012c35f7be834577f35e605ce92f44e164 Mon Sep 17 00:00:00 2001
 From: Meticulus <theonejohnnyd@gmail.com>
 Date: Fri, 26 Dec 2014 11:19:26 +0100
-Subject: [PATCH 08/17] STE-OMX-getSupportedProfileLevel-fix
+Subject: [PATCH 08/95] STE-OMX-getSupportedProfileLevel-fix
 
 Change-Id: I96526b12b382e9a5b24bf708f557e62a4d336263
 ---

@@ -1,0 +1,38 @@
+From 817646fdeb2f7a404ea64aa6958d36528a2df512 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Bernhard=20Rosenkr=C3=A4nzer?=
+ <Bernhard.Rosenkranzer@linaro.org>
+Date: Tue, 5 Nov 2013 15:46:37 +0100
+Subject: [PATCH 43/95] Use uint16_t instead of char16_t (C++11 compliance)
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Change-Id: Iaf99c9b38e367e94642883fe4c05ab0bdce46b7e
+Signed-off-by: Bernhard Rosenkränzer <Bernhard.Rosenkranzer@linaro.org>
+Signed-off-by: Chet Kener <Cl3Kener@gmail.com>
+---
+ media/libstagefright/id3/ID3.cpp | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/media/libstagefright/id3/ID3.cpp b/media/libstagefright/id3/ID3.cpp
+index dc6fd13..33a5db1 100644
+--- a/media/libstagefright/id3/ID3.cpp
++++ b/media/libstagefright/id3/ID3.cpp
+@@ -552,11 +552,11 @@ void __attribute__((optimize("no-tree-vectorize"))) ID3::Iterator::getstring(Str
+         // UCS-2
+         // API wants number of characters, not number of bytes...
+         int len = n / 2;
+-        const char16_t *framedata = (const char16_t *) (frameData + 1);
+-        char16_t *framedatacopy = NULL;
++        const uint16_t *framedata = (const uint16_t *) (frameData + 1);
++        uint16_t *framedatacopy = NULL;
+         if (*framedata == 0xfffe) {
+             // endianness marker doesn't match host endianness, convert
+-            framedatacopy = new char16_t[len];
++            framedatacopy = new uint16_t[len];
+             for (int i = 0; i < len; i++) {
+                 framedatacopy[i] = bswap_16(framedata[i]);
+             }
+-- 
+2.5.0
+

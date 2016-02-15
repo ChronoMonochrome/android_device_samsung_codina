@@ -1,0 +1,37 @@
+From fbd56c3beb3324d2d3e5d325ee9ca865cc1ee568 Mon Sep 17 00:00:00 2001
+From: Venkata Narendra Kumar Gutta <vgutta@codeaurora.org>
+Date: Mon, 20 Apr 2015 18:12:05 +0530
+Subject: [PATCH 90/95] audio: Fix media server crash at the start of voice
+ call
+
+Media server is crashing at the start of voice call. This is due
+to no strategy is supported for AUDIO_STREAM_PATCH stream type.
+AUDIO_STREAM_PATCH stream is added as part of L-MR1 upgrade
+and it's for internal flinger tracks. Fix this issue by skipping
+handleIncallSonification() for AUDIO_STREAM_PATCH stream.
+
+Change-Id: Ibe2d19acbed2ca44ab193ae0b613fae899f02ebb
+---
+ services/audiopolicy/AudioPolicyManager.cpp | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/services/audiopolicy/AudioPolicyManager.cpp b/services/audiopolicy/AudioPolicyManager.cpp
+index fba11cd..7cdcce8 100644
+--- a/services/audiopolicy/AudioPolicyManager.cpp
++++ b/services/audiopolicy/AudioPolicyManager.cpp
+@@ -5856,6 +5856,12 @@ void AudioPolicyManager::handleIncallSonification(audio_stream_type_t stream,
+     // interfere with the device used for phone strategy
+     // if stateChange is true, we are called from setPhoneState() and we must mute or unmute as
+     // many times as there are active tracks on the output
++
++    // no action needed for AUDIO_STREAM_PATCH stream type, it's for internal flinger tracks
++    if (stream == AUDIO_STREAM_PATCH) {
++        return;
++    }
++
+     const routing_strategy stream_strategy = getStrategy(stream);
+     if ((stream_strategy == STRATEGY_SONIFICATION) ||
+             ((stream_strategy == STRATEGY_SONIFICATION_RESPECTFUL))) {
+-- 
+2.5.0
+
