@@ -18,7 +18,7 @@ LOCAL_PATH := $(call my-dir)
 
 INSTALLED_BOOTIMAGE_TARGET := $(PRODUCT_OUT)/boot.img
 
-KERNEL_TOOLCHAIN := "/home/chronomonochrome/root/prebuilts/gcc/linux-x86/arm/arm-eabi-5.2/bin"
+KERNEL_TOOLCHAIN := "/home/chrono/root/prebuilts/gcc/linux-x86/arm/arm-eabi-5.2/bin"
 
 uncompressed_ramdisk := $(PRODUCT_OUT)/ramdisk.cpio
 $(uncompressed_ramdisk): $(INSTALLED_RAMDISK_TARGET)
