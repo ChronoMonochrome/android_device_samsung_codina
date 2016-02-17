@@ -1,0 +1,26 @@
+From bf89f66984b90c691f510794221784bfe9ecf05c Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Wed, 17 Feb 2016 20:00:38 +0700
+Subject: [PATCH] jni: AdapterService: Fix compilation
+
+Change-Id: I54aa93903eac5aeb2f18d3ca57739da53a6841ba
+---
+ jni/com_android_bluetooth_btservice_AdapterService.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/jni/com_android_bluetooth_btservice_AdapterService.cpp b/jni/com_android_bluetooth_btservice_AdapterService.cpp
+index f780364..0491d1d 100644
+--- a/jni/com_android_bluetooth_btservice_AdapterService.cpp
++++ b/jni/com_android_bluetooth_btservice_AdapterService.cpp
+@@ -353,7 +353,7 @@ static void discovery_state_changed_callback(bt_discovery_state_t state) {
+     checkAndClearExceptionFromCallback(callbackEnv, __FUNCTION__);
+ }
+ 
+-static void pin_request_callback(bt_bdaddr_t *bd_addr, bt_bdname_t *bdname, uint32_t cod) {
++static void pin_request_callback(bt_bdaddr_t *bd_addr, bt_bdname_t *bdname, uint32_t cod, unsigned char dummy) {
+     jbyteArray addr, devname;
+     if (!checkCallbackThread()) {
+        ALOGE("Callback: '%s' is not called on the correct thread", __FUNCTION__);
+-- 
+2.5.0
+
