@@ -124,11 +124,6 @@ PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/prebuilt/charger/images/battery_charge.png:root/res/images/charger/battery_charge.png \
     $(LOCAL_PATH)/prebuilt/charger/images/battery_fail.png:root/res/images/charger/battery_fail.png \
 
-# prebuilts
-PRODUCT_COPY_FILES += \
-    $(LOCAL_PATH)/prebuilt/libaudioflinger.so:system/lib/libaudioflinger.so \
-    $(LOCAL_PATH)/prebuilt/netd:system/bin/netd \
-
 # Misc Packages
 PRODUCT_PACKAGES += \
     com.android.future.usb.accessory \
