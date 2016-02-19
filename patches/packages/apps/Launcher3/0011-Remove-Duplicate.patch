@@ -1,0 +1,28 @@
+From c09bd7ffbc3b0791c8dc2dee79deaedf19e15b5f Mon Sep 17 00:00:00 2001
+From: Chet Kener <Cl3Kener@gmail.com>
+Date: Sun, 22 Mar 2015 12:28:34 -0400
+Subject: [PATCH 11/11] Remove Duplicate
+
+Signed-off-by: Chet Kener <Cl3Kener@gmail.com>
+---
+ res/values/styles.xml | 4 ----
+ 1 file changed, 4 deletions(-)
+
+diff --git a/res/values/styles.xml b/res/values/styles.xml
+index d4d99ee..7658763 100644
+--- a/res/values/styles.xml
++++ b/res/values/styles.xml
+@@ -99,10 +99,6 @@
+         <item name="android:paddingLeft">8dp</item>
+     </style>
+ 
+-    <style name="SearchButton.WithPaddingStart">
+-        <item name="android:paddingLeft">8dp</item>
+-    </style>
+-
+     <!-- Launcher Settings -->
+     <style name="LauncherTheme" parent="@android:style/Theme.Material.Light.DarkActionBar">
+         <item name="android:windowContentOverlay">@null</item>
+-- 
+2.5.0
+

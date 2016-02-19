@@ -1,0 +1,47 @@
+From e08af80d0f5835915038c28041edd30560cec6dd Mon Sep 17 00:00:00 2001
+From: CallMeAldy <aldrin.holmes20@gmail.com>
+Date: Tue, 3 Feb 2015 09:58:51 +0100
+Subject: [PATCH 17/17] Layers : Set switch to call the theme color instead of
+ the primary color, not every themer is lazy to just use 2 colors.
+
+Swtiches now call dialtacts_theme_color instead of the dialer_theme_color.
+
+Change-Id: I1a7216c1b4f6ac8e137a2fa58c54e026e6b84dd1
+Signed-off-by: CallMeAldy <aldrin.holmes20@gmail.com>
+---
+ res/values/styles.xml | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/res/values/styles.xml b/res/values/styles.xml
+index 01c6d3e..1050820 100644
+--- a/res/values/styles.xml
++++ b/res/values/styles.xml
+@@ -19,7 +19,7 @@
+     <style name="DialtactsTheme1" parent="@android:style/Theme.Material.Light">
+         <item name="android:textColorPrimary">@color/dialtacts_primary_text_color</item>
+         <item name="android:textColorSecondary">@color/dialtacts_secondary_text_color</item>
+-        <item name="android:colorControlActivated">@color/dialer_theme_color</item>
++        <item name="android:colorControlActivated">@color/dialtacts_theme_color</item>
+         <item name="android:colorPrimary">@color/dialer_theme_color</item>
+         <item name="android:colorPrimaryDark">@color/dialer_theme_color_dark</item>
+     </style>		
+@@ -84,7 +84,7 @@
+         <item name="android:colorPrimaryDark">@color/exposed_secondary_text_light</item>
+         <item name="android:navigationBarColor">@color/dialer_theme_color_dark</item>
+         <item name="dialpad_key_button_touch_tint">@color/dialer_dialpad_touch_tint</item>
+-        <item name="android:colorControlActivated">@color/dialer_theme_color</item>
++        <item name="android:colorControlActivated">@color/dialtacts_theme_color</item>
+     </style>
+ 
+     <!-- Action bar overflow menu icon. -->
+@@ -183,6 +183,7 @@
+         <!-- Setting description. -->
+         <item name="android:textColorSecondary">@color/setting_secondary_color</item>
+         <item name="android:windowBackground">@color/setting_background_color</item>
++        <item name="android:colorControlActivated">@color/dialtacts_theme_color</item>
+         <item name="android:colorAccent">@color/dialtacts_theme_color</item>
+         <item name="android:textColorLink">@color/dialtacts_theme_color</item>
+     </style>
+-- 
+2.5.0
+

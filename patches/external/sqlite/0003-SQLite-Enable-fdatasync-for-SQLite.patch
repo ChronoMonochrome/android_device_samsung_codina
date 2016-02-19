@@ -1,0 +1,32 @@
+From d0cb834736463f4601a3366d2fb0e092e98c57f8 Mon Sep 17 00:00:00 2001
+From: Kiran Kumar H N <hurlisal@codeaurora.org>
+Date: Fri, 11 Feb 2011 10:45:48 -0800
+Subject: [PATCH 03/11] SQLite: Enable fdatasync for SQLite
+
+SQLite library recommends usage of fdatasync when available.
+Since it is available for linux, enable it. This gives better
+performance compared to fsync.
+
+Change-Id: I47d5fb9cb1e8331729b54d77f10f7499e028269d
+Signed-off-by: Chet Kener <Cl3Kener@gmail.com>
+---
+ dist/Android.mk | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/dist/Android.mk b/dist/Android.mk
+index d7efb04..66740da 100644
+--- a/dist/Android.mk
++++ b/dist/Android.mk
+@@ -27,7 +27,8 @@ common_sqlite_flags := \
+ 	-DSQLITE_OMIT_BUILTIN_TEST \
+ 	-DSQLITE_OMIT_COMPILEOPTION_DIAGS \
+ 	-DSQLITE_OMIT_LOAD_EXTENSION \
+-	-DSQLITE_DEFAULT_FILE_PERMISSIONS=0600
++	-DSQLITE_DEFAULT_FILE_PERMISSIONS=0600 \
++	-Dfdatasync=fdatasync
+ 
+ device_sqlite_flags := $(common_sqlite_flags) \
+     -DSQLITE_ENABLE_ICU \
+-- 
+2.5.0
+

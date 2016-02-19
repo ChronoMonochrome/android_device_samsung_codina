@@ -1,0 +1,30 @@
+From cd475d256f741ab420cd80f41175f883953a39fd Mon Sep 17 00:00:00 2001
+From: Chester Kener <Cl3Kener@gmail.com>
+Date: Fri, 31 Jan 2014 17:27:14 -0500
+Subject: [PATCH 01/11] Launcher Model: Change Priority
+
+Signed-off-by: Chester Kener <Cl3Kener@gmail.com>
+Signed-off-by: Chet Kener <Cl3Kener@gmail.com>
+---
+ src/com/android/launcher3/LauncherModel.java | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/src/com/android/launcher3/LauncherModel.java b/src/com/android/launcher3/LauncherModel.java
+index 954887d..e31aa29 100644
+--- a/src/com/android/launcher3/LauncherModel.java
++++ b/src/com/android/launcher3/LauncherModel.java
+@@ -1605,9 +1605,9 @@ public class LauncherModel extends BroadcastReceiver
+                 // starving at boot time. Staring at a blank home is not cool.
+                 synchronized (mLock) {
+                     if (DEBUG_LOADERS) Log.d(TAG, "Setting thread priority to " +
+-                            (mIsLaunching ? "DEFAULT" : "BACKGROUND"));
++                            (mIsLaunching ? "FOREGROUND" : "DEFAULT"));
+                     android.os.Process.setThreadPriority(mIsLaunching
+-                            ? Process.THREAD_PRIORITY_DEFAULT : Process.THREAD_PRIORITY_BACKGROUND);
++                            ? Process.THREAD_PRIORITY_FOREGROUND : Process.THREAD_PRIORITY_DEFAULT);
+                 }
+                 if (DEBUG_LOADERS) Log.d(TAG, "step 1: loading workspace");
+                 isUpgrade = loadAndBindWorkspace();
+-- 
+2.5.0
+

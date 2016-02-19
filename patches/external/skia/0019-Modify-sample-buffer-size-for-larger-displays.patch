@@ -1,0 +1,50 @@
+From 8ac4e95bdf0c2bec01f3bd30cc8fa96370a27a61 Mon Sep 17 00:00:00 2001
+From: Henrik Smiding <henrik.smiding@intel.com>
+Date: Thu, 13 Feb 2014 23:09:36 +0100
+Subject: [PATCH 19/29] Modify sample buffer size for larger displays
+
+BZ: 146848
+
+Increases the intermediate buffer size for sample pixel indexes,
+used in the sample proc function calls. If the operation is bigger
+than the buffer it's split into multiple calls, creating overhead.
+This would especially impact the performance of SIMD optimizations.
+
+Change-Id: I44d0723cb26372050741e28fc14f676ddcd56d77
+Category: aosp improvement
+Domain: AOSP-Others
+Origin: internal
+Upstream-Candidate: yes
+Signed-off-by: Henrik Smiding <henrik.smiding@intel.com>
+Reviewed-on: https://android.intel.com/163478
+Tested-by: sys_abtbuild <sys_abtbuild@intel.com>
+Reviewed-by: Landberg, Joakim <joakim.landberg@intel.com>
+Reviewed-by: Chen, HuaqiangX <huaqiangx.chen@intel.com>
+Reviewed-by: Fagerstedt, Axel <axel.fagerstedt@intel.com>
+Signed-off-by: Chet Kener <Cl3Kener@gmail.com>
+---
+ src/core/SkBitmapProcShader.cpp | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
+
+diff --git a/src/core/SkBitmapProcShader.cpp b/src/core/SkBitmapProcShader.cpp
+index a6d36a1..5510306 100644
+--- a/src/core/SkBitmapProcShader.cpp
++++ b/src/core/SkBitmapProcShader.cpp
+@@ -198,7 +198,13 @@ SkBitmapProcShader::BitmapProcShaderContext::~BitmapProcShaderContext() {
+     fState->~SkBitmapProcState();
+ }
+ 
+-#define BUF_MAX     128
++/* Defines the buffer size for sample pixel indexes, used in the sample proc
++ * function calls.
++ * If the operation is bigger than the buffer, it's split into multiple calls.
++ * A display with a width of 1080 pixels requires a buffer size of at least 541,
++ * to run uninterrupted.
++ */
++#define BUF_MAX     576
+ 
+ #define TEST_BUFFER_OVERRITEx
+ 
+-- 
+2.5.0
+

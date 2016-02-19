@@ -1,0 +1,46 @@
+From ab9678e485da8bf24088f92a72369ac0e219bfa9 Mon Sep 17 00:00:00 2001
+From: yoshiyuki hama <yoshiyuki.hama@sonymobile.com>
+Date: Wed, 28 Jan 2015 16:37:23 +0900
+Subject: [PATCH 10/11] Wait for completion of device mapping in mountObb
+
+The VolumeManager::mountObb() creates a mapping between
+a loopback device and a dm device. However the device-mapper
+carries it out asynchronously, so there is a possibility that
+Vold accesses to the dm device which is being built. Added
+waiting for completion of the mapping in that function, like
+mountAsec().
+
+To verify install FrameworksCoreTests.apk and do:
+
+  adb shell am instrument -r -w -e class android.os.storage.\
+  StorageManagerIntegrationTest#testMountTwoEncryptedObb \
+  com.android.frameworks.coretests/android.test.\
+  InstrumentationTestRunner
+
+Change-Id: If42f4b7494bb2f8a8b72d106ad84b3e3bf91fd9b
+---
+ VolumeManager.cpp | 5 +++++
+ 1 file changed, 5 insertions(+)
+ mode change 100644 => 100755 VolumeManager.cpp
+
+diff --git a/VolumeManager.cpp b/VolumeManager.cpp
+old mode 100644
+new mode 100755
+index 06299b8..1494599
+--- a/VolumeManager.cpp
++++ b/VolumeManager.cpp
+@@ -1458,6 +1458,11 @@ int VolumeManager::mountObb(const char *img, const char *key, int ownerGid) {
+         }
+     }
+ 
++    /*
++     * Wait for the device mapper node to be created.
++     */
++    waitForDevMapper(dmDevice);
++
+     if (Fat::doMount(dmDevice, mountPoint, true, false, true, 0, ownerGid,
+                      0227, false)) {
+         SLOGE("Image mount failed (%s)", strerror(errno));
+-- 
+2.5.0
+

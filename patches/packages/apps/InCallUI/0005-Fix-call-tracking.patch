@@ -1,0 +1,132 @@
+From df7484d8cd316012c01eda08432644ec6724c351 Mon Sep 17 00:00:00 2001
+From: Danny Baumann <dannybaumann@web.de>
+Date: Wed, 26 Nov 2014 07:31:05 +0100
+Subject: [PATCH 05/11] Fix call tracking.
+
+getActiveCall() can return null when ending calls locally before they
+are answered locally, so better use the presence of an active call as
+indicator of whether to do the vibration instead of using the state.
+
+Change-Id: I088cd743c9a9e6704e93f8c48fb566b3a20ca8be
+Signed-off-by: Chet Kener <Cl3Kener@gmail.com>
+---
+ src/com/android/incallui/Call.java                 |  8 +++
+ .../android/incallui/InCallVibrationHandler.java   | 65 ++++++++++++++--------
+ 2 files changed, 50 insertions(+), 23 deletions(-)
+
+diff --git a/src/com/android/incallui/Call.java b/src/com/android/incallui/Call.java
+index 663c412..fb18240 100644
+--- a/src/com/android/incallui/Call.java
++++ b/src/com/android/incallui/Call.java
+@@ -184,6 +184,7 @@ public final class Call {
+     private DisconnectCause mDisconnectCause;
+     private int mSessionModificationState;
+     private final List<String> mChildCallIds = new ArrayList<>();
++    private boolean mIsOutgoing = false;
+ 
+     private InCallVideoCallListener mVideoCallListener;
+ 
+@@ -279,6 +280,13 @@ public final class Call {
+ 
+     public void setState(int state) {
+         mState = state;
++        if (state == State.DIALING || state == State.CONNECTING) {
++            mIsOutgoing = true;
++        }
++    }
++
++    public boolean isOutgoing() {
++        return mIsOutgoing;
+     }
+ 
+     public int getNumberPresentation() {
+diff --git a/src/com/android/incallui/InCallVibrationHandler.java b/src/com/android/incallui/InCallVibrationHandler.java
+index 517b076..42845df 100644
+--- a/src/com/android/incallui/InCallVibrationHandler.java
++++ b/src/com/android/incallui/InCallVibrationHandler.java
+@@ -22,6 +22,7 @@ import android.os.Handler;
+ import android.os.Message;
+ import android.os.Vibrator;
+ import android.preference.PreferenceManager;
++import android.telecom.DisconnectCause;
+ 
+ import com.android.incallui.InCallPresenter.InCallState;
+ 
+@@ -55,33 +56,51 @@ public class InCallVibrationHandler extends Handler implements
+ 
+     @Override
+     public void onStateChange(InCallState oldState, InCallState newState, CallList callList) {
+-        Log.d(this, "onStateChange");
++        Call activeCall = callList.getActiveCall();
+ 
+-        if (oldState == newState) {
+-            return;
++        if (activeCall != null && mActiveCall == null) {
++            Log.d(this, "Transition to active call " + activeCall);
++            if (activeCall.isOutgoing()) {
++                handleOutgoingCallVibration(activeCall);
++            }
++            mActiveCall = activeCall;
++        } else if (activeCall == null && mActiveCall != null) {
++            Log.d(this, "Transition from active call " + mActiveCall);
++            handleCallEnd(mActiveCall);
++            mActiveCall = null;
+         }
++    }
+ 
+-        if (newState == InCallState.INCALL) {
+-            mActiveCall = callList.getActiveCall();
+-            if (oldState == InCallState.PENDING_OUTGOING || oldState == InCallState.OUTGOING) {
+-                long durationMillis = System.currentTimeMillis() - mActiveCall.getConnectTimeMillis();
+-                Log.d(this, "duration is " + durationMillis);
+-
+-                if (mPrefs.getBoolean(KEY_VIBRATE_OUTGOING, false) && durationMillis < 200) {
+-                    vibrate(100, 200, 0);
+-                }
+-                if (mPrefs.getBoolean(KEY_VIBRATE_45SECS, false)) {
+-                    start45SecondVibration(durationMillis);
+-                }
+-            }
+-        } else if (mActiveCall != null && newState == InCallState.NO_CALLS) {
+-            long durationMillis = System.currentTimeMillis() - mActiveCall.getConnectTimeMillis();
+-            if (mPrefs.getBoolean(KEY_VIBRATE_HANGUP, false) && durationMillis > 500) {
+-                vibrate(50, 100, 50);
+-            }
+-            // Stop 45-second vibration
+-            removeMessages(MSG_VIBRATE_45_SEC);
++    private void handleOutgoingCallVibration(Call call) {
++        long durationMillis = System.currentTimeMillis() - call.getConnectTimeMillis();
++        Log.d(this, "Start outgoing call: duration = " + durationMillis);
++
++        if (mPrefs.getBoolean(KEY_VIBRATE_OUTGOING, false) && durationMillis < 200) {
++            vibrate(100, 200, 0);
+         }
++        if (mPrefs.getBoolean(KEY_VIBRATE_45SECS, false)) {
++            start45SecondVibration(durationMillis);
++        }
++    }
++
++    private void handleCallEnd(Call call) {
++        long durationMillis = System.currentTimeMillis() - call.getConnectTimeMillis();
++        DisconnectCause cause = call.getDisconnectCause();
++        boolean localDisconnect =
++                // Disconnection not yet processed
++                call.getState() == Call.State.DISCONNECTING ||
++                // Disconnection already processed
++                (cause != null && cause.getCode() == DisconnectCause.LOCAL);
++
++        Log.d(this, "Ending active call: duration = " + durationMillis
++                + ", locally disconnected = " + localDisconnect);
++
++        if (mPrefs.getBoolean(KEY_VIBRATE_HANGUP, false) &&
++                !localDisconnect && durationMillis > 500) {
++            vibrate(50, 100, 50);
++        }
++        // Stop 45-second vibration
++        removeMessages(MSG_VIBRATE_45_SEC);
+     }
+ 
+     private void start45SecondVibration(long callDurationMillis) {
+-- 
+2.5.0
+

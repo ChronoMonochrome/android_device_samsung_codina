@@ -1,0 +1,54 @@
+From 6e60028d0ecfd0793dd5a504b237ac63069f80ed Mon Sep 17 00:00:00 2001
+From: Elliott Hughes <enh@google.com>
+Date: Sat, 24 Jan 2015 22:39:10 -0800
+Subject: [PATCH 42/52] Remove obsolete BUILD_TINY_ANDROID.
+
+Change-Id: I876bce99efb40cd791256535d8d6c0d046b7aeae
+---
+ libpixelflinger/Android.mk |  2 --
+ netcfg/Android.mk          | 11 +----------
+ 2 files changed, 1 insertion(+), 12 deletions(-)
+
+diff --git a/libpixelflinger/Android.mk b/libpixelflinger/Android.mk
+index 354ae4b..bc2aa5e 100644
+--- a/libpixelflinger/Android.mk
++++ b/libpixelflinger/Android.mk
+@@ -61,12 +61,10 @@ LOCAL_CFLAGS := $(PIXELFLINGER_CFLAGS)
+ LOCAL_SHARED_LIBRARIES := libcutils liblog libutils
+ LOCAL_C_INCLUDES += external/safe-iop/include
+ 
+-ifneq ($(BUILD_TINY_ANDROID),true)
+ # Really this should go away entirely or at least not depend on
+ # libhardware, but this at least gets us built.
+ LOCAL_SHARED_LIBRARIES += libhardware_legacy
+ LOCAL_CFLAGS += -DWITH_LIB_HARDWARE
+-endif
+ # t32cb16blend.S does not compile with Clang.
+ LOCAL_CLANG_ASFLAGS_arm += -no-integrated-as
+ # arch-arm64/col32cb16blend.S does not compile with Clang.
+diff --git a/netcfg/Android.mk b/netcfg/Android.mk
+index fc01a54..4796c11 100644
+--- a/netcfg/Android.mk
++++ b/netcfg/Android.mk
+@@ -1,17 +1,8 @@
+-ifneq ($(BUILD_TINY_ANDROID),true)
+ LOCAL_PATH:= $(call my-dir)
+ 
+ include $(CLEAR_VARS)
+ LOCAL_SRC_FILES:= netcfg.c
+ LOCAL_MODULE:= netcfg
+-
+-#LOCAL_FORCE_STATIC_EXECUTABLE := true
+-#LOCAL_MODULE_PATH := $(TARGET_ROOT_OUT_SBIN)
+-#LOCAL_UNSTRIPPED_PATH := $(TARGET_ROOT_OUT_SBIN_UNSTRIPPED)
+-#LOCAL_STATIC_LIBRARIES := libcutils libc
+-
+-LOCAL_SHARED_LIBRARIES := libc libnetutils
++LOCAL_SHARED_LIBRARIES := libnetutils
+ LOCAL_CFLAGS := -Werror
+-
+ include $(BUILD_EXECUTABLE)
+-endif
+-- 
+2.5.0
+

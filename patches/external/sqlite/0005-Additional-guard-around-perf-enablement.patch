@@ -1,0 +1,30 @@
+From bf895b2571ed480ab42f41e732ebc59300f07515 Mon Sep 17 00:00:00 2001
+From: Steve Kondik <shade@chemlab.org>
+Date: Tue, 3 Dec 2013 05:57:43 -0800
+Subject: [PATCH 05/11] Additional guard around perf enablement
+
+Change-Id: I37aaa73110b5d91aae7a35cb8fecf4eade088661
+Signed-off-by: Chet Kener <Cl3Kener@gmail.com>
+---
+ dist/Android.mk | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/dist/Android.mk b/dist/Android.mk
+index ea04fad..f746b94 100644
+--- a/dist/Android.mk
++++ b/dist/Android.mk
+@@ -30,9 +30,11 @@ common_sqlite_flags := \
+ 	-DSQLITE_DEFAULT_FILE_PERMISSIONS=0600 \
+ 	-Dfdatasync=fdatasync
+ 
++ifeq ($(call is-vendor-board-platform,QCOM),true)
+ ifeq ($(WITH_QC_PERF),true)
+ common_sqlite_flags += -DQC_PERF
+ endif
++endif
+ 
+ device_sqlite_flags := $(common_sqlite_flags) \
+     -DSQLITE_ENABLE_ICU \
+-- 
+2.5.0
+

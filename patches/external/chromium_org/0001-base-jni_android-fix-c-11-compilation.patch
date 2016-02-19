@@ -1,0 +1,25 @@
+From 0c04ffafccc90f22f029440359434a1e4c8b9a43 Mon Sep 17 00:00:00 2001
+From: Maxime Poulain <maxime.poulain@student.uclouvain.be>
+Date: Tue, 5 May 2015 08:34:05 +0200
+Subject: [PATCH] base:jni_android:fix c++11 compilation
+
+---
+ base/android/jni_android.cc | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/base/android/jni_android.cc b/base/android/jni_android.cc
+index e09c2d5..fb51569 100644
+--- a/base/android/jni_android.cc
++++ b/base/android/jni_android.cc
+@@ -170,7 +170,7 @@ jclass LazyGetClass(
+     return reinterpret_cast<jclass>(value);
+   ScopedJavaGlobalRef<jclass> clazz;
+   clazz.Reset(GetClass(env, class_name));
+-  subtle::AtomicWord null_aw = reinterpret_cast<subtle::AtomicWord>(NULL);
++  subtle::AtomicWord null_aw = static_cast<subtle::AtomicWord>(NULL);
+   subtle::AtomicWord cas_result = base::subtle::Release_CompareAndSwap(
+       atomic_class_id,
+       null_aw,
+-- 
+2.5.0
+

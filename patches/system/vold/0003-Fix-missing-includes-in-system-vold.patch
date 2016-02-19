@@ -1,0 +1,25 @@
+From ef3ee21c3b353ed7d4d1e25287a913d151b465d2 Mon Sep 17 00:00:00 2001
+From: Elliott Hughes <enh@google.com>
+Date: Mon, 29 Dec 2014 14:09:42 -0800
+Subject: [PATCH 03/11] Fix missing #includes in system/vold.
+
+Change-Id: I53611cf8373daf638b0cc45b7b3d17e4d3e7247e
+---
+ fstrim.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/fstrim.c b/fstrim.c
+index 761f4a4..b2e1e05 100644
+--- a/fstrim.c
++++ b/fstrim.c
+@@ -16,6 +16,7 @@
+ 
+ #include <sys/types.h>
+ #include <sys/stat.h>
++#include <errno.h>
+ #include <fcntl.h>
+ #include <unistd.h>
+ #include <sys/ioctl.h>
+-- 
+2.5.0
+

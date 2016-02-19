@@ -1,0 +1,1207 @@
+From 7dd8e30f877691ec92027e196c4a0d8c384db87b Mon Sep 17 00:00:00 2001
+From: Jake Weinstein <xboxfanj@msn.com>
+Date: Mon, 15 Dec 2014 16:57:45 -0500
+Subject: [PATCH 26/29] SKIA: import Blend and Opaque optimizations from CAF
+ Chromium
+
+Change-Id: I2dd3ef437f1505a469f5007a8585e003ab4ec1f2
+Signed-off-by: Chet Kener <Cl3Kener@gmail.com>
+---
+ Android.mk                           |   3 +
+ src/core/SkBlitRow_D16.cpp           |  10 +-
+ src/opts/S32A_Blend_BlitRow32_arm.S  | 404 +++++++++++++++++++++++++++++++++++
+ src/opts/S32A_D565_Opaque_arm.S      | 334 +++++++++++++++++++++++++++++
+ src/opts/S32A_Opaque_BlitRow32_arm.S | 319 +++++++++++++++++++++++++++
+ src/opts/SkBlitRow_opts_arm_neon.cpp |  22 +-
+ 6 files changed, 1086 insertions(+), 6 deletions(-)
+ create mode 100644 src/opts/S32A_Blend_BlitRow32_arm.S
+ create mode 100644 src/opts/S32A_D565_Opaque_arm.S
+ create mode 100644 src/opts/S32A_Opaque_BlitRow32_arm.S
+
+diff --git a/Android.mk b/Android.mk
+index 0d8a770..6d6603f 100644
+--- a/Android.mk
++++ b/Android.mk
+@@ -604,6 +604,9 @@ ifeq ($(ARCH_ARM_HAVE_NEON), true)
+ LOCAL_SRC_FILES_arm += \
+ 	src/opts/S32A_Opaque_BlitRow32_neon.S \
+ 	src/opts/S32A_Blend_BlitRow32_neon.S \
++	src/opts/S32A_Blend_BlitRow32_arm.S \
++	src/opts/S32A_D565_Opaque_arm.S \
++	src/opts/S32A_Opaque_BlitRow32_arm.S \
+ 	src/opts/memset16_neon.S \
+ 	src/opts/memset32_neon.S \
+ 	src/opts/SkBitmapProcState_arm_neon.cpp \
+diff --git a/src/core/SkBlitRow_D16.cpp b/src/core/SkBlitRow_D16.cpp
+index 1b2be06..a45d839 100644
+--- a/src/core/SkBlitRow_D16.cpp
++++ b/src/core/SkBlitRow_D16.cpp
+@@ -1,6 +1,6 @@
+ /*
+  * Copyright 2011 Google Inc.
+- *
++ * Copyright (c) 2013 The Linux Foundation. All rights reserved.
+  * Use of this source code is governed by a BSD-style license that can be
+  * found in the LICENSE file.
+  */
+@@ -208,12 +208,20 @@ static void S32A_D565_Blend_Dither(uint16_t* SK_RESTRICT dst,
+ ///////////////////////////////////////////////////////////////////////////////
+ ///////////////////////////////////////////////////////////////////////////////
+ 
++#if defined(SK_BUILD_FOR_ANDROID) && defined(SK_CPU_LENDIAN)
++    extern "C" void S32A_D565_Opaque_arm(uint16_t*, uint32_t*, size_t);
++#endif
++
+ static const SkBlitRow::Proc gDefault_565_Procs[] = {
+     // no dither
+     S32_D565_Opaque,
+     S32_D565_Blend,
+ 
++#if defined(SK_BUILD_FOR_ANDROID) && defined(SK_CPU_LENDIAN)
++    (SkBlitRow::Proc)S32A_D565_Opaque_arm,
++#else
+     S32A_D565_Opaque,
++#endif
+     S32A_D565_Blend,
+ 
+     // dither
+diff --git a/src/opts/S32A_Blend_BlitRow32_arm.S b/src/opts/S32A_Blend_BlitRow32_arm.S
+new file mode 100644
+index 0000000..3fa5fca
+--- /dev/null
++++ b/src/opts/S32A_Blend_BlitRow32_arm.S
+@@ -0,0 +1,404 @@
++/*
++ * Original file from Android Open source project, modified by The Linux Foundation
++ * Copyright (c) 2013 The Linux Foundation. All rights reserved.
++ * Copyright (c) 2011 Google Inc. All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions are
++ * met:
++ *
++ *    * Redistributions of source code must retain the above copyright
++ * notice, this list of conditions and the following disclaimer.
++ *    * Redistributions in binary form must reproduce the above
++ * copyright notice, this list of conditions and the following disclaimer
++ * in the documentation and/or other materials provided with the
++ * distribution.
++ *    * Neither the name of Google Inc. nor the names of its
++ * contributors may be used to endorse or promote products derived from
++ * this software without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
++ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
++ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++ */
++    .text
++
++    .global S32A_Blend_BlitRow32_arm_neon
++    .func S32A_Blend_BlitRow32_arm_neon
++
++S32A_Blend_BlitRow32_arm_neon:
++
++    // calculate src_scale = aa + 1
++    add      r3, r3, #1
++
++#if defined(__ARM_HAVE_NEON)
++
++    cmp     r2,#24
++    blt      .Lslow_path
++
++    push {r4, r5}
++    vpush    {q4-q7}
++    vmov.u16 q14,#0x100
++
++    // store src_scale in q4
++    vdup.u16  q4, r3
++
++    vld4.8  {d0, d1, d2, d3}, [r1]! //d0,d1,d2,d3 = sourc rgb(0,1,2,3) A(0,1,2,3)
++                                    //update source ptr but not dst ptr
++    vld4.8  {d4, d5, d6, d7}, [r0]  //d4,d5,d6,d7 = dst rgb(0,1,2,3) A(0,1,2,3)
++    add      r4, r0, #32 // minus 16 to pretend the last round
++    mov      r5, #64
++    sub      r2,r2,#8
++
++.Lloop:
++    pld     [r1, #256]
++    pld     [r0, #256]
++    subs     r2, r2, #16
++    cmp      r2,#16
++
++    // expand destination from 8-bit to 16-bit
++    vmovl.u8 q6, d4
++    vmovl.u8 q7, d5
++    vmovl.u8 q8, d6
++    vmovl.u8 q9, d7
++
++    // expand source from 8-bit to 16-bit
++    vmovl.u8 q13, d3
++    vmovl.u8 q10, d0
++    vmovl.u8 q11, d1
++    vmovl.u8 q12, d2
++
++                                    //update source ptr but not dst ptr
++    // calculate destination scale
++    vmul.u16 q5, q13, q4
++    vshr.u16 q5, q5, #8
++    vsub.u16 q5, q14, q5
++
++    vld4.8  {d0, d1, d2, d3}, [r1]! //d0,d1,d2,d3 = sourc rgb(0,1,2,3) A(0,1,2,3)
++    // multiply destination ARGB components with dst_scale
++    vmul.u16 q6, q6, q5
++    vmul.u16 q7, q7, q5
++    vmul.u16 q8, q8, q5
++    vmul.u16 q9, q9, q5
++
++
++    vld4.8  {d4, d5, d6, d7}, [r4]  //d4,d5,d6,d7 = dst rgb(0,1,2,3) A(0,1,2,3)
++
++    // multiply source ARGB components with src_scale
++    vmul.u16 q10, q10, q4
++    vmul.u16 q11, q11, q4
++    vmul.u16 q12, q12, q4
++    vmul.u16 q13, q13, q4
++
++
++    // add processed src and dest pixels and extract high bytes
++    vqadd.u8  q10, q6, q10
++    vqadd.u8  q11, q7, q11
++    vqadd.u8  q12, q8, q12
++    vqadd.u8  q13, q9, q13
++
++    vshrn.u16 d20, q10, #8
++    vshrn.u16 d21, q11, #8
++    vshrn.u16 d22, q12, #8
++    vshrn.u16 d23, q13, #8
++
++    vst4.8  {d20, d21, d22, d23}, [r0], r5 //dst rgb(0,1,2,3) A(0,1,2,3) = d4,d5,d6,d7
++
++    // expand destination from 8-bit to 16-bit
++    vmovl.u8 q6, d4
++    vmovl.u8 q7, d5
++    vmovl.u8 q8, d6
++    vmovl.u8 q9, d7
++
++    // expand source from 8-bit to 16-bit
++    vmovl.u8 q13, d3
++    vmovl.u8 q10, d0
++    vmovl.u8 q11, d1
++    vmovl.u8 q12, d2
++
++    // calculate destination scale
++    vmul.u16 q5, q13, q4
++    vshr.u16 q5, q5, #8
++    vsub.u16 q5, q14, q5
++
++    vld4.8  {d0, d1, d2, d3}, [r1]! //d0,d1,d2,d3 = sourc rgb(0,1,2,3) A(0,1,2,3)
++
++    // multiply destination ARGB components with dst_scale
++    vmul.u16 q6, q6, q5
++    vmul.u16 q7, q7, q5
++    vmul.u16 q8, q8, q5
++    vmul.u16 q9, q9, q5
++
++    vld4.8  {d4, d5, d6, d7}, [r0]  //d4,d5,d6,d7 = dst rgb(0,1,2,3) A(0,1,2,3)
++
++    // multiply source ARGB components with src_scale
++    vmul.u16 q10, q10, q4
++    vmul.u16 q11, q11, q4
++    vmul.u16 q12, q12, q4
++    vmul.u16 q13, q13, q4
++
++
++    // add processed src and dest pixels and extract high bytes
++    vqadd.u8  q10, q6, q10
++    vqadd.u8  q11, q7, q11
++    vqadd.u8  q12, q8, q12
++    vqadd.u8  q13, q9, q13
++
++    vshrn.u16 d20, q10, #8
++    vshrn.u16 d21, q11, #8
++    vshrn.u16 d22, q12, #8
++    vshrn.u16 d23, q13, #8
++
++    vst4.8  {d20, d21, d22, d23}, [r4], r5 //dst rgb(0,1,2,3) A(0,1,2,3) = d4,d5,d6,d7
++
++    bge     .Lloop
++
++//There are 8 words left unprocessed from previous round
++    // expand destination from 8-bit to 16-bit
++    vmovl.u8 q6, d4
++    vmovl.u8 q7, d5
++    vmovl.u8 q8, d6
++    vmovl.u8 q9, d7
++
++    // expand source from 8-bit to 16-bit
++    vmovl.u8 q13, d3
++    vmovl.u8 q10, d0
++    vmovl.u8 q11, d1
++    vmovl.u8 q12, d2
++
++    // calculate destination scale
++    vmul.u16 q5, q13, q4
++    vshr.u16 q5, q5, #8
++    vsub.u16 q5, q14, q5
++
++    // multiply destination ARGB components with dst_scale
++    vmul.u16 q6, q6, q5
++    vmul.u16 q7, q7, q5
++    vmul.u16 q8, q8, q5
++    vmul.u16 q9, q9, q5
++
++    // multiply source ARGB components with src_scale
++    vmul.u16 q10, q10, q4
++    vmul.u16 q11, q11, q4
++    vmul.u16 q12, q12, q4
++    vmul.u16 q13, q13, q4
++
++    // add processed src and dest pixels and extract high bytes
++    vqadd.u8  q10, q6, q10
++    vqadd.u8  q11, q7, q11
++    vqadd.u8  q12, q8, q12
++    vqadd.u8  q13, q9, q13
++
++    vshrn.u16 d20, q10, #8
++    vshrn.u16 d21, q11, #8
++    vshrn.u16 d22, q12, #8
++    vshrn.u16 d23, q13, #8
++
++    vst4.8  {d20, d21, d22, d23}, [r0]! //dst rgb(0,1,2,3) A(0,1,2,3) = d4,d5,d6,d7
++
++.Lless_than_16:
++    cmp      r2,#8
++    blt      .Lless_than_8
++
++    sub      r2,r2,#8
++
++    vld4.8  {d0, d1, d2, d3}, [r1]! //d0,d1,d2,d3 = sourc rgb(0,1,2,3) A(0,1,2,3)
++                                    //update source ptr but not dst ptr
++    vld4.8  {d4, d5, d6, d7}, [r0]  //d4,d5,d6,d7 = dst rgb(0,1,2,3) A(0,1,2,3)
++
++    // expand destination from 8-bit to 16-bit
++    vmovl.u8 q6, d4
++    vmovl.u8 q7, d5
++    vmovl.u8 q8, d6
++    vmovl.u8 q9, d7
++
++    // expand source from 8-bit to 16-bit
++    vmovl.u8 q13, d3
++    vmovl.u8 q10, d0
++    vmovl.u8 q11, d1
++    vmovl.u8 q12, d2
++
++    // calculate destination scale
++    vmul.u16 q5, q13, q4
++    vshr.u16 q5, q5, #8
++    vsub.u16 q5, q14, q5
++
++    // multiply destination ARGB components with dst_scale
++    vmul.u16 q6, q6, q5
++    vmul.u16 q7, q7, q5
++    vmul.u16 q8, q8, q5
++    vmul.u16 q9, q9, q5
++
++    // multiply source ARGB components with src_scale
++    vmul.u16 q10, q10, q4
++    vmul.u16 q11, q11, q4
++    vmul.u16 q12, q12, q4
++    vmul.u16 q13, q13, q4
++
++    // add processed src and dest pixels and extract high bytes
++    vqadd.u8  q10, q6, q10
++    vqadd.u8  q11, q7, q11
++    vqadd.u8  q12, q8, q12
++    vqadd.u8  q13, q9, q13
++
++    vshrn.u16 d4, q10, #8
++    vshrn.u16 d5, q11, #8
++    vshrn.u16 d6, q12, #8
++    vshrn.u16 d7, q13, #8
++
++    vst4.8  {d4, d5, d6, d7}, [r0]! //dst rgb(0,1,2,3) A(0,1,2,3) = d4,d5,d6,d7
++
++.Lless_than_8:
++    vpop     {q4-q7}
++    pop {r4, r5}
++
++.Lslow_path:
++    adds     r2, #0
++    bxeq      lr
++#endif
++
++/*
++ * r0 - dst
++ * r1 - src
++ * r2 - count
++ * r3 - alpha
++ */
++    push     {r4-r11, lr}
++
++    mov      r10, #0xFF
++    orr      r10, r10, r10, lsl #16    //mask = r10 = 0x00FF00FF
++
++    subs     r2, r2, #2
++    blt      .Lblitrow32_single_loop
++
++.Lblitrow32_double_loop:
++    ldm      r0, {r4, r5}
++    ldm      r1!, {r6, r7}
++
++    /* First iteration */
++    lsr      lr, r6, #24               //extract src_alpha
++
++    // calculate dst_scale = 256 - ((src_alpha*src_scale)>>8)
++    mul      lr, r3, lr
++    lsr      lr, #8
++    rsb      lr, lr, #256
++
++    // src processing
++    and      r8, r6, r10               //rb = (src & mask)
++    and      r9, r10, r6, lsr #8       //ag = (src>>8) & mask
++
++    mul      r11, r8, r3               //RB = rb * src_scale
++    mul      r6, r9, r3                //AG = ag * src_scale
++
++    // combine RB and AG
++    and      r11, r10, r11, lsr #8     //r8 = (RB>>8) & mask
++    and      r6, r6, r10, lsl #8       //r9 = AG & ~mask
++
++    orr      r6, r6, r11
++
++    // dst processing
++    and      r8, r4, r10               //rb = (dst & mask)
++    and      r9, r10, r4, lsr #8       //ag = (dst>>8) & mask
++
++    mul      r11, r8, lr              //RB = rb * dst_scale
++    mul      r4, r9, lr               //AG = ag * dst_scale
++
++    // combine RB and AG
++    and      r11, r10, r11, lsr #8     //r8 = (RB>>8) & mask
++    and      r4, r4, r10, lsl #8       //r9 = AG & ~mask
++
++    orr      r4, r4, r11
++
++    /* Second iteration */
++    lsr      lr, r7, #24               //extract src_alpha
++
++    // calculate dst_scale = 256 - ((src_alpha*src_scale)>>8)
++    mul      lr, r3, lr
++    lsr      lr, #8
++    rsb      lr, lr, #256
++
++    // src processing
++    and      r8, r7, r10               //rb = (src & mask)
++    and      r9, r10, r7, lsr #8       //ag = (src>>8) & mask
++
++    mul      r11, r8, r3               //RB = rb * src_scale
++    mul      r7, r9, r3                //AG = ag * src_scale
++
++    // combine RB and AG
++    and      r11, r10, r11, lsr #8     //r8 = (RB>>8) & mask
++    and      r7, r7, r10, lsl #8       //r9 = AG & ~mask
++
++    orr      r7, r7, r11
++
++    // dst processing
++    and      r8, r5, r10               //rb = (dst & mask)
++    and      r9, r10, r5, lsr #8       //ag = (dst>>8) & mask
++
++    mul      r11, r8, lr              //RB = rb * dst_scale
++    mul      r5, r9, lr               //AG = ag * dst_scale
++
++    // combine RB and AG
++    and      r11, r10, r11, lsr #8     //r8 = (RB>>8) & mask
++    and      r5, r5, r10, lsl #8       //r9 = AG & ~mask
++
++    orr      r5, r5, r11
++
++
++    // add processed src and dst
++    add      r6, r6, r4
++    add      r7, r7, r5
++
++    subs     r2, r2, #2
++    stm      r0!, {r6, r7}
++
++    bge      .Lblitrow32_double_loop
++
++.Lblitrow32_single_loop:
++    adds     r2, #1
++    blo      .Lexit
++
++    ldr      r4, [r0]
++    ldr      r6, [r1], #4
++
++    lsr      lr, r6, #24               //extract src_alpha
++
++    // calculate dst_scale = 256 - ((src_alpha*src_scale)>>8)
++    mul      lr, r3, lr
++    lsr      lr, #8
++    rsb      lr, lr, #256
++
++    // src processing
++    and      r8, r6, r10               //rb = (src & mask)
++    and      r9, r10, r6, lsr #8       //ag = (src>>8) & mask
++
++    mul      r11, r8, r3               //RB = rb * src_scale
++    mul      r6, r9, r3                //AG = ag * src_scale
++
++    // combine RB and AG
++    and      r11, r10, r11, lsr #8     //r8 = (RB>>8) & mask
++    and      r6, r6, r10, lsl #8       //r9 = AG & ~mask
++
++    orr      r6, r6, r11
++
++    // dst processing
++    and      r8, r4, r10               //rb = (dst & mask)
++    and      r9, r10, r4, lsr #8       //ag = (dst>>8) & mask
++
++    mul      r11, r8, lr              //RB = rb * dst_scale
++    mul      r4, r9, lr               //AG = ag * dst_scale
++
++    // combine RB and AG
++    and      r11, r10, r11, lsr #8     //r8 = (RB>>8) & mask
++    and      r4, r4, r10, lsl #8       //r9 = AG & ~mask
++
++    orr      r4, r4, r11
++
++    add      r6, r6, r4                //add processed src and dst
++
++    str      r6, [r0], #4
++
++.Lexit:
++    pop      {r4-r11, lr}
++    bx       lr
+diff --git a/src/opts/S32A_D565_Opaque_arm.S b/src/opts/S32A_D565_Opaque_arm.S
+new file mode 100644
+index 0000000..be5eca0
+--- /dev/null
++++ b/src/opts/S32A_D565_Opaque_arm.S
+@@ -0,0 +1,334 @@
++/*
++ * Original file from Android Open source project, modified by The Linux Foundation
++ * Copyright (c) 2013 The Linux Foundation. All rights reserved.
++ * Copyright (c) 2011 Google Inc. All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions are
++ * met:
++ *
++ *    * Redistributions of source code must retain the above copyright
++ * notice, this list of conditions and the following disclaimer.
++ *    * Redistributions in binary form must reproduce the above
++ * copyright notice, this list of conditions and the following disclaimer
++ * in the documentation and/or other materials provided with the
++ * distribution.
++ *    * Neither the name of Google Inc. nor the names of its
++ * contributors may be used to endorse or promote products derived from
++ * this software without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
++ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
++ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++ */
++
++/*
++ * This file is derived from libpixelflinger version of BLIT routine.
++ * Algorithm used for BLIT operation here is equivalent to the one in
++ * C function, S32A_D565_Opaque. Use neon instructions to process 16 pixels
++ * at-a-time on armv7. If the number of pixels is less than 16 and/or the
++ * architecture is armv6 and below, use regular arm instructions. Regular
++ * arm code combines two 16-bit writes into one 32-bit write to destination,
++ * uses destination and source pre-loads, and unrolls the main loop thrice.
++ */
++    .text
++    .align
++
++    .global S32A_D565_Opaque_arm
++
++// uses r6, r7, r8, r9, r10, lr
++
++.macro pixel,   DREG, SRC, FB, OFFSET
++
++    // SRC = AABBGGRR
++    subs   r7, r10, \SRC, lsr #24           // sAA = 255 - sAA
++    beq    1f
++
++.if \OFFSET
++
++    // red
++    mov     lr, \DREG, lsr #(\OFFSET + 6 + 5)
++    smlabb  lr, r7, lr, r8
++    and     r6, \SRC, r10
++    add     lr, lr, lr, lsr #5
++    add     lr, r6, lr, lsr #5
++    lsr     lr, #3
++    orr     \FB, lr, lsl #(\OFFSET + 11)
++
++        // green
++        and     r6, \DREG, #(0x3F<<(\OFFSET + 5))
++        lsr     r6, #5
++        smlabt  r6, r7, r6, r9
++        and     lr, r10, \SRC, lsr #(8)
++        add     r6, r6, r6, lsr #6
++        add     r6, lr, r6, lsr #6
++        lsr     r6, #2
++        orr     \FB, \FB, r6, lsl #(\OFFSET + 5)
++
++            // blue
++            and     lr, \DREG, #(0x1F << \OFFSET)
++            smlabt  lr, r7, lr, r8
++            and     r6, r10, \SRC, lsr #(8+8)
++            add     lr, lr, lr, lsr #5
++            add     lr, r6, lr, lsr #5
++            lsr     lr, #3
++            orr     \FB, \FB, lr, lsl #\OFFSET
++
++.else
++
++    // red
++    mov     lr, \DREG, lsr #(6+5)
++    and     lr, lr, #0x1F
++    smlabb  lr, r7, lr, r8
++    and     r6, \SRC, r10
++    add     lr, lr, lr, lsr #5
++    add     lr, r6, lr, lsr #5
++    lsr     lr, #3
++    mov     \FB, lr, lsl #11
++
++        // green
++        and     r6, \DREG, #(0x3F<<5)
++        lsr     r6, #5
++        smlabb  r6, r7, r6, r9
++        and     lr, r10, \SRC, lsr #(8)
++        add     r6, r6, r6, lsr #6
++        add     r6, lr, r6, lsr #6
++        lsr     r6, #2
++        orr     \FB, \FB, r6, lsl #5
++
++            // blue
++            and     lr, \DREG, #0x1F
++            smlabb  lr, r7, lr, r8
++            and     r6, r10, \SRC, lsr #(8+8)
++            add     lr, lr, lr, lsr #5
++            add     lr, r6, lr, lsr #5
++            orr     \FB, \FB, lr, lsr #3
++
++.endif
++   b      2f
++
++   /*
++    * When alpha = 255, down scale the source RGB pixel (24 bits)
++    * to 16 bits(RGB565)
++    */
++1:
++    lsl    r6, \SRC, #8
++    lsr    lr, \SRC, #5
++    and    r7, r6, #0xf800
++    and    lr, lr, #0x7e0
++    orr    lr, lr, r7
++
++.if \OFFSET
++    orr    lr, lr, r6, lsr #27
++    orr    \FB, \FB, lr, lsl #(\OFFSET)
++.else
++    orr    \FB, lr, r6, lsr #27
++.endif
++
++2:
++.endm
++
++
++// r0:  dst ptr
++// r1:  src ptr
++// r2:  count
++// r3:  d
++// r4:  s0
++// r5:  s1
++// r6:  pixel
++// r7:  pixel
++// r8:  0x10
++// r9:  0x20
++// r10: 0xFF
++// r11: free
++// r12: scratch
++// r14: free
++
++S32A_D565_Opaque_arm:
++    stmfd   sp!, {r4-r10, lr}
++
++#if defined(__ARM_HAVE_NEON)
++    subs    r2, r2, #16
++
++    blo     blit_less_than_16_left
++
++    vmov.u16 q12,  #0x80
++    vmov.u8  q13,  #0xf8
++
++blit_neon_loop:
++    /*
++     * Load 64 bytes from source and 32 bytes from destination
++     * note that source pixels are 4 bytes wide and
++     * destination pixels are 2 bytes wide.
++     */
++    vld4.8  {d2, d4, d6, d8}, [r1]!
++    vld4.8  {d3, d5, d7, d9}, [r1]!
++
++    vand.8  d10, d8, d9
++    vmov    r3, r4, d10
++
++    cmp     r3, #0xffffffff
++    cmpeq   r4, #0xffffffff
++    bne     blit_alpha_not_255
++
++    // alpha equals 255 case
++
++    vshl.u8   q0, q2, #3
++
++    subs    r2, r2, #16
++
++    vsri.u8   q1, q2, #5
++    vsri.u8   q0, q3, #3
++
++    // store the rgb destination values back to memory
++    vst2.8  {d0, d2}, [r0]!
++    vst2.8  {d1, d3}, [r0]!
++
++    blo     blit_less_than_16_left
++    b       blit_neon_loop
++
++blit_alpha_not_255:
++    // alpha = 255 - alpha
++    vmvn.u8 q0, q4
++
++    vld2.8 {q5, q6}, [r0]
++
++    vshl.u8 q7, q6, #3
++
++    subs    r2, r2, #16
++
++    vand.u8 q6, q6, q13
++
++    vmov.16   q8, q12
++    vmov.16   q9, q12
++
++    vsri.u8 q7, q5, #5
++    vshl.u8 q5, q5, #3
++
++    vmlal.u8 q8, d0, d12
++    vmlal.u8 q9, d1, d13
++
++    vshl.u8 q7, q7, #2
++
++    vshr.u16  q10, q8, #5
++    vshr.u16  q11, q9, #5
++    vaddhn.u16 d12, q8, q10
++    vaddhn.u16 d13, q9, q11
++
++    vmov.16   q8, q12
++    vmov.16   q9, q12
++    vmlal.u8 q8, d0, d14
++    vmlal.u8 q9, d1, d15
++
++    vqadd.u8  q6, q6, q1
++
++    vshr.u16  q10, q8, #6
++    vshr.u16  q11, q9, #6
++    vaddhn.u16 d14, q8, q10
++    vaddhn.u16 d15, q9, q11
++
++    vmov.16   q8, q12
++    vmov.16   q9, q12
++    vmlal.u8 q8, d0, d10
++    vmlal.u8 q9, d1, d11
++
++    vqadd.u8  q7, q7, q2
++
++    vshl.u8  q5, q7, #3
++
++    vshr.u16  q10, q8, #5
++    vshr.u16  q11, q9, #5
++
++    vsri.u8  q6, q7, #5
++
++    vaddhn.u16 d16, q8, q10
++    vaddhn.u16 d17, q9, q11
++    vqadd.u8  q8, q8, q3
++
++    vsri.u8  q5, q8, #3
++
++    // store the rgb destination values back to memory
++    vst2.8  {d10, d12}, [r0]!
++    vst2.8  {d11, d13}, [r0]!
++
++    blo     blit_less_than_16_left
++    b       blit_neon_loop
++#endif
++
++blit_less_than_16_left:
++    pld     [r1]
++
++    mov     r8,  #0x10
++    mov     r9,  #0x20
++    mov     r10, #0xFF
++
++#if __ARM_ARCH__ == 7 || defined(__ARM_HAVE_NEON)
++//#if __ARM_ARCH__ == 7 || defined(__ARM_NEON__)
++    adds    r2, r2, #14
++#else
++    subs    r2, r2, #2
++#endif
++
++    pld     [r0]
++    blo     9f
++
++    // The main loop is unrolled thrice and process 6 pixels
++8:  ldmia   r1!, {r4, r5}
++    // stream the source
++    pld     [r1, #32]
++    add     r0, r0, #4
++    // it's all zero, skip this pixel
++    orrs    r3, r4, r5
++    beq     7f
++
++    // load the destination
++    ldr     r3, [r0, #-4]
++    // stream the destination
++    pld     [r0, #32]
++    pixel   r3, r4, r12, 0
++    pixel   r3, r5, r12, 16
++    // effectively, we're getting write-combining by virtue of the
++    // cpu's write-back cache.
++    str     r12, [r0, #-4]
++
++    // 2nd iteration of the loop, don't stream anything
++    subs    r2, r2, #2
++    blt     9f
++    ldmia   r1!, {r4, r5}
++    add     r0, r0, #4
++    orrs    r3, r4, r5
++    beq     7f
++    ldr     r3, [r0, #-4]
++    pixel   r3, r4, r12, 0
++    pixel   r3, r5, r12, 16
++    str     r12, [r0, #-4]
++
++    // 3rd iteration of the loop, don't stream anything
++    subs    r2, r2, #2
++    blt     9f
++    ldmia   r1!, {r4, r5}
++    add     r0, r0, #4
++    orrs    r3, r4, r5
++    beq     7f
++    ldr     r3, [r0, #-4]
++    pixel   r3, r4, r12, 0
++    pixel   r3, r5, r12, 16
++    str     r12, [r0, #-4]
++
++7:  subs    r2, r2, #2
++    blo     9f
++    b       8b
++
++9:  adds    r2, r2, #1
++    ldmlofd sp!, {r4-r10, lr}        // return
++    bxlo    lr
++
++    // last pixel left
++    ldr     r4, [r1], #4
++    ldrh    r3, [r0]
++    pixel   r3, r4, r12, 0
++    strh    r12, [r0], #2
++    ldmfd   sp!, {r4-r10, lr}        // return
++    bx      lr
+diff --git a/src/opts/S32A_Opaque_BlitRow32_arm.S b/src/opts/S32A_Opaque_BlitRow32_arm.S
+new file mode 100644
+index 0000000..91281df
+--- /dev/null
++++ b/src/opts/S32A_Opaque_BlitRow32_arm.S
+@@ -0,0 +1,319 @@
++/*
++ * Original file from Android Open source project, modified by The Linux Foundation
++ * Copyright (c) 2012 The Linux Foundation. All rights reserved.
++ * Copyright (c) 2011 Google Inc. All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions are
++ * met:
++ *
++ *    * Redistributions of source code must retain the above copyright
++ * notice, this list of conditions and the following disclaimer.
++ *    * Redistributions in binary form must reproduce the above
++ * copyright notice, this list of conditions and the following disclaimer
++ * in the documentation and/or other materials provided with the
++ * distribution.
++ *    * Neither the name of Google Inc. nor the names of its
++ * contributors may be used to endorse or promote products derived from
++ * this software without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
++ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
++ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++ */
++    .text
++
++    .global S32A_Opaque_BlitRow32_arm
++    .func S32A_Opaque_BlitRow32_arm
++
++S32A_Opaque_BlitRow32_arm:
++
++    push     {r4-r11}
++#if defined(__ARM_HAVE_NEON)
++
++    cmp      r2,#24
++    blt      .Lless_than_24
++
++    vpush    {Q4-Q7}
++
++    vmov.i16 q14,#0x100               //Q14.16 = 256
++//prefix
++    vld4.8  {d0, d1, d2, d3}, [r1]! //d0,d1,d2,d3 = sourc rgb(0,1,2,3) A(0,1,2,3)
++                                    //update source ptr but not dst ptr
++    vld4.8  {d4, d5, d6, d7}, [r0]  //d4,d5,d6,d7 = dst rgb(0,1,2,3) A(0,1,2,3)
++    add      r3, r0, #32 // minus 16 to pretend the last round
++    mov      r5, #64
++    sub      r2,r2,#8
++.Lloop:
++    pld     [r1, #256]
++    pld     [r0, #256]
++    sub      r2,r2,#16
++    vsubw.u8 q4,q14,d3               //Q4.16 = 256-d3
++
++    //It has to be 24 since we pre-load 8 word for the next rounds
++    cmp      r2,#16
++
++    vmovl.u8 q6,d4                  //Q6 = vmovl.u8 d4
++    vmovl.u8 q7,d5                  //Q7 = vmovl.u8 d5
++    vmovl.u8 q8,d6                  //Q8 = vmovl.u8 d6
++    vmovl.u8 q9,d7                  //Q9 = vmovl.u8 d7
++
++
++    vmul.i16 q6,q6,q4               //Q6 = Q6 * Q4
++    vmul.i16 q7,q7,q4               //Q7 = Q7 * Q4
++
++    vld4.8  {d20, d21, d22, d23}, [r1]! //d0,d1,d2,d3 = sourc rgb(0,1,2,3) A(0,1,2,3)
++
++    vmul.i16 q8,q8,q4               //Q8 = Q8 * Q4
++    vmul.i16 q9,q9,q4               //Q9 = Q9 * Q4
++
++    vld4.8  {d24, d25, d26, d27}, [r3]  //d4,d5,d6,d7 = dst rgb(0,1,2,3) A(0,1,2,3)
++
++    vshrn.i16 d4,q6,#8              //d4 = Q6.16 shrn 8
++    vshrn.i16 d5,q7,#8              //d5 = Q7.16 shrn 8
++    vshrn.i16 d6,q8,#8              //d6 = Q8.16 shrn 8
++    vshrn.i16 d7,q9,#8              //d7 = Q9.16 shrn 8
++
++    vadd.i8  d4,d4,d0               //d4 = d4+d0
++    vadd.i8  d5,d5,d1               //d5 = d5+d1
++    vadd.i8  d6,d6,d2               //d6 = d6+d2
++    vadd.i8  d7,d7,d3               //d7 = d7+d3
++
++    vst4.8  {d4, d5, d6, d7}, [r0], r5 //dst rgb(0,1,2,3) A(0,1,2,3) = d4,d5,d6,d7
++    //add r0, r0, r5
++
++    //The next 4 words
++    vsubW.u8 q4,q14,d23               //Q4.16 = 256-d3
++
++    vmovl.u8 q6,d24                  //Q6 = vmovl.u8 d4
++    vmovl.u8 q7,d25                  //Q7 = vmovl.u8 d5
++    vmovl.u8 q8,d26                  //Q8 = vmovl.u8 d6
++    vmovl.u8 q9,d27                  //Q9 = vmovl.u8 d7
++
++    vmul.i16 q6,q6,q4               //Q6 = Q6 * Q4
++    vmul.i16 q7,q7,q4               //Q7 = Q7 * Q4
++
++    vld4.8  {d0, d1, d2, d3}, [r1]! //d0,d1,d2,d3 = sourc rgb(0,1,2,3) A(0,1,2,3)
++
++    vmul.i16 q8,q8,q4               //Q8 = Q8 * Q4
++    vmul.i16 q9,q9,q4               //Q9 = Q9 * Q4
++
++    vld4.8  {d4, d5, d6, d7}, [r0]  //d4,d5,d6,d7 = dst rgb(0,1,2,3) A(0,1,2,3)
++    vshrn.i16 d24,q6,#8              //d4 = Q6.16 shrn 8
++    vshrn.i16 d25,q7,#8              //d5 = Q7.16 shrn 8
++    vshrn.i16 d26,q8,#8              //d6 = Q8.16 shrn 8
++    vshrn.i16 d27,q9,#8              //d7 = Q9.16 shrn 8
++
++    vadd.i8  d24,d24,d20               //d4 = d4+d0
++    vadd.i8  d25,d25,d21               //d5 = d5+d1
++    vadd.i8  d26,d26,d22               //d6 = d6+d2
++    vadd.i8  d27,d27,d23               //d7 = d7+d3
++
++    vst4.8  {d24, d25, d26, d27}, [r3], r5 //dst rgb(0,1,2,3) A(0,1,2,3) = d4,d5,d6,d7
++    //add r3, r3, r5
++
++    bge      .Lloop
++
++//There are 8 words left unprocessed from previous round
++    vsubw.u8 q4,q14,d3               //Q4.16 = 256-d3
++
++    cmp      r2,#8
++
++    vmovl.u8 q6,d4                  //Q6 = vmovl.u8 d4
++    vmovl.u8 q7,d5                  //Q7 = vmovl.u8 d5
++    vmovl.u8 q8,d6                  //Q8 = vmovl.u8 d6
++    vmovl.u8 q9,d7                  //Q9 = vmovl.u8 d7
++
++    vmul.i16 q6,q6,q4               //Q6 = Q6 * Q4
++    vmul.i16 q7,q7,q4               //Q7 = Q7 * Q4
++    vmul.i16 q8,q8,q4               //Q8 = Q8 * Q4
++    vmul.i16 q9,q9,q4               //Q9 = Q9 * Q4
++
++    vshrn.i16 d4,q6,#8              //d4 = Q6.16 shrn 8
++    vshrn.i16 d5,q7,#8              //d5 = Q7.16 shrn 8
++    vshrn.i16 d6,q8,#8              //d6 = Q8.16 shrn 8
++    vshrn.i16 d7,q9,#8              //d7 = Q9.16 shrn 8
++
++    vadd.i8  d4,d4,d0               //d4 = d4+d0
++    vadd.i8  d5,d5,d1               //d5 = d5+d1
++    vadd.i8  d6,d6,d2               //d6 = d6+d2
++    vadd.i8  d7,d7,d3               //d7 = d7+d3
++
++    vst4.8  {d4, d5, d6, d7}, [r0]! //dst rgb(0,1,2,3) A(0,1,2,3) = d4,d5,d6,d7
++
++.Lless_than_16:
++    cmp      r2,#8
++    blt      .Lless_than_8
++
++    sub      r2,r2,#8
++
++    vld4.8  {d0, d1, d2, d3}, [r1]! //d0,d1,d2,d3 = sourc rgb(0,1,2,3) A(0,1,2,3)
++                                    //update source ptr but not dst ptr
++    vld4.8  {d4, d5, d6, d7}, [r0]  //d4,d5,d6,d7 = dst rgb(0,1,2,3) A(0,1,2,3)
++
++    vsubw.u8 q4,q14,d3               //Q4.16 = 256-d3
++
++    vmovl.u8 q6,d4                  //Q6 = vmovl.u8 d4
++    vmovl.u8 q7,d5                  //Q7 = vmovl.u8 d5
++    vmovl.u8 q8,d6                  //Q8 = vmovl.u8 d6
++    vmovl.u8 q9,d7                  //Q9 = vmovl.u8 d7
++
++    vmul.i16 q6,q6,q4               //Q6 = Q6 * Q4
++    vmul.i16 q7,q7,q4               //Q7 = Q7 * Q4
++    vmul.i16 q8,q8,q4               //Q8 = Q8 * Q4
++    vmul.i16 q9,q9,q4               //Q9 = Q9 * Q4
++
++    vshrn.i16 d4,q6,#8              //d4 = Q6.16 shrn 8
++    vshrn.i16 d5,q7,#8              //d5 = Q7.16 shrn 8
++    vshrn.i16 d6,q8,#8              //d6 = Q8.16 shrn 8
++    vshrn.i16 d7,q9,#8              //d7 = Q9.16 shrn 8
++
++    vadd.i8  d4,d4,d0               //d4 = d4+d0
++    vadd.i8  d5,d5,d1               //d5 = d5+d1
++    vadd.i8  d6,d6,d2               //d6 = d6+d2
++    vadd.i8  d7,d7,d3               //d7 = d7+d3
++
++    vst4.8  {d4, d5, d6, d7}, [r0]! //dst rgb(0,1,2,3) A(0,1,2,3) = d4,d5,d6,d7
++
++.Lless_than_8:
++    vpop     {Q4-Q7}
++
++.Lless_than_4:
++    cmp      r2, #1
++    bmi      .Lexit
++    b        .Lresidual_loop
++
++.Lless_than_24:
++    cmp      r2,#8
++    blt      .Lless_than_4
++
++.Lloop_8:
++    sub      r2,r2,#8
++    // We already read the 8 words from the previous pipe line
++    vld4.8  {d0, d1, d2, d3}, [r1]! //d0,d1,d2,d3 = sourc rgb(0,1,2,3) A(0,1,2,3)
++                                    //update source ptr but not dst ptr
++    vld4.8  {d4, d5, d6, d7}, [r0]  //d4,d5,d6,d7 = dst rgb(0,1,2,3) A(0,1,2,3)
++
++    vmov.i16 q10,#0x100               //Q4.16 = 256
++    vsubW.u8 q10,q10,d3               //Q4.16 = 256-d3
++
++    cmp      r2,#8
++
++    vmovl.u8 q12,d4                  //Q6 = vmovl.u8 d4
++    vmovl.u8 q13,d5                  //Q7 = vmovl.u8 d5
++    vmovl.u8 q8,d6                  //Q8 = vmovl.u8 d6
++    vmovl.u8 q9,d7                  //Q9 = vmovl.u8 d7
++
++    vmul.i16 q12,q12,q10               //Q6 = Q6 * Q4
++    vmul.i16 q13,q13,q10               //Q7 = Q7 * Q4
++    vmul.i16 q8,q8,q10               //Q8 = Q8 * Q4
++    vmul.i16 q9,q9,q10               //Q9 = Q9 * Q4
++
++    vshrn.i16 d4,q12,#8              //d4 = Q6.16 shrn 8
++    vshrn.i16 d5,q13,#8              //d5 = Q7.16 shrn 8
++    vshrn.i16 d6,q8,#8              //d6 = Q8.16 shrn 8
++    vshrn.i16 d7,q9,#8              //d7 = Q9.16 shrn 8
++
++    vadd.i8  d4,d4,d0               //d4 = d4+d0
++    vadd.i8  d5,d5,d1               //d5 = d5+d1
++    vadd.i8  d6,d6,d2               //d6 = d6+d2
++    vadd.i8  d7,d7,d3               //d7 = d7+d3
++
++    vst4.8  {d4, d5, d6, d7}, [r0]! //dst rgb(0,1,2,3) A(0,1,2,3) = d4,d5,d6,d7
++
++    bge      .Lloop_8
++    b        .Lless_than_4
++
++#endif
++
++/*
++ * r0 - dst
++ * r1 - src
++ * r2 - count
++ */
++.Lresidual_loop:
++    mov      r10, #0xFF
++    orr      r10, r10, r10, lsl #16    //mask = r10 = 0x00FF00FF
++
++    subs     r2, r2, #2
++    blt      .Lblitrow32_single_loop
++
++.Lblitrow32_double_loop:
++    ldm      r0, {r3, r4}
++    ldm      r1!, {r5, r6}
++
++    orrs     r9, r3, r4
++    beq      .Lblitrow32_loop_cond
++
++    // First iteration
++    lsr      r7, r5, #24               //extract alpha
++    and      r8, r3, r10               //rb = (dst & mask)
++    rsb      r7, r7, #256              //r5 = scale = (255-alpha)+1
++    and      r9, r10, r3, lsr #8       //ag = (dst>>8) & mask
++
++    mul      r11, r8, r7               //RB = rb * scale
++    mul      r3, r9, r7                //AG = ag * scale
++
++    // combine RB and AG
++    and      r11, r10, r11, lsr #8     //r8 = (RB>>8) & mask
++    and      r3, r3, r10, lsl #8       //r9 = AG & ~mask
++
++    lsr      r7, r6, #24               //extract alpha for second iteration
++    orr      r3, r3, r11
++
++    // Second iteration
++    and      r8, r4, r10               //rb = (dst & mask)
++    rsb      r7, r7, #256              //r5 = scale = (255-alpha)+1
++    and      r9, r10, r4, lsr #8       //ag = (dst>>8) & mask
++
++    mul      r11, r8, r7               //RB = rb * scale
++    mul      r4, r9, r7                //AG = ag * scale
++
++    // combine RB and AG
++    and      r11, r10, r11, lsr #8     //r8 = (RB>>8) & mask
++    and      r4, r4, r10, lsl #8       //r9 = AG & ~mask
++    orr      r4, r4, r11
++
++    // add src to combined value
++    add      r5, r5, r3
++    add      r6, r6, r4
++
++.Lblitrow32_loop_cond:
++    subs     r2, r2, #2
++    stm      r0!, {r5, r6}
++
++    bge      .Lblitrow32_double_loop
++
++.Lblitrow32_single_loop:
++    adds     r2, #1
++    blo      .Lexit
++
++    ldr      r3, [r0]
++    ldr      r5, [r1], #4
++
++    cmp      r3, #0
++    beq      .Lblitrow32_single_store
++
++    lsr      r7, r5, #24               //extract alpha
++    and      r8, r3, r10               //rb = (dst & mask)
++    rsb      r7, r7, #256              //r5 = scale = (255-alpha)+1
++    and      r9, r10, r3, lsr #8       //ag = (dst>>8) & mask
++
++    mul      r8, r8, r7                //RB = rb * scale
++    mul      r9, r9, r7                //AG = ag * scale
++
++    // combine RB and AG
++    and      r8, r10, r8, lsr #8       //r8 = (RB>>8) & mask
++    and      r9, r9, r10, lsl #8       //r9 = AG & ~mask
++    orr      r3, r8, r9
++
++    add      r5, r5, r3                //add src to combined value
++
++.Lblitrow32_single_store:
++    str      r5, [r0], #4
++
++.Lexit:
++    pop      {r4-r11}
++    bx       lr
+diff --git a/src/opts/SkBlitRow_opts_arm_neon.cpp b/src/opts/SkBlitRow_opts_arm_neon.cpp
+index 01a6a2a..084d8df 100644
+--- a/src/opts/SkBlitRow_opts_arm_neon.cpp
++++ b/src/opts/SkBlitRow_opts_arm_neon.cpp
+@@ -1,6 +1,6 @@
+ /*
+  * Copyright 2012 The Android Open Source Project
+- *
++ * Copyright (c) 2013 The Linux Foundation. All rights reserved.
+  * Use of this source code is governed by a BSD-style license that can be
+  * found in the LICENSE file.
+  */
+@@ -17,6 +17,16 @@
+ #include "SkColor_opts_neon.h"
+ #include <arm_neon.h>
+ 
++extern "C"  void S32A_Opaque_BlitRow32_arm(SkPMColor* SK_RESTRICT dst,
++                                            const SkPMColor* SK_RESTRICT src,
++                                            int count,
++                                            U8CPU alpha);
++
++extern "C"  void S32A_Blend_BlitRow32_arm_neon(SkPMColor* SK_RESTRICT dst,
++                                          const SkPMColor* SK_RESTRICT src,
++                                          int count,
++                                          U8CPU alpha);
++
+ #ifdef SK_CPU_ARM64
+ static inline uint8x8x4_t sk_vld4_u8_arm64_3(const SkPMColor* SK_RESTRICT & src) {
+     uint8x8x4_t vsrc;
+@@ -638,7 +648,9 @@ void S32_D565_Blend_Dither_neon(uint16_t *dst, const SkPMColor *src,
+         } while (--count != 0);
+     }
+ }
+-
++/*
++ * Use S32A_Opaque_BlitRow32 function from S32A_Opaque_BlitRow32.S
++ */
+ void S32A_Opaque_BlitRow32_neon(SkPMColor* SK_RESTRICT dst,
+                                 const SkPMColor* SK_RESTRICT src,
+                                 int count, U8CPU alpha) {
+@@ -1550,7 +1562,7 @@ void Color32_arm_neon(SkPMColor* dst, const SkPMColor* src, int count,
+ 
+ const SkBlitRow::Proc sk_blitrow_platform_565_procs_arm_neon[] = {
+     // no dither
+-    S32_D565_Opaque_neon,
++    NULL,
+     S32_D565_Blend_neon,
+ #ifdef SK_CPU_ARM32
+     S32A_D565_Opaque_neon,
+@@ -1582,10 +1594,10 @@ const SkBlitRow::Proc32 sk_blitrow_platform_32_procs_arm_neon[] = {
+     // This proc assumes the alpha value occupies bits 24-32 of each SkPMColor
+     S32A_Opaque_BlitRow32_neon_src_alpha,   // S32A_Opaque,
+ #else
+-    S32A_Opaque_BlitRow32_neon,     // S32A_Opaque,
++    S32A_Opaque_BlitRow32_arm,     // arm is better for this
+ #endif
+ #ifdef SK_CPU_ARM32
+-    S32A_Blend_BlitRow32_neon        // S32A_Blend
++    S32A_Blend_BlitRow32_arm_neon        // S32A_Blend
+ #else
+     NULL
+ #endif
+-- 
+2.5.0
+

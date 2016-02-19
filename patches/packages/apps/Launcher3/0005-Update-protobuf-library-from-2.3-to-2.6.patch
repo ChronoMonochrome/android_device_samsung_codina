@@ -1,0 +1,30 @@
+From 9be6a972af1990e15a7a9e0290444ffcc2ab1e5c Mon Sep 17 00:00:00 2001
+From: Jeff Davidson <jpd@google.com>
+Date: Mon, 15 Sep 2014 18:14:39 -0700
+Subject: [PATCH 05/11] Update protobuf library from 2.3 to 2.6.
+
+The dependency here can be removed because it it automatically added
+when LOCAL_PROTOC_OPTIMIZE_TYPE=nano by
+build/core/host_java_library_common.mk.
+
+Change-Id: I949d32fb5126f1c05e2a6ed48f6636a4a9b15a48
+Signed-off-by: Chet Kener <Cl3Kener@gmail.com>
+---
+ Android.mk | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/Android.mk b/Android.mk
+index 110117b..83d39d4 100644
+--- a/Android.mk
++++ b/Android.mk
+@@ -64,7 +64,6 @@ LOCAL_MODULE_TAGS := optional
+ LOCAL_MODULE := launcher_protoutil_lib
+ LOCAL_IS_HOST_MODULE := true
+ LOCAL_JAR_MANIFEST := util/etc/manifest.txt
+-LOCAL_STATIC_JAVA_LIBRARIES := host-libprotobuf-java-2.3.0-nano
+ 
+ include $(BUILD_HOST_JAVA_LIBRARY)
+ 
+-- 
+2.5.0
+

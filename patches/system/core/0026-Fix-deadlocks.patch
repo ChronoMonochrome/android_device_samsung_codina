@@ -1,0 +1,48 @@
+From 6774089d17e47e613e960f41b9f2c60633d9c617 Mon Sep 17 00:00:00 2001
+From: Bao Haojun <baohaojun@gmail.com>
+Date: Wed, 14 May 2014 21:03:48 +0800
+Subject: [PATCH 26/52] Fix deadlocks.
+
+1. Close pipe fds[1] as soon as possible. Otherwise it may block when
+   reading from fds[0] even though the child process has exited early
+   and closed its copy of fds[1].
+
+2. Waitpid after pipe is closed. Otherwise the screencap child process
+   may block while writing fds[1], because the fds[0] is not closed
+   yet. If we close fds[0] first, then the screencap child process will
+   die because of SIGPIPE, and waitpid will return correctly.
+
+Change-Id: I433c95a5ba2eb3045727fc39a49fd9557fb1a1d1
+Signed-off-by: Bao Haojun <baohaojun@gmail.com>
+---
+ adb/framebuffer_service.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/adb/framebuffer_service.c b/adb/framebuffer_service.c
+index 8cbe840..61578aa 100644
+--- a/adb/framebuffer_service.c
++++ b/adb/framebuffer_service.c
+@@ -76,6 +76,7 @@ void framebuffer_service(int fd, void *cookie)
+         exit(1);
+     }
+ 
++    close(fds[1]);
+     fd_screencap = fds[0];
+ 
+     /* read w, h & format */
+@@ -173,10 +174,9 @@ void framebuffer_service(int fd, void *cookie)
+     }
+ 
+ done:
+-    TEMP_FAILURE_RETRY(waitpid(pid, NULL, 0));
+-
+     close(fds[0]);
+-    close(fds[1]);
++
++    TEMP_FAILURE_RETRY(waitpid(pid, NULL, 0));
+ pipefail:
+     close(fd);
+ }
+-- 
+2.5.0
+

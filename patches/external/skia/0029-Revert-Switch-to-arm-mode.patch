@@ -1,0 +1,26 @@
+From a631e6647f80161045e4d6f8dcc4965c8e590134 Mon Sep 17 00:00:00 2001
+From: Sebastian Jena <sebastianjena95@gmail.com>
+Date: Sat, 18 Apr 2015 17:22:27 -0500
+Subject: [PATCH 29/29] Revert "Switch to arm mode"
+
+This reverts commit 5c6c1f897332a15bda33b3b3ebf0b29b74d478c5.
+---
+ Android.mk | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Android.mk b/Android.mk
+index 72949c3..1b1aab9 100644
+--- a/Android.mk
++++ b/Android.mk
+@@ -36,7 +36,7 @@ include $(CLEAR_VARS)
+ 
+ LOCAL_FDO_SUPPORT := true
+ 
+-LOCAL_ARM_MODE := arm
++LOCAL_ARM_MODE := thumb
+ ifeq ($(TARGET_ARCH),arm)
+ 	ifeq ($(ARCH_ARM_HAVE_VFP),true)
+ 		LOCAL_CFLAGS += -DANDROID_LARGE_MEMORY_DEVICE
+-- 
+2.5.0
+

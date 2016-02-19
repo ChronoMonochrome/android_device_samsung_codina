@@ -1,0 +1,25 @@
+From 442623758734bb3422014b9fa564726e36da4988 Mon Sep 17 00:00:00 2001
+From: Steve Kondik <steve@cyngn.com>
+Date: Sun, 22 Mar 2015 01:42:28 -0700
+Subject: [PATCH 24/52] healthd: Fix compilation issue
+
+Change-Id: I1e2c2ced2de198a662156fd90e510bbbb0347e5a
+---
+ healthd/healthd_mode_charger.cpp | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/healthd/healthd_mode_charger.cpp b/healthd/healthd_mode_charger.cpp
+index 6fed3f6..6e07d09 100644
+--- a/healthd/healthd_mode_charger.cpp
++++ b/healthd/healthd_mode_charger.cpp
+@@ -88,6 +88,7 @@ char *locale;
+ #define CHARGING_ENABLED_PATH   "/sys/class/power_supply/battery/charging_enabled"
+ #endif
+ 
++#define LOGI(x...) do { KLOG_INFO("charger", x); } while (0)
+ #define LOGE(x...) do { KLOG_ERROR("charger", x); } while (0)
+ #define LOGW(x...) do { KLOG_WARNING("charger", x); } while (0)
+ #define LOGV(x...) do { KLOG_DEBUG("charger", x); } while (0)
+-- 
+2.5.0
+

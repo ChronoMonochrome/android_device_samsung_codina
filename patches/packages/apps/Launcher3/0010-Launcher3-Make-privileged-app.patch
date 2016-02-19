@@ -1,0 +1,29 @@
+From 630885947a0e0388ecf7dfbe1b97981ae4be72cd Mon Sep 17 00:00:00 2001
+From: Danesh Mondegarian <daneshm90@gmail.com>
+Date: Thu, 5 Dec 2013 01:47:03 -0800
+Subject: [PATCH 10/11] Launcher3 : Make privileged app
+
+Enable LOCAL_PRIVILEGED_MODULE for launcher.
+This seems to be required to gain widget privileges by default.
+
+Change-Id: Iae2ce085129b39bcc3591ced5f7938d63cebf722
+Signed-off-by: Chet Kener <Cl3Kener@gmail.com>
+---
+ Android.mk | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/Android.mk b/Android.mk
+index 83d39d4..0575a61 100644
+--- a/Android.mk
++++ b/Android.mk
+@@ -38,6 +38,7 @@ LOCAL_PROTOC_FLAGS := --proto_path=$(LOCAL_PATH)/protos/
+ 
+ LOCAL_SDK_VERSION := 21
+ 
++LOCAL_PRIVILEGED_MODULE := true
+ LOCAL_PACKAGE_NAME := Launcher3
+ #LOCAL_CERTIFICATE := shared
+ 
+-- 
+2.5.0
+

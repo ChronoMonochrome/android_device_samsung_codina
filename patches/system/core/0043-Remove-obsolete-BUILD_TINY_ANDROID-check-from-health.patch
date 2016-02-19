@@ -1,0 +1,32 @@
+From f708cc4516f860c251b5971387188c16528fe764 Mon Sep 17 00:00:00 2001
+From: Trevor Drake <trevordrake.gerrit@gmail.com>
+Date: Sat, 24 Jan 2015 04:26:16 +0000
+Subject: [PATCH 43/52] Remove obsolete BUILD_TINY_ANDROID check from healthd
+ makefile
+
+Change-Id: I7e23236e7725891d07368dd8ea8d667014d7dc78
+---
+ healthd/Android.mk | 4 ----
+ 1 file changed, 4 deletions(-)
+
+diff --git a/healthd/Android.mk b/healthd/Android.mk
+index 259f3a6..ccd1cac 100644
+--- a/healthd/Android.mk
++++ b/healthd/Android.mk
+@@ -1,7 +1,5 @@
+ # Copyright 2013 The Android Open Source Project
+ 
+-ifneq ($(BUILD_TINY_ANDROID),true)
+-
+ LOCAL_PATH := $(call my-dir)
+ 
+ include $(CLEAR_VARS)
+@@ -104,5 +102,3 @@ include $(BUILD_PHONY_PACKAGE)
+ 
+ _add-charger-image :=
+ _img_modules :=
+-
+-endif
+-- 
+2.5.0
+

@@ -1,0 +1,49 @@
+From 9a6d23c87ab5e8764bf41e5e799b6c7055bebba3 Mon Sep 17 00:00:00 2001
+From: David Ng <dave@codeaurora.org>
+Date: Thu, 1 Dec 2011 18:28:34 -0800
+Subject: [PATCH 09/29] SkBlitter_RGB16: Add device-specific optimization hooks
+
+Change-Id: I18bf4825669fef6fcc10e5d48271e7ea9abb3ed6
+(cherry picked from commit 5d5e3dd98e15a5d25fcddf41f00dc5989942d094)
+(cherry picked from commit afbd633b035a8b8f6017f52f6ad398a076aee841)
+(cherry picked from commit 814fe785689f0b018283fbc2b02a2d230f0221cb)
+Signed-off-by: Chet Kener <Cl3Kener@gmail.com>
+---
+ src/core/SkBlitter_RGB16.cpp | 14 ++++++++++++--
+ 1 file changed, 12 insertions(+), 2 deletions(-)
+
+diff --git a/src/core/SkBlitter_RGB16.cpp b/src/core/SkBlitter_RGB16.cpp
+index 4503a2a..ec4b5f3 100644
+--- a/src/core/SkBlitter_RGB16.cpp
++++ b/src/core/SkBlitter_RGB16.cpp
+@@ -551,15 +551,25 @@ static uint32_t pmcolor_to_expand16(SkPMColor c) {
+     return (g << 24) | (r << 13) | (b << 2);
+ }
+ 
++extern "C" {
++void skia_androidopt_blend32_16_optimized(uint32_t src, unsigned scale, uint16_t **pdst, int *pcount) __attribute__((weak));
++}
++
+ static inline void blend32_16_row(SkPMColor src, uint16_t dst[], int count) {
+     SkASSERT(count > 0);
+     uint32_t src_expand = pmcolor_to_expand16(src);
+     unsigned scale = SkAlpha255To256(0xFF - SkGetPackedA32(src)) >> 3;
+-    do {
++
++    if (skia_androidopt_blend32_16_optimized) {
++        skia_androidopt_blend32_16_optimized(src_expand, scale, &dst, &count);
++    }
++
++    while (count > 0) {
+         uint32_t dst_expand = SkExpand_rgb_16(*dst) * scale;
+         *dst = SkCompact_rgb_16((src_expand + dst_expand) >> 5);
+         dst += 1;
+-    } while (--count != 0);
++        --count;
++    }
+ }
+ 
+ void SkRGB16_Blitter::blitH(int x, int y, int width) {
+-- 
+2.5.0
+

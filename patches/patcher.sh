@@ -6,13 +6,17 @@ KERNEL_PATCH="kernel/codina/chrono"
 
 if [ "$PATCHES" == "" ] ; then
 	PATCHES="art bionic bootable/recovery build external/bluetooth/bluedroid external/dhcpcd \
+        external/libpng/ external/skia/ external/sqlite/ external/stlport/ \
 	external/chromium_org/ external/chromium_org/third_party/skia external/chromium_org/third_party/WebKit \
 	frameworks/av frameworks/base/ \
 	#frameworks/native/ \
 	frameworks/opt/net/wifi/ \
         #hardware/libhardware \
         frameworks/opt/telephony/  $KERNEL_PATCH  libcore $(find packages/apps/ -type d) \
-        packages/services/Telecomm  packages/services/Telephony  system/core system/security"
+        packages/services/Telecomm  packages/services/Telephony \
+	packages/providers/DownloadProvider/ \
+	system/core system/extras system/vold system/security \
+	vendor/omni"
 fi
 
 export CL_RED="\033[31m"

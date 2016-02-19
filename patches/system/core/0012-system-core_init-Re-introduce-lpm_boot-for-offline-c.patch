@@ -1,0 +1,30 @@
+From cef65752afa2dfeef312c26128be9d7e9ad4d3ca Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Tue, 16 Feb 2016 21:39:54 +0700
+Subject: [PATCH 12/52] 
+ system-core_init-Re-introduce-lpm_boot-for-offline-charging01.patch
+
+Change-Id: I820e11215fdd6527a33488987cb4c37cd3abd1a3
+---
+ init/Android.mk | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/init/Android.mk b/init/Android.mk
+index 1c01cbe..98b59eb 100755
+--- a/init/Android.mk
++++ b/init/Android.mk
+@@ -32,7 +32,10 @@ LOCAL_CFLAGS += -DALLOW_LOCAL_PROP_OVERRIDE=1
+ 
+ SYSTEM_CORE_INIT_DEFINES := BOARD_CHARGING_MODE_BOOTING_LPM \
+     BOARD_CHARGING_CMDLINE_NAME \
+-    BOARD_CHARGING_CMDLINE_VALUE
++    BOARD_CHARGING_CMDLINE_VALUE \
++    BOARD_LPM_BOOT_ARGUMENT_NAME \
++    BOARD_LPM_BOOT_ARGUMENT_VALUE
++
+ 
+ $(foreach system_core_init_define,$(SYSTEM_CORE_INIT_DEFINES), \
+   $(if $($(system_core_init_define)), \
+-- 
+2.5.0
+

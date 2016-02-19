@@ -1,0 +1,28 @@
+From 5858b218b5e2830c15aceb0aa336ef84f437b716 Mon Sep 17 00:00:00 2001
+From: Tomasz Kondel <tomasz.kondel2@sonymobile.com>
+Date: Tue, 5 Nov 2013 13:17:45 +0100
+Subject: [PATCH 31/52] Fix segfault in get_character_device_symlinks()
+
+A segmentation fault will occur when strchr function returns NULL.
+
+Change-Id: I76076acfff16056179bf24dff5df9f81d9a45125
+---
+ init/devices.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/init/devices.c b/init/devices.c
+index 089b780..8af8978 100644
+--- a/init/devices.c
++++ b/init/devices.c
+@@ -538,7 +538,7 @@ static char **get_character_device_symlinks(struct uevent *uevent)
+ 
+     /* skip "/devices/platform/<driver>" */
+     parent = strchr(uevent->path + pdev->path_len, '/');
+-    if (!*parent)
++    if (!parent)
+         goto err;
+ 
+     if (!strncmp(parent, "/usb", 4)) {
+-- 
+2.5.0
+

@@ -1,0 +1,28 @@
+From 5c6c1f897332a15bda33b3b3ebf0b29b74d478c5 Mon Sep 17 00:00:00 2001
+From: Chet Kener <Cl3Kener@gmail.com>
+Date: Mon, 2 Mar 2015 12:34:09 -0500
+Subject: [PATCH 01/29] Switch to arm mode
+
+Thanks to Dave Kessler from Team-Vanir to pointing out to me that skia was being built with thumb. Arm Mode is much better for repo.
+
+Signed-off-by: Chet Kener <Cl3Kener@gmail.com>
+---
+ Android.mk | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Android.mk b/Android.mk
+index 28436ff..22a9d58 100644
+--- a/Android.mk
++++ b/Android.mk
+@@ -36,7 +36,7 @@ include $(CLEAR_VARS)
+ 
+ LOCAL_FDO_SUPPORT := true
+ 
+-LOCAL_ARM_MODE := thumb
++LOCAL_ARM_MODE := arm
+ ifeq ($(TARGET_ARCH),arm)
+ 	ifeq ($(ARCH_ARM_HAVE_VFP),true)
+ 		LOCAL_CFLAGS += -DANDROID_LARGE_MEMORY_DEVICE
+-- 
+2.5.0
+

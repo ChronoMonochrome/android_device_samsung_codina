@@ -1,0 +1,28 @@
+From a8a66ceda9ae0b70cddc570684c6afd22ce6bc4d Mon Sep 17 00:00:00 2001
+From: Tomasz Kondel <tomasz.kondel2@sonymobile.com>
+Date: Thu, 6 Feb 2014 08:57:27 +0100
+Subject: [PATCH 30/52] Close fd on error path in do_mount()
+
+This fix closes a file descriptor before returning
+error from do_mount()
+
+Change-Id: Ib370229f16bf9ac385162d6b163cc5b079a1e73e
+---
+ init/builtins.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/init/builtins.c b/init/builtins.c
+index d4b3f99..3a70545 100644
+--- a/init/builtins.c
++++ b/init/builtins.c
+@@ -505,6 +505,7 @@ int do_mount(int nargs, char **args)
+             sprintf(tmp, "/dev/block/loop%d", n);
+             loop = open(tmp, mode);
+             if (loop < 0) {
++                close(fd);
+                 return -1;
+             }
+ 
+-- 
+2.5.0
+

@@ -1,0 +1,27 @@
+From 00bfaf9fdb31425df74680a72e7a09b51ca32a15 Mon Sep 17 00:00:00 2001
+From: arter97 <qkrwngud825@gmail.com>
+Date: Sun, 12 Apr 2015 09:15:42 +0900
+Subject: [PATCH 08/11] Fix compilation
+
+Signed-off-by: arter97 <qkrwngud825@gmail.com>
+Signed-off-by: Chet Kener <Cl3Kener@gmail.com>
+---
+ dist/sqlite3.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/dist/sqlite3.c b/dist/sqlite3.c
+index 563c821..d246276 100644
+--- a/dist/sqlite3.c
++++ b/dist/sqlite3.c
+@@ -17011,7 +17011,7 @@ static malloc_zone_t* _sqliteZone_;
+ ** The malloc.h header file is needed for malloc_usable_size() function
+ ** on some systems (e.g. Linux).
+ */
+-#if HAVE_MALLOC_H && HAVE_MALLOC_USABLE_SIZE
++#if defined(HAVE_MALLOC_H) || defined(HAVE_MALLOC_USABLE_SIZE)
+ #  define SQLITE_USE_MALLOC_H 1
+ #  define SQLITE_USE_MALLOC_USABLE_SIZE 1
+ /*
+-- 
+2.5.0
+

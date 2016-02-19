@@ -1,0 +1,51 @@
+From 1b89477ada0e2021747939c55f59464a6aa605ec Mon Sep 17 00:00:00 2001
+From: Nick Kralevich <nnk@google.com>
+Date: Thu, 5 Mar 2015 12:50:23 -0800
+Subject: [PATCH 02/11] fstrim.c: use open(O_DIRECTORY) instead of stat
+
+open(O_DIRECTORY) returns an error if the open attempt
+is against anything other than a directory. This basically
+duplicates the check that the stat() call was trying to do.
+Eliminate the unnecessary stat() call and use O_DIRECTORY
+instead.
+
+Change-Id: I1821abbed325f29a7214fdc41ed27cd9e26817d0
+---
+ fstrim.c | 14 +-------------
+ 1 file changed, 1 insertion(+), 13 deletions(-)
+
+diff --git a/fstrim.c b/fstrim.c
+index 895d44f..761f4a4 100644
+--- a/fstrim.c
++++ b/fstrim.c
+@@ -61,7 +61,6 @@ static void *do_fstrim_filesystems(void *thread_arg)
+     int fd;
+     int ret = 0;
+     struct fstrim_range range = { 0 };
+-    struct stat sb;
+     extern struct fstab *fstab;
+     int deep_trim = !!thread_arg;
+ 
+@@ -84,18 +83,7 @@ static void *do_fstrim_filesystems(void *thread_arg)
+             continue; /* Should we trim fat32 filesystems? */
+         }
+ 
+-        if (stat(fstab->recs[i].mount_point, &sb) == -1) {
+-            SLOGE("Cannot stat mount point %s\n", fstab->recs[i].mount_point);
+-            ret = -1;
+-            continue;
+-        }
+-        if (!S_ISDIR(sb.st_mode)) {
+-            SLOGE("%s is not a directory\n", fstab->recs[i].mount_point);
+-            ret = -1;
+-            continue;
+-        }
+-
+-        fd = open(fstab->recs[i].mount_point, O_RDONLY);
++        fd = open(fstab->recs[i].mount_point, O_RDONLY | O_DIRECTORY | O_CLOEXEC | O_NOFOLLOW);
+         if (fd < 0) {
+             SLOGE("Cannot open %s for FITRIM\n", fstab->recs[i].mount_point);
+             ret = -1;
+-- 
+2.5.0
+

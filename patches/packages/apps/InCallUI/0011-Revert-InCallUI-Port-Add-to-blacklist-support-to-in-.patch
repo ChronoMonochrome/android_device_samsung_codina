@@ -1,0 +1,223 @@
+From 2b417539cc852ba77e29edf67acb8fb699c9f382 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Thu, 18 Feb 2016 04:52:18 +0700
+Subject: [PATCH 11/11] Revert "InCallUI: Port "Add to blacklist" support to
+ in-call ui (1 of 2)"
+
+This reverts commit 4207e02c69b11143b20520e0951b5bc06d6fb7ac.
+
+Change-Id: Iec0b47aaa225b01bb7f0523acbdb6b7fd2e585c3
+---
+ res/layout/call_button_fragment.xml               |  6 ----
+ res/menu/incall_more_menu.xml                     | 35 -----------------------
+ res/values/strings.xml                            |  7 -----
+ src/com/android/incallui/CallButtonFragment.java  | 22 --------------
+ src/com/android/incallui/CallButtonPresenter.java | 23 ---------------
+ src/com/android/incallui/CallList.java            | 30 -------------------
+ 6 files changed, 123 deletions(-)
+ delete mode 100644 res/menu/incall_more_menu.xml
+
+diff --git a/res/layout/call_button_fragment.xml b/res/layout/call_button_fragment.xml
+index b589b5f..e8feca6 100644
+--- a/res/layout/call_button_fragment.xml
++++ b/res/layout/call_button_fragment.xml
+@@ -160,12 +160,6 @@
+             android:contentDescription="@string/onscreenOverflowText"
+             android:visibility="gone" />
+ 
+-        <ImageButton
+-            android:id="@+id/moreMenuButton"
+-            style="@style/InCallButton"
+-            android:background="@drawable/btn_overflow"
+-            android:contentDescription="@string/onscreenMoreMenuText" />
+-
+     </LinearLayout>
+ 
+ </LinearLayout>
+diff --git a/res/menu/incall_more_menu.xml b/res/menu/incall_more_menu.xml
+deleted file mode 100644
+index ae6138e..0000000
+--- a/res/menu/incall_more_menu.xml
++++ /dev/null
+@@ -1,35 +0,0 @@
+-<?xml version="1.0" encoding="utf-8"?>
+-<!--
+-Copyright (c) 2014, The Linux Foundation. All rights reserved.
+-
+-Redistribution and use in source and binary forms, with or without
+-modification, are permitted provided that the following conditions are
+-met:
+-    * Redistributions of source code must retain the above copyright
+-      notice, this list of conditions and the following disclaimer.
+-    * Redistributions in binary form must reproduce the above
+-      copyright notice, this list of conditions and the following
+-      disclaimer in the documentation and/or other materials provided
+-      with the distribution.
+-    * Neither the name of The Linux Foundation nor the names of its
+-      contributors may be used to endorse or promote products derived
+-      from this software without specific prior written permission.
+-
+-THIS SOFTWARE IS PROVIDED "AS IS" AND ANY EXPRESS OR IMPLIED
+-WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+-MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT
+-ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS
+-BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+-CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+-SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
+-BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+-WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+-OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
+-IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+- -->
+-
+-<menu xmlns:android="http://schemas.android.com/apk/res/android">
+-    <item
+-        android:id="@+id/menu_add_to_blacklist"
+-        android:title="@string/add_to_black_list"/>
+-</menu>
+diff --git a/res/values/strings.xml b/res/values/strings.xml
+index dee281f..944eff6 100644
+--- a/res/values/strings.xml
++++ b/res/values/strings.xml
+@@ -417,11 +417,4 @@
+ 
+     <!-- This can be used in any application wanting to disable the text "Emergency number" -->
+     <string name="emergency_call_dialog_number_for_display">Emergency number</string>
+-
+-    <!-- Text for the onscreen "Blacklist" button -->
+-    <string name="onscreenBlacklistText">Blacklist</string>
+-
+-    <!-- Blacklist confirmation dialog -->
+-    <string name="blacklist_dialog_title">Add to blacklist</string>
+-    <string name="blacklist_dialog_message">Future calls from <xliff:g id="number">%s</xliff:g> will be blocked</string>
+ </resources>
+diff --git a/src/com/android/incallui/CallButtonFragment.java b/src/com/android/incallui/CallButtonFragment.java
+index d3df236..b2d109a 100644
+--- a/src/com/android/incallui/CallButtonFragment.java
++++ b/src/com/android/incallui/CallButtonFragment.java
+@@ -38,7 +38,6 @@ import android.widget.ImageButton;
+ import android.widget.PopupMenu;
+ import android.widget.PopupMenu.OnDismissListener;
+ import android.widget.PopupMenu.OnMenuItemClickListener;
+-import com.android.internal.telephony.util.BlacklistUtils;
+ 
+ import com.android.contacts.common.util.MaterialColorMapUtils;
+ import com.android.contacts.common.util.MaterialColorMapUtils.MaterialPalette;
+@@ -122,22 +121,6 @@ public class CallButtonFragment
+         mOverflowButton = (ImageButton) parent.findViewById(R.id.overflowButton);
+         mOverflowButton.setOnClickListener(this);
+ 
+-        mMoreMenuButton = (ImageButton) parent.findViewById(R.id.moreMenuButton);
+-        if (mMoreMenuButton != null) {
+-            boolean blacklistEnabled = BlacklistUtils.isBlacklistEnabled(getActivity());
+-            if (blacklistEnabled) {
+-                mMoreMenuButton.setOnClickListener(this);
+-                final ContextThemeWrapper contextWrapper = new ContextThemeWrapper(getActivity(),
+-                        R.style.InCallPopupMenuStyle);
+-                mMoreMenu = new MorePopupMenu(contextWrapper, mMoreMenuButton /* anchorView */);
+-                mMoreMenu.getMenuInflater().inflate(R.menu.incall_more_menu, mMoreMenu.getMenu());
+-                mMoreMenu.setOnMenuItemClickListener(this);
+-
+-                mMoreMenuButton.setOnTouchListener(mMoreMenu.getDragToOpenListener());
+-            } else {
+-                mMoreMenuButton.setVisibility(View.GONE);
+-            }
+-        }
+         return parent;
+     }
+ 
+@@ -541,11 +524,6 @@ public class CallButtonFragment
+             case R.id.audio_mode_bluetooth:
+                 mode = AudioState.ROUTE_BLUETOOTH;
+                 break;
+-
+-            case R.id.menu_add_to_blacklist:
+-                getPresenter().blacklistClicked(getActivity());
+-                return true;
+-
+             default:
+                 Log.e(this, "onMenuItemClick:  unexpected View ID " + item.getItemId()
+                         + " (MenuItem = '" + item + "')");
+diff --git a/src/com/android/incallui/CallButtonPresenter.java b/src/com/android/incallui/CallButtonPresenter.java
+index 5d1104b..9897d37 100644
+--- a/src/com/android/incallui/CallButtonPresenter.java
++++ b/src/com/android/incallui/CallButtonPresenter.java
+@@ -243,29 +243,6 @@ public class CallButtonPresenter extends Presenter<CallButtonPresenter.CallButto
+         videoCall.sendSessionModifyRequest(videoProfile);
+     }
+ 
+-    public void blacklistClicked(final Context context) {
+-        if (mCall == null) {
+-            return;
+-        }
+-
+-        final String number = mCall.getNumber();
+-        final String message = context.getString(R.string.blacklist_dialog_message, number);
+-
+-        new AlertDialog.Builder(context)
+-            .setTitle(R.string.blacklist_dialog_title)
+-            .setMessage(message)
+-            .setPositiveButton(R.string.pause_prompt_yes, new DialogInterface.OnClickListener() {
+-                @Override
+-                public void onClick(DialogInterface dialog, int which) {
+-                    Log.d(this, "hanging up due to blacklist: " + mCall.getId());
+-                    TelecomAdapter.getInstance().disconnectCall(mCall.getId());
+-                    BlacklistUtils.addOrUpdate(context, mCall.getNumber(), BlacklistUtils.BLOCK_CALLS, BlacklistUtils.BLOCK_CALLS);
+-                }
+-            })
+-            .setNegativeButton(R.string.pause_prompt_no, null)
+-            .show();
+-    }
+-
+     public void showDialpadClicked(boolean checked) {
+         Log.v(this, "Show dialpad " + String.valueOf(checked));
+         getUi().displayDialpad(checked /* show */, true /* animate */);
+diff --git a/src/com/android/incallui/CallList.java b/src/com/android/incallui/CallList.java
+index 71be5c1..db43b16 100644
+--- a/src/com/android/incallui/CallList.java
++++ b/src/com/android/incallui/CallList.java
+@@ -23,7 +23,6 @@ import android.os.Handler;
+ import android.os.Message;
+ import android.telecom.DisconnectCause;
+ import android.telecom.Phone;
+-import android.telecom.PhoneAccountHandle;
+ 
+ import java.util.Collections;
+ import java.util.HashMap;
+@@ -560,33 +559,4 @@ public class CallList implements InCallPhoneListener {
+         // TODO: refactor and limit arg to be call state.  Caller info is not needed.
+         public void onCallChanged(Call call);
+     }
+-
+-    /**
+-     * Returns true, if any voice call in ACTIVE on the provided subscription.
+-     */
+-    public boolean hasAnyLiveCall(long subId) {
+-        for (Call call : mCallById.values()) {
+-            PhoneAccountHandle ph = call.getAccountHandle();
+-            if (!isCallDead(call) && ph != null && (Long.parseLong(ph.getId()) == subId)) {
+-                Log.i(this, "hasAnyLiveCall sub = " + subId);
+-                return true;
+-            }
+-        }
+-        Log.i(this, "no active call ");
+-        return false;
+-    }
+-
+-    /**
+-     * Returns true, if any call in ACTIVE on the provided subscription.
+-     */
+-    public boolean hasAnyLiveCall() {
+-        for (Call call : mCallById.values()) {
+-            if (!isCallDead(call)) {
+-                Log.i(this, "hasAnyLiveCall call = " + call);
+-                return true;
+-            }
+-        }
+-        Log.i(this, "no active call ");
+-        return false;
+-    }
+ }
+-- 
+2.5.0
+

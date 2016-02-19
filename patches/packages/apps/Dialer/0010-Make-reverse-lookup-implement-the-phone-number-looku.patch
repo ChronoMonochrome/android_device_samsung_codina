@@ -1,0 +1,377 @@
+From f11bf83118c7203b57062d1fb68792b4f632c15d Mon Sep 17 00:00:00 2001
+From: Danny Baumann <dannybaumann@web.de>
+Date: Wed, 3 Dec 2014 16:41:47 +0100
+Subject: [PATCH 10/17] Make reverse lookup implement the phone number lookup
+ interface (1/2)
+
+Change-Id: I35195d6c5a89cf22ac0f31d48e2ef89102a453c1
+Signed-off-by: Chet Kener <Cl3Kener@gmail.com>
+---
+ .../dialer/lookup/ReverseLookupService.java        | 203 +++++++++++++++++++++
+ .../android/dialer/lookup/ReverseLookupThread.java | 144 ---------------
+ 2 files changed, 203 insertions(+), 144 deletions(-)
+ create mode 100644 src/com/android/dialer/lookup/ReverseLookupService.java
+ delete mode 100644 src/com/android/dialer/lookup/ReverseLookupThread.java
+
+diff --git a/src/com/android/dialer/lookup/ReverseLookupService.java b/src/com/android/dialer/lookup/ReverseLookupService.java
+new file mode 100644
+index 0000000..25c3f4a
+--- /dev/null
++++ b/src/com/android/dialer/lookup/ReverseLookupService.java
+@@ -0,0 +1,203 @@
++/*
++ * Copyright (C) 2014 Xiao-Long Chen <chillermillerlong@hotmail.com>
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++package com.android.dialer.lookup;
++
++import android.content.Context;
++import android.graphics.Bitmap;
++import android.net.Uri;
++import android.os.Handler;
++import android.os.HandlerThread;
++import android.os.Message;
++import android.telephony.PhoneNumberUtils;
++import android.telephony.TelephonyManager;
++
++import com.android.contacts.common.GeoUtil;
++import com.android.dialer.calllog.ContactInfo;
++import com.android.incallui.service.PhoneNumberService;
++
++import java.io.IOException;
++
++public class ReverseLookupService implements PhoneNumberService, Handler.Callback {
++    private final HandlerThread mBackgroundThread;
++    private final Handler mBackgroundHandler;
++    private final Handler mHandler;
++    private final Context mContext;
++    private final TelephonyManager mTelephonyManager;
++
++    private static final int MSG_LOOKUP = 1;
++    private static final int MSG_NOTIFY_NUMBER = 2;
++    private static final int MSG_NOTIFY_IMAGE = 3;
++
++    public ReverseLookupService(Context context) {
++        mContext = context;
++        mTelephonyManager = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
++
++        // TODO: stop after a while?
++        mBackgroundThread = new HandlerThread("ReverseLookup");
++        mBackgroundThread.start();
++
++        mBackgroundHandler = new Handler(mBackgroundThread.getLooper(), this);
++        mHandler = new Handler(this);
++    }
++
++    @Override
++    public void getPhoneNumberInfo(String phoneNumber, NumberLookupListener numberListener,
++            ImageLookupListener imageListener, boolean isIncoming) {
++        if (!LookupSettings.isReverseLookupEnabled(mContext)) {
++            LookupCache.deleteCachedContacts(mContext);
++            return;
++        }
++
++        // Can't do reverse lookup without a number
++        if (phoneNumber == null) {
++            return;
++        }
++
++        LookupRequest request = new LookupRequest();
++        String countryIso = mTelephonyManager.getSimCountryIso().toUpperCase();
++        request.normalizedNumber = PhoneNumberUtils.formatNumberToE164(phoneNumber, countryIso);
++        request.formattedNumber = PhoneNumberUtils.formatNumber(phoneNumber,
++                request.normalizedNumber, GeoUtil.getCurrentCountryIso(mContext));
++        request.numberListener = numberListener;
++        request.imageListener = imageListener;
++
++        mBackgroundHandler.obtainMessage(MSG_LOOKUP, request).sendToTarget();
++    }
++
++    @Override
++    public boolean handleMessage(Message msg) {
++        switch (msg.what) {
++            case MSG_LOOKUP: {
++                // background thread
++                LookupRequest request = (LookupRequest) msg.obj;
++                request.contactInfo = doLookup(request);
++                if (request.contactInfo != null) {
++                    mHandler.obtainMessage(MSG_NOTIFY_NUMBER, request).sendToTarget();
++                    if (request.imageListener != null && request.contactInfo.photoUri != null) {
++                        request.photo = fetchImage(request, request.contactInfo.photoUri);
++                        if (request.photo != null) {
++                            mHandler.obtainMessage(MSG_NOTIFY_IMAGE, request).sendToTarget();
++                        }
++                    }
++                }
++                break;
++            }
++            case MSG_NOTIFY_NUMBER: {
++                // main thread
++                LookupRequest request = (LookupRequest) msg.obj;
++                if (request.numberListener != null) {
++                    LookupNumberInfo info = new LookupNumberInfo(request.contactInfo);
++                    request.numberListener.onPhoneNumberInfoComplete(info);
++                }
++                break;
++            }
++            case MSG_NOTIFY_IMAGE:
++                // main thread
++                LookupRequest request = (LookupRequest) msg.obj;
++                if (request.imageListener != null) {
++                    request.imageListener.onImageFetchComplete(request.photo);
++                }
++                break;
++        }
++
++        return true;
++    }
++
++    private ContactInfo doLookup(LookupRequest request) {
++        final String number = request.normalizedNumber;
++
++        if (LookupCache.hasCachedContact(mContext, number)) {
++            ContactInfo info = LookupCache.getCachedContact(mContext, number);
++            if (!ContactInfo.EMPTY.equals(info)) {
++                return info;
++            } else if (info != null) {
++                // If we have an empty cached contact, remove it and redo lookup
++                LookupCache.deleteCachedContact(mContext, number);
++            }
++        }
++
++        try {
++            ContactInfo info = ReverseLookup.getInstance(mContext).lookupNumber(mContext,
++                    number, request.formattedNumber);
++            if (info != null && !info.equals(ContactInfo.EMPTY)) {
++                LookupCache.cacheContact(mContext, info);
++                return info;
++            }
++        } catch (IOException e) {
++            // ignored
++        }
++
++        return null;
++    }
++
++    private Bitmap fetchImage(LookupRequest request, Uri uri) {
++        if (!LookupCache.hasCachedImage(mContext, request.normalizedNumber)) {
++            Bitmap bmp = ReverseLookup.getInstance(mContext).lookupImage(mContext, uri);
++            if (bmp != null) {
++                LookupCache.cacheImage(mContext, request.normalizedNumber, bmp);
++            }
++        }
++
++        return LookupCache.getCachedImage(mContext, request.normalizedNumber);
++    }
++
++    private static class LookupRequest {
++        String normalizedNumber;
++        String formattedNumber;
++        NumberLookupListener numberListener;
++        ImageLookupListener imageListener;
++        ContactInfo contactInfo;
++        Bitmap photo;
++    }
++
++    private static class LookupNumberInfo implements PhoneNumberInfo {
++        private ContactInfo mInfo;
++        private LookupNumberInfo(ContactInfo info) {
++            mInfo = info;
++        }
++
++        @Override
++        public String getDisplayName() {
++            return mInfo.name;
++        }
++        @Override
++        public String getNumber() {
++            return mInfo.number;
++        }
++        @Override
++        public int getPhoneType() {
++            return mInfo.type;
++        }
++        @Override
++        public String getPhoneLabel() {
++            return mInfo.label;
++        }
++        @Override
++        public String getNormalizedNumber() {
++            return mInfo.normalizedNumber;
++        }
++        @Override
++        public String getImageUrl() {
++            return mInfo.photoUri != null ? mInfo.photoUri.toString() : null;
++        }
++        @Override
++        public boolean isBusiness() {
++            // FIXME
++            return false;
++        }
++    }
++}
+diff --git a/src/com/android/dialer/lookup/ReverseLookupThread.java b/src/com/android/dialer/lookup/ReverseLookupThread.java
+deleted file mode 100644
+index 31c3442..0000000
+--- a/src/com/android/dialer/lookup/ReverseLookupThread.java
++++ /dev/null
+@@ -1,144 +0,0 @@
+-/*
+- * Copyright (C) 2014 Xiao-Long Chen <chillermillerlong@hotmail.com>
+- *
+- * Licensed under the Apache License, Version 2.0 (the "License");
+- * you may not use this file except in compliance with the License.
+- * You may obtain a copy of the License at
+- *
+- *      http://www.apache.org/licenses/LICENSE-2.0
+- *
+- * Unless required by applicable law or agreed to in writing, software
+- * distributed under the License is distributed on an "AS IS" BASIS,
+- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- * See the License for the specific language governing permissions and
+- * limitations under the License.
+- */
+-
+-package com.android.dialer.lookup;
+-
+-import com.android.contacts.common.GeoUtil;
+-import com.android.dialer.calllog.ContactInfo;
+-import com.android.incallui.ContactInfoCache;
+-
+-import android.content.Context;
+-import android.graphics.Bitmap;
+-import android.os.Handler;
+-import android.os.Looper;
+-import android.telephony.PhoneNumberUtils;
+-import android.telephony.TelephonyManager;
+-import android.util.Log;
+-
+-import java.io.IOException;
+-import java.util.concurrent.Executors;
+-import java.util.concurrent.ExecutorService;
+-
+-public class ReverseLookupThread extends Thread {
+-    private static final String TAG = ReverseLookupThread.class.getSimpleName();
+-
+-    private static final ExecutorService mExecutorService =
+-            Executors.newFixedThreadPool(2);
+-    private static final Handler mHandler = new Handler(Looper.getMainLooper());
+-
+-    private final Context mContext;
+-    private final ContactInfoCache.ReverseLookupListener mListener;
+-    private final String mNormalizedNumber;
+-    private final String mFormattedNumber;
+-
+-    public static void performLookup(Context context, String number,
+-            ContactInfoCache.ReverseLookupListener listener) {
+-        try {
+-            mExecutorService.execute(
+-                    new ReverseLookupThread(context, number, listener));
+-        } catch (Exception e) {
+-            Log.e(TAG, "Failed to perform reverse lookup", e);
+-        }
+-    }
+-
+-    private ReverseLookupThread(Context context, String number,
+-            ContactInfoCache.ReverseLookupListener listener) {
+-        mContext = context;
+-        mListener = listener;
+-        String countryIso = ((TelephonyManager) mContext.getSystemService(
+-                Context.TELEPHONY_SERVICE)).getSimCountryIso().toUpperCase();
+-        mNormalizedNumber = PhoneNumberUtils
+-                .formatNumberToE164(number, countryIso);
+-        mFormattedNumber = PhoneNumberUtils.formatNumber(number,
+-                mNormalizedNumber, GeoUtil.getCurrentCountryIso(mContext));
+-    }
+-
+-    @Override
+-    public void run() {
+-        if (!LookupSettings.isReverseLookupEnabled(mContext)) {
+-            LookupCache.deleteCachedContacts(mContext);
+-            return;
+-        }
+-
+-        // Can't do reverse lookup without a number
+-        if (mNormalizedNumber == null || mFormattedNumber == null) {
+-            return;
+-        }
+-
+-        ContactInfo info = null;
+-
+-        if (LookupCache.hasCachedContact(mContext, mNormalizedNumber)) {
+-            info = LookupCache.getCachedContact(mContext, mNormalizedNumber);
+-
+-            if (ContactInfo.EMPTY.equals(info)) {
+-                // If we have an empty cached contact, remove it and redo lookup
+-                LookupCache.deleteCachedContact(mContext, mNormalizedNumber);
+-                info = null;
+-            }
+-        }
+-
+-        // Lookup contact if it's not cached
+-        if (info == null) {
+-            try {
+-                info = ReverseLookup.getInstance(mContext).lookupNumber(mContext,
+-                        mNormalizedNumber, mFormattedNumber);
+-            } catch (IOException e) {
+-                // ignored, we'll return below
+-            }
+-
+-            if (info == null) {
+-                return;
+-            }
+-
+-            // Put in cache only if the contact is valid
+-            if (info.equals(ContactInfo.EMPTY)) {
+-                return;
+-            } else if (info.name != null) {
+-                LookupCache.cacheContact(mContext, info);
+-            }
+-        }
+-
+-        final ContactInfo infoFinal = info;
+-
+-        mHandler.post(new Runnable() {
+-            @Override
+-            public void run() {
+-                mListener.onLookupComplete(infoFinal);
+-            }
+-        });
+-
+-        if (info.photoUri != null) {
+-            if (!LookupCache.hasCachedImage(mContext, mNormalizedNumber)) {
+-                Bitmap bmp = ReverseLookup.getInstance(mContext).lookupImage(
+-                        mContext, info.photoUri);
+-
+-                if (bmp != null) {
+-                    LookupCache.cacheImage(mContext, mNormalizedNumber, bmp);
+-                }
+-            }
+-
+-            final Bitmap bmp = LookupCache.getCachedImage(
+-                    mContext, mNormalizedNumber);
+-
+-            mHandler.post(new Runnable() {
+-                @Override
+-                public void run() {
+-                    mListener.onImageFetchComplete(bmp);
+-                }
+-            });
+-        }
+-    }
+-}
+-- 
+2.5.0
+

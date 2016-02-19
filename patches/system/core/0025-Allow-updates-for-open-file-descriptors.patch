@@ -1,0 +1,32 @@
+From d98e2cc47f0081559e7262cf2b5769fbc11737f4 Mon Sep 17 00:00:00 2001
+From: Marco Nelissen <marcone@google.com>
+Date: Wed, 10 Dec 2014 10:44:20 -0800
+Subject: [PATCH 25/52] Allow updates for open file descriptors
+
+even if the calling process itself would not be able to open the file.
+
+Bug: 18688419
+
+Change-Id: I640db19f19c1a677735fd0c14b7e2e38977d0f4d
+---
+ sdcard/sdcard.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/sdcard/sdcard.c b/sdcard/sdcard.c
+index a29462c..f3f33cd 100644
+--- a/sdcard/sdcard.c
++++ b/sdcard/sdcard.c
+@@ -940,7 +940,9 @@ static int handle_setattr(struct fuse* fuse, struct fuse_handler* handler,
+     if (!node) {
+         return -ENOENT;
+     }
+-    if (!check_caller_access_to_node(fuse, hdr, node, W_OK, has_rw)) {
++
++    if (!(req->valid & FATTR_FH) &&
++            !check_caller_access_to_node(fuse, hdr, node, W_OK, has_rw)) {
+         return -EACCES;
+     }
+ 
+-- 
+2.5.0
+

@@ -1,0 +1,34 @@
+From 695f9378d0c868be45014bfad32328370fa1dfdb Mon Sep 17 00:00:00 2001
+From: Martin Brabham <optedoblivion@cyngn.com>
+Date: Fri, 6 Mar 2015 17:13:41 -0800
+Subject: [PATCH 13/17] Call Vibration Settings: Fix preference key name
+
+Change-Id: I9bad8f4c0c1dfeff407de8a9668fa38f750cc019
+Signed-off-by: Chet Kener <Cl3Kener@gmail.com>
+---
+ res/xml/general_settings.xml | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/res/xml/general_settings.xml b/res/xml/general_settings.xml
+index 406927c..d6d57d0 100644
+--- a/res/xml/general_settings.xml
++++ b/res/xml/general_settings.xml
+@@ -74,7 +74,7 @@
+             android:title="@string/incall_vibrate_hangup_title" />
+ 
+         <SwitchPreference
+-            android:key="incall_vibrate_45"
++            android:key="incall_vibrate_45secs"
+             android:title="@string/incall_vibrate_45_title"
+             android:summary="@string/incall_vibrate_45_summary" />
+ 
+@@ -99,4 +99,4 @@
+ 
+     </PreferenceCategory>
+ 
+-</PreferenceScreen>
+\ No newline at end of file
++</PreferenceScreen>
+-- 
+2.5.0
+

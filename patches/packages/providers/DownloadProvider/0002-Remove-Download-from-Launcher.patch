@@ -1,0 +1,27 @@
+From dc78228f161043f3bfbc10e4c22ee8c1fc5c74e6 Mon Sep 17 00:00:00 2001
+From: Chet Kener <Cl3Kener@gmail.com>
+Date: Tue, 27 Jan 2015 11:28:56 -0500
+Subject: [PATCH 2/2] Remove Download from Launcher
+
+* This is redundant because DocumentsUI already has Downloads inside it.  No reason to be redundant.
+
+Signed-off-by: Chet Kener <Cl3Kener@gmail.com>
+---
+ ui/AndroidManifest.xml | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/ui/AndroidManifest.xml b/ui/AndroidManifest.xml
+index 93fb522..e70d3f8 100644
+--- a/ui/AndroidManifest.xml
++++ b/ui/AndroidManifest.xml
+@@ -18,7 +18,6 @@
+             android:theme="@android:style/Theme.NoDisplay">
+             <intent-filter>
+                 <action android:name="android.intent.action.MAIN" />
+-                <category android:name="android.intent.category.LAUNCHER" />
+             </intent-filter>
+             <intent-filter>
+                 <action android:name="android.intent.action.VIEW_DOWNLOADS" />
+-- 
+2.5.0
+

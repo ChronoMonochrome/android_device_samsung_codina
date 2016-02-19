@@ -1,0 +1,25 @@
+From b5186c7ed981cb81c90f86db3f639b782bbd1f6a Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Tue, 16 Feb 2016 21:39:54 +0700
+Subject: [PATCH 09/52] system-core_W0-Fix-flash-recovery-service.patch
+
+Change-Id: Ib5a277ed99c28e48a5cebdfea2ab7b51d261b8de
+---
+ rootdir/init.rc | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/rootdir/init.rc b/rootdir/init.rc
+index a7dc8ae..27a0191 100644
+--- a/rootdir/init.rc
++++ b/rootdir/init.rc
+@@ -9,6 +9,7 @@ import /init.usb.rc
+ import /init.${ro.hardware}.rc
+ import /init.${ro.zygote}.rc
+ import /init.trace.rc
++import /init.kernel.rc
+ # Include CM's extra init file
+ import /init.cm.rc
+ 
+-- 
+2.5.0
+

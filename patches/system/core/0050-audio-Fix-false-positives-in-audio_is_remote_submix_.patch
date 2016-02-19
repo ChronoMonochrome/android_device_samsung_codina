@@ -1,0 +1,39 @@
+From 4f724ca540e88b9dd91b0301acc9c5980f44894c Mon Sep 17 00:00:00 2001
+From: Misael Lopez Cruz <misael.lopez@ti.com>
+Date: Wed, 29 Apr 2015 12:02:08 -0500
+Subject: [PATCH 50/52] audio: Fix false positives in
+ audio_is_remote_submix_device()
+
+The audio_is_remote_submix_device() helper function incorrectly
+reported AUDIO_DEVICE_OUT_BLUETOOTH_A2DP_HEADPHONES and
+AUDIO_DEVICE_IN_LINE as a submix devices.
+
+The cases where the confusion occurs are for devices whose bitwise
+value only differs in the direction bit.
+
+Change-Id: I3bb9fd1158a26a8f4b3b59246974e703ca5ba0f0
+Signed-off-by: Misael Lopez Cruz <misael.lopez@ti.com>
+---
+ include/system/audio.h | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/include/system/audio.h b/include/system/audio.h
+index 9daaa17..8a3f005 100644
+--- a/include/system/audio.h
++++ b/include/system/audio.h
+@@ -1220,8 +1220,10 @@ static inline bool audio_is_usb_device(audio_devices_t device)
+ 
+ static inline bool audio_is_remote_submix_device(audio_devices_t device)
+ {
+-    if ((device & AUDIO_DEVICE_OUT_REMOTE_SUBMIX) == AUDIO_DEVICE_OUT_REMOTE_SUBMIX
+-            || (device & AUDIO_DEVICE_IN_REMOTE_SUBMIX) == AUDIO_DEVICE_IN_REMOTE_SUBMIX)
++    if ((audio_is_output_devices(device) &&
++         (device & AUDIO_DEVICE_OUT_REMOTE_SUBMIX) == AUDIO_DEVICE_OUT_REMOTE_SUBMIX)
++        || (!audio_is_output_devices(device) &&
++         (device & AUDIO_DEVICE_IN_REMOTE_SUBMIX) == AUDIO_DEVICE_IN_REMOTE_SUBMIX))
+         return true;
+     else
+         return false;
+-- 
+2.5.0
+

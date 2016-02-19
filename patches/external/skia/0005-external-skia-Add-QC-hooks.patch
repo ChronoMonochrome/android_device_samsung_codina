@@ -1,0 +1,64 @@
+From e02628692af1f3161c13d95f13f40fddc771be43 Mon Sep 17 00:00:00 2001
+From: Xin Qi <xqi@codeaurora.org>
+Date: Wed, 12 Jun 2013 13:14:24 -0700
+Subject: [PATCH 05/29] external/skia: Add QC hooks
+
+Add QC hooks blittering functions
+
+Change-Id: I9d72549ec23b9f5ed69e8337734b32cac165c83d
+Signed-off-by: Chet Kener <Cl3Kener@gmail.com>
+---
+ Android.mk                      |  5 +++++
+ src/opts/SkBlitRow_opts_arm.cpp | 16 ++++++++++++++--
+ 2 files changed, 19 insertions(+), 2 deletions(-)
+
+diff --git a/Android.mk b/Android.mk
+index 22a9d58..dc2863f 100644
+--- a/Android.mk
++++ b/Android.mk
+@@ -531,6 +531,11 @@ LOCAL_STATIC_LIBRARIES := \
+ 	libgif \
+ 	libsfntly
+ 
++ifeq ($(BOARD_USES_QCOM_HARDWARE),true)
++	LOCAL_WHOLE_STATIC_LIBRARIES += libqc-skia
++endif
++
++
+ LOCAL_C_INCLUDES := \
+ 	$(LOCAL_PATH)/include/config \
+ 	$(LOCAL_PATH)/include/core \
+diff --git a/src/opts/SkBlitRow_opts_arm.cpp b/src/opts/SkBlitRow_opts_arm.cpp
+index 473a3e9..61946eb 100644
+--- a/src/opts/SkBlitRow_opts_arm.cpp
++++ b/src/opts/SkBlitRow_opts_arm.cpp
+@@ -373,12 +373,24 @@ static const SkBlitRow::Proc32 sk_blitrow_platform_32_procs_arm[] = {
+ 
+ #endif // USE_ARM_CODE
+ 
++extern SkBlitRow::Proc32 skia_androidopt_PlatformProcs32(unsigned flags) __attribute__((weak));
++extern SkBlitRow::Proc skia_androidopt_PlatformProcs565(unsigned flags) __attribute__((weak));
++
+ SkBlitRow::Proc SkBlitRow::PlatformProcs565(unsigned flags) {
+-    return SK_ARM_NEON_WRAP(sk_blitrow_platform_565_procs_arm)[flags];
++    if (skia_androidopt_PlatformProcs565 && skia_androidopt_PlatformProcs565(flags) ) {
++        return  skia_androidopt_PlatformProcs565(flags);
++    } else {
++        return SK_ARM_NEON_WRAP(sk_blitrow_platform_565_procs_arm)[flags];
++    }
+ }
+ 
++
+ SkBlitRow::Proc32 SkBlitRow::PlatformProcs32(unsigned flags) {
+-    return SK_ARM_NEON_WRAP(sk_blitrow_platform_32_procs_arm)[flags];
++    if (skia_androidopt_PlatformProcs32 && skia_androidopt_PlatformProcs32(flags) ) {
++        return  skia_androidopt_PlatformProcs32(flags);
++    } else {
++        return SK_ARM_NEON_WRAP(sk_blitrow_platform_32_procs_arm)[flags];
++    }
+ }
+ 
+ ///////////////////////////////////////////////////////////////////////////////
+-- 
+2.5.0
+

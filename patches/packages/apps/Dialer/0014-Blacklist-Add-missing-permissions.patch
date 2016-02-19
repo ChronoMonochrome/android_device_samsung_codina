@@ -1,0 +1,27 @@
+From 56d31f5ff89ef716c87f716b6305d950a64ffff2 Mon Sep 17 00:00:00 2001
+From: snak3ater <saeedyasir91@gmail.com>
+Date: Fri, 28 Nov 2014 12:02:35 +0500
+Subject: [PATCH 14/17] Blacklist: Add missing permissions
+
+Change-Id: Iee17eab0752edda1e192db3890f8ab6ccb4cf6ae
+Signed-off-by: Chet Kener <Cl3Kener@gmail.com>
+---
+ AndroidManifest.xml | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/AndroidManifest.xml b/AndroidManifest.xml
+index f6ab4a5..a57c743 100644
+--- a/AndroidManifest.xml
++++ b/AndroidManifest.xml
+@@ -48,6 +48,8 @@
+     <uses-permission android:name="com.android.voicemail.permission.READ_VOICEMAIL" />
+     <uses-permission android:name="android.permission.ALLOW_ANY_CODEC_FOR_PLAYBACK" />
+     <uses-permission android:name="com.android.launcher.permission.INSTALL_SHORTCUT"/>
++    <uses-permission android:name="android.permission.READ_PHONE_BLACKLIST" />
++    <uses-permission android:name="android.permission.CHANGE_PHONE_BLACKLIST" />
+     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+     <uses-permission android:name="android.permission.BROADCAST_STICKY" />
+     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+-- 
+2.5.0
+

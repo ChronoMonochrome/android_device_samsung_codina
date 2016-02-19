@@ -1,0 +1,75 @@
+From ddaed1e6f23459f626a191639d2d867fcfa76ca2 Mon Sep 17 00:00:00 2001
+From: Henrik Baard <henrik.baard@sonymobile.com>
+Date: Fri, 6 Feb 2015 09:24:14 +0100
+Subject: [PATCH 07/11] Change strncpy to strlcpy
+
+Change all function calls to strncpy to strlcpy.
+
+Change-Id: I2bbefb7829d715847c5b26f4b9f0faddbd4c89d0
+---
+ Loop.cpp    | 4 ++--
+ Process.cpp | 4 ++--
+ vdc.c       | 3 +--
+ 3 files changed, 5 insertions(+), 6 deletions(-)
+
+diff --git a/Loop.cpp b/Loop.cpp
+index 11c114f..00706c1 100644
+--- a/Loop.cpp
++++ b/Loop.cpp
+@@ -120,7 +120,7 @@ int Loop::lookupActive(const char *id, char *buffer, size_t len) {
+         errno = ENOENT;
+         return -1;
+     }
+-    strncpy(buffer, filename, len -1);
++    strlcpy(buffer, filename, len);
+     return 0;
+ }
+ 
+@@ -172,7 +172,7 @@ int Loop::create(const char *id, const char *loopFile, char *loopDeviceBuffer, s
+         return -1;
+     }
+ 
+-    strncpy(loopDeviceBuffer, filename, len -1);
++    strlcpy(loopDeviceBuffer, filename, len);
+ 
+     int file_fd;
+ 
+diff --git a/Process.cpp b/Process.cpp
+index 08be28e..24e4082 100644
+--- a/Process.cpp
++++ b/Process.cpp
+@@ -110,7 +110,7 @@ int Process::checkFileDescriptorSymLinks(int pid, const char *mountPoint, char *
+         if (readSymLink(path, link, sizeof(link)) && pathMatchesMountPoint(link, mountPoint)) {
+             if (openFilename) {
+                 memset(openFilename, 0, max);
+-                strncpy(openFilename, link, max-1);
++                strlcpy(openFilename, link, max);
+             }
+             closedir(dir);
+             return 1;
+@@ -140,7 +140,7 @@ int Process::checkFileMaps(int pid, const char *mountPoint, char *openFilename,
+         if (path && pathMatchesMountPoint(path, mountPoint)) {
+             if (openFilename) {
+                 memset(openFilename, 0, max);
+-                strncpy(openFilename, path, max-1);
++                strlcpy(openFilename, path, max);
+             }
+             fclose(file);
+             return 1;
+diff --git a/vdc.c b/vdc.c
+index f44852f..8f606be 100644
+--- a/vdc.c
++++ b/vdc.c
+@@ -145,8 +145,7 @@ static int do_monitor(int sock, int stop_after_cmd) {
+                     int code;
+                     char tmp[4];
+ 
+-                    strncpy(tmp, buffer + offset, 3);
+-                    tmp[3] = '\0';
++                    strlcpy(tmp, buffer + offset, sizeof(tmp));
+                     code = atoi(tmp);
+ 
+                     printf("%s\n", buffer + offset);
+-- 
+2.5.0
+

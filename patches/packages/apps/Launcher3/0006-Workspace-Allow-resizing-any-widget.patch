@@ -1,0 +1,98 @@
+From c922d007556d5c5299e16b18b0c054344136d97c Mon Sep 17 00:00:00 2001
+From: Nebojsa Cvetkovic <nebkat@gmail.com>
+Date: Wed, 27 Nov 2013 15:32:56 +0000
+Subject: [PATCH 06/11] Workspace: Allow resizing any widget
+
+Change-Id: I3a16b33955ccc7a17292e2d0887d473fed7b757c
+Signed-off-by: Chet Kener <Cl3Kener@gmail.com>
+---
+ .../android/launcher3/AppWidgetResizeFrame.java    | 29 ++++------------------
+ src/com/android/launcher3/Workspace.java           |  3 +--
+ 2 files changed, 6 insertions(+), 26 deletions(-)
+
+diff --git a/src/com/android/launcher3/AppWidgetResizeFrame.java b/src/com/android/launcher3/AppWidgetResizeFrame.java
+index f57f4d0..c2125b7 100644
+--- a/src/com/android/launcher3/AppWidgetResizeFrame.java
++++ b/src/com/android/launcher3/AppWidgetResizeFrame.java
+@@ -36,7 +36,6 @@ public class AppWidgetResizeFrame extends FrameLayout {
+     private int mBaselineHeight;
+     private int mBaselineX;
+     private int mBaselineY;
+-    private int mResizeMode;
+ 
+     private int mRunningHInc;
+     private int mRunningVInc;
+@@ -78,7 +77,6 @@ public class AppWidgetResizeFrame extends FrameLayout {
+         mLauncher = (Launcher) context;
+         mCellLayout = cellLayout;
+         mWidgetView = widgetView;
+-        mResizeMode = widgetView.getAppWidgetInfo().resizeMode;
+         mDragLayer = dragLayer;
+ 
+         final AppWidgetProviderInfo info = widgetView.getAppWidgetInfo();
+@@ -121,14 +119,6 @@ public class AppWidgetResizeFrame extends FrameLayout {
+         mWidgetPaddingRight = p.right;
+         mWidgetPaddingBottom = p.bottom;
+ 
+-        if (mResizeMode == AppWidgetProviderInfo.RESIZE_HORIZONTAL) {
+-            mTopHandle.setVisibility(GONE);
+-            mBottomHandle.setVisibility(GONE);
+-        } else if (mResizeMode == AppWidgetProviderInfo.RESIZE_VERTICAL) {
+-            mLeftHandle.setVisibility(GONE);
+-            mRightHandle.setVisibility(GONE);
+-        }
+-
+         final float density = mLauncher.getResources().getDisplayMetrics().density;
+         mBackgroundPadding = (int) Math.ceil(density * BACKGROUND_PADDING);
+         mTouchTargetWidth = 2 * mBackgroundPadding;
+@@ -140,14 +130,11 @@ public class AppWidgetResizeFrame extends FrameLayout {
+     }
+ 
+     public boolean beginResizeIfPointInRegion(int x, int y) {
+-        boolean horizontalActive = (mResizeMode & AppWidgetProviderInfo.RESIZE_HORIZONTAL) != 0;
+-        boolean verticalActive = (mResizeMode & AppWidgetProviderInfo.RESIZE_VERTICAL) != 0;
+ 
+-        mLeftBorderActive = (x < mTouchTargetWidth) && horizontalActive;
+-        mRightBorderActive = (x > getWidth() - mTouchTargetWidth) && horizontalActive;
+-        mTopBorderActive = (y < mTouchTargetWidth + mTopTouchRegionAdjustment) && verticalActive;
+-        mBottomBorderActive = (y > getHeight() - mTouchTargetWidth + mBottomTouchRegionAdjustment)
+-                && verticalActive;
++        mLeftBorderActive = x < mTouchTargetWidth;
++        mRightBorderActive = x > getWidth() - mTouchTargetWidth;
++        mTopBorderActive = y < mTouchTargetWidth + mTopTouchRegionAdjustment;
++        mBottomBorderActive = y > getHeight() - mTouchTargetWidth + mBottomTouchRegionAdjustment;
+ 
+         boolean anyBordersActive = mLeftBorderActive || mRightBorderActive
+                 || mTopBorderActive || mBottomBorderActive;
+@@ -452,13 +439,7 @@ public class AppWidgetResizeFrame extends FrameLayout {
+                 }
+             });
+             AnimatorSet set = LauncherAnimUtils.createAnimatorSet();
+-            if (mResizeMode == AppWidgetProviderInfo.RESIZE_VERTICAL) {
+-                set.playTogether(oa, topOa, bottomOa);
+-            } else if (mResizeMode == AppWidgetProviderInfo.RESIZE_HORIZONTAL) {
+-                set.playTogether(oa, leftOa, rightOa);
+-            } else {
+-                set.playTogether(oa, leftOa, rightOa, topOa, bottomOa);
+-            }
++            set.playTogether(oa, leftOa, rightOa, topOa, bottomOa);
+ 
+             set.setDuration(SNAP_DURATION);
+             set.start();
+diff --git a/src/com/android/launcher3/Workspace.java b/src/com/android/launcher3/Workspace.java
+index 704bdb0..ea01c34 100644
+--- a/src/com/android/launcher3/Workspace.java
++++ b/src/com/android/launcher3/Workspace.java
+@@ -3185,8 +3185,7 @@ public class Workspace extends SmoothPagedView
+ 
+                         final LauncherAppWidgetHostView hostView = (LauncherAppWidgetHostView) cell;
+                         AppWidgetProviderInfo pinfo = hostView.getAppWidgetInfo();
+-                        if (pinfo != null &&
+-                                pinfo.resizeMode != AppWidgetProviderInfo.RESIZE_NONE) {
++                        if (pinfo != null) {
+                             final Runnable addResizeFrame = new Runnable() {
+                                 public void run() {
+                                     DragLayer dragLayer = mLauncher.getDragLayer();
+-- 
+2.5.0
+

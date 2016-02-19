@@ -1,0 +1,28 @@
+From 63960e1d4aea78f036f4d7fbf2113bbd5b570d30 Mon Sep 17 00:00:00 2001
+From: Chet Kener <Cl3Kener@gmail.com>
+Date: Fri, 7 Nov 2014 16:07:59 -0500
+Subject: [PATCH 18/52] Log Level 2 is sufficient
+
+* "Level 2 will provide us with useful debugging information without wasting disk space"
+
+Signed-off-by: Chet Kener <Cl3Kener@gmail.com>
+---
+ rootdir/init.rc | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/rootdir/init.rc b/rootdir/init.rc
+index 5694819..9f53216 100644
+--- a/rootdir/init.rc
++++ b/rootdir/init.rc
+@@ -36,7 +36,7 @@ on early-init
+ on init
+     sysclktz 0
+ 
+-    loglevel 3
++    loglevel 2
+ 
+     # Backward compatibility
+     symlink /system/etc /etc
+-- 
+2.5.0
+

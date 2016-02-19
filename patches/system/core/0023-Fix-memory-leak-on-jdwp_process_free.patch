@@ -1,0 +1,30 @@
+From a305af710e5153fbf5ecd2c47d7ce51e5065581d Mon Sep 17 00:00:00 2001
+From: SungHyun Kwon <sh.kwon@lge.com>
+Date: Tue, 3 Mar 2015 13:56:42 +0900
+Subject: [PATCH 23/52] Fix memory leak on jdwp_process_free()
+
+if many jdwp connection are created(), the memory will be leaked.
+
+When it deletes heap memory on jdwp_process_free(),
+the proc->fde just set to null.
+
+so it need to free() in fdevent_destory().
+---
+ adb/fdevent.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/adb/fdevent.c b/adb/fdevent.c
+index 43e600c..0a5d1e9 100644
+--- a/adb/fdevent.c
++++ b/adb/fdevent.c
+@@ -579,6 +579,7 @@ void fdevent_destroy(fdevent *fde)
+         FATAL("fde %p not created by fdevent_create()\n", fde);
+     }
+     fdevent_remove(fde);
++    free(fde);
+ }
+ 
+ void fdevent_install(fdevent *fde, int fd, fd_func func, void *arg)
+-- 
+2.5.0
+

@@ -1,0 +1,26 @@
+From 44024f4106479027f11e5378a7ad96960e059666 Mon Sep 17 00:00:00 2001
+From: Elliott Hughes <enh@google.com>
+Date: Wed, 3 Dec 2014 17:15:14 -0800
+Subject: [PATCH 27/52] libpixelflinger should #define __ARM_HAVE_NEON.
+
+Bug: 18556103
+Change-Id: Ife07cf63948f1c248bcde5685cdb6d89c373d988
+---
+ libpixelflinger/Android.mk | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/libpixelflinger/Android.mk b/libpixelflinger/Android.mk
+index 8a427b3..b3356ea 100644
+--- a/libpixelflinger/Android.mk
++++ b/libpixelflinger/Android.mk
+@@ -34,6 +34,7 @@ PIXELFLINGER_SRC_FILES_arm := \
+ 
+ ifeq ($(ARCH_ARM_HAVE_NEON),true)
+ PIXELFLINGER_SRC_FILES_arm += col32cb16blend_neon.S
++PIXELFLINGER_CFLAGS_arm += -D__ARM_HAVE_NEON
+ endif
+ 
+ PIXELFLINGER_SRC_FILES_arm64 := \
+-- 
+2.5.0
+

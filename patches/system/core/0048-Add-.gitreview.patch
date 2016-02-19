@@ -1,0 +1,26 @@
+From 0c4f09594885ff08c919cc2553e0d059e5dea50c Mon Sep 17 00:00:00 2001
+From: freak97 <lennart.1997@gmx.de>
+Date: Wed, 13 May 2015 22:33:53 +0200
+Subject: [PATCH 48/52] Add .gitreview
+
+Change-Id: Id074243464763828b4df4b2a22a954e7db6d7a86
+---
+ .gitreview | 5 +++++
+ 1 file changed, 5 insertions(+)
+ create mode 100644 .gitreview
+
+diff --git a/.gitreview b/.gitreview
+new file mode 100644
+index 0000000..1e37c4a
+--- /dev/null
++++ b/.gitreview
+@@ -0,0 +1,5 @@
++[gerrit]
++host=optipop.ddns.net
++port=29418
++project=system_core.git
++defaultbranch=opti-5.1
+\ No newline at end of file
+-- 
+2.5.0
+

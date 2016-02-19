@@ -1,0 +1,29 @@
+From efe5f2d9d814683a20d92bd484b707b7437e9738 Mon Sep 17 00:00:00 2001
+From: Chet Kener <Cl3Kener@gmail.com>
+Date: Fri, 7 Nov 2014 16:03:21 -0500
+Subject: [PATCH 17/52] update lmk permissions
+
+Signed-off-by: Chet Kener <Cl3Kener@gmail.com>
+---
+ rootdir/init.rc | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/rootdir/init.rc b/rootdir/init.rc
+index dbd3404..5694819 100644
+--- a/rootdir/init.rc
++++ b/rootdir/init.rc
+@@ -346,9 +346,9 @@ on boot
+     write /proc/sys/vm/overcommit_memory 1
+     write /proc/sys/vm/min_free_order_shift 4
+     chown root system /sys/module/lowmemorykiller/parameters/adj
+-    chmod 0220 /sys/module/lowmemorykiller/parameters/adj
++    chmod 0664 /sys/module/lowmemorykiller/parameters/adj
+     chown root system /sys/module/lowmemorykiller/parameters/minfree
+-    chmod 0220 /sys/module/lowmemorykiller/parameters/minfree
++    chmod 0664 /sys/module/lowmemorykiller/parameters/minfree
+ 
+     # Tweak background writeout
+     write /proc/sys/vm/dirty_expire_centisecs 200
+-- 
+2.5.0
+

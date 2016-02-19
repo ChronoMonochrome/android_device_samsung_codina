@@ -1,0 +1,187 @@
+From 8047554084f24d9c090e3a50e08958aea39c5659 Mon Sep 17 00:00:00 2001
+From: Xin Qi <xqi@codeaurora.org>
+Date: Wed, 9 Oct 2013 17:00:46 -0700
+Subject: [PATCH 08/29] external/skia Hooks for optimized blitting
+
+Add in hooks to allow for overriding blitting operations with
+optimized functions
+
+Change-Id: If38010a69d9fe7cf412d91c277db666f2fd7df34
+Signed-off-by: Chet Kener <Cl3Kener@gmail.com>
+---
+ Android.mk                      |  3 ++-
+ include/core/SkShader.h         |  8 ++++++++
+ src/core/SkBitmapProcShader.cpp |  8 ++++++++
+ src/core/SkBitmapProcShader.h   |  7 ++++++-
+ src/core/SkBitmapProcState.cpp  |  6 ++++++
+ src/core/SkBitmapProcState.h    |  5 +++++
+ src/core/SkBlitter_ARGB32.cpp   | 11 +++++++++++
+ src/core/SkCoreBlitters.h       |  2 +-
+ src/core/SkShader.cpp           |  6 ++++++
+ 9 files changed, 53 insertions(+), 3 deletions(-)
+
+diff --git a/Android.mk b/Android.mk
+index 47831cc..b795aaa 100644
+--- a/Android.mk
++++ b/Android.mk
+@@ -523,7 +523,8 @@ LOCAL_SHARED_LIBRARIES := \
+ 	libicuuc \
+ 	libicui18n \
+ 	libexpat \
+-	libft2
++	libft2 \
++	libcutils
+ 
+ LOCAL_STATIC_LIBRARIES := \
+ 	libwebp-decode \
+diff --git a/include/core/SkShader.h b/include/core/SkShader.h
+index 0b7a702..1a36ae6 100644
+--- a/include/core/SkShader.h
++++ b/include/core/SkShader.h
+@@ -167,6 +167,14 @@ public:
+          *  to the specified device coordinates.
+          */
+         virtual void shadeSpan(int x, int y, SkPMColor[], int count) = 0;
++        enum SkShaderIds {
++            kSkBitmapProcShader_Class = 0x1,
++            kSkShader_OtherClass      = 0x2,
++        };
++
++        virtual void beginRect(int x, int y, int width);
++        virtual void endRect();
++        virtual SkShaderIds getID() { return kSkShader_OtherClass; }
+ 
+         typedef void (*ShadeProc)(void* ctx, int x, int y, SkPMColor[], int count);
+         virtual ShadeProc asAShadeProc(void** ctx);
+diff --git a/src/core/SkBitmapProcShader.cpp b/src/core/SkBitmapProcShader.cpp
+index 8e03a80..6ae7799 100644
+--- a/src/core/SkBitmapProcShader.cpp
++++ b/src/core/SkBitmapProcShader.cpp
+@@ -47,6 +47,14 @@ SkBitmapProcShader::SkBitmapProcShader(SkReadBuffer& buffer)
+     fTileModeY = buffer.readUInt();
+ }
+ 
++void SkBitmapProcShader::BitmapProcShaderContext::beginRect(int x, int y, int width) {
++    fState->beginRect(x, y, width);
++}
++
++void SkBitmapProcShader::BitmapProcShaderContext::endRect() {
++    fState->endRect();
++}
++
+ SkShader::BitmapType SkBitmapProcShader::asABitmap(SkBitmap* texture,
+                                                    SkMatrix* texM,
+                                                    TileMode xy[]) const {
+diff --git a/src/core/SkBitmapProcShader.h b/src/core/SkBitmapProcShader.h
+index c12b548..7ae18f0 100644
+--- a/src/core/SkBitmapProcShader.h
++++ b/src/core/SkBitmapProcShader.h
+@@ -41,7 +41,12 @@ public:
+         BitmapProcShaderContext(const SkBitmapProcShader&, const ContextRec&, SkBitmapProcState*);
+         virtual ~BitmapProcShaderContext();
+ 
+-        virtual void shadeSpan(int x, int y, SkPMColor dstC[], int count) SK_OVERRIDE;
++        virtual void shadeSpan(int x, int y, SkPMColor dstC[], int count) SK_OVERRIDE __attribute__((weak));
++        // override beginRect and endRect
++        virtual void beginRect(int x, int y, int width);
++        virtual void endRect();
++
++        virtual SkShaderIds getID() { return kSkBitmapProcShader_Class; }
+         virtual ShadeProc asAShadeProc(void** ctx) SK_OVERRIDE;
+         virtual void shadeSpan16(int x, int y, uint16_t dstC[], int count) SK_OVERRIDE;
+ 
+diff --git a/src/core/SkBitmapProcState.cpp b/src/core/SkBitmapProcState.cpp
+index 137bcda..3605910 100644
+--- a/src/core/SkBitmapProcState.cpp
++++ b/src/core/SkBitmapProcState.cpp
+@@ -939,6 +939,12 @@ SkBitmapProcState::ShaderProc32 SkBitmapProcState::chooseShaderProc32() {
+     return NULL;
+ }
+ 
++void SkBitmapProcState::beginRect(int x, int y, int width) {
++}
++
++void SkBitmapProcState::endRect() {
++}
++
+ ///////////////////////////////////////////////////////////////////////////////
+ 
+ #ifdef SK_DEBUG
+diff --git a/src/core/SkBitmapProcState.h b/src/core/SkBitmapProcState.h
+index 663bcb8..572c30e 100644
+--- a/src/core/SkBitmapProcState.h
++++ b/src/core/SkBitmapProcState.h
+@@ -136,6 +136,11 @@ struct SkBitmapProcState {
+     SampleProc32 getSampleProc32() const { return fSampleProc32; }
+     SampleProc16 getSampleProc16() const { return fSampleProc16; }
+ 
++    /* Perform rectaingle geometry specific setup/cleanup */
++    void beginRect(int x, int y, int width) __attribute__((weak));
++    void endRect() __attribute__((weak));
++    void *              fOptPtr;
++
+ private:
+     friend class SkBitmapProcShader;
+ 
+diff --git a/src/core/SkBlitter_ARGB32.cpp b/src/core/SkBlitter_ARGB32.cpp
+index f86bc47..d25be76 100644
+--- a/src/core/SkBlitter_ARGB32.cpp
++++ b/src/core/SkBlitter_ARGB32.cpp
+@@ -333,6 +333,10 @@ void SkARGB32_Shader_Blitter::blitH(int x, int y, int width) {
+     }
+ }
+ 
++extern int skia_androidopt_blitRect(int x, int y, int width, int height,
++        SkARGB32_Shader_Blitter *sk, const SkBitmap& fDevice, SkXfermode *fXfermode,
++        SkShader::Context* shaderContext) __attribute__((weak));
++
+ void SkARGB32_Shader_Blitter::blitRect(int x, int y, int width, int height) {
+     SkASSERT(x >= 0 && y >= 0 &&
+              x + width <= fDevice.width() && y + height <= fDevice.height());
+@@ -342,6 +346,13 @@ void SkARGB32_Shader_Blitter::blitRect(int x, int y, int width, int height) {
+     SkShader::Context* shaderContext = fShaderContext;
+     SkPMColor*         span = fBuffer;
+ 
++    SkXfermode* xfer = fXfermode;
++    if (skia_androidopt_blitRect) {
++        if (skia_androidopt_blitRect(x, y, width, height, this, fDevice, xfer, shaderContext)) {
++            return;
++        }
++    }
++
+     if (fConstInY) {
+         if (fShadeDirectlyIntoDevice) {
+             // shade the first row directly into the device
+diff --git a/src/core/SkCoreBlitters.h b/src/core/SkCoreBlitters.h
+index 20f9437..02fe921 100644
+--- a/src/core/SkCoreBlitters.h
++++ b/src/core/SkCoreBlitters.h
+@@ -161,7 +161,7 @@ public:
+     SkARGB32_Shader_Blitter(const SkBitmap& device, const SkPaint& paint,
+                             SkShader::Context* shaderContext);
+     virtual ~SkARGB32_Shader_Blitter();
+-    virtual void blitH(int x, int y, int width) SK_OVERRIDE;
++    virtual void blitH(int x, int y, int width) SK_OVERRIDE __attribute__((weak));
+     virtual void blitV(int x, int y, int height, SkAlpha alpha) SK_OVERRIDE;
+     virtual void blitRect(int x, int y, int width, int height) SK_OVERRIDE;
+     virtual void blitAntiH(int x, int y, const SkAlpha[], const int16_t[]) SK_OVERRIDE;
+diff --git a/src/core/SkShader.cpp b/src/core/SkShader.cpp
+index d006792..2d2c01d 100644
+--- a/src/core/SkShader.cpp
++++ b/src/core/SkShader.cpp
+@@ -64,6 +64,12 @@ SkShader::~SkShader() {
+     dec_shader_counter();
+ }
+ 
++void SkShader::Context::beginRect(int x, int y, int width) {
++}
++
++void SkShader::Context::endRect() {
++}
++
+ void SkShader::flatten(SkWriteBuffer& buffer) const {
+     this->INHERITED::flatten(buffer);
+     bool hasLocalM = !fLocalMatrix.isIdentity();
+-- 
+2.5.0
+

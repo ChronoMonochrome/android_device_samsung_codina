@@ -1,14 +1,10 @@
-From b8a3defdabc0c36a0b7090ffae713d45cd590436 Mon Sep 17 00:00:00 2001
-From: bgill55 <bricam55@gmail.com>
-Date: Sat, 24 Jan 2015 18:47:24 -0700
-Subject: [PATCH] Exposing hard coded resources for type 2 overlay access [5/6]
+From 1c15aa2c90dc17cbaa63294db0ff35d88c92a350 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Tue, 16 Feb 2016 21:39:52 +0700
+Subject: [PATCH 01/17] 
+ 0001-Exposing-hard-coded-resources-for-type-2-overlay-acc.patch
 
-Have to expose hard coded hex coding to changeable resources for theming purposes. For the Layers type 2 overlays.
-
-Change-Id: I5039c2ad6fb765a94285123d3c0566132b3bf9ac
-
-Conflicts:
-	res/values/styles.xml
+Change-Id: Ic0e413f77ea49933c90ff6bebd33b1af4e9cfd63
 ---
  res/drawable/floating_action_button.xml         |  2 +-
  res/drawable/recent_lists_footer_background.xml |  2 +-
@@ -206,5 +202,5 @@ index fbb400f..1f8be68 100644
          <item name="android:fontFamily">"sans-serif-medium"</item>
      </style>
 -- 
-1.9.1
+2.5.0
 

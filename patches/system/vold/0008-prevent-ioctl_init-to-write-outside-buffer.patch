@@ -1,0 +1,32 @@
+From 2b8b9a14b88ae827287590b4795214e497651ad9 Mon Sep 17 00:00:00 2001
+From: Marek Pola <marek.pola@sonymobile.com>
+Date: Thu, 5 Feb 2015 14:22:34 +0100
+Subject: [PATCH 08/11] prevent ioctl_init() to write outside buffer
+
+The strncpy operation does not write a 0 termination
+if the name is larger than the target buffer.
+
+Ensure that zero termination is always written using
+safe strlcpy function.
+
+Change-Id: Idb68cdff7cd1a860c1dfac7494fa99f3d382cb91
+---
+ cryptfs.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/cryptfs.c b/cryptfs.c
+index 05d55dc..44c5c5e 100755
+--- a/cryptfs.c
++++ b/cryptfs.c
+@@ -351,7 +351,7 @@ static void ioctl_init(struct dm_ioctl *io, size_t dataSize, const char *name, u
+     io->version[2] = 0;
+     io->flags = flags;
+     if (name) {
+-        strncpy(io->name, name, sizeof(io->name));
++        strlcpy(io->name, name, sizeof(io->name));
+     }
+ }
+ 
+-- 
+2.5.0
+

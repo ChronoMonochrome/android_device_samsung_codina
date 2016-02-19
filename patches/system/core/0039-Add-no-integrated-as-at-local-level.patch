@@ -1,0 +1,100 @@
+From 51a3b96d666cd916e650ed28cc4d561e56be0616 Mon Sep 17 00:00:00 2001
+From: Chih-Hung Hsieh <chh@google.com>
+Date: Mon, 6 Oct 2014 13:27:20 -0700
+Subject: [PATCH 39/52] Add -no-integrated-as at local level.
+
+Later we will enable integrated-as as default at the global level.
+
+BUG: 17820427
+Change-Id: I1beed3e75d074d970fa9112ec1c0f0df3d43947a
+---
+ libcutils/Android.mk                                       | 3 +++
+ libpixelflinger/Android.mk                                 | 8 ++++++++
+ libpixelflinger/tests/arch-arm64/assembler/Android.mk      | 3 +++
+ libpixelflinger/tests/arch-arm64/col32cb16blend/Android.mk | 2 ++
+ libpixelflinger/tests/arch-arm64/t32cb16blend/Android.mk   | 2 ++
+ 5 files changed, 18 insertions(+)
+
+diff --git a/libcutils/Android.mk b/libcutils/Android.mk
+index 60815c7..afe2b85 100644
+--- a/libcutils/Android.mk
++++ b/libcutils/Android.mk
+@@ -121,6 +121,9 @@ LOCAL_SRC_FILES := $(commonSources) \
+ LOCAL_SRC_FILES_arm += \
+         arch-arm/memset32.S \
+ 
++# arch-arm/memset32.S does not compile with Clang.
++LOCAL_CLANG_ASFLAGS_arm += -no-integrated-as
++
+ LOCAL_SRC_FILES_arm64 += \
+         arch-arm64/android_memset.S \
+ 
+diff --git a/libpixelflinger/Android.mk b/libpixelflinger/Android.mk
+index b3356ea..354ae4b 100644
+--- a/libpixelflinger/Android.mk
++++ b/libpixelflinger/Android.mk
+@@ -67,6 +67,10 @@ ifneq ($(BUILD_TINY_ANDROID),true)
+ LOCAL_SHARED_LIBRARIES += libhardware_legacy
+ LOCAL_CFLAGS += -DWITH_LIB_HARDWARE
+ endif
++# t32cb16blend.S does not compile with Clang.
++LOCAL_CLANG_ASFLAGS_arm += -no-integrated-as
++# arch-arm64/col32cb16blend.S does not compile with Clang.
++LOCAL_CLANG_ASFLAGS_arm64 += -no-integrated-as
+ include $(BUILD_SHARED_LIBRARY)
+ 
+ #
+@@ -80,6 +84,10 @@ LOCAL_SRC_FILES_arm := $(PIXELFLINGER_SRC_FILES_arm)
+ LOCAL_SRC_FILES_arm64 := $(PIXELFLINGER_SRC_FILES_arm64)
+ LOCAL_SRC_FILES_mips := $(PIXELFLINGER_SRC_FILES_mips)
+ LOCAL_CFLAGS := $(PIXELFLINGER_CFLAGS)
++# t32cb16blend.S does not compile with Clang.
++LOCAL_CLANG_ASFLAGS_arm += -no-integrated-as
++# arch-arm64/col32cb16blend.S does not compile with Clang.
++LOCAL_CLANG_ASFLAGS_arm64 += -no-integrated-as
+ include $(BUILD_STATIC_LIBRARY)
+ 
+ 
+diff --git a/libpixelflinger/tests/arch-arm64/assembler/Android.mk b/libpixelflinger/tests/arch-arm64/assembler/Android.mk
+index eca36ef..961f323 100644
+--- a/libpixelflinger/tests/arch-arm64/assembler/Android.mk
++++ b/libpixelflinger/tests/arch-arm64/assembler/Android.mk
+@@ -5,6 +5,9 @@ LOCAL_SRC_FILES:= \
+     arm64_assembler_test.cpp\
+     asm_test_jacket.S
+ 
++# asm_test_jacket.S does not compile with Clang.
++LOCAL_CLANG_ASFLAGS_arm64 += -no-integrated-as
++
+ LOCAL_SHARED_LIBRARIES := \
+     libcutils \
+     libpixelflinger
+diff --git a/libpixelflinger/tests/arch-arm64/col32cb16blend/Android.mk b/libpixelflinger/tests/arch-arm64/col32cb16blend/Android.mk
+index 3368eb0..5d69203 100644
+--- a/libpixelflinger/tests/arch-arm64/col32cb16blend/Android.mk
++++ b/libpixelflinger/tests/arch-arm64/col32cb16blend/Android.mk
+@@ -5,6 +5,8 @@ LOCAL_SRC_FILES:= \
+     col32cb16blend_test.c \
+     ../../../arch-arm64/col32cb16blend.S
+ 
++LOCAL_CLANG_ASFLAGS_arm64 += -no-integrated-as
++
+ LOCAL_SHARED_LIBRARIES :=
+ 
+ LOCAL_C_INCLUDES :=
+diff --git a/libpixelflinger/tests/arch-arm64/t32cb16blend/Android.mk b/libpixelflinger/tests/arch-arm64/t32cb16blend/Android.mk
+index 8e5ec5e..2c1379b 100644
+--- a/libpixelflinger/tests/arch-arm64/t32cb16blend/Android.mk
++++ b/libpixelflinger/tests/arch-arm64/t32cb16blend/Android.mk
+@@ -5,6 +5,8 @@ LOCAL_SRC_FILES:= \
+     t32cb16blend_test.c \
+     ../../../arch-arm64/t32cb16blend.S
+ 
++LOCAL_CLANG_ASFLAGS_arm64 += -no-integrated-as
++
+ LOCAL_SHARED_LIBRARIES :=
+ 
+ LOCAL_C_INCLUDES :=
+-- 
+2.5.0
+

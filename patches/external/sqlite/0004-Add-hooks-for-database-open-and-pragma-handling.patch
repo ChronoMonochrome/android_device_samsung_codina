@@ -1,0 +1,142 @@
+From 313edd16a9422ce7c48a4748110fa8aa6eb2df1c Mon Sep 17 00:00:00 2001
+From: David Ng <dave@codeaurora.org>
+Date: Tue, 5 Jul 2011 10:53:34 -0700
+Subject: [PATCH 04/11] Add hooks for database open and pragma handling
+
+Change-Id: I0c1843a1c17e6cb7786ea5c66d229282b1fa0d32
+
+SQLite: Updated hooks for database open and close.
+
+Change-Id: I38135eaed3b5e66ef302eb0337f1bf3ba9f184d7
+
+Leave out magic perf code unless requested
+
+Change-Id: I154e288e440abd70dd4eec590150be1e800efac9
+Signed-off-by: Chet Kener <Cl3Kener@gmail.com>
+---
+ dist/Android.mk |  9 +++++++++
+ dist/sqlite3.c  | 39 +++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 48 insertions(+)
+
+diff --git a/dist/Android.mk b/dist/Android.mk
+index 66740da..ea04fad 100644
+--- a/dist/Android.mk
++++ b/dist/Android.mk
+@@ -30,6 +30,10 @@ common_sqlite_flags := \
+ 	-DSQLITE_DEFAULT_FILE_PERMISSIONS=0600 \
+ 	-Dfdatasync=fdatasync
+ 
++ifeq ($(WITH_QC_PERF),true)
++common_sqlite_flags += -DQC_PERF
++endif
++
+ device_sqlite_flags := $(common_sqlite_flags) \
+     -DSQLITE_ENABLE_ICU \
+     -DUSE_PREAD64 \
+@@ -66,6 +70,11 @@ LOCAL_SHARED_LIBRARIES += liblog \
+ # include android specific methods
+ LOCAL_WHOLE_STATIC_LIBRARIES := libsqlite3_android
+ 
++ifeq ($(WITH_QC_PERF),true)
++LOCAL_WHOLE_STATIC_LIBRARIES += libqc-sqlite
++LOCAL_SHARED_LIBRARIES += libcutils
++endif
++
+ include $(BUILD_SHARED_LIBRARY)
+ 
+ 
+diff --git a/dist/sqlite3.c b/dist/sqlite3.c
+index f5a68f8..563c821 100644
+--- a/dist/sqlite3.c
++++ b/dist/sqlite3.c
+@@ -22,6 +22,13 @@
+ #ifndef SQLITE_PRIVATE
+ # define SQLITE_PRIVATE static
+ #endif
++#ifdef QC_PERF
++extern void sqlite3_androidopt_init(void*, const char*) __attribute__((weak));
++extern void sqlite3_androidopt_open(void*, const char*, unsigned, int*) __attribute__((weak));
++extern void sqlite3_androidopt_close(void*) __attribute__((weak));
++extern int  sqlite3_androidopt_handle_pragma(void*, char*, char*) __attribute__((weak));
++#endif
++
+ /************** Begin file sqliteInt.h ***************************************/
+ /*
+ ** 2001 September 15
+@@ -11024,6 +11031,7 @@ struct sqlite3 {
+ #ifdef SQLITE_USER_AUTHENTICATION
+   sqlite3_userauth auth;        /* User authentication information */
+ #endif
++  u8 isSettingOverride;         /* True if db settings have been overridden */
+ };
+ 
+ /*
+@@ -103524,6 +103532,14 @@ SQLITE_PRIVATE void sqlite3Pragma(
+     goto pragma_out;
+   }
+ 
++#ifdef QC_PERF
++  if( sqlite3_androidopt_handle_pragma ) {
++    if( sqlite3_androidopt_handle_pragma(db, zLeft, zRight) == 1 ) {
++      goto pragma_out;
++    }
++  }
++#endif
++
+   /* Send an SQLITE_FCNTL_PRAGMA file-control to the underlying VFS
+   ** connection.  If it returns SQLITE_OK, then assume that the VFS
+   ** handled the pragma and generate a no-op prepared statement.
+@@ -103805,6 +103821,11 @@ SQLITE_PRIVATE void sqlite3Pragma(
+         /* If the "=MODE" part does not match any known journal mode,
+         ** then do a query */
+         eMode = PAGER_JOURNALMODE_QUERY;
++      }else if( db->isSettingOverride==1 ){
++        /* Skip journal mode changes if override in effect */
++        sqlite3VdbeAddOp4(v, OP_String, strlen(zMode), 1, 1, zMode, P4_STATIC);
++        sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 1);
++        goto pragma_out;
+       }
+     }
+     if( eMode==PAGER_JOURNALMODE_QUERY && pId2->n==0 ){
+@@ -128526,6 +128547,11 @@ static int sqlite3Close(sqlite3 *db, int forceZombie){
+   if( !sqlite3SafetyCheckSickOrOk(db) ){
+     return SQLITE_MISUSE_BKPT;
+   }
++#ifdef QC_PERF
++  if (sqlite3_androidopt_close) {
++    sqlite3_androidopt_close(db);
++  }
++#endif
+   sqlite3_mutex_enter(db->mutex);
+ 
+   /* Force xDisconnect calls on all virtual tables */
+@@ -130275,6 +130301,11 @@ static int openDatabase(
+     }
+   }
+   sqlite3_mutex_enter(db->mutex);
++#ifdef QC_PERF
++  if( sqlite3_androidopt_init ) {
++    sqlite3_androidopt_init(db, zFilename);
++  }
++#endif
+   db->errMask = 0xff;
+   db->nDb = 2;
+   db->magic = SQLITE_MAGIC_BUSY;
+@@ -130459,6 +130490,14 @@ opendb_out:
+     db = 0;
+   }else if( rc!=SQLITE_OK ){
+     db->magic = SQLITE_MAGIC_SICK;
++  }else {
++#ifdef QC_PERF
++    if (sqlite3_androidopt_open) {
++      int override = 0;
++      sqlite3_androidopt_open(db, zFilename, flags, &override);
++      db->isSettingOverride = override;
++    }
++#endif
+   }
+   *ppDb = db;
+ #ifdef SQLITE_ENABLE_SQLLOG
+-- 
+2.5.0
+

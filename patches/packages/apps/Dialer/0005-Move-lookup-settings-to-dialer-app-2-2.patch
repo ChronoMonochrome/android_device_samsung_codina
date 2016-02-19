@@ -1,0 +1,113 @@
+From 64b62b1dd6b64e262bf58d2de61d744d01e20fb2 Mon Sep 17 00:00:00 2001
+From: Danny Baumann <dannybaumann@web.de>
+Date: Mon, 17 Nov 2014 12:47:45 +0100
+Subject: [PATCH 05/17] Move lookup settings to dialer app (2/2)
+
+Change-Id: I3d4da7cc1db60963b3e47370a36a6e839ec112d6
+Signed-off-by: Chet Kener <Cl3Kener@gmail.com>
+
+Conflicts:
+	res/values/cm_arrays.xml
+	res/values/cm_strings.xml
+
+Conflicts:
+	src/com/android/dialer/settings/DialerSettingsActivity.java
+
+Signed-off-by: Chet Kener <Cl3Kener@gmail.com>
+---
+ res/values/arrays.xml  | 55 ++++++++++++++++++++++++++++++++++++++++++++++++++
+ res/values/strings.xml | 18 +++++++++++++++++
+ 2 files changed, 73 insertions(+)
+ create mode 100644 res/values/arrays.xml
+
+diff --git a/res/values/arrays.xml b/res/values/arrays.xml
+new file mode 100644
+index 0000000..91a3f7b
+--- /dev/null
++++ b/res/values/arrays.xml
+@@ -0,0 +1,55 @@
++<?xml version="1.0" encoding="utf-8"?>
++<!--
++     Copyright (C) 2013 The CyanogenMod Project
++
++     Licensed under the Apache License, Version 2.0 (the "License");
++     you may not use this file except in compliance with the License.
++     You may obtain a copy of the License at
++
++          http://www.apache.org/licenses/LICENSE-2.0
++
++     Unless required by applicable law or agreed to in writing, software
++     distributed under the License is distributed on an "AS IS" BASIS,
++     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++     See the License for the specific language governing permissions and
++     limitations under the License.
++-->
++<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
++
++    <string-array name="forward_lookup_providers" translatable="false">
++        <item>Google</item>
++        <item>OpenStreetMap</item>
++    </string-array>
++
++    <string-array name="forward_lookup_provider_names" translatable="false">
++        <item>Google</item>
++        <item>OpenStreetMap</item>
++    </string-array>
++
++    <string-array name="people_lookup_providers" translatable="false">
++        <item>WhitePages</item>
++    </string-array>
++
++    <string-array name="people_lookup_provider_names" translatable="false">
++        <item>WhitePages (US)</item>
++    </string-array>
++
++    <string-array name="reverse_lookup_providers" translatable="false">
++        <item>OpenCnam</item>
++        <item>WhitePages</item>
++        <item>WhitePages_CA</item>
++        <item>YellowPages</item>
++        <item>YellowPages_CA</item>
++        <item>ZabaSearch</item>
++    </string-array>
++
++    <string-array name="reverse_lookup_provider_names" translatable="false">
++        <item>OpenCnam (US)</item>
++        <item>WhitePages (US)</item>
++        <item>WhitePages (CA)</item>
++        <item>YellowPages (US)</item>
++        <item>YellowPages (CA)</item>
++        <item>ZabaSearch (US)</item>
++    </string-array>
++
++</resources>
+diff --git a/res/values/strings.xml b/res/values/strings.xml
+index 53c70ab..a90f549 100644
+--- a/res/values/strings.xml
++++ b/res/values/strings.xml
+@@ -726,4 +726,22 @@
+     <!-- Forward lookup -->
+     <string name="nearby_places">Nearby places</string>
+     <string name="people">People</string>
++
++    <!-- Number lookup -->
++    <string name="lookup_settings_label">Phone number lookup</string>
++    <string name="lookup_settings_description">Lookup of unknown phone numbers</string>
++    <string name="enable_forward_lookup_title">Forward lookup</string>
++    <string name="enable_forward_lookup_summary">Show nearby places when searching in the dialer</string>
++    <string name="enable_people_lookup_title">People lookup</string>
++    <string name="enable_people_lookup_summary">Show online results for people when searching in the dialer</string>
++    <string name="enable_reverse_lookup_title">Reverse lookup</string>
++    <string name="enable_reverse_lookup_summary">Look up information about the person or place for unknown numbers on incoming calls</string>
++    <string name="forward_lookup_provider_title">Forward lookup provider</string>
++    <string name="people_lookup_provider_title">People lookup provider</string>
++    <string name="reverse_lookup_provider_title">Reverse lookup provider</string>
++
++    <!-- Chinese Reverse Lookup Provider -->
++    <string name="cyngn_reverse_lookup_provider_package" translatable="false">com.cyngn.chineselocationlookup</string>
++    <string name="cyngn_reverse_lookup_provider_name">Cyngn Chinese (CN)</string>
++    <string name="cyngn_reverse_lookup_provider_value" translatable="false">CyngnChinese</string>       
+ </resources>
+-- 
+2.5.0
+

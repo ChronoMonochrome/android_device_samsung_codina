@@ -1,0 +1,26 @@
+From 4fb6b2b3318842510d0d47e9ca8cda3bae491c30 Mon Sep 17 00:00:00 2001
+From: Chet Kener <Cl3Kener@gmail.com>
+Date: Sat, 9 May 2015 06:12:51 -0400
+Subject: [PATCH 10/11] Add .gitreview
+
+Change-Id: Icd03ecedd2012383ad2e68309608185be94ed1fa
+Signed-off-by: Chet Kener <Cl3Kener@gmail.com>
+---
+ .gitreview | 5 +++++
+ 1 file changed, 5 insertions(+)
+ create mode 100644 .gitreview
+
+diff --git a/.gitreview b/.gitreview
+new file mode 100644
+index 0000000..64b3bdf
+--- /dev/null
++++ b/.gitreview
+@@ -0,0 +1,5 @@
++[gerrit]
++host=optipop.ddns.net
++port=29418
++project=external_sqlite.git
++defaultbranch=opti-5.1
+-- 
+2.5.0
+

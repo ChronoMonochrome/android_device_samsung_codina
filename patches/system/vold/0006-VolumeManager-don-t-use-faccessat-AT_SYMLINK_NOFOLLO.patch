@@ -1,0 +1,49 @@
+From a52a32b5e606bd5b567518c8362e71118086d753 Mon Sep 17 00:00:00 2001
+From: Nick Kralevich <nnk@google.com>
+Date: Fri, 6 Feb 2015 08:55:08 -0800
+Subject: [PATCH 06/11] VolumeManager: don't use faccessat(AT_SYMLINK_NOFOLLOW)
+
+Don't use faccessat(AT_SYMLINK_NOFOLLOW). In Android, AT_SYMLINK_NOFOLLOW
+is ignored. In glibc, it returns counter intuitive results when a
+symbolic link is encountered, returning true all the time even though
+an open(O_NOFOLLOW) will eventually fail.
+
+Instead, stat the file and check to see if it's a regular file,
+not a directory or symlink or some other weirdness.
+
+In addition, fix a bug where isAsecInDirectory would return
+true ("-1") if the asec directory didn't exist. It should return
+false.
+
+Bug: 18867827
+Change-Id: I33d90e9095fad36ce0f83fde105b70f72e4eaef4
+---
+ VolumeManager.cpp | 10 ++++------
+ 1 file changed, 4 insertions(+), 6 deletions(-)
+
+diff --git a/VolumeManager.cpp b/VolumeManager.cpp
+index 300fa88..06299b8 100644
+--- a/VolumeManager.cpp
++++ b/VolumeManager.cpp
+@@ -1221,14 +1221,12 @@ bool VolumeManager::isAsecInDirectory(const char *dir, const char *asecName) con
+     int dirfd = open(dir, O_DIRECTORY);
+     if (dirfd < 0) {
+         SLOGE("Couldn't open internal ASEC dir (%s)", strerror(errno));
+-        return -1;
++        return false;
+     }
+ 
+-    bool ret = false;
+-
+-    if (!faccessat(dirfd, asecName, F_OK, AT_SYMLINK_NOFOLLOW)) {
+-        ret = true;
+-    }
++    struct stat sb;
++    bool ret = (fstatat(dirfd, asecName, &sb, AT_SYMLINK_NOFOLLOW) == 0)
++        && S_ISREG(sb.st_mode);
+ 
+     close(dirfd);
+ 
+-- 
+2.5.0
+

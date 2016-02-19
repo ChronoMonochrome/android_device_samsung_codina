@@ -1,0 +1,51 @@
+From e59ba561ce854f0d33278348a663234351a2afab Mon Sep 17 00:00:00 2001
+From: Johan Redestig <johan.redestig@sonymobile.com>
+Date: Thu, 20 Nov 2014 14:26:16 +0100
+Subject: [PATCH 34/52] notify: dynamically allocate filename buffer
+
+use asprintf to dynamically allocate filename buffer
+rather than just reserving 512 bytes on the stack to
+avoid potential overflow.
+
+Change-Id: Ieeb9c6c2e5f97a9574f8128d84eba0b8efdb7263
+---
+ toolbox/notify.c | 12 ++++++++----
+ 1 file changed, 8 insertions(+), 4 deletions(-)
+
+diff --git a/toolbox/notify.c b/toolbox/notify.c
+index c983ed5..8ce346c 100644
+--- a/toolbox/notify.c
++++ b/toolbox/notify.c
+@@ -101,14 +101,17 @@ int notify_main(int argc, char *argv[])
+ 			else if(verbose >= 1)
+ 		        printf("%d: %08x \"%s\"\n", event->wd, event->mask, event->len ? event->name : "");
+ 			if(print_files && (event->mask & IN_MODIFY)) {
+-				char filename[512];
++				char* filename = file_names[event->wd + id_offset];
++				char* alloc_buf = NULL;
+ 				ssize_t read_len;
+ 				char *display_name;
+ 				int buflen;
+-				strcpy(filename, file_names[event->wd + id_offset]);
+ 				if(event->len) {
+-					strcat(filename, "/");
+-					strcat(filename, event->name);
++					if(asprintf(&alloc_buf, "%s/%s", filename, event->name) < 0) {
++						fprintf(stderr, "asprintf failed, %s\n", strerror(errno));
++						return 1;
++					}
++					filename = alloc_buf;
+ 				}
+ 				ffd = open(filename, O_RDONLY);
+ 				display_name = (verbose >= 2 || event->len == 0) ? filename : event->name;
+@@ -132,6 +135,7 @@ int notify_main(int argc, char *argv[])
+ 					printf("%s: %s", display_name, buf);
+ 				}
+ 				close(ffd);
++				free(alloc_buf);
+ 			}
+ 	        if(event_count && --event_count == 0)
+ 	            return 0;
+-- 
+2.5.0
+

@@ -1,0 +1,47 @@
+From 22a279d23ec42a6a9a717ad642bb59550c229650 Mon Sep 17 00:00:00 2001
+From: Yorke Lee <yorkelee@google.com>
+Date: Mon, 30 Mar 2015 12:31:19 -0700
+Subject: [PATCH 09/11] Don't hide end call button until call is disconnected
+
+Currently, the end call button is hidden the moment the user
+initates a hangup. In the event that the call is not actually
+disconnected, the UI is stuck in a "Hanging up" state that is
+unresponsive
+
+For the majority of calls that disconnect correctly, there should
+be no user-perceptible difference in behavior. For calls that are
+not disconnected correctly, the end call button will remain showing
+so that hangup commands can continue to be sent that will eventually
+disconnect the call correctly.
+
+Bug: 19933863
+Change-Id: I2ff2018d7d229615f5f57c599f74954ec7492f6b
+---
+ res/layout/call_card_content.xml | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/res/layout/call_card_content.xml b/res/layout/call_card_content.xml
+index 3491868..bd3063b 100644
+--- a/res/layout/call_card_content.xml
++++ b/res/layout/call_card_content.xml
+@@ -54,7 +54,7 @@
+             android:textAppearance="?android:attr/textAppearanceMedium"
+             android:visibility="gone"
+             android:padding="@dimen/call_banner_side_padding"
+-            android:background="@color/background_white" />
++            android:background="#FFFFFFFF" />
+ 
+     </LinearLayout>
+ 
+@@ -84,7 +84,7 @@
+         android:gravity="top|center_horizontal"
+         android:scaleType="centerCrop"
+         android:contentDescription="@string/contactPhoto"
+-        android:background="@color/background_white"
++        android:background="#FFFFFFFF"
+         android:src="@drawable/img_no_image_automirrored" />
+ 
+     <!-- Progress spinner, useful for indicating pending operations such as upgrade to video. -->
+-- 
+2.5.0
+

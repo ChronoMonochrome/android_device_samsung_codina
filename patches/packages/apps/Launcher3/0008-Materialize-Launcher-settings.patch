@@ -1,0 +1,38 @@
+From 512ad34f8f566923975d4bef7f5feed548a62857 Mon Sep 17 00:00:00 2001
+From: Alex Cruz <mazdarider23@gmail.com>
+Date: Sun, 1 Feb 2015 08:27:01 +0000
+Subject: [PATCH 08/11] Materialize Launcher settings
+
+Before - http://i.imgur.com/BzZEbrr.png
+After - http://i.imgur.com/qOVRJLv.png
+
+Change-Id: I691f8da55b7c28c27820c48dca05834100a40871
+Signed-off-by: Chet Kener <Cl3Kener@gmail.com>
+
+Conflicts:
+	res/values/styles.xml
+
+Conflicts:
+	res/values/styles.xml
+---
+ res/values/styles.xml | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/res/values/styles.xml b/res/values/styles.xml
+index bbc443e..d4d99ee 100644
+--- a/res/values/styles.xml
++++ b/res/values/styles.xml
+@@ -94,6 +94,10 @@
+     <style name="PagedViewWidgetImageView">
+         <item name="android:paddingLeft">@dimen/app_widget_preview_padding_left</item>
+     </style>
++    
++    <style name="SearchButton.WithPaddingStart">
++        <item name="android:paddingLeft">8dp</item>
++    </style>
+ 
+     <style name="SearchButton.WithPaddingStart">
+         <item name="android:paddingLeft">8dp</item>
+-- 
+2.5.0
+

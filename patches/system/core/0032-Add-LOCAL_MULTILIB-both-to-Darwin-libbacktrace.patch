@@ -1,0 +1,29 @@
+From fc053ce4ff601f85b1656935e4210327b736a8d5 Mon Sep 17 00:00:00 2001
+From: Dan Albert <danalbert@google.com>
+Date: Thu, 13 Nov 2014 14:54:10 -0800
+Subject: [PATCH 32/52] Add LOCAL_MULTILIB := both to Darwin libbacktrace.
+
+This was previously set for libbacktrace_libc++, but apparently never
+was for libbacktrace.
+
+Change-Id: I85dc44b356710c6367f5cea3bc0a4d6c817ca202
+---
+ libbacktrace/Android.mk | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/libbacktrace/Android.mk b/libbacktrace/Android.mk
+index 9588dd6..81d15dc 100755
+--- a/libbacktrace/Android.mk
++++ b/libbacktrace/Android.mk
+@@ -194,6 +194,8 @@ LOCAL_MODULE_TAGS := optional
+ LOCAL_SRC_FILES := \
+ 	BacktraceMap.cpp \
+ 
++LOCAL_MULTILIB := both
++
+ include $(BUILD_HOST_SHARED_LIBRARY)
+ 
+ # Don't build for unbundled branches
+-- 
+2.5.0
+

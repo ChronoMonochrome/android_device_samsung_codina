@@ -1,0 +1,63 @@
+From 165949c6e00ac46db039c33e7593fcca28e59b65 Mon Sep 17 00:00:00 2001
+From: Elliott Hughes <enh@google.com>
+Date: Fri, 9 Jan 2015 16:16:53 -0800
+Subject: [PATCH 44/52] Linux always has POSIX clocks available.
+
+pixelflinger doesn't have to run on the Mac, but the Condition
+code might.
+
+Change-Id: Ib4e9b4daa6e848ffd5742959427b172d45f08e3c
+---
+ include/utils/Condition.h        | 6 +++---
+ libpixelflinger/pixelflinger.cpp | 8 --------
+ 2 files changed, 3 insertions(+), 11 deletions(-)
+
+diff --git a/include/utils/Condition.h b/include/utils/Condition.h
+index 1c99d1a..db9be59 100644
+--- a/include/utils/Condition.h
++++ b/include/utils/Condition.h
+@@ -113,15 +113,15 @@ inline status_t Condition::waitRelative(Mutex& mutex, nsecs_t reltime) {
+     return -pthread_cond_timedwait_relative_np(&mCond, &mutex.mMutex, &ts);
+ #else // HAVE_PTHREAD_COND_TIMEDWAIT_RELATIVE
+     struct timespec ts;
+-#if defined(HAVE_POSIX_CLOCKS)
++#if defined(__linux__)
+     clock_gettime(CLOCK_REALTIME, &ts);
+-#else // HAVE_POSIX_CLOCKS
++#else // __APPLE__
+     // we don't support the clocks here.
+     struct timeval t;
+     gettimeofday(&t, NULL);
+     ts.tv_sec = t.tv_sec;
+     ts.tv_nsec= t.tv_usec*1000;
+-#endif // HAVE_POSIX_CLOCKS
++#endif
+     ts.tv_sec += reltime/1000000000;
+     ts.tv_nsec+= reltime%1000000000;
+     if (ts.tv_nsec >= 1000000000) {
+diff --git a/libpixelflinger/pixelflinger.cpp b/libpixelflinger/pixelflinger.cpp
+index ea5bc8e..fd449b2 100644
+--- a/libpixelflinger/pixelflinger.cpp
++++ b/libpixelflinger/pixelflinger.cpp
+@@ -727,18 +727,10 @@ void ggl_enable_texture2d(context_t* c, int enable)
+ 
+ int64_t ggl_system_time()
+ {
+-#if defined(HAVE_POSIX_CLOCKS)
+     struct timespec t;
+     t.tv_sec = t.tv_nsec = 0;
+     clock_gettime(CLOCK_THREAD_CPUTIME_ID, &t);
+     return int64_t(t.tv_sec)*1000000000LL + t.tv_nsec;
+-#else
+-    // we don't support the clocks here.
+-    struct timeval t;
+-    t.tv_sec = t.tv_usec = 0;
+-    gettimeofday(&t, NULL);
+-    return int64_t(t.tv_sec)*1000000000LL + int64_t(t.tv_usec)*1000LL;
+-#endif
+ }
+ 
+ // ----------------------------------------------------------------------------
+-- 
+2.5.0
+

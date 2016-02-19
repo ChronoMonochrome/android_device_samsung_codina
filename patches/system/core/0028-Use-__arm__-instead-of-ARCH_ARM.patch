@@ -1,0 +1,26 @@
+From 425acdec8c751c8a14b1a898e6397a95ddeefac7 Mon Sep 17 00:00:00 2001
+From: Elliott Hughes <enh@google.com>
+Date: Thu, 4 Dec 2014 14:17:26 -0800
+Subject: [PATCH 28/52] Use __arm__ instead of ARCH_ARM.
+
+Change-Id: I777da5757f01d8328d5475e654d56d81dc802655
+---
+ libutils/SystemClock.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/libutils/SystemClock.cpp b/libutils/SystemClock.cpp
+index 3de0e94..c3b5d74 100644
+--- a/libutils/SystemClock.cpp
++++ b/libutils/SystemClock.cpp
+@@ -71,7 +71,7 @@ int64_t elapsedRealtime()
+  */
+ #define DEBUG_TIMESTAMP         0
+ 
+-#if DEBUG_TIMESTAMP && defined(ARCH_ARM)
++#if DEBUG_TIMESTAMP && defined(__arm__)
+ static inline void checkTimeStamps(int64_t timestamp,
+                                    int64_t volatile *prevTimestampPtr,
+                                    int volatile *prevMethodPtr,
+-- 
+2.5.0
+

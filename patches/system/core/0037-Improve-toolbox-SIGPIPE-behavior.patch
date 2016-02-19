@@ -1,0 +1,76 @@
+From c0943a4b343ad44bf351dfdf783ded3688e192eb Mon Sep 17 00:00:00 2001
+From: Elliott Hughes <enh@google.com>
+Date: Sat, 25 Apr 2015 11:49:04 -0700
+Subject: [PATCH 37/52] Improve toolbox SIGPIPE behavior.
+
+None of our tools -- except for top, which I'd fixed previously --
+handles SIGPIE correctly. Let's just handle SIGPIPE in the driver.
+
+Bug: https://code.google.com/p/android/issues/detail?id=157920
+Change-Id: I322ea411f53c71585a64118c217d54389f675d4e
+---
+ toolbox/toolbox.c | 15 +++++++++++++++
+ toolbox/top.c     |  6 ------
+ 2 files changed, 15 insertions(+), 6 deletions(-)
+
+diff --git a/toolbox/toolbox.c b/toolbox/toolbox.c
+index 0eac390..915da44 100644
+--- a/toolbox/toolbox.c
++++ b/toolbox/toolbox.c
+@@ -1,6 +1,8 @@
++#include <signal.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
++#include <unistd.h>
+ 
+ int main(int, char **);
+ 
+@@ -31,11 +33,24 @@ static struct
+     { 0, 0 },
+ };
+ 
++static void SIGPIPE_handler(int signal) {
++    // Those desktop Linux tools that catch SIGPIPE seem to agree that it's
++    // a successful way to exit, not a failure. (Which makes sense --- we were
++    // told to stop by a reader, rather than failing to continue ourselves.)
++    _exit(0);
++}
++
+ int main(int argc, char **argv)
+ {
+     int i;
+     char *name = argv[0];
+ 
++    // Let's assume that none of this code handles broken pipes. At least ls,
++    // ps, and top were broken (though I'd previously added this fix locally
++    // to top). We exit rather than use SIG_IGN because tools like top will
++    // just keep on writing to nowhere forever if we don't stop them.
++    signal(SIGPIPE, SIGPIPE_handler);
++
+     if((argc > 1) && (argv[1][0] == '@')) {
+         name = argv[1] + 1;
+         argc--;
+diff --git a/toolbox/top.c b/toolbox/top.c
+index b1a275c..1e99d4c 100644
+--- a/toolbox/top.c
++++ b/toolbox/top.c
+@@ -109,15 +109,9 @@ static int proc_thr_cmp(const void *a, const void *b);
+ static int numcmp(long long a, long long b);
+ static void usage(char *cmd);
+ 
+-static void exit_top(int signal) {
+-  exit(EXIT_FAILURE);
+-}
+-
+ int top_main(int argc, char *argv[]) {
+     num_used_procs = num_free_procs = 0;
+ 
+-    signal(SIGPIPE, exit_top);
+-
+     max_procs = 0;
+     delay = 3;
+     iterations = -1;
+-- 
+2.5.0
+

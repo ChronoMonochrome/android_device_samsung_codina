@@ -1,0 +1,26 @@
+From 3181ec1109a76cab30d25891a1c5542ce2b603b6 Mon Sep 17 00:00:00 2001
+From: Chet Kener <Cl3Kener@gmail.com>
+Date: Fri, 22 May 2015 09:06:07 -0400
+Subject: [PATCH 51/52] libutils: Use Python newer than 2.6
+
+* I see no reason to be using Python 2.6 here.  No build errors or issues detected on my end here.
+
+Change-Id: Ib80b616acbf05aee649382c69bf95b68e40cfd5f
+Signed-off-by: Chet Kener <Cl3Kener@gmail.com>
+---
+ libutils/primes.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/libutils/primes.py b/libutils/primes.py
+index e161dd8..8f00f72 100755
+--- a/libutils/primes.py
++++ b/libutils/primes.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python2.6
++#!/usr/bin/env python
+ #
+ # Copyright (C) 2011 The Android Open Source Project
+ #
+-- 
+2.5.0
+

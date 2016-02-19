@@ -1,0 +1,149 @@
+From 749a3ed3f024788a90d160017fecbfbba13e6371 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Fri, 19 Feb 2016 01:05:22 +0700
+Subject: [PATCH 2/2] Revert "Disable Clang as Host Compiler"
+
+This reverts commit cf1247fd4cb861138b7dfce79f344ef56fd4b383.
+---
+ Android.mk                    |  3 ---
+ build/Android.common_build.mk | 40 ++++++++++++++++++++++------------------
+ compiler/Android.mk           |  2 +-
+ dalvikvm/Android.mk           |  2 +-
+ 4 files changed, 24 insertions(+), 23 deletions(-)
+
+diff --git a/Android.mk b/Android.mk
+index 10d85d7..15e8308 100644
+--- a/Android.mk
++++ b/Android.mk
+@@ -14,9 +14,6 @@
+ # limitations under the License.
+ #
+ 
+-# Disable Clang
+-WITHOUT_CLANG=true
+-
+ LOCAL_PATH := $(call my-dir)
+ 
+ art_path := $(LOCAL_PATH)
+diff --git a/build/Android.common_build.mk b/build/Android.common_build.mk
+index 4775a66..fbc0412 100644
+--- a/build/Android.common_build.mk
++++ b/build/Android.common_build.mk
+@@ -29,9 +29,9 @@ include art/build/Android.common.mk
+ # Beware that tests may use the non-debug build for performance, notable 055-enum-performance
+ #
+ ART_BUILD_TARGET_NDEBUG ?= true
+-ART_BUILD_TARGET_DEBUG ?= false
++ART_BUILD_TARGET_DEBUG ?= true
+ ART_BUILD_HOST_NDEBUG ?= true
+-ART_BUILD_HOST_DEBUG ?= false
++ART_BUILD_HOST_DEBUG ?= true
+ 
+ ifeq ($(ART_BUILD_TARGET_NDEBUG),false)
+ $(info Disabling ART_BUILD_TARGET_NDEBUG)
+@@ -86,7 +86,7 @@ endif
+ #
+ # Used to enable optimizing compiler
+ #
+-ART_USE_OPTIMIZING_COMPILER := true
++ART_USE_OPTIMIZING_COMPILER := false
+ ifneq ($(wildcard art/USE_OPTIMIZING_COMPILER),)
+ $(info Enabling ART_USE_OPTIMIZING_COMPILER because of existence of art/USE_OPTIMIZING_COMPILER)
+ ART_USE_OPTIMIZING_COMPILER := true
+@@ -116,14 +116,18 @@ endif
+ 
+ # Host.
+ ART_HOST_CLANG := false
++ifneq ($(WITHOUT_HOST_CLANG),true)
++  # By default, host builds use clang for better warnings.
++  ART_HOST_CLANG := true
++endif
+ 
+ # Clang on the target. Target builds use GCC by default.
+-ART_TARGET_CLANG := false
+-ART_TARGET_CLANG_arm := false
+-ART_TARGET_CLANG_arm64 := false
+-ART_TARGET_CLANG_mips := false
+-ART_TARGET_CLANG_x86 := false
+-ART_TARGET_CLANG_x86_64 := false
++ART_TARGET_CLANG :=
++ART_TARGET_CLANG_arm :=
++ART_TARGET_CLANG_arm64 :=
++ART_TARGET_CLANG_mips :=
++ART_TARGET_CLANG_x86 :=
++ART_TARGET_CLANG_x86_64 :=
+ 
+ define set-target-local-clang-vars
+     LOCAL_CLANG := $(ART_TARGET_CLANG)
+@@ -196,8 +200,8 @@ art_target_non_debug_cflags := \
+ 
+ ifeq ($(HOST_OS),linux)
+   # Larger frame-size for host clang builds today
+-#  art_host_non_debug_cflags += -Wframe-larger-than=3000
+-#  art_target_non_debug_cflags += -Wframe-larger-than=1728
++  art_host_non_debug_cflags += -Wframe-larger-than=3000
++  art_target_non_debug_cflags += -Wframe-larger-than=1728
+ endif
+ 
+ # FIXME: upstream LLVM has a vectorizer bug that needs to be fixed
+@@ -207,16 +211,16 @@ ART_TARGET_CLANG_CFLAGS_arm64 += \
+ art_debug_cflags := \
+   $(art_non_debug_cflags)
+ 
+-#ifndef LIBART_IMG_HOST_BASE_ADDRESS
+- # $(error LIBART_IMG_HOST_BASE_ADDRESS unset)
+-#endif
++ifndef LIBART_IMG_HOST_BASE_ADDRESS
++  $(error LIBART_IMG_HOST_BASE_ADDRESS unset)
++endif
+ ART_HOST_CFLAGS := $(art_cflags) -DANDROID_SMP=1 -DART_BASE_ADDRESS=$(LIBART_IMG_HOST_BASE_ADDRESS)
+ ART_HOST_CFLAGS += -DART_DEFAULT_INSTRUCTION_SET_FEATURES=default
+ ART_HOST_CFLAGS += $(ART_DEFAULT_GC_TYPE_CFLAGS)
+ 
+-#ifndef LIBART_IMG_TARGET_BASE_ADDRESS
+- # $(error LIBART_IMG_TARGET_BASE_ADDRESS unset)
+-#endif
++ifndef LIBART_IMG_TARGET_BASE_ADDRESS
++  $(error LIBART_IMG_TARGET_BASE_ADDRESS unset)
++endif
+ ART_TARGET_CFLAGS := $(art_cflags) -DART_TARGET -DART_BASE_ADDRESS=$(LIBART_IMG_TARGET_BASE_ADDRESS)
+ 
+ ifndef LIBART_IMG_HOST_MIN_BASE_ADDRESS_DELTA
+@@ -275,7 +279,7 @@ else
+   endif
+ endif
+ # We compile with GCC 4.6 or clang on the host, both of which support -Wthread-safety.
+-#ART_HOST_CFLAGS += -Wthread-safety
++ART_HOST_CFLAGS += -Wthread-safety
+ 
+ # To use oprofile_android --callgraph, uncomment this and recompile with "mmm art -B -j16"
+ # ART_TARGET_CFLAGS += -fno-omit-frame-pointer -marm -mapcs
+diff --git a/compiler/Android.mk b/compiler/Android.mk
+index 2ccec7e..3985bbd 100644
+--- a/compiler/Android.mk
++++ b/compiler/Android.mk
+@@ -216,7 +216,7 @@ $$(ENUM_OPERATOR_OUT_GEN): $$(GENERATED_SRC_DIR)/%_operator_out.cc : $(LOCAL_PAT
+     $(call set-target-local-clang-vars)
+     $(call set-target-local-cflags-vars,$(2))
+   else # host
+-    LOCAL_CLANG := $(use_clang)
++    LOCAL_CLANG := $(ART_HOST_CLANG)
+     LOCAL_CFLAGS += $(ART_HOST_CFLAGS)
+     ifeq ($$(art_ndebug_or_debug),debug)
+       LOCAL_CFLAGS += $(ART_HOST_DEBUG_CFLAGS)
+diff --git a/dalvikvm/Android.mk b/dalvikvm/Android.mk
+index 80c7576..0ef20d6 100644
+--- a/dalvikvm/Android.mk
++++ b/dalvikvm/Android.mk
+@@ -50,7 +50,7 @@ endif
+ include $(CLEAR_VARS)
+ LOCAL_MODULE := dalvikvm
+ LOCAL_MODULE_TAGS := optional
+-LOCAL_CLANG := $(ART_HOST_CLANG)
++LOCAL_CLANG := true
+ LOCAL_CPP_EXTENSION := cc
+ LOCAL_SRC_FILES := dalvikvm.cc
+ LOCAL_CFLAGS := $(dalvikvm_cflags)
+-- 
+2.5.0
+

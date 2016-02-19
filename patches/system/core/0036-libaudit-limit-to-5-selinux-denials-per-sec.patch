@@ -1,0 +1,31 @@
+From 7da63c7e9fb7cc2e9d14ccfa683ecd41ed204ef8 Mon Sep 17 00:00:00 2001
+From: Nick Kralevich <nnk@google.com>
+Date: Thu, 26 Mar 2015 14:04:13 -0700
+Subject: [PATCH 36/52] libaudit: limit to 5 selinux denials per sec
+
+watchdog is triggering on shamu. This may be due to an excessive
+number of SELinux denials. Drop the limit from 20/sec to 5/sec.
+
+Bug: 19950451
+Bug: 19949988
+Change-Id: I979f11e17c241ff2ebda4dec9694ef441dc5d0ed
+---
+ logd/libaudit.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/logd/libaudit.c b/logd/libaudit.c
+index d00d579..cf76305 100644
+--- a/logd/libaudit.c
++++ b/logd/libaudit.c
+@@ -177,7 +177,7 @@ int audit_setup(int fd, uint32_t pid)
+      */
+     status.pid = pid;
+     status.mask = AUDIT_STATUS_PID | AUDIT_STATUS_RATE_LIMIT;
+-    status.rate_limit = 20; // audit entries per second
++    status.rate_limit = 5; // audit entries per second
+ 
+     /* Let the kernel know this pid will be registering for audit events */
+     rc = audit_send(fd, AUDIT_SET, &status, sizeof(status));
+-- 
+2.5.0
+

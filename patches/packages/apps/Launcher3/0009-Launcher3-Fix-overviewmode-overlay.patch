@@ -1,0 +1,30 @@
+From bf27f46d30d85088ece6a431422b3865464b76ee Mon Sep 17 00:00:00 2001
+From: crondog <patches@crondog.com>
+Date: Sun, 29 Dec 2013 19:10:33 +1100
+Subject: [PATCH 09/11] Launcher3: Fix overviewmode overlay
+
+Currently pressing the menu key will cause the overview settings will appear
+under the app draw. This allows the menu to only be created if in the workspace
+
+Change-Id: I6c5b8e142f10d534a45d591573ad57c2dfd12c26
+Signed-off-by: Chet Kener <Cl3Kener@gmail.com>
+---
+ src/com/android/launcher3/Launcher.java | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/com/android/launcher3/Launcher.java b/src/com/android/launcher3/Launcher.java
+index 1d6bacc..002ed4c 100644
+--- a/src/com/android/launcher3/Launcher.java
++++ b/src/com/android/launcher3/Launcher.java
+@@ -2257,7 +2257,7 @@ public class Launcher extends Activity
+             closeFolder();
+             // Stop resizing any widgets
+             mWorkspace.exitWidgetResizeMode();
+-            if (!mWorkspace.isInOverviewMode()) {
++            if (!mWorkspace.isInOverviewMode() && mState == State.WORKSPACE) {
+                 // Show the overview mode
+                 showOverviewMode(true);
+             } else {
+-- 
+2.5.0
+

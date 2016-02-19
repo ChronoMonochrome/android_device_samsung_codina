@@ -1,0 +1,542 @@
+From 873f871e7498e26198f39c21935c4ade1977d4b7 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Thu, 18 Feb 2016 04:48:15 +0700
+Subject: [PATCH 10/11] Revert "InCallUI: move 'more' menu button to top-right"
+
+This reverts commit b67ac12f4b4b5b8c85d039ddf7c4bcb1b3560d91.
+
+Change-Id: I6ca1b9fcedd6747993d0156d8b8ee2f5741f5b51
+---
+ res/drawable-hdpi/overflow_thumbnail.png          | Bin 947 -> 0 bytes
+ res/drawable-mdpi/overflow_thumbnail.png          | Bin 692 -> 0 bytes
+ res/drawable-xhdpi/overflow_thumbnail.png         | Bin 1388 -> 0 bytes
+ res/drawable-xxhdpi/overflow_thumbnail.png        | Bin 4576 -> 0 bytes
+ res/layout/call_button_fragment.xml               |   6 ++
+ res/layout/call_card_content.xml                  |  17 ------
+ res/menu/incall_more_menu.xml                     |   2 +-
+ res/values/dimens.xml                             |   1 -
+ res/values/strings.xml                            |   1 -
+ src/com/android/incallui/CallButtonFragment.java  |  21 +++++++
+ src/com/android/incallui/CallButtonPresenter.java |  23 ++++++++
+ src/com/android/incallui/CallCardFragment.java    |  64 ----------------------
+ src/com/android/incallui/CallCardPresenter.java   |  27 ---------
+ 13 files changed, 51 insertions(+), 111 deletions(-)
+ delete mode 100644 res/drawable-hdpi/overflow_thumbnail.png
+ delete mode 100644 res/drawable-mdpi/overflow_thumbnail.png
+ delete mode 100644 res/drawable-xhdpi/overflow_thumbnail.png
+ delete mode 100644 res/drawable-xxhdpi/overflow_thumbnail.png
+
+diff --git a/res/drawable-hdpi/overflow_thumbnail.png b/res/drawable-hdpi/overflow_thumbnail.png
+deleted file mode 100644
+index 57db353f7e3d28eada9a7a8ffca7a7ce76c19e10..0000000000000000000000000000000000000000
+GIT binary patch
+literal 0
+HcmV?d00001
+
+literal 947
+zcmeAS@N?(olHy`uVBq!ia0vp^1|ZDA1|-9oezpTCmUKs7M+SzC{oH>NS%G}U;vjb?
+zhIQv;UIIA^$sR$z3=CDO3=9p;3=BX218JamDbSQx2@DKYGZ+}e^C!h0bpxtpOY(Mi
+zVfYV%3-&Ib3>4uk@Q5sCVBi)8VMc~ob0ioTm{xeYIEG~0dpl#lzi^^V`}}XK!cVyh
+zG#M_7y>LTKccMvdl1$3wsjO=3;<A7E|1kTQ=q!t!z<Rm&1w*$XJ0~-53oE-&@<jQC
+zd?qWeab+xgd-wH+O92}v@0`5*$-Jj+=9T;3Ki~Vkc78R#4FsIyKl<!nZNvXP&i}Yi
+zy?Bw~zcQq%rl8<MQh9m#p8fmnTmA~CoqZtO=@P#->~y!8*3?tk4u@IuRkrNf^~>W=
+zucf7BrFg(vowTnxKNw5}IAY#kF*7g_VAZp-Z7?!7|IR7!mbcgKvBu<+IdiXkiHx~^
+ziNV&PsI1KFdXAa26G!0ct95BcGoL%iyx6vD!PON9L=z0ey6^fdzkL1K^XJ>WmtIoa
+zz+A&D<;VAcy~#npKyv4^{syiO%ofkid@71+2;1K{`QUFxX3N*U+U)=BGiKh{=9@h|
+zWJ-$B%~&0=<EyW}y4>5_TYVz+X+<Za#>0Xg-#>i#P`mr+si#F^l}wg)F4s?;I(3*&
+z&1}=nH?lDaj~1+2wb5^@(nJp#^BED>zxtk=W7d{<W%;sYWd)s`!MoP&H}t(M;M7sI
+zx6a1a_OFnK!hR23-3(K$0#OMWNl8hsr9p|Y*X`G@UtiC%ZKB#bYs&`t7fin_ObdB4
+zA8B1WvTQQ*mS1}h%vW2N+}!#0j?cbr%QsX#(9JR4xN6lwr-cRkWAyAJqoa5C-jVK`
+zF3}Kwd5ib&-@o&3ub*69U46b`g0xeKuCA`_i-bqdjvR5367SGikr}nedA3lmTmDYP
+zhDqn2cc)AHT+Vq`v{U~?y>p*gq5g!pxVSp?7K2uSLk2z1&YU@;oxmYJ!=l6FWADa|
+z8?Su$P>_<CxNyUc9X}XvFztK9B-}nh?VUB}7w(^&A7v};%l35soii)Kan=usO8v5{
+zb0uW<B-(-!&JW(Usiq5p7ykezc?Q)I*NBpo#FA92<f2p{#b9J$XrgOiq-$stVrXV%
+zU}R-tple`ZWnl2<5`P1VhTQy=%(O~$4Te@A{U8mu#ML~28W=oX{an^LB{Ts51PP1U
+
+diff --git a/res/drawable-mdpi/overflow_thumbnail.png b/res/drawable-mdpi/overflow_thumbnail.png
+deleted file mode 100644
+index c69937428687727b3fb7f3dbda063825661edab0..0000000000000000000000000000000000000000
+GIT binary patch
+literal 0
+HcmV?d00001
+
+literal 692
+zcmeAS@N?(olHy`uVBq!ia0vp^3LwnE1|*BCs=fdzmUKs7M+SzC{oH>NS%G}U;vjb?
+zhIQv;UV>C6dj$D1FjT2BFf=qXF#P-vq=Dk41`G_Z5*Qe)W-u^_=TC}1>IPKHmgMd3
+z!tfsi7wla=87RV8;1OBOz`!jG!i)^F=12gIU+L-M7!q;#?bQ9*Qi&4B?dM%L&Ippa
+zbyn3WSB9(g(#iz(g(W2g9^cQ%wpy_`|8Ln*vSJ69(hv8N!dC&S^etE)<`g%%yIOYM
+zyR0~U!q<DviyMC*IK8=c{`=p59yGSJw6OPB%Jttr^ZfJVvfY10JdVz)F_EejnYgy&
+zMB3(`p?cH#ADc|voV#29`->8*_l+enY;yc;&HCF<PCxxLbY(~t>x{(KEwbgi@7|x5
+zx^wf*oLd<tdToav`X{h@NXXuux3od$1J4Nty$uZON?S@i8Qlc_K4?95;cVR6u+7~^
+zAAPRco2R|>p5S8!rijZgzx*lV0GU*^x30y_wN!h;$J+l-=XNB@Jo)@nT=0ui@r4{S
+zf7|oXogF@ElNV;rI)3Cvo4dop2%T$LTW_f!Hn_*+e<8zhitdJnzX#56MJ(RP8F<}5
+z_Q+hnPZ~>p{ry*b{`0>4?YHgw9?xMF?d-L^y>0*9-L7@3uU7RQ6MM0)_vx;8cl%vk
+zrUdQes9Jb3OlvB?*Gl=m$1z{4_O5quJl^n5VA)Pf7gh!KGY#H(+Z4r^S@xf0`Dj(K
+z(67+xQ2jxBrb*jd+%`1M2F9dniEBhjN@7W>RdP`(kYX@0Ff`FMFw!+N3NbXZGBC0-
+vG0-)zure_CbBVtJMMG|WN@iLmx&}ilkbaPcTjFXSKn)C@u6{1-oD!M<mXjUo
+
+diff --git a/res/drawable-xhdpi/overflow_thumbnail.png b/res/drawable-xhdpi/overflow_thumbnail.png
+deleted file mode 100644
+index e538b9894981c453404bb59f62a13229e1feaef9..0000000000000000000000000000000000000000
+GIT binary patch
+literal 0
+HcmV?d00001
+
+literal 1388
+zcmeAS@N?(olHy`uVBq!ia0vp^4j|0I1|(Ny7TyC=Ea{HEjtmSN`?>!lvI6;x#X;^)
+z4C~IxyaaL-l0AZa85pWm85kOx85n;42hu?CQUeBtR|yOZRx=nF#PcV`A9Vw&WlQpQ
+zcVYMsf(!O8p9~b?EbxddW?<kJ24O~qS#u<S)+KtnIEGZ*dOOQDLpoieVZOCz`tD74
+zRrE4DXHRg*WshnUEc)K|$TZGtI?v2k3zPSX?AkJ6;gXbsgBPxC&E{#X5a8ff>^+&Z
+z!91Ata@vc2RT0mLQ@YR92l;=${P41=lE>Uv?@#@dv#{gl`%?FQZ`D`3Up$J)V0nLs
+z|NGTUfeL2E#>N+N%ocyGl67E=*+04Hk_$s_b+vV<-gJ8_3yU8?*T0@OntA5Ni4!Lr
+ztS!6lJI=fDOt|yNPWOJf+84Xt#pkha%eB8=`j<UH;KCoiFDe0yxtW<S??$ctw)l2y
+z*y_-Ib$@@&c9_Eu=Ex&)E^YJt*~?b$wvC97-_N+GZ^^$UUOo*>E;^@QIh!0<H)EOQ
+z1;1%ixF*bG5ba1Ynt9xRp3Tj-WzMUwW}Q2K{(oP^udX#JCl>Krm>U{?jI)~i?^bE-
+z^QCGTPm6ZW7j^Yy68||}>!<!iOLh&0^Yd(j-{0H2TfF~xZ`$Ua^))qjPCPBDE`N6?
+za?b48(Z)Q=>@rNeDrZ=XynS42ww-5A4-MUGWM@}bmzDL(X=RAjof|iPh*t3Z;gs1r
+zSzrZAh3AX>`1ISW*(@3wD_*f(V9JqX^!z!e^uZSM=Sq|0vyVSu@IAn?=3BPrkDIA`
+zCtjcZ-&#NOhpO}39kQ!S1SeUtSGX{|J=n}1{`u!0_ODfcFMBQh^zqZDPa2EVe+W)C
+z5n1s5+1c6aCEGsE&72i^ypT`#v{u;atNL<wH8Y&Pv^uCcGA40zb5EY?_4K!#(UkpV
+zZ*Q?a5M{FBa#sg}#~*)$Y?oei@x_ZXXU?P^2~U0?B*6IV_wV29k0ot9z4y`1l9!im
+zbI48;nw=vZQW~2-V_D^u*UM_`?mL`eYn-xhVv5nve|xLH?|XZR=}pqcAKl9`HCuQ*
+z1CwToK4AKG?wnt3YHDiq^{>m<z5ZwXQIxCo{=578|4+`G<$J_LBUSH%bK5<Jb9}tK
+zd#C!Sxd*SjlCd_-Ix05yZlR1j`#*<{fCniajwXkUJLK)$1<&R&d_0nUz%Ib4!ZA23
+zVADsIj17<T#Vy=U1TZT)2eq8&XQ>ccqNwGRtG?jsy)P>_IxbCqE20$NG@<uaVI}8=
+z+pD)Mf6vZ!!Q9ri*6sS&^-{gZmZe6zUN(^z?>_1eOsCc?5p4`g&CSh+qoboQZ_B+N
+zFSKxP(8>~SMJL1k%(fHHGBeMfJ=>g*pTE3Hh9`1+{{4AOajFeQOBgObeE3j%*0R_)
+zQ<rSqxKX<!zvIBk0G10SvHjbk*3Ro)7o+!GxlLK~_>)cA4ma=K)s=1wd{x%`*y7r;
+zW5<FerN1-t8nP`<OHWV#{{8#cbB{NAEu92(!f!SY262uT7iVxC*?cp{c%lc7W#8pZ
+zxwqGbt)5z9wRhi+9XmobM7{~AJ0E8WXj{~wCBd|(zU9RfMP?198iy{PpM`o0J|w-$
+z{`APghn-JA>P=<il!TPWy$7TgDcMLG-R`s$HG1-uIsdDS!UsJ8At?A%|1jT_(}{U!
+z#-lC35=gbgHKHUXu_V<hxhNG#F&G&bn&=uB=^7e^7@Aob7+IMZ=o(m985sPz#NU9T
+iAvZrIGp!O`gP|2jKS;wZaWxO11_n=8KbLh*2~7Yx(^?t;
+
+diff --git a/res/drawable-xxhdpi/overflow_thumbnail.png b/res/drawable-xxhdpi/overflow_thumbnail.png
+deleted file mode 100644
+index 7f3f73386989d7dab9ddf23e01ccba9340761b40..0000000000000000000000000000000000000000
+GIT binary patch
+literal 0
+HcmV?d00001
+
+literal 4576
+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
+
+diff --git a/res/layout/call_button_fragment.xml b/res/layout/call_button_fragment.xml
+index e8feca6..b589b5f 100644
+--- a/res/layout/call_button_fragment.xml
++++ b/res/layout/call_button_fragment.xml
+@@ -160,6 +160,12 @@
+             android:contentDescription="@string/onscreenOverflowText"
+             android:visibility="gone" />
+ 
++        <ImageButton
++            android:id="@+id/moreMenuButton"
++            style="@style/InCallButton"
++            android:background="@drawable/btn_overflow"
++            android:contentDescription="@string/onscreenMoreMenuText" />
++
+     </LinearLayout>
+ 
+ </LinearLayout>
+diff --git a/res/layout/call_card_content.xml b/res/layout/call_card_content.xml
+index bd3063b..bd0b86e 100644
+--- a/res/layout/call_card_content.xml
++++ b/res/layout/call_card_content.xml
+@@ -58,23 +58,6 @@
+ 
+     </LinearLayout>
+ 
+-    <!--  More menu overflow button for call recording, blacklisting
+-          only visible during the call. It sits above the primary call info
+-          container in the top-right hand corner. -->
+-    <ImageButton
+-            android:id="@+id/moreMenuButton"
+-            style="@style/InCallButton"
+-            android:paddingTop="16dp"
+-            android:paddingRight="16dp"
+-            android:layout_width="40dp"
+-            android:layout_height="40dp"
+-            android:background="@drawable/overflow_thumbnail"
+-            android:layout_alignParentRight="true"
+-            android:layout_alignParentTop="true"
+-            android:elevation="@dimen/primary_call_overflow_elevation"
+-            android:rotation="90"
+-            android:contentDescription="@string/onscreenMoreMenuText"/>
+-
+     <!-- Contact photo for primary call info -->
+     <ImageView android:id="@+id/photo"
+         android:layout_below="@id/primary_call_info_container"
+diff --git a/res/menu/incall_more_menu.xml b/res/menu/incall_more_menu.xml
+index a812609..ae6138e 100644
+--- a/res/menu/incall_more_menu.xml
++++ b/res/menu/incall_more_menu.xml
+@@ -31,5 +31,5 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ <menu xmlns:android="http://schemas.android.com/apk/res/android">
+     <item
+         android:id="@+id/menu_add_to_blacklist"
+-        android:title="@string/blacklist_dialog_title"/>
++        android:title="@string/add_to_black_list"/>
+ </menu>
+diff --git a/res/values/dimens.xml b/res/values/dimens.xml
+index 13b1e3a..43307e8 100644
+--- a/res/values/dimens.xml
++++ b/res/values/dimens.xml
+@@ -55,7 +55,6 @@
+     <dimen name="in_call_button_dimension">48dp</dimen>
+ 
+     <dimen name="primary_call_elevation">5dp</dimen>
+-    <dimen name="primary_call_overflow_elevation">6dp</dimen>
+     <dimen name="dialpad_elevation">2dp</dimen>
+ 
+     <!-- The InCallUI dialpad will sometimes want digits sizes that are different from dialer.
+diff --git a/res/values/strings.xml b/res/values/strings.xml
+index 3dc319f..dee281f 100644
+--- a/res/values/strings.xml
++++ b/res/values/strings.xml
+@@ -420,7 +420,6 @@
+ 
+     <!-- Text for the onscreen "Blacklist" button -->
+     <string name="onscreenBlacklistText">Blacklist</string>
+-    <string name="onscreenMoreMenuText">More menu</string>
+ 
+     <!-- Blacklist confirmation dialog -->
+     <string name="blacklist_dialog_title">Add to blacklist</string>
+diff --git a/src/com/android/incallui/CallButtonFragment.java b/src/com/android/incallui/CallButtonFragment.java
+index cda5409..d3df236 100644
+--- a/src/com/android/incallui/CallButtonFragment.java
++++ b/src/com/android/incallui/CallButtonFragment.java
+@@ -38,6 +38,7 @@ import android.widget.ImageButton;
+ import android.widget.PopupMenu;
+ import android.widget.PopupMenu.OnDismissListener;
+ import android.widget.PopupMenu.OnMenuItemClickListener;
++import com.android.internal.telephony.util.BlacklistUtils;
+ 
+ import com.android.contacts.common.util.MaterialColorMapUtils;
+ import com.android.contacts.common.util.MaterialColorMapUtils.MaterialPalette;
+@@ -121,6 +122,22 @@ public class CallButtonFragment
+         mOverflowButton = (ImageButton) parent.findViewById(R.id.overflowButton);
+         mOverflowButton.setOnClickListener(this);
+ 
++        mMoreMenuButton = (ImageButton) parent.findViewById(R.id.moreMenuButton);
++        if (mMoreMenuButton != null) {
++            boolean blacklistEnabled = BlacklistUtils.isBlacklistEnabled(getActivity());
++            if (blacklistEnabled) {
++                mMoreMenuButton.setOnClickListener(this);
++                final ContextThemeWrapper contextWrapper = new ContextThemeWrapper(getActivity(),
++                        R.style.InCallPopupMenuStyle);
++                mMoreMenu = new MorePopupMenu(contextWrapper, mMoreMenuButton /* anchorView */);
++                mMoreMenu.getMenuInflater().inflate(R.menu.incall_more_menu, mMoreMenu.getMenu());
++                mMoreMenu.setOnMenuItemClickListener(this);
++
++                mMoreMenuButton.setOnTouchListener(mMoreMenu.getDragToOpenListener());
++            } else {
++                mMoreMenuButton.setVisibility(View.GONE);
++            }
++        }
+         return parent;
+     }
+ 
+@@ -525,6 +542,10 @@ public class CallButtonFragment
+                 mode = AudioState.ROUTE_BLUETOOTH;
+                 break;
+ 
++            case R.id.menu_add_to_blacklist:
++                getPresenter().blacklistClicked(getActivity());
++                return true;
++
+             default:
+                 Log.e(this, "onMenuItemClick:  unexpected View ID " + item.getItemId()
+                         + " (MenuItem = '" + item + "')");
+diff --git a/src/com/android/incallui/CallButtonPresenter.java b/src/com/android/incallui/CallButtonPresenter.java
+index 9897d37..5d1104b 100644
+--- a/src/com/android/incallui/CallButtonPresenter.java
++++ b/src/com/android/incallui/CallButtonPresenter.java
+@@ -243,6 +243,29 @@ public class CallButtonPresenter extends Presenter<CallButtonPresenter.CallButto
+         videoCall.sendSessionModifyRequest(videoProfile);
+     }
+ 
++    public void blacklistClicked(final Context context) {
++        if (mCall == null) {
++            return;
++        }
++
++        final String number = mCall.getNumber();
++        final String message = context.getString(R.string.blacklist_dialog_message, number);
++
++        new AlertDialog.Builder(context)
++            .setTitle(R.string.blacklist_dialog_title)
++            .setMessage(message)
++            .setPositiveButton(R.string.pause_prompt_yes, new DialogInterface.OnClickListener() {
++                @Override
++                public void onClick(DialogInterface dialog, int which) {
++                    Log.d(this, "hanging up due to blacklist: " + mCall.getId());
++                    TelecomAdapter.getInstance().disconnectCall(mCall.getId());
++                    BlacklistUtils.addOrUpdate(context, mCall.getNumber(), BlacklistUtils.BLOCK_CALLS, BlacklistUtils.BLOCK_CALLS);
++                }
++            })
++            .setNegativeButton(R.string.pause_prompt_no, null)
++            .show();
++    }
++
+     public void showDialpadClicked(boolean checked) {
+         Log.v(this, "Show dialpad " + String.valueOf(checked));
+         getUi().displayDialpad(checked /* show */, true /* animate */);
+diff --git a/src/com/android/incallui/CallCardFragment.java b/src/com/android/incallui/CallCardFragment.java
+index 619bfe0..4c8ad9a 100644
+--- a/src/com/android/incallui/CallCardFragment.java
++++ b/src/com/android/incallui/CallCardFragment.java
+@@ -33,13 +33,9 @@ import android.telecom.VideoProfile;
+ import android.telephony.PhoneNumberUtils;
+ import android.text.TextUtils;
+ import android.text.format.DateUtils;
+-import android.view.ContextThemeWrapper;
+ import android.view.Display;
+ import android.view.LayoutInflater;
+-import android.view.Menu;
+-import android.view.MenuItem;
+ import android.view.View;
+-import android.view.View.OnClickListener;
+ import android.view.View.OnLayoutChangeListener;
+ import android.view.ViewAnimationUtils;
+ import android.view.ViewGroup;
+@@ -51,13 +47,11 @@ import android.view.animation.Animation;
+ import android.view.animation.AnimationUtils;
+ import android.widget.ImageButton;
+ import android.widget.ImageView;
+-import android.widget.PopupMenu;
+ import android.widget.TextView;
+ 
+ import com.android.contacts.common.util.MaterialColorMapUtils.MaterialPalette;
+ import com.android.contacts.common.widget.FloatingActionButtonController;
+ import com.android.incallui.service.PhoneNumberService;
+-import com.android.internal.telephony.util.BlacklistUtils;
+ import com.android.phone.common.animation.AnimUtils;
+ 
+ import java.util.List;
+@@ -91,9 +85,6 @@ public class CallCardFragment extends BaseFragment<CallCardPresenter, CallCardPr
+     private TextView mElapsedTime;
+     private Drawable mPrimaryPhotoDrawable;
+ 
+-    private ImageButton mMoreMenuButton;
+-    private MorePopupMenu mMoreMenu;
+-
+     // Container view that houses the entire primary call card, including the call buttons
+     private View mPrimaryCallCardContainer;
+     // Container view that houses the primary call information
+@@ -201,20 +192,6 @@ public class CallCardFragment extends BaseFragment<CallCardPresenter, CallCardPr
+         mInCallMessageLabel = (TextView) view.findViewById(R.id.connectionServiceMessage);
+         mProgressSpinner = view.findViewById(R.id.progressSpinner);
+ 
+-        mMoreMenuButton = (ImageButton) view.findViewById(R.id.moreMenuButton);
+-        final ContextThemeWrapper contextWrapper = new ContextThemeWrapper(getActivity(),
+-                R.style.InCallPopupMenuStyle);
+-        mMoreMenu = new MorePopupMenu(contextWrapper, mMoreMenuButton /* anchorView */);
+-        mMoreMenu.getMenuInflater().inflate(R.menu.incall_more_menu, mMoreMenu.getMenu());
+-        mMoreMenuButton.setOnTouchListener(mMoreMenu.getDragToOpenListener());
+-        mMoreMenuButton.setOnClickListener(new OnClickListener() {
+-            @Override
+-            public void onClick(View v) {
+-                mMoreMenu.show();
+-            }
+-        });
+-
+-
+         mFloatingActionButtonContainer = view.findViewById(
+                 R.id.floating_end_call_action_button_container);
+         mFloatingActionButton = (ImageButton) view.findViewById(
+@@ -519,8 +496,6 @@ public class CallCardFragment extends BaseFragment<CallCardPresenter, CallCardPr
+                 sessionModificationState, disconnectCause, connectionLabel, isGatewayCall, isWifi,
+                 isConference);
+ 
+-        updateMoreMenuByCall(state);
+-
+         Log.v(this, "setCallState " + callStateLabel);
+         Log.v(this, "DisconnectCause " + disconnectCause.toString());
+         Log.v(this, "gateway " + connectionLabel + gatewayNumber);
+@@ -1115,43 +1090,4 @@ public class CallCardFragment extends BaseFragment<CallCardPresenter, CallCardPr
+             v.setBottom(oldBottom);
+         }
+     }
+-
+-    private void updateMoreMenuByCall(int state) {
+-        if (mMoreMenuButton == null) {
+-            return;
+-        }
+-
+-        final Menu menu = mMoreMenu.getMenu();
+-        final MenuItem addToBlacklist = menu.findItem(R.id.menu_add_to_blacklist);
+-
+-        boolean blacklistVisible = BlacklistUtils.isBlacklistEnabled(getActivity())
+-                && Call.State.isConnectingOrConnected(state);
+-
+-        addToBlacklist.setVisible(blacklistVisible);
+-        addToBlacklist.setEnabled(blacklistVisible);
+-
+-        if (mMoreMenu.getMenu().hasVisibleItems()) {
+-            mMoreMenuButton.setVisibility(View.VISIBLE);
+-        } else {
+-            mMoreMenuButton.setVisibility(View.GONE);
+-        }
+-    }
+- 
+-    private class MorePopupMenu extends PopupMenu implements PopupMenu.OnMenuItemClickListener {
+-        public MorePopupMenu(Context context, View anchor) {
+-            super(context, anchor);
+-            setOnMenuItemClickListener(this);
+-        }
+-
+-        @Override
+-        public boolean onMenuItemClick(MenuItem item) {
+-            switch(item.getItemId()) {
+-
+-                case R.id.menu_add_to_blacklist:
+-                    getPresenter().blacklistClicked(getActivity());
+-                    return true;
+-            }
+-            return true;
+-        }
+-    }
+ }
+diff --git a/src/com/android/incallui/CallCardPresenter.java b/src/com/android/incallui/CallCardPresenter.java
+index d208015..941c64e 100644
+--- a/src/com/android/incallui/CallCardPresenter.java
++++ b/src/com/android/incallui/CallCardPresenter.java
+@@ -17,9 +17,7 @@
+ package com.android.incallui;
+ 
+ import android.Manifest;
+-import android.app.AlertDialog;
+ import android.content.Context;
+-import android.content.DialogInterface;
+ import android.content.Intent;
+ import android.content.pm.ApplicationInfo;
+ import android.content.pm.PackageManager;
+@@ -48,7 +46,6 @@ import com.android.incalluibind.ObjectFactory;
+ 
+ import java.lang.ref.WeakReference;
+ 
+-import com.android.internal.telephony.util.BlacklistUtils;
+ import com.google.common.base.Preconditions;
+ 
+ /**
+@@ -735,30 +732,6 @@ public class CallCardPresenter extends Presenter<CallCardPresenter.CallCardUi>
+         return photo;
+     }
+ 
+-    public void blacklistClicked(final Context context) {
+-        if (mPrimary == null) {
+-            return;
+-        }
+-
+-        final String number = mPrimary.getNumber();
+-        final String message = context.getString(R.string.blacklist_dialog_message, number);
+-
+-        new AlertDialog.Builder(context)
+-                .setTitle(R.string.blacklist_dialog_title)
+-                .setMessage(message)
+-                .setPositiveButton(R.string.pause_prompt_yes, new DialogInterface.OnClickListener() {
+-                    @Override
+-                    public void onClick(DialogInterface dialog, int which) {
+-                        Log.d(this, "hanging up due to blacklist: " + mPrimary.getId());
+-                        TelecomAdapter.getInstance().disconnectCall(mPrimary.getId());
+-                        BlacklistUtils.addOrUpdate(context, mPrimary.getNumber(),
+-                                BlacklistUtils.BLOCK_CALLS, BlacklistUtils.BLOCK_CALLS);
+-                    }
+-                })
+-                .setNegativeButton(R.string.pause_prompt_no, null)
+-                .show();
+-    }
+-
+     public interface CallCardUi extends Ui {
+         void setVisible(boolean on);
+         void setCallCardVisible(boolean visible);
+-- 
+2.5.0
+

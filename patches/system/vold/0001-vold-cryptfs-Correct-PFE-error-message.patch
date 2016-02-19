@@ -1,0 +1,28 @@
+From 709b1a0ef0442abc7bceecb675aa634be1d3c176 Mon Sep 17 00:00:00 2001
+From: myfluxi <linflux@arcor.de>
+Date: Sun, 8 Mar 2015 19:25:07 +0100
+Subject: [PATCH 01/11] vold: cryptfs: Correct PFE error message
+
+Disabled PFE is not an error.
+
+Change-Id: I68d9cdddfaa7a93641185728a1faf9671ef45edf
+---
+ cryptfs.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/cryptfs.c b/cryptfs.c
+index c8ad321..05d55dc 100755
+--- a/cryptfs.c
++++ b/cryptfs.c
+@@ -3641,7 +3641,7 @@ int cryptfs_pfe_boot(void)
+     }
+ 
+     if (!(crypt_ftr.flags & CRYPT_PFE_ACTIVATED) ) {
+-        SLOGE("PFE not activated");
++        SLOGI("PFE not activated");
+         goto exit_err;
+     }
+ 
+-- 
+2.5.0
+

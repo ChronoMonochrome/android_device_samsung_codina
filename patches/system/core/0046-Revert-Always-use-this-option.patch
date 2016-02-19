@@ -1,0 +1,37 @@
+From fd2056b6cb8689464a736793b7d4139c4e0327a8 Mon Sep 17 00:00:00 2001
+From: Maxime Poulain <maxime.poulain@student.uclouvain.be>
+Date: Tue, 12 May 2015 12:55:44 +0200
+Subject: [PATCH 46/52] Revert "Always use this option"
+
+This reverts commit 47364ae8909546d93f67c51cc1e193f87e76313c.
+
+This commit bring issues on exynos devices.
+
+Change-Id: I7af897d245afe7105e779d501bf690046ef43dfa
+---
+ healthd/healthd.cpp | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/healthd/healthd.cpp b/healthd/healthd.cpp
+index 59f3af9..e172e25 100644
+--- a/healthd/healthd.cpp
++++ b/healthd/healthd.cpp
+@@ -38,10 +38,15 @@
+ using namespace android;
+ 
+ // Periodic chores intervals in seconds
++#ifdef QCOM_HARDWARE
+ #define DEFAULT_PERIODIC_CHORES_INTERVAL_FAST (60 * 10)
+ //For the designs without low battery detection,need to enable
+ //the default 60*10s wakeup timer to periodic check.
+ #define DEFAULT_PERIODIC_CHORES_INTERVAL_SLOW -1
++#else
++#define DEFAULT_PERIODIC_CHORES_INTERVAL_FAST (60 * 1)
++#define DEFAULT_PERIODIC_CHORES_INTERVAL_SLOW (60 * 10)
++#endif
+ 
+ static struct healthd_config healthd_config = {
+     .periodic_chores_interval_fast = DEFAULT_PERIODIC_CHORES_INTERVAL_FAST,
+-- 
+2.5.0
+

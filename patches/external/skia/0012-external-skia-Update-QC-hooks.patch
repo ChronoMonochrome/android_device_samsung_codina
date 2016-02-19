@@ -1,0 +1,132 @@
+From bcb290fefb774243a309cabe672608b85989af0c Mon Sep 17 00:00:00 2001
+From: Xin Qi <xqi@codeaurora.org>
+Date: Thu, 20 Nov 2014 16:04:02 -0800
+Subject: [PATCH 12/29] external/skia: Update QC hooks
+
+Cleaner way to use weak functions for hooks
+
+Change-Id: Ic9ff68b6f406323d464433fb43aef151c07c45e9
+Signed-off-by: Chet Kener <Cl3Kener@gmail.com>
+---
+ src/core/SkBitmapProcShader.h |  9 ++++++++-
+ src/core/SkBitmapProcState.h  | 10 ++++++++--
+ src/core/SkBlitter_ARGB32.cpp | 11 -----------
+ src/core/SkCoreBlitters.h     | 10 ++++++++--
+ 4 files changed, 24 insertions(+), 16 deletions(-)
+
+diff --git a/src/core/SkBitmapProcShader.h b/src/core/SkBitmapProcShader.h
+index 7ae18f0..46af09f 100644
+--- a/src/core/SkBitmapProcShader.h
++++ b/src/core/SkBitmapProcShader.h
+@@ -14,6 +14,13 @@
+ #include "SkBitmapProcState.h"
+ #include "SkSmallAllocator.h"
+ 
++#ifdef QC_STRONG
++#define QC_WEAK
++#else
++#define QC_WEAK __attribute__((weak))
++#endif
++
++
+ class SkBitmapProcShader : public SkShader {
+ public:
+     SkBitmapProcShader(const SkBitmap& src, TileMode tx, TileMode ty,
+@@ -41,7 +48,7 @@ public:
+         BitmapProcShaderContext(const SkBitmapProcShader&, const ContextRec&, SkBitmapProcState*);
+         virtual ~BitmapProcShaderContext();
+ 
+-        virtual void shadeSpan(int x, int y, SkPMColor dstC[], int count) SK_OVERRIDE __attribute__((weak));
++        virtual void shadeSpan(int x, int y, SkPMColor dstC[], int count) SK_OVERRIDE QC_WEAK;
+         // override beginRect and endRect
+         virtual void beginRect(int x, int y, int width);
+         virtual void endRect();
+diff --git a/src/core/SkBitmapProcState.h b/src/core/SkBitmapProcState.h
+index 572c30e..81c1ed7 100644
+--- a/src/core/SkBitmapProcState.h
++++ b/src/core/SkBitmapProcState.h
+@@ -16,6 +16,12 @@
+ #include "SkPaint.h"
+ #include "SkScaledImageCache.h"
+ 
++#ifdef QC_STRONG
++#define QC_WEAK
++#else
++#define QC_WEAK __attribute__((weak))
++#endif
++
+ #define FractionalInt_IS_64BIT
+ 
+ #ifdef FractionalInt_IS_64BIT
+@@ -137,8 +143,8 @@ struct SkBitmapProcState {
+     SampleProc16 getSampleProc16() const { return fSampleProc16; }
+ 
+     /* Perform rectaingle geometry specific setup/cleanup */
+-    void beginRect(int x, int y, int width) __attribute__((weak));
+-    void endRect() __attribute__((weak));
++    void beginRect(int x, int y, int width) QC_WEAK;
++    void endRect() QC_WEAK;
+     void *              fOptPtr;
+ 
+ private:
+diff --git a/src/core/SkBlitter_ARGB32.cpp b/src/core/SkBlitter_ARGB32.cpp
+index d25be76..f86bc47 100644
+--- a/src/core/SkBlitter_ARGB32.cpp
++++ b/src/core/SkBlitter_ARGB32.cpp
+@@ -333,10 +333,6 @@ void SkARGB32_Shader_Blitter::blitH(int x, int y, int width) {
+     }
+ }
+ 
+-extern int skia_androidopt_blitRect(int x, int y, int width, int height,
+-        SkARGB32_Shader_Blitter *sk, const SkBitmap& fDevice, SkXfermode *fXfermode,
+-        SkShader::Context* shaderContext) __attribute__((weak));
+-
+ void SkARGB32_Shader_Blitter::blitRect(int x, int y, int width, int height) {
+     SkASSERT(x >= 0 && y >= 0 &&
+              x + width <= fDevice.width() && y + height <= fDevice.height());
+@@ -346,13 +342,6 @@ void SkARGB32_Shader_Blitter::blitRect(int x, int y, int width, int height) {
+     SkShader::Context* shaderContext = fShaderContext;
+     SkPMColor*         span = fBuffer;
+ 
+-    SkXfermode* xfer = fXfermode;
+-    if (skia_androidopt_blitRect) {
+-        if (skia_androidopt_blitRect(x, y, width, height, this, fDevice, xfer, shaderContext)) {
+-            return;
+-        }
+-    }
+-
+     if (fConstInY) {
+         if (fShadeDirectlyIntoDevice) {
+             // shade the first row directly into the device
+diff --git a/src/core/SkCoreBlitters.h b/src/core/SkCoreBlitters.h
+index 02fe921..7b241f0 100644
+--- a/src/core/SkCoreBlitters.h
++++ b/src/core/SkCoreBlitters.h
+@@ -14,6 +14,12 @@
+ #include "SkShader.h"
+ #include "SkSmallAllocator.h"
+ 
++#ifdef QC_STRONG
++#define QC_WEAK
++#else
++#define QC_WEAK __attribute__((weak))
++#endif
++
+ class SkRasterBlitter : public SkBlitter {
+ public:
+     SkRasterBlitter(const SkBitmap& device) : fDevice(device) {}
+@@ -161,9 +167,9 @@ public:
+     SkARGB32_Shader_Blitter(const SkBitmap& device, const SkPaint& paint,
+                             SkShader::Context* shaderContext);
+     virtual ~SkARGB32_Shader_Blitter();
+-    virtual void blitH(int x, int y, int width) SK_OVERRIDE __attribute__((weak));
++    virtual void blitH(int x, int y, int width) SK_OVERRIDE QC_WEAK;
+     virtual void blitV(int x, int y, int height, SkAlpha alpha) SK_OVERRIDE;
+-    virtual void blitRect(int x, int y, int width, int height) SK_OVERRIDE;
++    virtual void blitRect(int x, int y, int width, int height) SK_OVERRIDE QC_WEAK;
+     virtual void blitAntiH(int x, int y, const SkAlpha[], const int16_t[]) SK_OVERRIDE;
+     virtual void blitMask(const SkMask&, const SkIRect&) SK_OVERRIDE;
+ 
+-- 
+2.5.0
+

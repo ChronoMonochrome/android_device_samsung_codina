@@ -1,0 +1,42 @@
+From 657664a272b7198441604f79e6846b82e551e335 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Sat, 20 Feb 2016 02:07:05 +0700
+Subject: [PATCH] Remove LatinIME overlay file
+
+Change-Id: I042539cf17f4ff11543a2ded9b8fa738e00ca354
+---
+ .../LatinIME/java/res/values/gesture-input.xml     | 22 ----------------------
+ 1 file changed, 22 deletions(-)
+ delete mode 100644 overlay/common/packages/inputmethods/LatinIME/java/res/values/gesture-input.xml
+
+diff --git a/overlay/common/packages/inputmethods/LatinIME/java/res/values/gesture-input.xml b/overlay/common/packages/inputmethods/LatinIME/java/res/values/gesture-input.xml
+deleted file mode 100644
+index 445a389..0000000
+--- a/overlay/common/packages/inputmethods/LatinIME/java/res/values/gesture-input.xml
++++ /dev/null
+@@ -1,22 +0,0 @@
+-<?xml version="1.0" encoding="utf-8"?>
+-<!--
+-/*
+-**
+-** Copyright 2012, The Android Open Source Project
+-**
+-** Licensed under the Apache License, Version 2.0 (the "License");
+-** you may not use this file except in compliance with the License.
+-** You may obtain a copy of the License at
+-**
+-**     http://www.apache.org/licenses/LICENSE-2.0
+-**
+-** Unless required by applicable law or agreed to in writing, software
+-** distributed under the License is distributed on an "AS IS" BASIS,
+-** WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-** See the License for the specific language governing permissions and
+-** limitations under the License.
+-*/
+--->
+-<resources>
+-    <bool name="config_gesture_input_enabled_by_build_config">true</bool>
+-</resources>
+-- 
+2.5.0
+

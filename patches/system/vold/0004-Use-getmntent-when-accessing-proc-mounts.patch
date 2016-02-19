@@ -1,0 +1,197 @@
+From 96ae973fbea19ea82925b10a38c7526dd48fbd38 Mon Sep 17 00:00:00 2001
+From: Yabin Cui <yabinc@google.com>
+Date: Fri, 2 Jan 2015 13:28:28 -0800
+Subject: [PATCH 04/11] Use getmntent when accessing /proc/mounts.
+
+Bug: 18887435
+Change-Id: Ibcb446fac954d9c42ebdfc4b684e6f3503337ab4
+---
+ CommandListener.cpp |  1 +
+ Volume.cpp          | 27 +++++++++------------
+ VolumeManager.cpp   | 68 ++++++++++++++++++++---------------------------------
+ 3 files changed, 37 insertions(+), 59 deletions(-)
+
+diff --git a/CommandListener.cpp b/CommandListener.cpp
+index 6d19fd5..19faf21 100644
+--- a/CommandListener.cpp
++++ b/CommandListener.cpp
+@@ -25,6 +25,7 @@
+ #include <errno.h>
+ #include <fcntl.h>
+ #include <fs_mgr.h>
++#include <stdio.h>
+ #include <string.h>
+ 
+ #define LOG_TAG "VoldCmdListener"
+diff --git a/Volume.cpp b/Volume.cpp
+index a2db960..46bfcb1 100644
+--- a/Volume.cpp
++++ b/Volume.cpp
+@@ -19,6 +19,7 @@
+ #include <dirent.h>
+ #include <errno.h>
+ #include <fcntl.h>
++#include <mntent.h>
+ 
+ #include <sys/types.h>
+ #include <sys/stat.h>
+@@ -339,28 +340,22 @@ err:
+ }
+ 
+ bool Volume::isMountpointMounted(const char *path) {
+-    char device[256];
+-    char mount_path[256];
+-    char rest[256];
+-    FILE *fp;
+-    char line[1024];
+-
+-    if (!(fp = fopen("/proc/mounts", "r"))) {
++    FILE *fp = setmntent("/proc/mounts", "r");
++    if (fp == NULL) {
+         SLOGE("Error opening /proc/mounts (%s)", strerror(errno));
+         return false;
+     }
+ 
+-    while(fgets(line, sizeof(line), fp)) {
+-        line[strlen(line)-1] = '\0';
+-        sscanf(line, "%255s %255s %255s\n", device, mount_path, rest);
+-        if (!strcmp(mount_path, path)) {
+-            fclose(fp);
+-            return true;
++    bool found_path = false;
++    mntent* mentry;
++    while ((mentry = getmntent(fp)) != NULL) {
++        if (strcmp(mentry->mnt_dir, path) == 0) {
++            found_path = true;
++            break;
+         }
+     }
+-
+-    fclose(fp);
+-    return false;
++    endmntent(fp);
++    return found_path;
+ }
+ 
+ int Volume::mountVol() {
+diff --git a/VolumeManager.cpp b/VolumeManager.cpp
+index 4dcb57b..300fa88 100644
+--- a/VolumeManager.cpp
++++ b/VolumeManager.cpp
+@@ -14,18 +14,19 @@
+  * limitations under the License.
+  */
+ 
+-#include <stdio.h>
+-#include <stdlib.h>
+-#include <string.h>
++#include <dirent.h>
+ #include <errno.h>
+ #include <fcntl.h>
+ #include <fts.h>
+-#include <unistd.h>
++#include <mntent.h>
++#include <stdio.h>
++#include <stdlib.h>
++#include <string.h>
++#include <sys/ioctl.h>
++#include <sys/mount.h>
+ #include <sys/stat.h>
+ #include <sys/types.h>
+-#include <sys/mount.h>
+-#include <sys/ioctl.h>
+-#include <dirent.h>
++#include <unistd.h>
+ 
+ #include <linux/kdev_t.h>
+ 
+@@ -1488,13 +1489,8 @@ int VolumeManager::mountVolume(const char *label) {
+ }
+ 
+ int VolumeManager::listMountedObbs(SocketClient* cli) {
+-    char device[256];
+-    char mount_path[256];
+-    char rest[256];
+-    FILE *fp;
+-    char line[1024];
+-
+-    if (!(fp = fopen("/proc/mounts", "r"))) {
++    FILE *fp = setmntent("/proc/mounts", "r");
++    if (fp == NULL) {
+         SLOGE("Error opening /proc/mounts (%s)", strerror(errno));
+         return -1;
+     }
+@@ -1506,17 +1502,10 @@ int VolumeManager::listMountedObbs(SocketClient* cli) {
+     loopDir[loopDirLen++] = '/';
+     loopDir[loopDirLen] = '\0';
+ 
+-    while(fgets(line, sizeof(line), fp)) {
+-        line[strlen(line)-1] = '\0';
+-
+-        /*
+-         * Should look like:
+-         * /dev/block/loop0 /mnt/obb/fc99df1323fd36424f864dcb76b76d65 ...
+-         */
+-        sscanf(line, "%255s %255s %255s\n", device, mount_path, rest);
+-
+-        if (!strncmp(mount_path, loopDir, loopDirLen)) {
+-            int fd = open(device, O_RDONLY);
++    mntent* mentry;
++    while ((mentry = getmntent(fp)) != NULL) {
++        if (!strncmp(mentry->mnt_dir, loopDir, loopDirLen)) {
++            int fd = open(mentry->mnt_fsname, O_RDONLY);
+             if (fd >= 0) {
+                 struct loop_info64 li;
+                 if (ioctl(fd, LOOP_GET_STATUS64, &li) >= 0) {
+@@ -1527,8 +1516,7 @@ int VolumeManager::listMountedObbs(SocketClient* cli) {
+             }
+         }
+     }
+-
+-    fclose(fp);
++    endmntent(fp);
+     return 0;
+ }
+ 
+@@ -1879,28 +1867,22 @@ Volume *VolumeManager::lookupVolume(const char *label) {
+ 
+ bool VolumeManager::isMountpointMounted(const char *mp)
+ {
+-    char device[256];
+-    char mount_path[256];
+-    char rest[256];
+-    FILE *fp;
+-    char line[1024];
+-
+-    if (!(fp = fopen("/proc/mounts", "r"))) {
++    FILE *fp = setmntent("/proc/mounts", "r");
++    if (fp == NULL) {
+         SLOGE("Error opening /proc/mounts (%s)", strerror(errno));
+         return false;
+     }
+ 
+-    while(fgets(line, sizeof(line), fp)) {
+-        line[strlen(line)-1] = '\0';
+-        sscanf(line, "%255s %255s %255s\n", device, mount_path, rest);
+-        if (!strcmp(mount_path, mp)) {
+-            fclose(fp);
+-            return true;
++    bool found_mp = false;
++    mntent* mentry;
++    while ((mentry = getmntent(fp)) != NULL) {
++        if (strcmp(mentry->mnt_dir, mp) == 0) {
++            found_mp = true;
++            break;
+         }
+     }
+-
+-    fclose(fp);
+-    return false;
++    endmntent(fp);
++    return found_mp;
+ }
+ 
+ int VolumeManager::cleanupAsec(Volume *v, bool force) {
+-- 
+2.5.0
+

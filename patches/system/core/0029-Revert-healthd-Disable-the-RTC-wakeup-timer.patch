@@ -1,0 +1,33 @@
+From b2e5af4275fdc035ecbf6b1e4812c1ecf48af23e Mon Sep 17 00:00:00 2001
+From: Lennart Wieboldt <lennart.1997@gmx.de>
+Date: Thu, 16 Apr 2015 21:02:28 +0200
+Subject: [PATCH 29/52] Revert "healthd: Disable the RTC wakeup timer"
+
+This reverts commit d34d7dcd9cfaf2ff9e16b818993718e65f8ad364.
+---
+ healthd/healthd.cpp | 5 -----
+ 1 file changed, 5 deletions(-)
+
+diff --git a/healthd/healthd.cpp b/healthd/healthd.cpp
+index e172e25..59f3af9 100644
+--- a/healthd/healthd.cpp
++++ b/healthd/healthd.cpp
+@@ -38,15 +38,10 @@
+ using namespace android;
+ 
+ // Periodic chores intervals in seconds
+-#ifdef QCOM_HARDWARE
+ #define DEFAULT_PERIODIC_CHORES_INTERVAL_FAST (60 * 10)
+ //For the designs without low battery detection,need to enable
+ //the default 60*10s wakeup timer to periodic check.
+ #define DEFAULT_PERIODIC_CHORES_INTERVAL_SLOW -1
+-#else
+-#define DEFAULT_PERIODIC_CHORES_INTERVAL_FAST (60 * 1)
+-#define DEFAULT_PERIODIC_CHORES_INTERVAL_SLOW (60 * 10)
+-#endif
+ 
+ static struct healthd_config healthd_config = {
+     .periodic_chores_interval_fast = DEFAULT_PERIODIC_CHORES_INTERVAL_FAST,
+-- 
+2.5.0
+

@@ -1,0 +1,38 @@
+From b4af9d5558465ef9d685037062be63bc953be2ea Mon Sep 17 00:00:00 2001
+From: fsheng <fsheng@codeaurora.org>
+Date: Thu, 22 May 2014 19:25:19 +0800
+Subject: [PATCH 49/52] healthd: Disable the RTC wakeup timer
+
+The timer is used here to avoid battery drained to zero. But the periodic
+wakeup during suspend should not be needed as MSM PMIC already support
+that by trigger interrupt to avoid the critical low battery situation.
+This will save more power. And if the design is not support HW interrupt
+of low battery, need to enable the timer to periodic check.
+
+Change-Id: I040b4bc8548dc59b5e7cacb9a5a8a3557604f458
+---
+ healthd/healthd.cpp | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/healthd/healthd.cpp b/healthd/healthd.cpp
+index e172e25..5a2a066 100644
+--- a/healthd/healthd.cpp
++++ b/healthd/healthd.cpp
+@@ -38,13 +38,12 @@
+ using namespace android;
+ 
+ // Periodic chores intervals in seconds
+-#ifdef QCOM_HARDWARE
+ #define DEFAULT_PERIODIC_CHORES_INTERVAL_FAST (60 * 10)
++#ifdef QCOM_HARDWARE
+ //For the designs without low battery detection,need to enable
+ //the default 60*10s wakeup timer to periodic check.
+ #define DEFAULT_PERIODIC_CHORES_INTERVAL_SLOW -1
+ #else
+-#define DEFAULT_PERIODIC_CHORES_INTERVAL_FAST (60 * 1)
+ #define DEFAULT_PERIODIC_CHORES_INTERVAL_SLOW (60 * 10)
+ #endif
+ 
+-- 
+2.5.0
+

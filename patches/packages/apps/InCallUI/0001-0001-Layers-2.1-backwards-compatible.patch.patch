@@ -1,0 +1,35 @@
+From d0278b0893dbeb734b2a0637773c74aa739cca90 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Tue, 16 Feb 2016 21:39:53 +0700
+Subject: [PATCH 01/11] 0001-Layers-2.1-backwards-compatible.patch
+
+Change-Id: Ie11b278f1a1989fa971ed5aab09a77dd493836f7
+---
+ res/layout/call_card_content.xml | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/res/layout/call_card_content.xml b/res/layout/call_card_content.xml
+index 7a42586..72fb24e 100644
+--- a/res/layout/call_card_content.xml
++++ b/res/layout/call_card_content.xml
+@@ -54,7 +54,7 @@
+             android:textAppearance="?android:attr/textAppearanceMedium"
+             android:visibility="gone"
+             android:padding="@dimen/call_banner_side_padding"
+-            android:background="@android:color/white" />
++            android:background="@color/background_white" />
+ 
+     </LinearLayout>
+ 
+@@ -67,7 +67,7 @@
+         android:gravity="top|center_horizontal"
+         android:scaleType="centerCrop"
+         android:contentDescription="@string/contactPhoto"
+-        android:background="@android:color/white"
++        android:background="@color/background_white"
+         android:src="@drawable/img_no_image_automirrored" />
+ 
+     <!-- Progress spinner, useful for indicating pending operations such as upgrade to video. -->
+-- 
+2.5.0
+

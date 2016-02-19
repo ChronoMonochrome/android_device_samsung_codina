@@ -1,0 +1,33 @@
+From dd5a777bda948f5229bb1e076d30c1f51bf9f000 Mon Sep 17 00:00:00 2001
+From: Pawit Pornkitprasan <p.pawit@gmail.com>
+Date: Sun, 28 Dec 2014 21:18:31 +0700
+Subject: [PATCH 12/17] Dialer: truncate hint text for search box
+
+There's not enough space on hdpi if voice search is enabled.
+Showing truncated text is better than showing truncated 2 lines.
+
+Before: http://imgur.com/aSUJm7X
+After: http://imgur.com/LthsLsh
+
+Change-Id: I2f140b2e61d575ea0c745bd95eb48b9950602316
+Signed-off-by: Chet Kener <Cl3Kener@gmail.com>
+---
+ res/layout/search_edittext.xml | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/res/layout/search_edittext.xml b/res/layout/search_edittext.xml
+index 93a3c75..76cd094 100644
+--- a/res/layout/search_edittext.xml
++++ b/res/layout/search_edittext.xml
+@@ -48,6 +48,8 @@
+                 android:fontFamily="@string/search_font_family"
+                 android:textColorHint="@color/searchbox_hint_text_color"
+                 android:gravity="center_vertical"
++                android:ellipsize="end"
++                android:maxLines="1"
+                 android:hint="@string/dialer_hint_find_contact" />
+ 
+         </LinearLayout>
+-- 
+2.5.0
+

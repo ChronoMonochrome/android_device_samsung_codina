@@ -1,0 +1,51 @@
+From 8b7c09a64f1ef49b27f1ac08ed0c1ec1b0b31e3a Mon Sep 17 00:00:00 2001
+From: CallMeAldy <aldrin.holmes20@gmail.com>
+Date: Thu, 29 Jan 2015 20:26:42 +0100
+Subject: [PATCH 16/17] Layers : Let's split styles.xml in order to make it
+ easier to theme.
+
+Split DialtactsTheme to DialtactsTheme and DialtactsTheme1. Thanks Thyrus.
+
+Change-Id: I21018ea22eae66d791431ac04b159c863f0229b9
+Signed-off-by: CallMeAldy <aldrin.holmes20@gmail.com>
+---
+ res/values/styles.xml | 14 +++++++++-----
+ 1 file changed, 9 insertions(+), 5 deletions(-)
+
+diff --git a/res/values/styles.xml b/res/values/styles.xml
+index 69e1471..01c6d3e 100644
+--- a/res/values/styles.xml
++++ b/res/values/styles.xml
+@@ -15,10 +15,16 @@
+   ~ limitations under the License
+   -->
+ <resources>
+-    <style name="DialtactsTheme"
+-           parent="android:Theme.Material.Light">
++        <!-- Thyrus: Split Dialtacts style  to enable main style to be themeable -->
++    <style name="DialtactsTheme1" parent="@android:style/Theme.Material.Light">
+         <item name="android:textColorPrimary">@color/dialtacts_primary_text_color</item>
+         <item name="android:textColorSecondary">@color/dialtacts_secondary_text_color</item>
++        <item name="android:colorControlActivated">@color/dialer_theme_color</item>
++        <item name="android:colorPrimary">@color/dialer_theme_color</item>
++        <item name="android:colorPrimaryDark">@color/dialer_theme_color_dark</item>
++    </style>		
++
++    <style name="DialtactsTheme" parent="@style/DialtactsTheme1">
+         <item name="android:windowActionBarOverlay">true</item>
+         <item name="android:windowActionModeOverlay">true</item>
+         <item name="android:actionBarStyle">@style/DialtactsActionBarStyle</item>
+@@ -37,9 +43,7 @@
+         <item name="list_item_padding_right">32dp</item>
+         <item name="list_item_padding_bottom">12dp</item>
+         <item name="list_item_padding_left">16dp</item>
+-        <item name="list_item_gap_between_image_and_text">
+-            @dimen/contact_browser_list_item_gap_between_image_and_text
+-        </item>
++        <item name="list_item_gap_between_image_and_text">@dimen/contact_browser_list_item_gap_between_image_and_text</item>
+         <item name="list_item_gap_between_label_and_data">5dip</item>
+         <item name="list_item_presence_icon_margin">4dip</item>
+         <item name="list_item_presence_icon_size">16dip</item>
+-- 
+2.5.0
+

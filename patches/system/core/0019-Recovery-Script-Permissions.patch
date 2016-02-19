@@ -1,0 +1,35 @@
+From 08f9add4062a4df157ef846403bb80797f43d68d Mon Sep 17 00:00:00 2001
+From: Chet Kener <Cl3Kener@gmail.com>
+Date: Fri, 14 Nov 2014 07:29:53 -0500
+Subject: [PATCH 19/52] Recovery Script Permissions
+
+* I'll add these while I'm thinking about it
+
+Signed-off-by: Chet Kener <Cl3Kener@gmail.com>
+---
+ include/private/android_filesystem_config.h | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/include/private/android_filesystem_config.h b/include/private/android_filesystem_config.h
+index 44cb4ba..27c9ac5 100644
+--- a/include/private/android_filesystem_config.h
++++ b/include/private/android_filesystem_config.h
+@@ -234,6 +234,7 @@ static const struct fs_path_config android_dirs[] = {
+     { 00775, AID_MEDIA_RW, AID_MEDIA_RW, 0, "data/media/Music" },
+     { 00771, AID_SYSTEM, AID_SYSTEM, 0, "data" },
+     { 00750, AID_ROOT,   AID_SHELL,  0, "sbin" },
++    { 00755, AID_ROOT,   AID_ROOT,   0, "system/addon.d" },
+     { 00755, AID_ROOT,   AID_SHELL,  0, "system/bin" },
+     { 00755, AID_ROOT,   AID_SHELL,  0, "system/vendor" },
+     { 00755, AID_ROOT,   AID_SHELL,  0, "system/xbin" },
+@@ -260,6 +261,7 @@ static const struct fs_path_config android_files[] = {
+     { 00444, AID_RADIO,     AID_AUDIO,     0, "system/etc/AudioPara4.csv" },
+     { 00555, AID_ROOT,      AID_ROOT,      0, "system/etc/ppp/*" },
+     { 00555, AID_ROOT,      AID_ROOT,      0, "system/etc/rc.*" },
++    { 00755, AID_ROOT,      AID_ROOT,      0, "system/addon.d/*" },
+     { 00644, AID_SYSTEM,    AID_SYSTEM,    0, "data/app/*" },
+     { 00644, AID_MEDIA_RW,  AID_MEDIA_RW,  0, "data/media/*" },
+     { 00644, AID_SYSTEM,    AID_SYSTEM,    0, "data/app-private/*" },
+-- 
+2.5.0
+

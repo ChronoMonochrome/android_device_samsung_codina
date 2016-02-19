@@ -1,0 +1,69 @@
+From d90cf3e0e3df91db03ec29e350e74527e53a66f1 Mon Sep 17 00:00:00 2001
+From: Hamster Tian <haotia@gmail.com>
+Date: Sun, 23 Nov 2014 20:01:35 +0800
+Subject: [PATCH 02/17] Dialer: replace the blurry background picture of
+ overflow button
+
+Resized from xxhdpi resource. I'm wondering why the one in AOSP is
+so blurry...
+
+Change-Id: I5e0e3aa262df88dd2cff91397e7efaf0f496ecc5
+Signed-off-by: Chet Kener <Cl3Kener@gmail.com>
+---
+ res/drawable-xhdpi/overflow_thumbnail.png | Bin 1388 -> 1066 bytes
+ 1 file changed, 0 insertions(+), 0 deletions(-)
+
+diff --git a/res/drawable-xhdpi/overflow_thumbnail.png b/res/drawable-xhdpi/overflow_thumbnail.png
+index e538b9894981c453404bb59f62a13229e1feaef9..9e5d67d4cd6f0383ce5d7b3717fa8d4f3b66ed04 100644
+GIT binary patch
+delta 941
+zcmV;e15*6#3aSW@83+Ub0001BxmA%NOn(AmOGiWi|A&vvzW@LL32;bRa{vGf6951U
+z69E94oEQKA10zX9K~!ko?U&DM6;~9;KX+#C%*&6L#JsAhR;4tRbWvLbEeS|V>89N%
+zxGV^+#FZQW0ZVu7s%xQip&-&9p_Hl^3AVJ=R%o?0tp*aPFY)F1Ud+7r=KY#Cw||QS
+z$L%`<1BLnS=D<DYd+*$PJ{-uDDO09Qnf~uG3D>IxD-{Y$*``N?!N|Nw4Jd5SJAe4?
+zWBENn>9=oB{#Xs@B|eTm$~$U!_C&B`j4{TvR_4#-M{p9HXP>h0jvXxhYM#ko{BW89
+zEJ-Sv0sZEI{8Svsy)-jJE<FPZ*MA?xi35?<$m6AHz?myQdK?F8wQrWNQT^WnnE^0&
+zm(R~VZEk)vx}VS8dPq<56m6ja8|Rm`f128R(!RIy>6OpE4F6?=Hc|hFDUpTCC_9;O
+zb`OmOez!=8$869_%K+Hq7-p1VG$D0-YP2M+C_yJg<Kbcv(V<OO)(Mla0Dmkj6b7?J
+z17Vs37K{N<3NaR?uK+CU54IO(Hr`s;qk=!02{s}u@0~qRywF<hbvotJSD#EPFTrN|
+zmcpIf``}^>qvF-WlX#LJDut1A{NTj9aiB1BbQ;kaNDa7pmpk@cz#E@T7e@MitJa7E
+zVR+{$I!zc^SC?-79zA<{w}1b>^p`A=?B*(T*Z$exJ+W&%QbFg&!kI6M_t>CGum4n{
+z{WCy;7xk-CufM#rSpD;E`yoXt1Zf#iI1I9l0;9Ne@u{#*gKl~-varc9$N&yKngp~6
+z`-gEd7+E;jSQtWjQXD0O5umop3Ss2Pma#dS+3%0M;*~m=eL}efX@7Y=HGbnn>FfHP
+z@^?R-dS?Ph+*3s59X&dKwpHCkQOCdiaiM@tb2Q7HJW^hWX;@!9{T@SUj%Mz@{rSCd
+zz#V_%P`WhKB{zKT(nYM<xLE1I$iBY1T#P>})k}-ATrwD0c<WU4q1VO+0M`7EE`LAI
+zx&%g28rnGbD?e18gjFlSwFl>BXRk#?{4_^1%?K~BL+!AKqE=L*%o;wO{td`Fp&_J>
+zp>3+6CZs`)I$@eD*hG=u8qK<N2#L~%k=nZXMpisirc9YK0sIGl5j|bK)~xfB{sb8q
+zF)=MMHB>P<IxsLgGB+zQI65#eF%FvslP?7tBQ`BDHB>M&Ix;mnH8U$PI65#eh?Prd
+P00000NkvXXu0mjf_BFEa
+
+delta 1266
+zcmV<O1P%MD2<!@w83+ad0063Kao&+3On(MqOGiWi{{a60|De66lK=n!32;bRa{vGf
+z6951U69E94oEQKA1Yt=;K~#9!?V3Gk8)q1RpF2rsyRzLRE@_FIkU(t*T7eOA_lDv%
+zUP_k?nd+fqy%f5%kfEexaKX^lwQCH8cn}B=A&tpmus2f$(`M+8B@{`Kl#9-PQh!hP
+z)8W%KB1oO;@5=ceI6eyw^nUNXdi6f~3?U&QAt50lAt50lAt9%ah)?gU0#P6~Gcz;L
+zY&N6ydL2LkT)&fY(nJ7ldwV-oE|)(#I5_xH*Y(dbnatS8$jCrDIf~ywp4jFSiNv`_
+zj~;#Ky6#_Y2exfL*LD2|U=Yy!4uA9{PyuaeY3bcst@fkag;uLozJC4sn?RfZRzVCH
+z&StZpo2IF|Jy>5~zX80Cr2eEzOn?GJEX(RcG{CNyra90~mXr#RnE(}tWHOn@Po6y4
+z?RG<})oRYq&;O2i`iiV1$f6H8H!(5sUOJur+I3y$r6y?Qa=D)sMM(k|`G1!x`7e<<
+z2Pgo~o;_3V-o3jQkH?K>v$=nKeB8+8a(j2~+*zEPn_DvsBL^G;4J6D2GD}QFe74U6
+zXH`|bGCn?jerjs!La9_b+}POo6?hK(2^_VP5U2!rN$781XWOd=IDmn8>ITpPY#9Mb
+z`J8p&v^VD>k{@fw-~dg)1b?jdYbp5IWxbKtoBum6Y4{~WowyyVbP<v{2Y5sP?ZJZw
+zSM&M&2laaW(@LfC@$&NWD559$5tB3&pzr3*o39y$@ttX!S;uh>Ez2ratJN<aK75!$
+z^o2ksK>=b53k#E#O6B_=GL*k|?b-$46#_a6M<*vIC*$$>RJR+V(SPXZ%*@PX#8+eB
+z5)c9U`}_N^#$vI{z2doa>C)Q>9hMTCY#UT{U2mACdDQEsd_Lbm%m#s!p^;=V`To6o
+z_rC4Y0_<Y3_=~1#DTEA3QDT`D-~#r}&Q5)0Wo28}^{1}u{xk6v3WeY9-@pHpX_`&M
+zG$>^*@I!{)0L~5#4S&6rOeRNDsnlq#Ry$f<UEOgUM+g2uh*02UNI^8hGl(BPM-k0#
+z0P)0Yz&=nyctKNEP_pp^Xt3jN7dS@9Py-=DQiRBl1b7mpAu2*`C!p2d^r^8yrDN?B
+zB42`#joNW}39#F%w5RU}3eYz_J$**k^{*O@#-?RiMbk7N7k`VzPcoUzI|NvU03w5f
+zgTq@}Thq2}*IyE$y;7-k3n4-=zXLsy%>x6Qo0~Td4-a>G91K~vZ{MB*UL}AsqyW+3
+z;o&Qqrd{lnq_MHFD~NB1z{yYq&~#mowpy*8jjmiS_alZQDaYipD?r)Z-7Oo2QR;Ss
+z<2csF#>P__8-Mo$4KW6%W@l$-_xJbp&f~F4rIK4)Tl)q`02c`8(U=Ovv)ODjkw^?V
+zj?=Pj+pSism2^72zPPx!RVWnp5GO;&1W<;eh$<KYynlq~lpzBsB78uK4Eb>`pzvbq
+zYx3eaOa~4S8ti$2lwf4zjldeBB0L!~+le_9GUW9GZyNO+An+~_5)u*;5)u*;@_*rP
+zH3>okxoG0Fle_~N7%(y|F)~y!HaajeIy5jXFgQ9eF#OUFfRpV58Y40-F)~y!Haajd
+cIx#dYFgQ9eFxnR;NB{r;07*qoM6N<$f<}8lVE_OC
+
+-- 
+2.5.0
+

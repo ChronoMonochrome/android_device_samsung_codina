@@ -1,0 +1,61 @@
+From a4eb1bb0a75f1e6a07f195c384ba32a365724575 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Tue, 16 Feb 2016 21:39:54 +0700
+Subject: [PATCH 13/52] 
+ system-core_init-Re-introduce-lpm_boot-for-offline-charging02.patch
+
+Change-Id: I3aa1d6b820064870eabddc6e415c575ac529ce6a
+---
+ init/init.c | 15 ++++++++++++++-
+ 1 file changed, 14 insertions(+), 1 deletion(-)
+
+diff --git a/init/init.c b/init/init.c
+index ef64d2d..3081dfb 100644
+--- a/init/init.c
++++ b/init/init.c
+@@ -73,6 +73,11 @@ static int   bootchart_count;
+ #define BOARD_CHARGING_CMDLINE_VALUE "true"
+ #endif
+ 
++#ifndef BOARD_LPM_BOOT_ARGUMENT_NAME
++#define BOARD_LPM_BOOT_ARGUMENT_NAME "lpm_boot"
++#define BOARD_LPM_BOOT_ARGUMENT_VALUE "1"
++#endif
++
+ static char console[32];
+ static char bootmode[32];
+ static char hardware[32];
+@@ -100,6 +105,8 @@ static time_t process_needs_restart;
+ 
+ static const char *ENV[32];
+ 
++static unsigned lpm_bootmode = 0;
++
+ static unsigned charging_mode = 0;
+ 
+ /* add_environment - add "key=value" to the current environment */
+@@ -743,6 +750,12 @@ static void import_kernel_nv(char *name, int for_emulator)
+ 
+     if (!strcmp(name,"qemu")) {
+         strlcpy(qemu, value, sizeof(qemu));
++#ifdef BOARD_LPM_BOOT_ARGUMENT_NAME
++    } else if (!strcmp(name,BOARD_LPM_BOOT_ARGUMENT_NAME)) {
++        if (!strcmp(value,BOARD_LPM_BOOT_ARGUMENT_VALUE)) {
++            lpm_bootmode = 1;
++        }
++#endif
+     } else if (!strcmp(name,BOARD_CHARGING_CMDLINE_NAME)) {
+         strlcpy(battchg_pause, value, sizeof(battchg_pause));
+     } else if (!strncmp(name, "androidboot.", 12) && name_len > 12) {
+@@ -995,7 +1008,7 @@ static void selinux_initialize(void)
+ static int charging_mode_booting(void)
+ {
+ #ifndef BOARD_CHARGING_MODE_BOOTING_LPM
+-    return 0;
++    return lpm_bootmode;
+ #else
+     int f;
+     char cmb;
+-- 
+2.5.0
+

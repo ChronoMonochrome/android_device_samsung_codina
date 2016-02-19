@@ -1,0 +1,26 @@
+From 6840d8d5ee1c8f7e5d64a845015bdf2d794552be Mon Sep 17 00:00:00 2001
+From: Gopal G Goberu <ggober@codeaurora.org>
+Date: Tue, 5 Aug 2014 16:42:17 +0530
+Subject: [PATCH 02/29] Add macro SK_SUPPORT_LEGACY_SETCONFIG
+
+Change-Id: I7ea50c55bb0fa64e966741926195135d9c1bac00
+Signed-off-by: Chet Kener <Cl3Kener@gmail.com>
+---
+ include/core/SkUserConfig.h | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/include/core/SkUserConfig.h b/include/core/SkUserConfig.h
+index 06b3b43..3f6f614 100644
+--- a/include/core/SkUserConfig.h
++++ b/include/core/SkUserConfig.h
+@@ -230,6 +230,7 @@
+ #define SK_DEFAULT_GLOBAL_DISCARDABLE_MEMORY_POOL_SIZE (512 * 1024)
+ #define SK_IGNORE_ETC1_SUPPORT
+ #define SK_SUPPORT_LEGACY_BITMAP_CONFIG
++#define SK_SUPPORT_LEGACY_SETCONFIG
+ #define SK_BUILD_FOR_ANDROID
+ #define SK_FONTHOST_DOES_NOT_USE_FONTMGR
+ #define SK_GAMMA_EXPONENT 1.4
+-- 
+2.5.0
+

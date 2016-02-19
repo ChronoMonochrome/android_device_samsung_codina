@@ -1,0 +1,28 @@
+From 01d2f24bea06c103950373f039d0e19d43e55d55 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Tue, 16 Feb 2016 21:39:28 +0700
+Subject: [PATCH 1/2] art_0001-Extend-kWatchDogTimeoutSeconds-to-1-hour.patch
+
+Change-Id: I31e9b288218ced755ad0c677838641ab85f70659
+---
+ dex2oat/dex2oat.cc | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/dex2oat/dex2oat.cc b/dex2oat/dex2oat.cc
+index 2ad3577..529675b 100644
+--- a/dex2oat/dex2oat.cc
++++ b/dex2oat/dex2oat.cc
+@@ -713,8 +713,8 @@ class WatchDog {
+   // 30 minutes scaled by kSlowdownFactor.
+   static const unsigned int kWatchDogTimeoutSeconds = kSlowdownFactor * 30 * 60;
+ #else
+-  // 6 minutes scaled by kSlowdownFactor.
+-  static const unsigned int kWatchDogTimeoutSeconds = kSlowdownFactor * 6 * 60;
++  // 60 minutes scaled by kSlowdownFactor.
++  static const unsigned int kWatchDogTimeoutSeconds = kSlowdownFactor * 60 * 60;
+ #endif
+ 
+   bool is_watch_dog_enabled_;
+-- 
+2.5.0
+

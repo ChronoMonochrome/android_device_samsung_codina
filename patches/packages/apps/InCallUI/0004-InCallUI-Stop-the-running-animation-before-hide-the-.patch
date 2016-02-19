@@ -1,0 +1,41 @@
+From a6f8ddb53e6bb4b6136800debcb65e4ee1eeb1e8 Mon Sep 17 00:00:00 2001
+From: kaiyiz <kaiyiz@codeaurora.org>
+Date: Thu, 23 Oct 2014 10:17:49 +0800
+Subject: [PATCH 04/11] InCallUI: Stop the running animation before hide the
+ icon
+
+There is a running alpha animation on the state icon,
+so it can be shown.
+
+Before hide the state icon, clear it's animation firstly
+and do not start animation unless it is visible.
+
+CRs-Fixed: 741096
+
+Change-Id: Id14d9f6e8e5d968b9d0497945833f7e6e78e1b06
+Signed-off-by: Chet Kener <Cl3Kener@gmail.com>
+
+Conflicts:
+	src/com/android/incallui/CallCardFragment.java
+
+Signed-off-by: Chet Kener <Cl3Kener@gmail.com>
+---
+ src/com/android/incallui/CallCardFragment.java | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/com/android/incallui/CallCardFragment.java b/src/com/android/incallui/CallCardFragment.java
+index 4fa9d7e..4c8ad9a 100644
+--- a/src/com/android/incallui/CallCardFragment.java
++++ b/src/com/android/incallui/CallCardFragment.java
+@@ -515,7 +515,7 @@ public class CallCardFragment extends BaseFragment<CallCardPresenter, CallCardPr
+             mCallStateLabel.setAlpha(1);
+             mCallStateLabel.setVisibility(View.VISIBLE);
+ 
+-            if (state == Call.State.ACTIVE || state == Call.State.CONFERENCED) {
++	if (state == Call.State.ACTIVE || state == Call.State.CONFERENCED) {
+                 mCallStateLabel.clearAnimation();
+             } else {
+                 mCallStateLabel.startAnimation(mPulseAnimation);
+-- 
+2.5.0
+

@@ -1,0 +1,45 @@
+From 2e396725dadbffc3939212045a0308f4fe76208a Mon Sep 17 00:00:00 2001
+From: Altaf-Mahdi <altaf.mahdi@gmail.com>
+Date: Sun, 14 Dec 2014 00:00:31 +0000
+Subject: [PATCH 11/17] Dialer: fix NPE in ReverseLookupService.doLookup
+
+-also little fix in coding style
+
+Signed-off-by: Chet Kener <Cl3Kener@gmail.com>
+---
+ src/com/android/dialer/lookup/ReverseLookupService.java           | 5 +++++
+ src/com/android/dialer/lookup/opencnam/OpenCnamReverseLookup.java | 2 +-
+ 2 files changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/src/com/android/dialer/lookup/ReverseLookupService.java b/src/com/android/dialer/lookup/ReverseLookupService.java
+index 25c3f4a..f547c50 100644
+--- a/src/com/android/dialer/lookup/ReverseLookupService.java
++++ b/src/com/android/dialer/lookup/ReverseLookupService.java
+@@ -120,6 +120,11 @@ public class ReverseLookupService implements PhoneNumberService, Handler.Callbac
+     private ContactInfo doLookup(LookupRequest request) {
+         final String number = request.normalizedNumber;
+ 
++        // Can't do reverse lookup without a number
++        if (request.normalizedNumber == null || request.formattedNumber == null) {
++            return null;
++        }
++
+         if (LookupCache.hasCachedContact(mContext, number)) {
+             ContactInfo info = LookupCache.getCachedContact(mContext, number);
+             if (!ContactInfo.EMPTY.equals(info)) {
+diff --git a/src/com/android/dialer/lookup/opencnam/OpenCnamReverseLookup.java b/src/com/android/dialer/lookup/opencnam/OpenCnamReverseLookup.java
+index 9dafab7..649be10 100644
+--- a/src/com/android/dialer/lookup/opencnam/OpenCnamReverseLookup.java
++++ b/src/com/android/dialer/lookup/opencnam/OpenCnamReverseLookup.java
+@@ -57,7 +57,7 @@ public class OpenCnamReverseLookup extends ReverseLookup {
+      */
+     public ContactInfo lookupNumber(Context context,
+             String normalizedNumber, String formattedNumber) throws IOException {
+-        if (normalizedNumber.startsWith("+") &&!normalizedNumber.startsWith("+1")) {
++        if (normalizedNumber.startsWith("+") && !normalizedNumber.startsWith("+1")) {
+             // Any non-US number will return "We currently accept only US numbers"
+             return null;
+         }
+-- 
+2.5.0
+

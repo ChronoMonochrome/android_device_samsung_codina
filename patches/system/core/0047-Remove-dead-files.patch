@@ -1,0 +1,111 @@
+From d2ff5aa893f6997b8e0c39966a62e8e1760303cc Mon Sep 17 00:00:00 2001
+From: Elliott Hughes <enh@google.com>
+Date: Mon, 11 May 2015 21:57:33 -0700
+Subject: [PATCH 47/52] Remove dead files.
+
+Auto-imported from cupcake, not touched since then, or used anyway.
+
+Change-Id: If2d50cddff0238dff818c7bae92fe8e1100fccdf
+---
+ fastboot/engineering_key.p12 | Bin 2610 -> 0 bytes
+ fastboot/p12topem.sh         |   9 ---------
+ fastboot/signfile.sh         |  10 ----------
+ 3 files changed, 19 deletions(-)
+ delete mode 100644 fastboot/engineering_key.p12
+ delete mode 100755 fastboot/p12topem.sh
+ delete mode 100755 fastboot/signfile.sh
+
+diff --git a/fastboot/engineering_key.p12 b/fastboot/engineering_key.p12
+deleted file mode 100644
+index d8183b055d375152f557fdfe3d593f4f444b51e8..0000000000000000000000000000000000000000
+GIT binary patch
+literal 0
+HcmV?d00001
+
+literal 2610
+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
+HH=+LmTtL!p
+
+diff --git a/fastboot/p12topem.sh b/fastboot/p12topem.sh
+deleted file mode 100755
+index f081eb5..0000000
+--- a/fastboot/p12topem.sh
++++ /dev/null
+@@ -1,9 +0,0 @@
+-#!/bin/bash
+-
+-if [ $# -ne 2 ]
+-then
+- echo "Usage: $0 alias passphrase"
+- exit -1
+-fi
+-
+-openssl pkcs12 -passin pass:"$2" -passout pass:"$2" -in $1.p12 -out $1.pem
+diff --git a/fastboot/signfile.sh b/fastboot/signfile.sh
+deleted file mode 100755
+index 3188d2d..0000000
+--- a/fastboot/signfile.sh
++++ /dev/null
+@@ -1,10 +0,0 @@
+-#!/bin/bash
+-
+-if [ $# -ne 3 ]
+-then
+- echo "Usage: $0 alias filename passpharse"
+- exit -1
+-fi
+-
+-openssl dgst -passin pass:"$3" -binary -sha1 -sign $1.pem $2 > $2.sign
+-
+-- 
+2.5.0
+

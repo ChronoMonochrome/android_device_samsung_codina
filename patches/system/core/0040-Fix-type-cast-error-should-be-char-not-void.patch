@@ -1,0 +1,27 @@
+From 4b9908b22c330306b8f5e1d02dc79841f300f5bf Mon Sep 17 00:00:00 2001
+From: Chih-Hung Hsieh <chh@google.com>
+Date: Thu, 23 Oct 2014 15:25:28 -0700
+Subject: [PATCH 40/52] Fix type cast error, should be char* not void*.
+
+BUG: 18106835
+Change-Id: Ic0051d5035e5684de0091cd3528d65e1b1e57161
+---
+ libpixelflinger/tests/arch-arm64/assembler/arm64_assembler_test.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/libpixelflinger/tests/arch-arm64/assembler/arm64_assembler_test.cpp b/libpixelflinger/tests/arch-arm64/assembler/arm64_assembler_test.cpp
+index 456be58..fd96f7e 100644
+--- a/libpixelflinger/tests/arch-arm64/assembler/arm64_assembler_test.cpp
++++ b/libpixelflinger/tests/arch-arm64/assembler/arm64_assembler_test.cpp
+@@ -409,7 +409,7 @@ void flushcache()
+ {
+     const long base = long(instrMem);
+     const long curr = base + long(instrMemSize);
+-    __builtin___clear_cache((void*)base, (void*)curr);
++    __builtin___clear_cache((char*)base, (char*)curr);
+ }
+ void dataOpTest(dataOpTest_t test, ARMAssemblerInterface *a64asm, uint32_t Rd = 0,
+                 uint32_t Rn = 1, uint32_t Rm = 2, uint32_t Rs = 3)
+-- 
+2.5.0
+

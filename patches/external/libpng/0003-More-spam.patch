@@ -1,0 +1,33 @@
+From 7b60aac95057f1739620ca44e970af75b99ed5b3 Mon Sep 17 00:00:00 2001
+From: deadman96385 <seanhoyt963@gmail.com>
+Date: Fri, 20 Feb 2015 23:35:44 -0500
+Subject: [PATCH 3/3] More spam
+
+Change-Id: I560be48870d403d521ac32b17f8d34f5b712e465
+Signed-off-by: Chet Kener <Cl3Kener@gmail.com>
+---
+ png.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/png.c b/png.c
+index 41a18d1..bd9c7bf 100644
+--- a/png.c
++++ b/png.c
+@@ -1854,12 +1854,12 @@ png_colorspace_set_sRGB(png_const_structrp png_ptr, png_colorspacerp colorspace,
+ 
+    /* If the standard sRGB cHRM chunk does not match the one from the PNG file
+     * warn but overwrite the value with the correct one.
+-    */
++    
+    if ((colorspace->flags & PNG_COLORSPACE_HAVE_ENDPOINTS) != 0 &&
+       !png_colorspace_endpoints_match(&sRGB_xy, &colorspace->end_points_xy,
+          100))
+       png_chunk_report(png_ptr, "cHRM chunk does not match sRGB",
+-         PNG_CHUNK_ERROR);
++         PNG_CHUNK_ERROR); */
+ 
+    /* This check is just done for the error reporting - the routine always
+     * returns true when the 'from' argument corresponds to sRGB (2).
+-- 
+2.5.0
+

@@ -1,0 +1,183 @@
+From 3cd33d9ffc53d0903b7891906484518882e1d0f6 Mon Sep 17 00:00:00 2001
+From: Xiao-Long Chen <chenxiaolong@cxl.epac.to>
+Date: Wed, 12 Nov 2014 17:01:47 -0800
+Subject: [PATCH 04/17] Dialer lookup.
+
+Squashed commit of the following:
+
+commit 934fbc79312a7cb0a4bd821d80af3b87f27c5beb
+Author: Xiao-Long Chen <chenxiaolong@cxl.epac.to>
+Date:   Sun Feb 23 14:33:41 2014 -0500
+
+    New API
+
+    Change-Id: I0822407bb808382da56146ecf7e52cacb7cb8613
+
+commit 4e81f04c716fead182cb453791d4a77f7eb54a89
+Author: Xiao-Long Chen <chenxiaolong@cxl.epac.to>
+Date:   Sat Feb 15 21:04:15 2014 -0500
+
+    My old email is gone
+
+    Change-Id: Icfeccd195b9fbd269dc3400194dd42f215859049
+
+commit 8a01ae35f9696275f1f156ea0486b1164a8d205e
+Author: Xiao-Long Chen <chenxiaolong@cxl.epac.to>
+Date:   Sat Feb 15 15:12:55 2014 -0500
+
+    Dialer: Upgrade path for Google reverse lookup
+
+    Change-Id: I9e02beff958ed529f2520ac7023730392500606a
+
+commit c0f2fae26eea774c1a5e5eae7d6ba97be32f16cc
+Author: Xiao-Long Chen <chenxiaolong@cxl.epac.to>
+Date:   Sat Feb 15 13:38:56 2014 -0500
+
+    [1/2] Remove Google Reverse Lookup: Auth may violate terms of service
+
+    Change-Id: I2055770a43163cb2020daec6707fd45f0577584b
+
+commit 8804367536eb38eb917c61172d9e4b6406b59c44
+Author: Xiao-Long Chen <chenxiaolong@cxl.epac.to>
+Date:   Tue Feb 11 19:11:10 2014 -0500
+
+    [2/2] Dialer: Add YellowPages Canada reverse lookup provider
+
+    Change-Id: I07ca3932d024a5c834c25e23b2e16094ed1f974e
+
+commit cdf5c18588b4b0e2ed0f12b5912c7ae90b51120a
+Author: Xiao-Long Chen <chenxiaolong@cxl.epac.to>
+Date:   Tue Feb 11 12:27:53 2014 -0500
+
+    Nitpicks.
+
+    Change-Id: If8ce155246beb5395d81db8ab432046181b6d97f
+
+commit 79aeb53db82c75adbb90f8f152e5d66d95706314
+Author: Xiao-Long Chen <chenxiaolong@cxl.epac.to>
+Date:   Tue Feb 11 00:20:50 2014 -0500
+
+    [2/2] Dialer: Add WhitePages Canada reverse lookup provider
+
+    Change-Id: Ie4d5302945c39efca9f4b5fbf6dee9a63ec24184
+
+commit c6fe12ffe357f209c2723c2c16aa6b853494a477
+Author: Xiao-Long Chen <chenxiaolong@cxl.epac.to>
+Date:   Mon Feb 10 12:02:59 2014 -0500
+
+    Dialer: Use PackageManager to detect of Google Play Services is installed
+
+    Change-Id: I7b39867c0e8ec79c6c02c731ac27f78663358910
+
+commit 9787c0b312df649840b55fbd35f5a6d87fceb5bb
+Author: Xiao-Long Chen <chenxiaolong@cxl.epac.to>
+Date:   Fri Jan 31 22:41:09 2014 -0500
+
+    Dialer: Add support for forward and reverse lookups
+
+    Change-Id: I848db0bbbe6a648064d1eace4993814a16aa9fa0
+
+Change-Id: Iec295b05d72680f770367fcaf1dae9ec68b3d6e9
+
+commit 71b121d082d777e54f7fc02338b609cbfc31ff9c
+Author: Xiao-Long Chen <chenxiaolong@cxl.epac.to>
+Date:   Sat Mar 22 15:32:10 2014 -0400
+
+    Dialer: Add support for OpenCNAM paid accounts
+
+    Change-Id: I09c67eed706311a40569617980585a357f1d74aa
+
+commit 50cc4c8615d99e92a481981289ff9a7ec83b4c04
+Author: Ricardo Cerqueira <cyanogenmod@cerqueira.org>
+Date:   Mon Jun 2 13:31:15 2014 -0700
+
+    ReverseLookup: Don't return OpenCNAM errors as caller IDs
+
+    Skip the API entirely for non-US numbers, and ignore any non-200
+    bodies to avoid names of the "Limit Exceeded" variety
+
+    PS2: Use constant from HttpStatus and don't check for null on normalizedNumber
+    Change-Id: I1ea107ba828e6dba44fa0828ad5fedecb8faf4de
+
+commit 7fde43587525973b2172123c8696d06f2fd67e37
+Author: Dan Pasanen <dan.pasanen@gmail.com>
+Date:   Mon Jun 2 17:08:18 2014 -0500
+
+    OpenCnameReverseLookup: fix import class
+
+    Change-Id: Ib10877aecbdc1e07f8912e1ce35df6e8a112f131
+
+commit 6605b6292df97b66785a06927d7bcd28c217d121
+Author: Adnan <adnan@cyngn.com>
+Date:   Tue Jun 10 19:02:33 2014 -0700
+
+    Chinese Location Lookup [1/2] Dialer: Chinese Reverse Lookup
+
+        PS6: Add static integers for reference
+
+    Change-Id: I22ede59cfa8785ac04ad1b1f19d1c69e24b9fb89
+
+commit cff06b01e0a4c4487d69be7f21de1ddb7f663f38
+Author: Danny Baumann <dannybaumann@web.de>
+Date:   Wed Aug 27 09:04:14 2014 +0200
+
+    Add reverse lookup provider "Das Telefonbuch" (DE).
+
+    Change-Id: I0ad72bb3e57da3d27fb1c50c58c112234c39b585
+
+commit 887609d1f6d00d883783e9d03bf16b24e716e234
+Author: Danny Baumann <dannybaumann@web.de>
+Date:   Wed Sep 3 09:09:19 2014 +0200
+
+    Refine regexes for Das Telefonbuch.
+
+    Looks like private and business numbers have a slightly differing
+    format.
+
+    Change-Id: I7eae982fe81cf890686f49b88417e604ba0171a0
+
+commit e64d747e3ae87cc6ddf83b96882e7bcad6ebcd31
+Author: Danny Baumann <dannybaumann@web.de>
+Date:   Thu Oct 2 12:55:23 2014 +0200
+
+    Code cleanup.
+
+    Avoid repetetive boilerplate code by using helper methods.
+
+    Change-Id: Id3ce8d07d35d59c08cbc67fa35bbf6daa67c9608
+
+commit c10bafdd9bab3af4e9dca4fae749fd0ab2202acd
+Author: Adnan <adnan@cyngn.com>
+Date:   Wed Oct 1 17:13:14 2014 -0700
+
+    Dialer: Scrub debug logging for identifiable information.
+
+    Change-Id: I2b45ec7c37a7f69c972feb3dde1eac87306259f6
+
+Change-Id: I4445ac7a3aa7f60a912fe33dde1eac87306259f2
+Signed-off-by: Chet Kener <Cl3Kener@gmail.com>
+
+Conflicts:
+	res/values/strings.xml
+
+Signed-off-by: Chet Kener <Cl3Kener@gmail.com>
+---
+ res/values/strings.xml | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/res/values/strings.xml b/res/values/strings.xml
+index 5d06852..53c70ab 100644
+--- a/res/values/strings.xml
++++ b/res/values/strings.xml
+@@ -722,4 +722,8 @@
+ 
+     <!-- Label for the phone account settings [CHAR LIMIT=30] -->
+     <string name="phone_account_settings_label">Calling accounts</string>
++
++    <!-- Forward lookup -->
++    <string name="nearby_places">Nearby places</string>
++    <string name="people">People</string>
+ </resources>
+-- 
+2.5.0
+

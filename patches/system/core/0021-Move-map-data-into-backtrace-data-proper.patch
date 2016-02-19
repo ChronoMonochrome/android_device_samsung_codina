@@ -1,0 +1,343 @@
+From e1263322c8df9d42deb57cdca6c5124f0be941de Mon Sep 17 00:00:00 2001
+From: Christopher Ferris <cferris@google.com>
+Date: Fri, 6 Feb 2015 13:22:01 -0800
+Subject: [PATCH 21/52] Move map data into backtrace data proper.
+
+The backtrace structure used to include a pointer to a backtrace_map_t
+that represented the map data for a particular pc. This introduced a
+race condition where the pointer could be discarded, but the backtrace
+structure still contained a pointer to garbage memory. Now all of the map
+information is right in the structure.
+
+Bug: 19028453
+Change-Id: If7088a73f3c6bf1f3bc8cdd2bb4b62e7cab831c0
+Signed-off-by: Chet Kener <Cl3Kener@gmail.com>
+---
+ debuggerd/tombstone.cpp          |  7 ++++---
+ include/backtrace/Backtrace.h    |  6 +++---
+ include/backtrace/BacktraceMap.h | 17 ++++++++++++-----
+ libbacktrace/BacktraceImpl.cpp   | 17 +++++++++--------
+ libbacktrace/BacktraceImpl.h     |  4 ++--
+ libbacktrace/BacktraceMap.cpp    |  7 ++++---
+ libbacktrace/UnwindCurrent.cpp   |  3 +--
+ libbacktrace/UnwindMap.cpp       |  9 ++++-----
+ libbacktrace/UnwindMap.h         |  2 +-
+ libbacktrace/UnwindPtrace.cpp    |  2 +-
+ libbacktrace/backtrace_test.cpp  | 34 ++++++++++++++++++++++++----------
+ 11 files changed, 65 insertions(+), 43 deletions(-)
+
+diff --git a/debuggerd/tombstone.cpp b/debuggerd/tombstone.cpp
+index 4234fae..e8d7153 100644
+--- a/debuggerd/tombstone.cpp
++++ b/debuggerd/tombstone.cpp
+@@ -239,12 +239,13 @@ static void dump_stack_segment(
+       break;
+     }
+ 
+-    const backtrace_map_t* map = backtrace->FindMap(stack_content);
++    backtrace_map_t map;
++    backtrace->FillInMap(stack_content, &map);
+     const char* map_name;
+-    if (!map) {
++    if (BacktraceMap::IsValid(map)) {
+       map_name = "";
+     } else {
+-      map_name = map->name.c_str();
++      map_name = map.name.c_str();
+     }
+     uintptr_t offset = 0;
+     std::string func_name(backtrace->GetFunctionName(stack_content, &offset));
+diff --git a/include/backtrace/Backtrace.h b/include/backtrace/Backtrace.h
+index e07d322..e2d718b 100644
+--- a/include/backtrace/Backtrace.h
++++ b/include/backtrace/Backtrace.h
+@@ -39,7 +39,7 @@ struct backtrace_frame_data_t {
+   uintptr_t pc;           // The absolute pc.
+   uintptr_t sp;           // The top of the stack.
+   size_t stack_size;      // The size of the stack, zero indicate an unknown stack size.
+-  const backtrace_map_t* map;   // The map associated with the given pc.
++  backtrace_map_t map;    // The map associated with the given pc.
+   std::string func_name;  // The function name associated with this pc, NULL if not found.
+   uintptr_t func_offset;  // pc relative to the start of the function, only valid if func_name is not NULL.
+ };
+@@ -78,8 +78,8 @@ public:
+   // If the string is empty, then no valid function name was found.
+   virtual std::string GetFunctionName(uintptr_t pc, uintptr_t* offset);
+ 
+-  // Find the map associated with the given pc.
+-  virtual const backtrace_map_t* FindMap(uintptr_t pc);
++  // Fill in the map data associated with the given pc.
++  virtual void FillInMap(uintptr_t pc, backtrace_map_t* map);
+ 
+   // Read the data at a specific address.
+   virtual bool ReadWord(uintptr_t ptr, word_t* out_value) = 0;
+diff --git a/include/backtrace/BacktraceMap.h b/include/backtrace/BacktraceMap.h
+index 4ed23a8..da96307 100644
+--- a/include/backtrace/BacktraceMap.h
++++ b/include/backtrace/BacktraceMap.h
+@@ -33,6 +33,8 @@
+ #include <string>
+ 
+ struct backtrace_map_t {
++  backtrace_map_t(): start(0), end(0), flags(0) {}
++
+   uintptr_t start;
+   uintptr_t end;
+   int flags;
+@@ -48,15 +50,16 @@ public:
+ 
+   virtual ~BacktraceMap();
+ 
+-  // Get the map data structure for the given address.
+-  virtual const backtrace_map_t* Find(uintptr_t addr);
++  // Fill in the map data structure for the given address.
++  virtual void FillIn(uintptr_t addr, backtrace_map_t* map);
+ 
+   // The flags returned are the same flags as used by the mmap call.
+   // The values are PROT_*.
+   int GetFlags(uintptr_t pc) {
+-    const backtrace_map_t* map = Find(pc);
+-    if (map) {
+-      return map->flags;
++    backtrace_map_t map;
++    FillIn(pc, &map);
++    if (IsValid(map)) {
++      return map.flags;
+     }
+     return PROT_NONE;
+   }
+@@ -75,6 +78,10 @@ public:
+ 
+   virtual bool Build();
+ 
++  static inline bool IsValid(const backtrace_map_t& map) {
++    return map.end > 0;
++  }
++
+ protected:
+   BacktraceMap(pid_t pid);
+ 
+diff --git a/libbacktrace/BacktraceImpl.cpp b/libbacktrace/BacktraceImpl.cpp
+index 405b042..fb8a725 100644
+--- a/libbacktrace/BacktraceImpl.cpp
++++ b/libbacktrace/BacktraceImpl.cpp
+@@ -99,15 +99,15 @@ std::string Backtrace::FormatFrameData(size_t frame_num) {
+ 
+ std::string Backtrace::FormatFrameData(const backtrace_frame_data_t* frame) {
+   const char* map_name;
+-  if (frame->map && !frame->map->name.empty()) {
+-    map_name = frame->map->name.c_str();
++  if (BacktraceMap::IsValid(frame->map) && !frame->map.name.empty()) {
++    map_name = frame->map.name.c_str();
+   } else {
+     map_name = "<unknown>";
+   }
+ 
+   uintptr_t relative_pc;
+-  if (frame->map) {
+-    relative_pc = frame->pc - frame->map->start;
++  if (BacktraceMap::IsValid(frame->map)) {
++    relative_pc = frame->pc - frame->map.start;
+   } else {
+     relative_pc = frame->pc;
+   }
+@@ -128,8 +128,8 @@ std::string Backtrace::FormatFrameData(const backtrace_frame_data_t* frame) {
+   return buf;
+ }
+ 
+-const backtrace_map_t* Backtrace::FindMap(uintptr_t pc) {
+-  return map_->Find(pc);
++void Backtrace::FillInMap(uintptr_t pc, backtrace_map_t* map) {
++  map_->FillIn(pc, map);
+ }
+ 
+ //-------------------------------------------------------------------------
+@@ -147,8 +147,9 @@ bool BacktraceCurrent::ReadWord(uintptr_t ptr, word_t* out_value) {
+     return false;
+   }
+ 
+-  const backtrace_map_t* map = FindMap(ptr);
+-  if (map && map->flags & PROT_READ) {
++  backtrace_map_t map;
++  FillInMap(ptr, &map);
++  if (BacktraceMap::IsValid(map) && map.flags & PROT_READ) {
+     *out_value = *reinterpret_cast<word_t*>(ptr);
+     return true;
+   } else {
+diff --git a/libbacktrace/BacktraceImpl.h b/libbacktrace/BacktraceImpl.h
+index d34ad05..cd61bdf 100755
+--- a/libbacktrace/BacktraceImpl.h
++++ b/libbacktrace/BacktraceImpl.h
+@@ -37,8 +37,8 @@ public:
+   inline pid_t Pid() { return backtrace_obj_->Pid(); }
+   inline pid_t Tid() { return backtrace_obj_->Tid(); }
+ 
+-  inline const backtrace_map_t* FindMap(uintptr_t addr) {
+-    return backtrace_obj_->FindMap(addr);
++  inline void FillInMap(uintptr_t addr, backtrace_map_t* map) {
++    backtrace_obj_->FillInMap(addr, map);
+   }
+   inline std::string GetFunctionName(uintptr_t pc, uintptr_t* offset) {
+     return backtrace_obj_->GetFunctionName(pc, offset);
+diff --git a/libbacktrace/BacktraceMap.cpp b/libbacktrace/BacktraceMap.cpp
+index f38e484..82a4085 100644
+--- a/libbacktrace/BacktraceMap.cpp
++++ b/libbacktrace/BacktraceMap.cpp
+@@ -37,14 +37,15 @@ BacktraceMap::BacktraceMap(pid_t pid) : pid_(pid) {
+ BacktraceMap::~BacktraceMap() {
+ }
+ 
+-const backtrace_map_t* BacktraceMap::Find(uintptr_t addr) {
++void BacktraceMap::FillIn(uintptr_t addr, backtrace_map_t* map) {
+   for (BacktraceMap::const_iterator it = begin();
+        it != end(); ++it) {
+     if (addr >= it->start && addr < it->end) {
+-      return &*it;
++      *map = *it;
++      return;
+     }
+   }
+-  return NULL;
++  *map = {};
+ }
+ 
+ bool BacktraceMap::ParseLine(const char* line, backtrace_map_t* map) {
+diff --git a/libbacktrace/UnwindCurrent.cpp b/libbacktrace/UnwindCurrent.cpp
+index b176aaf..372555b 100755
+--- a/libbacktrace/UnwindCurrent.cpp
++++ b/libbacktrace/UnwindCurrent.cpp
+@@ -137,9 +137,8 @@ bool UnwindCurrent::UnwindFromContext(size_t num_ignore_frames, bool within_hand
+ 
+       if (!within_handler) {
+         frame->func_name = GetFunctionName(frame->pc, &frame->func_offset);
+-        frame->map = FindMap(frame->pc);
++        FillInMap(frame->pc, &frame->map);
+       } else {
+-        frame->map = NULL;
+         frame->func_offset = 0;
+       }
+       num_frames++;
+diff --git a/libbacktrace/UnwindMap.cpp b/libbacktrace/UnwindMap.cpp
+index 387d768..284a561 100644
+--- a/libbacktrace/UnwindMap.cpp
++++ b/libbacktrace/UnwindMap.cpp
+@@ -113,18 +113,17 @@ bool UnwindMapLocal::Build() {
+   return (map_created_ = (unw_map_local_create() == 0)) && GenerateMap();;
+ }
+ 
+-const backtrace_map_t* UnwindMapLocal::Find(uintptr_t addr) {
+-  const backtrace_map_t* map = BacktraceMap::Find(addr);
+-  if (!map) {
++void UnwindMapLocal::FillIn(uintptr_t addr, backtrace_map_t* map) {
++  BacktraceMap::FillIn(addr, map);
++  if (!IsValid(*map)) {
+     // Check to see if the underlying map changed and regenerate the map
+     // if it did.
+     if (unw_map_local_cursor_valid(&map_cursor_) < 0) {
+       if (GenerateMap()) {
+-        map = BacktraceMap::Find(addr);
++        BacktraceMap::FillIn(addr, map);
+       }
+     }
+   }
+-  return map;
+ }
+ 
+ //-------------------------------------------------------------------------
+diff --git a/libbacktrace/UnwindMap.h b/libbacktrace/UnwindMap.h
+index 2fdb29f..be8855e 100644
+--- a/libbacktrace/UnwindMap.h
++++ b/libbacktrace/UnwindMap.h
+@@ -45,7 +45,7 @@ public:
+ 
+   virtual bool Build();
+ 
+-  virtual const backtrace_map_t* Find(uintptr_t addr);
++  virtual void FillIn(uintptr_t addr, backtrace_map_t* map);
+ 
+ protected:
+   virtual bool GenerateMap();
+diff --git a/libbacktrace/UnwindPtrace.cpp b/libbacktrace/UnwindPtrace.cpp
+index 7ba8775..efe758b 100644
+--- a/libbacktrace/UnwindPtrace.cpp
++++ b/libbacktrace/UnwindPtrace.cpp
+@@ -106,7 +106,7 @@ bool UnwindPtrace::Unwind(size_t num_ignore_frames, ucontext_t* ucontext) {
+ 
+       frame->func_name = GetFunctionName(frame->pc, &frame->func_offset);
+ 
+-      frame->map = FindMap(frame->pc);
++      FillInMap(frame->pc, &frame->map);
+ 
+       num_frames++;
+     } else {
+diff --git a/libbacktrace/backtrace_test.cpp b/libbacktrace/backtrace_test.cpp
+index 8002ed6..76aabd1 100644
+--- a/libbacktrace/backtrace_test.cpp
++++ b/libbacktrace/backtrace_test.cpp
+@@ -688,6 +688,25 @@ TEST(libbacktrace, simultaneous_maps) {
+   delete map3;
+ }
+ 
++TEST(libbacktrace, fillin_erases) {
++  BacktraceMap* back_map = BacktraceMap::Create(getpid());
++
++  backtrace_map_t map;
++
++  map.start = 1;
++  map.end = 3;
++  map.flags = 1;
++  map.name = "Initialized";
++  back_map->FillIn(0, &map);
++  delete back_map;
++
++  ASSERT_FALSE(BacktraceMap::IsValid(map));
++  ASSERT_EQ(static_cast<uintptr_t>(0), map.start);
++  ASSERT_EQ(static_cast<uintptr_t>(0), map.end);
++  ASSERT_EQ(0, map.flags);
++  ASSERT_EQ("", map.name);
++}
++
+ TEST(libbacktrace, format_test) {
+   UniquePtr<Backtrace> backtrace(Backtrace::Create(getpid(), BACKTRACE_CURRENT_THREAD));
+   ASSERT_TRUE(backtrace.get() != NULL);
+@@ -697,13 +716,8 @@ TEST(libbacktrace, format_test) {
+   frame.pc = 2;
+   frame.sp = 0;
+   frame.stack_size = 0;
+-  frame.map = NULL;
+   frame.func_offset = 0;
+ 
+-  backtrace_map_t map;
+-  map.start = 0;
+-  map.end = 0;
+-
+   // Check no map set.
+   frame.num = 1;
+ #if defined(__LP64__)
+@@ -714,8 +728,8 @@ TEST(libbacktrace, format_test) {
+             backtrace->FormatFrameData(&frame));
+ 
+   // Check map name empty, but exists.
+-  frame.map = &map;
+-  map.start = 1;
++  frame.map.start = 1;
++  frame.map.end = 1;
+ #if defined(__LP64__)
+   EXPECT_EQ("#01 pc 0000000000000001  <unknown>",
+ #else
+@@ -726,9 +740,9 @@ TEST(libbacktrace, format_test) {
+ 
+   // Check relative pc is set and map name is set.
+   frame.pc = 0x12345679;
+-  frame.map = &map;
+-  map.name = "MapFake";
+-  map.start =  1;
++  frame.map.name = "MapFake";
++  frame.map.start =  1;
++  frame.map.end =  1;
+ #if defined(__LP64__)
+   EXPECT_EQ("#01 pc 0000000012345678  MapFake",
+ #else
+-- 
+2.5.0
+

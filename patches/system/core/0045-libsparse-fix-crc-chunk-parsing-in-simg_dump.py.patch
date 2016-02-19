@@ -1,0 +1,26 @@
+From 2c3e8ba972e9a27d031c51bd2d206ae9e909ba7b Mon Sep 17 00:00:00 2001
+From: Eric Miao <emiao@nvidia.com>
+Date: Sun, 12 Apr 2015 16:31:46 -0700
+Subject: [PATCH 45/52] libsparse: fix crc chunk parsing in simg_dump.py
+
+Change-Id: Ia5b7cedd88809b0e421a056704d25afa190470b8
+---
+ libsparse/simg_dump.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/libsparse/simg_dump.py b/libsparse/simg_dump.py
+index 6ece31d..c70d45f 100755
+--- a/libsparse/simg_dump.py
++++ b/libsparse/simg_dump.py
+@@ -135,7 +135,7 @@ def main():
+           break;
+         else:
+           crc_bin = FH.read(4)
+-          crc = struct.unpack("<I", crc)
++          crc = struct.unpack("<I", crc_bin)
+           print("Unverified CRC32 0x%08X" % (crc))
+       else:
+           print("Unknown chunk type 0x%04X" % (chunk_type), end="")
+-- 
+2.5.0
+

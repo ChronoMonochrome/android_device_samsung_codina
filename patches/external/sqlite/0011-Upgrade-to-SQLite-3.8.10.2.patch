@@ -1,0 +1,697 @@
+From bc8309daaae3d790bfdfd94cd02a426cc0d1da0d Mon Sep 17 00:00:00 2001
+From: arter97 <qkrwngud825@gmail.com>
+Date: Sat, 23 May 2015 04:27:17 +0900
+Subject: [PATCH 11/11] Upgrade to SQLite 3.8.10.2
+
+Downloaded from http://www.sqlite.org/2015/sqlite-amalgamation-3081002.zip
+
+Signed-off-by: arter97 <qkrwngud825@gmail.com>
+
+Conflicts:
+	dist/Android.patch
+
+Change-Id: Iae04fc403c388173d0245b9acdfe61822d307aff
+---
+ dist/Android.patch  | 126 ++++++++++++++++++++++++++++++++++++++++++++++------
+ dist/orig/shell.c   |   3 +-
+ dist/orig/sqlite3.c |  63 ++++++++++++++++++--------
+ dist/orig/sqlite3.h |   4 +-
+ dist/shell.c        |   3 +-
+ dist/sqlite3.c      |  63 ++++++++++++++++++--------
+ dist/sqlite3.h      |   4 +-
+ 7 files changed, 210 insertions(+), 56 deletions(-)
+
+diff --git a/dist/Android.patch b/dist/Android.patch
+index 922a34b..8ed2e81 100644
+--- a/dist/Android.patch
++++ b/dist/Android.patch
+@@ -1,6 +1,6 @@
+ diff -r -u -d orig/shell.c ./shell.c
+---- orig/shell.c	2015-05-08 11:10:06.525393270 -0700
+-+++ ./shell.c	2015-05-08 11:17:28.275228469 -0700
++--- orig/shell.c	2015-05-21 03:28:10.000000000 +0900
+++++ ./shell.c	2015-05-23 04:26:16.358501955 +0900
+ @@ -52,6 +52,11 @@
+  #endif
+  #include <ctype.h>
+@@ -36,9 +36,40 @@ diff -r -u -d orig/shell.c ./shell.c
+  }
+  
+ diff -r -u -d orig/sqlite3.c ./sqlite3.c
+---- orig/sqlite3.c	2015-05-08 11:10:07.173395986 -0700
+-+++ ./sqlite3.c	2015-05-08 11:11:18.625694907 -0700
+-@@ -25289,6 +25289,13 @@
++--- orig/sqlite3.c	2015-05-21 03:28:10.000000000 +0900
+++++ ./sqlite3.c	2015-05-23 04:26:16.370501608 +0900
++@@ -22,6 +22,13 @@
++ #ifndef SQLITE_PRIVATE
++ # define SQLITE_PRIVATE static
++ #endif
+++#ifdef QC_PERF
+++extern void sqlite3_androidopt_init(void*, const char*) __attribute__((weak));
+++extern void sqlite3_androidopt_open(void*, const char*, unsigned, int*) __attribute__((weak));
+++extern void sqlite3_androidopt_close(void*) __attribute__((weak));
+++extern int  sqlite3_androidopt_handle_pragma(void*, char*, char*) __attribute__((weak));
+++#endif
+++
++ /************** Begin file sqliteInt.h ***************************************/
++ /*
++ ** 2001 September 15
++@@ -11127,6 +11134,7 @@
++ #ifdef SQLITE_USER_AUTHENTICATION
++   sqlite3_userauth auth;        /* User authentication information */
++ #endif
+++  u8 isSettingOverride;         /* True if db settings have been overridden */
++ };
++ 
++ /*
++@@ -17090,7 +17098,7 @@
++ ** The malloc.h header file is needed for malloc_usable_size() function
++ ** on some systems (e.g. Linux).
++ */
++-#if HAVE_MALLOC_H && HAVE_MALLOC_USABLE_SIZE
+++#if defined(HAVE_MALLOC_H) || defined(HAVE_MALLOC_USABLE_SIZE)
++ #  define SQLITE_USE_MALLOC_H 1
++ #  define SQLITE_USE_MALLOC_USABLE_SIZE 1
++ /*
++@@ -25292,6 +25300,13 @@
+  */
+  #if SQLITE_OS_UNIX              /* This file is used on unix only */
+  
+@@ -52,7 +83,7 @@ diff -r -u -d orig/sqlite3.c ./sqlite3.c
+  /*
+  ** There are various methods for file locking used for concurrency
+  ** control:
+-@@ -25843,7 +25850,12 @@
++@@ -25846,7 +25861,12 @@
+  #else
+    { "pread64",      (sqlite3_syscall_ptr)0,          0  },
+  #endif
+@@ -65,7 +96,7 @@ diff -r -u -d orig/sqlite3.c ./sqlite3.c
+  
+    { "write",        (sqlite3_syscall_ptr)write,      0  },
+  #define osWrite     ((ssize_t(*)(int,const void*,size_t))aSyscall[11].pCurrent)
+-@@ -25861,8 +25873,14 @@
++@@ -25864,8 +25884,14 @@
+  #else
+    { "pwrite64",     (sqlite3_syscall_ptr)0,          0  },
+  #endif
+@@ -80,7 +111,7 @@ diff -r -u -d orig/sqlite3.c ./sqlite3.c
+  
+    { "fchmod",       (sqlite3_syscall_ptr)fchmod,     0  },
+  #define osFchmod    ((int(*)(int,mode_t))aSyscall[14].pCurrent)
+-@@ -29112,7 +29130,7 @@
++@@ -29115,7 +29141,7 @@
+    SimulateIOError( rc=1 );
+    if( rc!=0 ){
+      storeLastErrno((unixFile*)id, errno);
+@@ -89,7 +120,7 @@ diff -r -u -d orig/sqlite3.c ./sqlite3.c
+    }
+    *pSize = buf.st_size;
+  
+-@@ -29148,7 +29166,7 @@
++@@ -29151,7 +29177,7 @@
+      struct stat buf;              /* Used to hold return values of fstat() */
+     
+      if( osFstat(pFile->h, &buf) ){
+@@ -98,7 +129,7 @@ diff -r -u -d orig/sqlite3.c ./sqlite3.c
+      }
+  
+      nSize = ((nByte+pFile->szChunk-1) / pFile->szChunk) * pFile->szChunk;
+-@@ -29733,7 +29751,7 @@
++@@ -29736,7 +29762,7 @@
+      ** with the same permissions.
+      */
+      if( osFstat(pDbFd->h, &sStat) && pInode->bProcessLock==0 ){
+@@ -107,7 +138,7 @@ diff -r -u -d orig/sqlite3.c ./sqlite3.c
+        goto shm_open_err;
+      }
+  
+-@@ -31079,7 +31097,7 @@
++@@ -31082,7 +31108,7 @@
+        *pUid = sStat.st_uid;
+        *pGid = sStat.st_gid;
+      }else{
+@@ -116,7 +147,35 @@ diff -r -u -d orig/sqlite3.c ./sqlite3.c
+      }
+    }else if( flags & SQLITE_OPEN_DELETEONCLOSE ){
+      *pMode = 0600;
+-@@ -105873,7 +105891,7 @@
++
++@@ -103904,6 +103930,14 @@
++     goto pragma_out;
++   }
++ 
+++#ifdef QC_PERF
+++  if( sqlite3_androidopt_handle_pragma ) {
+++    if( sqlite3_androidopt_handle_pragma(db, zLeft, zRight) == 1 ) {
+++      goto pragma_out;
+++    }
+++  }
+++#endif
+++
++   /* Send an SQLITE_FCNTL_PRAGMA file-control to the underlying VFS
++   ** connection.  If it returns SQLITE_OK, then assume that the VFS
++   ** handled the pragma and generate a no-op prepared statement.
++@@ -104185,6 +104219,11 @@
++         /* If the "=MODE" part does not match any known journal mode,
++         ** then do a query */
++         eMode = PAGER_JOURNALMODE_QUERY;
+++      }else if( db->isSettingOverride==1 ){
+++        /* Skip journal mode changes if override in effect */
+++        sqlite3VdbeAddOp4(v, OP_String, strlen(zMode), 1, 1, zMode, P4_STATIC);
+++        sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 1);
+++        goto pragma_out;
++       }
++     }
++     if( eMode==PAGER_JOURNALMODE_QUERY && pId2->n==0 ){
++@@ -105877,7 +105916,7 @@
+    }
+    if( pDb->pSchema->file_format>SQLITE_MAX_FILE_FORMAT ){
+      sqlite3SetString(pzErrMsg, db, "unsupported file format");
+@@ -125,7 +184,31 @@ diff -r -u -d orig/sqlite3.c ./sqlite3.c
+      goto initone_error_out;
+    }
+  
+-@@ -130846,9 +130864,9 @@
++@@ -128966,6 +129005,11 @@
++   if( !sqlite3SafetyCheckSickOrOk(db) ){
++     return SQLITE_MISUSE_BKPT;
++   }
+++#ifdef QC_PERF
+++  if (sqlite3_androidopt_close) {
+++    sqlite3_androidopt_close(db);
+++  }
+++#endif
++   sqlite3_mutex_enter(db->mutex);
++ 
++   /* Force xDisconnect calls on all virtual tables */
++@@ -130715,6 +130759,11 @@
++     }
++   }
++   sqlite3_mutex_enter(db->mutex);
+++#ifdef QC_PERF
+++  if( sqlite3_androidopt_init ) {
+++    sqlite3_androidopt_init(db, zFilename);
+++  }
+++#endif
++   db->errMask = 0xff;
++   db->nDb = 2;
++   db->magic = SQLITE_MAGIC_BUSY;
++@@ -130850,9 +130899,9 @@
+  #endif
+  
+  #ifdef SQLITE_ENABLE_FTS3
+@@ -138,7 +221,22 @@ diff -r -u -d orig/sqlite3.c ./sqlite3.c
+  #endif
+  
+  #ifdef SQLITE_ENABLE_ICU
+-@@ -136906,16 +136924,28 @@
++@@ -130906,6 +130955,14 @@
++     db = 0;
++   }else if( rc!=SQLITE_OK ){
++     db->magic = SQLITE_MAGIC_SICK;
+++  }else {
+++#ifdef QC_PERF
+++    if (sqlite3_androidopt_open) {
+++      int override = 0;
+++      sqlite3_androidopt_open(db, zFilename, flags, &override);
+++      db->isSettingOverride = override;
+++    }
+++#endif
++   }
++   *ppDb = db;
++ #ifdef SQLITE_ENABLE_SQLLOG
++@@ -136910,16 +136967,28 @@
+    ** module with sqlite.
+    */
+    if( SQLITE_OK==rc 
+diff --git a/dist/orig/shell.c b/dist/orig/shell.c
+index 542381a..7db8dbd 100644
+--- a/dist/orig/shell.c
++++ b/dist/orig/shell.c
+@@ -3258,7 +3258,8 @@ static int do_meta_command(char *zLine, ShellState *p){
+         goto meta_command_exit;
+       }
+       if( nArg==3 ){
+-        sqlite3_limit(p->db, aLimit[iLimit].limitCode, integerValue(azArg[2]));
++        sqlite3_limit(p->db, aLimit[iLimit].limitCode,
++                      (int)integerValue(azArg[2]));
+       }
+       printf("%20s %d\n", aLimit[iLimit].zLimitName,
+              sqlite3_limit(p->db, aLimit[iLimit].limitCode, -1));
+diff --git a/dist/orig/sqlite3.c b/dist/orig/sqlite3.c
+index a09cf71..0403df5 100644
+--- a/dist/orig/sqlite3.c
++++ b/dist/orig/sqlite3.c
+@@ -1,6 +1,6 @@
+ /******************************************************************************
+ ** This file is an amalgamation of many separate C source files from SQLite
+-** version 3.8.10.  By combining all the individual C code files into this 
++** version 3.8.10.2.  By combining all the individual C code files into this 
+ ** single large file, the entire code can be compiled as a single translation
+ ** unit.  This allows many compilers to do optimizations that would not be
+ ** possible if the files were compiled separately.  Performance improvements
+@@ -318,9 +318,9 @@ extern "C" {
+ ** [sqlite3_libversion_number()], [sqlite3_sourceid()],
+ ** [sqlite_version()] and [sqlite_source_id()].
+ */
+-#define SQLITE_VERSION        "3.8.10"
++#define SQLITE_VERSION        "3.8.10.2"
+ #define SQLITE_VERSION_NUMBER 3008010
+-#define SQLITE_SOURCE_ID      "2015-05-07 11:53:08 cf975957b9ae671f34bb65f049acf351e650d437"
++#define SQLITE_SOURCE_ID      "2015-05-20 18:17:19 2ef4f3a5b1d1d0c4338f8243d40a2452cc1f7fe4"
+ 
+ /*
+ ** CAPI3REF: Run-Time Library Version Numbers
+@@ -14126,6 +14126,9 @@ static const char * const azCompileOpt[] = {
+ #if SQLITE_ENABLE_COLUMN_METADATA
+   "ENABLE_COLUMN_METADATA",
+ #endif
++#if SQLITE_ENABLE_DBSTAT_VTAB
++  "ENABLE_DBSTAT_VTAB",
++#endif
+ #if SQLITE_ENABLE_EXPENSIVE_ASSERT
+   "ENABLE_EXPENSIVE_ASSERT",
+ #endif
+@@ -71036,6 +71039,7 @@ static void applyAffinity(
+     if( 0==(pRec->flags&MEM_Str) && (pRec->flags&(MEM_Real|MEM_Int)) ){
+       sqlite3VdbeMemStringify(pRec, enc, 1);
+     }
++    pRec->flags &= ~(MEM_Real|MEM_Int);
+   }
+ }
+ 
+@@ -155333,6 +155337,7 @@ struct StatCursor {
+ struct StatTable {
+   sqlite3_vtab base;
+   sqlite3 *db;
++  int iDb;                        /* Index of database to analyze */
+ };
+ 
+ #ifndef get2byte
+@@ -155351,7 +155356,17 @@ static int statConnect(
+ ){
+   StatTable *pTab = 0;
+   int rc = SQLITE_OK;
++  int iDb;
+ 
++  if( argc>=4 ){
++    iDb = sqlite3FindDbName(db, argv[3]);
++    if( iDb<0 ){
++      *pzErr = sqlite3_mprintf("no such database: %s", argv[3]);
++      return SQLITE_ERROR;
++    }
++  }else{
++    iDb = 0;
++  }
+   rc = sqlite3_declare_vtab(db, VTAB_SCHEMA);
+   if( rc==SQLITE_OK ){
+     pTab = (StatTable *)sqlite3_malloc64(sizeof(StatTable));
+@@ -155362,6 +155377,7 @@ static int statConnect(
+   if( rc==SQLITE_OK ){
+     memset(pTab, 0, sizeof(StatTable));
+     pTab->db = db;
++    pTab->iDb = iDb;
+   }
+ 
+   *ppVtab = (sqlite3_vtab*)pTab;
+@@ -155416,16 +155432,22 @@ static int statOpen(sqlite3_vtab *pVTab, sqlite3_vtab_cursor **ppCursor){
+   if( pCsr==0 ){
+     rc = SQLITE_NOMEM;
+   }else{
++    char *zSql;
+     memset(pCsr, 0, sizeof(StatCursor));
+     pCsr->base.pVtab = pVTab;
+ 
+-    rc = sqlite3_prepare_v2(pTab->db, 
++    zSql = sqlite3_mprintf(
+         "SELECT 'sqlite_master' AS name, 1 AS rootpage, 'table' AS type"
+         "  UNION ALL  "
+-        "SELECT name, rootpage, type FROM sqlite_master WHERE rootpage!=0"
+-        "  ORDER BY name", -1,
+-        &pCsr->pStmt, 0
+-        );
++        "SELECT name, rootpage, type"
++        "  FROM \"%w\".sqlite_master WHERE rootpage!=0"
++        "  ORDER BY name", pTab->db->aDb[pTab->iDb].zName);
++    if( zSql==0 ){
++      rc = SQLITE_NOMEM;
++    }else{
++      rc = sqlite3_prepare_v2(pTab->db, zSql, -1, &pCsr->pStmt, 0);
++      sqlite3_free(zSql);
++    }
+     if( rc!=SQLITE_OK ){
+       sqlite3_free(pCsr);
+       pCsr = 0;
+@@ -155591,7 +155613,7 @@ static int statDecodePage(Btree *pBt, StatPage *p){
+ */
+ static void statSizeAndOffset(StatCursor *pCsr){
+   StatTable *pTab = (StatTable *)((sqlite3_vtab_cursor *)pCsr)->pVtab;
+-  Btree *pBt = pTab->db->aDb[0].pBt;
++  Btree *pBt = pTab->db->aDb[pTab->iDb].pBt;
+   Pager *pPager = sqlite3BtreePager(pBt);
+   sqlite3_file *fd;
+   sqlite3_int64 x[2];
+@@ -155605,7 +155627,7 @@ static void statSizeAndOffset(StatCursor *pCsr){
+   */
+   fd = sqlite3PagerFile(pPager);
+   x[0] = pCsr->iPageno;
+-  if( sqlite3OsFileControl(fd, 230440, &x)==SQLITE_OK ){
++  if( fd->pMethods!=0 && sqlite3OsFileControl(fd, 230440, &x)==SQLITE_OK ){
+     pCsr->iOffset = x[0];
+     pCsr->szPage = (int)x[1];
+   }
+@@ -155617,9 +155639,10 @@ static void statSizeAndOffset(StatCursor *pCsr){
+ static int statNext(sqlite3_vtab_cursor *pCursor){
+   int rc;
+   int nPayload;
++  char *z;
+   StatCursor *pCsr = (StatCursor *)pCursor;
+   StatTable *pTab = (StatTable *)pCursor->pVtab;
+-  Btree *pBt = pTab->db->aDb[0].pBt;
++  Btree *pBt = pTab->db->aDb[pTab->iDb].pBt;
+   Pager *pPager = sqlite3BtreePager(pBt);
+ 
+   sqlite3_free(pCsr->zPath);
+@@ -155639,8 +155662,9 @@ statNextRestart:
+       rc = sqlite3PagerGet(pPager, iRoot, &pCsr->aPage[0].pPg);
+       pCsr->aPage[0].iPgno = iRoot;
+       pCsr->aPage[0].iCell = 0;
+-      pCsr->aPage[0].zPath = sqlite3_mprintf("/");
++      pCsr->aPage[0].zPath = z = sqlite3_mprintf("/");
+       pCsr->iPage = 0;
++      if( z==0 ) rc = SQLITE_NOMEM;
+     }else{
+       pCsr->isEof = 1;
+       return sqlite3_reset(pCsr->pStmt);
+@@ -155663,7 +155687,7 @@ statNextRestart:
+         pCsr->zPagetype = "overflow";
+         pCsr->nCell = 0;
+         pCsr->nMxPayload = 0;
+-        pCsr->zPath = sqlite3_mprintf(
++        pCsr->zPath = z = sqlite3_mprintf(
+             "%s%.3x+%.6x", p->zPath, p->iCell, pCell->iOvfl
+         );
+         if( pCell->iOvfl<pCell->nOvfl-1 ){
+@@ -155675,7 +155699,7 @@ statNextRestart:
+         }
+         pCell->iOvfl++;
+         statSizeAndOffset(pCsr);
+-        return SQLITE_OK;
++        return z==0 ? SQLITE_NOMEM : SQLITE_OK;
+       }
+       if( p->iRightChildPg ) break;
+       p->iCell++;
+@@ -155697,8 +155721,9 @@ statNextRestart:
+     }
+     rc = sqlite3PagerGet(pPager, p[1].iPgno, &p[1].pPg);
+     p[1].iCell = 0;
+-    p[1].zPath = sqlite3_mprintf("%s%.3x/", p->zPath, p->iCell);
++    p[1].zPath = z = sqlite3_mprintf("%s%.3x/", p->zPath, p->iCell);
+     p->iCell++;
++    if( z==0 ) rc = SQLITE_NOMEM;
+   }
+ 
+ 
+@@ -155731,7 +155756,8 @@ statNextRestart:
+       pCsr->nCell = p->nCell;
+       pCsr->nUnused = p->nUnused;
+       pCsr->nMxPayload = p->nMxPayload;
+-      pCsr->zPath = sqlite3_mprintf("%s", p->zPath);
++      pCsr->zPath = z = sqlite3_mprintf("%s", p->zPath);
++      if( z==0 ) rc = SQLITE_NOMEM;
+       nPayload = 0;
+       for(i=0; i<p->nCell; i++){
+         nPayload += p->aCell[i].nLocal;
+@@ -155767,7 +155793,7 @@ static int statColumn(
+   StatCursor *pCsr = (StatCursor *)pCursor;
+   switch( i ){
+     case 0:            /* name */
+-      sqlite3_result_text(ctx, pCsr->zName, -1, SQLITE_STATIC);
++      sqlite3_result_text(ctx, pCsr->zName, -1, SQLITE_TRANSIENT);
+       break;
+     case 1:            /* path */
+       sqlite3_result_text(ctx, pCsr->zPath, -1, SQLITE_TRANSIENT);
+@@ -155793,7 +155819,8 @@ static int statColumn(
+     case 8:            /* pgoffset */
+       sqlite3_result_int64(ctx, pCsr->iOffset);
+       break;
+-    case 9:            /* pgsize */
++    default:           /* pgsize */
++      assert( i==9 );
+       sqlite3_result_int(ctx, pCsr->szPage);
+       break;
+   }
+diff --git a/dist/orig/sqlite3.h b/dist/orig/sqlite3.h
+index edb9e9c..d43b63c 100644
+--- a/dist/orig/sqlite3.h
++++ b/dist/orig/sqlite3.h
+@@ -111,9 +111,9 @@ extern "C" {
+ ** [sqlite3_libversion_number()], [sqlite3_sourceid()],
+ ** [sqlite_version()] and [sqlite_source_id()].
+ */
+-#define SQLITE_VERSION        "3.8.10"
++#define SQLITE_VERSION        "3.8.10.2"
+ #define SQLITE_VERSION_NUMBER 3008010
+-#define SQLITE_SOURCE_ID      "2015-05-07 11:53:08 cf975957b9ae671f34bb65f049acf351e650d437"
++#define SQLITE_SOURCE_ID      "2015-05-20 18:17:19 2ef4f3a5b1d1d0c4338f8243d40a2452cc1f7fe4"
+ 
+ /*
+ ** CAPI3REF: Run-Time Library Version Numbers
+diff --git a/dist/shell.c b/dist/shell.c
+index 42f03fa..bedfa4c 100644
+--- a/dist/shell.c
++++ b/dist/shell.c
+@@ -3278,7 +3278,8 @@ static int do_meta_command(char *zLine, ShellState *p){
+         goto meta_command_exit;
+       }
+       if( nArg==3 ){
+-        sqlite3_limit(p->db, aLimit[iLimit].limitCode, integerValue(azArg[2]));
++        sqlite3_limit(p->db, aLimit[iLimit].limitCode,
++                      (int)integerValue(azArg[2]));
+       }
+       printf("%20s %d\n", aLimit[iLimit].zLimitName,
+              sqlite3_limit(p->db, aLimit[iLimit].limitCode, -1));
+diff --git a/dist/sqlite3.c b/dist/sqlite3.c
+index c9f7ca2..a5d8ef7 100644
+--- a/dist/sqlite3.c
++++ b/dist/sqlite3.c
+@@ -1,6 +1,6 @@
+ /******************************************************************************
+ ** This file is an amalgamation of many separate C source files from SQLite
+-** version 3.8.10.  By combining all the individual C code files into this 
++** version 3.8.10.2.  By combining all the individual C code files into this 
+ ** single large file, the entire code can be compiled as a single translation
+ ** unit.  This allows many compilers to do optimizations that would not be
+ ** possible if the files were compiled separately.  Performance improvements
+@@ -325,9 +325,9 @@ extern "C" {
+ ** [sqlite3_libversion_number()], [sqlite3_sourceid()],
+ ** [sqlite_version()] and [sqlite_source_id()].
+ */
+-#define SQLITE_VERSION        "3.8.10"
++#define SQLITE_VERSION        "3.8.10.2"
+ #define SQLITE_VERSION_NUMBER 3008010
+-#define SQLITE_SOURCE_ID      "2015-05-07 11:53:08 cf975957b9ae671f34bb65f049acf351e650d437"
++#define SQLITE_SOURCE_ID      "2015-05-20 18:17:19 2ef4f3a5b1d1d0c4338f8243d40a2452cc1f7fe4"
+ 
+ /*
+ ** CAPI3REF: Run-Time Library Version Numbers
+@@ -14134,6 +14134,9 @@ static const char * const azCompileOpt[] = {
+ #if SQLITE_ENABLE_COLUMN_METADATA
+   "ENABLE_COLUMN_METADATA",
+ #endif
++#if SQLITE_ENABLE_DBSTAT_VTAB
++  "ENABLE_DBSTAT_VTAB",
++#endif
+ #if SQLITE_ENABLE_EXPENSIVE_ASSERT
+   "ENABLE_EXPENSIVE_ASSERT",
+ #endif
+@@ -71062,6 +71065,7 @@ static void applyAffinity(
+     if( 0==(pRec->flags&MEM_Str) && (pRec->flags&(MEM_Real|MEM_Int)) ){
+       sqlite3VdbeMemStringify(pRec, enc, 1);
+     }
++    pRec->flags &= ~(MEM_Real|MEM_Int);
+   }
+ }
+ 
+@@ -155402,6 +155406,7 @@ struct StatCursor {
+ struct StatTable {
+   sqlite3_vtab base;
+   sqlite3 *db;
++  int iDb;                        /* Index of database to analyze */
+ };
+ 
+ #ifndef get2byte
+@@ -155420,7 +155425,17 @@ static int statConnect(
+ ){
+   StatTable *pTab = 0;
+   int rc = SQLITE_OK;
++  int iDb;
+ 
++  if( argc>=4 ){
++    iDb = sqlite3FindDbName(db, argv[3]);
++    if( iDb<0 ){
++      *pzErr = sqlite3_mprintf("no such database: %s", argv[3]);
++      return SQLITE_ERROR;
++    }
++  }else{
++    iDb = 0;
++  }
+   rc = sqlite3_declare_vtab(db, VTAB_SCHEMA);
+   if( rc==SQLITE_OK ){
+     pTab = (StatTable *)sqlite3_malloc64(sizeof(StatTable));
+@@ -155431,6 +155446,7 @@ static int statConnect(
+   if( rc==SQLITE_OK ){
+     memset(pTab, 0, sizeof(StatTable));
+     pTab->db = db;
++    pTab->iDb = iDb;
+   }
+ 
+   *ppVtab = (sqlite3_vtab*)pTab;
+@@ -155485,16 +155501,22 @@ static int statOpen(sqlite3_vtab *pVTab, sqlite3_vtab_cursor **ppCursor){
+   if( pCsr==0 ){
+     rc = SQLITE_NOMEM;
+   }else{
++    char *zSql;
+     memset(pCsr, 0, sizeof(StatCursor));
+     pCsr->base.pVtab = pVTab;
+ 
+-    rc = sqlite3_prepare_v2(pTab->db, 
++    zSql = sqlite3_mprintf(
+         "SELECT 'sqlite_master' AS name, 1 AS rootpage, 'table' AS type"
+         "  UNION ALL  "
+-        "SELECT name, rootpage, type FROM sqlite_master WHERE rootpage!=0"
+-        "  ORDER BY name", -1,
+-        &pCsr->pStmt, 0
+-        );
++        "SELECT name, rootpage, type"
++        "  FROM \"%w\".sqlite_master WHERE rootpage!=0"
++        "  ORDER BY name", pTab->db->aDb[pTab->iDb].zName);
++    if( zSql==0 ){
++      rc = SQLITE_NOMEM;
++    }else{
++      rc = sqlite3_prepare_v2(pTab->db, zSql, -1, &pCsr->pStmt, 0);
++      sqlite3_free(zSql);
++    }
+     if( rc!=SQLITE_OK ){
+       sqlite3_free(pCsr);
+       pCsr = 0;
+@@ -155660,7 +155682,7 @@ static int statDecodePage(Btree *pBt, StatPage *p){
+ */
+ static void statSizeAndOffset(StatCursor *pCsr){
+   StatTable *pTab = (StatTable *)((sqlite3_vtab_cursor *)pCsr)->pVtab;
+-  Btree *pBt = pTab->db->aDb[0].pBt;
++  Btree *pBt = pTab->db->aDb[pTab->iDb].pBt;
+   Pager *pPager = sqlite3BtreePager(pBt);
+   sqlite3_file *fd;
+   sqlite3_int64 x[2];
+@@ -155674,7 +155696,7 @@ static void statSizeAndOffset(StatCursor *pCsr){
+   */
+   fd = sqlite3PagerFile(pPager);
+   x[0] = pCsr->iPageno;
+-  if( sqlite3OsFileControl(fd, 230440, &x)==SQLITE_OK ){
++  if( fd->pMethods!=0 && sqlite3OsFileControl(fd, 230440, &x)==SQLITE_OK ){
+     pCsr->iOffset = x[0];
+     pCsr->szPage = (int)x[1];
+   }
+@@ -155686,9 +155708,10 @@ static void statSizeAndOffset(StatCursor *pCsr){
+ static int statNext(sqlite3_vtab_cursor *pCursor){
+   int rc;
+   int nPayload;
++  char *z;
+   StatCursor *pCsr = (StatCursor *)pCursor;
+   StatTable *pTab = (StatTable *)pCursor->pVtab;
+-  Btree *pBt = pTab->db->aDb[0].pBt;
++  Btree *pBt = pTab->db->aDb[pTab->iDb].pBt;
+   Pager *pPager = sqlite3BtreePager(pBt);
+ 
+   sqlite3_free(pCsr->zPath);
+@@ -155708,8 +155731,9 @@ statNextRestart:
+       rc = sqlite3PagerGet(pPager, iRoot, &pCsr->aPage[0].pPg);
+       pCsr->aPage[0].iPgno = iRoot;
+       pCsr->aPage[0].iCell = 0;
+-      pCsr->aPage[0].zPath = sqlite3_mprintf("/");
++      pCsr->aPage[0].zPath = z = sqlite3_mprintf("/");
+       pCsr->iPage = 0;
++      if( z==0 ) rc = SQLITE_NOMEM;
+     }else{
+       pCsr->isEof = 1;
+       return sqlite3_reset(pCsr->pStmt);
+@@ -155732,7 +155756,7 @@ statNextRestart:
+         pCsr->zPagetype = "overflow";
+         pCsr->nCell = 0;
+         pCsr->nMxPayload = 0;
+-        pCsr->zPath = sqlite3_mprintf(
++        pCsr->zPath = z = sqlite3_mprintf(
+             "%s%.3x+%.6x", p->zPath, p->iCell, pCell->iOvfl
+         );
+         if( pCell->iOvfl<pCell->nOvfl-1 ){
+@@ -155744,7 +155768,7 @@ statNextRestart:
+         }
+         pCell->iOvfl++;
+         statSizeAndOffset(pCsr);
+-        return SQLITE_OK;
++        return z==0 ? SQLITE_NOMEM : SQLITE_OK;
+       }
+       if( p->iRightChildPg ) break;
+       p->iCell++;
+@@ -155766,8 +155790,9 @@ statNextRestart:
+     }
+     rc = sqlite3PagerGet(pPager, p[1].iPgno, &p[1].pPg);
+     p[1].iCell = 0;
+-    p[1].zPath = sqlite3_mprintf("%s%.3x/", p->zPath, p->iCell);
++    p[1].zPath = z = sqlite3_mprintf("%s%.3x/", p->zPath, p->iCell);
+     p->iCell++;
++    if( z==0 ) rc = SQLITE_NOMEM;
+   }
+ 
+ 
+@@ -155800,7 +155825,8 @@ statNextRestart:
+       pCsr->nCell = p->nCell;
+       pCsr->nUnused = p->nUnused;
+       pCsr->nMxPayload = p->nMxPayload;
+-      pCsr->zPath = sqlite3_mprintf("%s", p->zPath);
++      pCsr->zPath = z = sqlite3_mprintf("%s", p->zPath);
++      if( z==0 ) rc = SQLITE_NOMEM;
+       nPayload = 0;
+       for(i=0; i<p->nCell; i++){
+         nPayload += p->aCell[i].nLocal;
+@@ -155836,7 +155862,7 @@ static int statColumn(
+   StatCursor *pCsr = (StatCursor *)pCursor;
+   switch( i ){
+     case 0:            /* name */
+-      sqlite3_result_text(ctx, pCsr->zName, -1, SQLITE_STATIC);
++      sqlite3_result_text(ctx, pCsr->zName, -1, SQLITE_TRANSIENT);
+       break;
+     case 1:            /* path */
+       sqlite3_result_text(ctx, pCsr->zPath, -1, SQLITE_TRANSIENT);
+@@ -155862,7 +155888,8 @@ static int statColumn(
+     case 8:            /* pgoffset */
+       sqlite3_result_int64(ctx, pCsr->iOffset);
+       break;
+-    case 9:            /* pgsize */
++    default:           /* pgsize */
++      assert( i==9 );
+       sqlite3_result_int(ctx, pCsr->szPage);
+       break;
+   }
+diff --git a/dist/sqlite3.h b/dist/sqlite3.h
+index edb9e9c..d43b63c 100644
+--- a/dist/sqlite3.h
++++ b/dist/sqlite3.h
+@@ -111,9 +111,9 @@ extern "C" {
+ ** [sqlite3_libversion_number()], [sqlite3_sourceid()],
+ ** [sqlite_version()] and [sqlite_source_id()].
+ */
+-#define SQLITE_VERSION        "3.8.10"
++#define SQLITE_VERSION        "3.8.10.2"
+ #define SQLITE_VERSION_NUMBER 3008010
+-#define SQLITE_SOURCE_ID      "2015-05-07 11:53:08 cf975957b9ae671f34bb65f049acf351e650d437"
++#define SQLITE_SOURCE_ID      "2015-05-20 18:17:19 2ef4f3a5b1d1d0c4338f8243d40a2452cc1f7fe4"
+ 
+ /*
+ ** CAPI3REF: Run-Time Library Version Numbers
+-- 
+2.5.0
+

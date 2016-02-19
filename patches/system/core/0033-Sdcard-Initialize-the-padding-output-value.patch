@@ -1,0 +1,31 @@
+From 48d5c54df573f6001ad89dfbe09be67dcc6f6fa8 Mon Sep 17 00:00:00 2001
+From: Daisuke Okitsu <daisuke.x.okitsu@sonymobile.com>
+Date: Mon, 5 Aug 2013 12:18:15 +0900
+Subject: [PATCH 33/52] Sdcard: Initialize the padding output value
+
+Add initialization of the output value in handle_write.
+This value is referred to in FUSE so initialization is
+necessary.
+
+See also handle_open and handle_opendir.
+
+Change-Id: I6507f113da9f6823fbfa459624d6594fc20afa51
+---
+ sdcard/sdcard.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/sdcard/sdcard.c b/sdcard/sdcard.c
+index f3f33cd..586d4d1 100644
+--- a/sdcard/sdcard.c
++++ b/sdcard/sdcard.c
+@@ -1321,6 +1321,7 @@ static int handle_write(struct fuse* fuse, struct fuse_handler* handler,
+         return -errno;
+     }
+     out.size = res;
++    out.padding = 0;
+     fuse_reply(fuse, hdr->unique, &out, sizeof(out));
+     return NO_STATUS;
+ }
+-- 
+2.5.0
+

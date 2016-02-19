@@ -1,0 +1,29 @@
+From a9fcf05898204cf45224680cecb188c44e1d3e46 Mon Sep 17 00:00:00 2001
+From: deadman96385 <seanhoyt963@gmail.com>
+Date: Thu, 1 Jan 2015 04:07:49 -0500
+Subject: [PATCH 2/3] Kill more spam
+
+Change-Id: I4736b976ecc137f395a015b84dfc66c8f1324b9f
+Signed-off-by: Chet Kener <Cl3Kener@gmail.com>
+---
+ png.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/png.c b/png.c
+index 3a76691..41a18d1 100644
+--- a/png.c
++++ b/png.c
+@@ -2275,9 +2275,8 @@ png_compare_ICC_profile_with_sRGB(png_const_structrp png_ptr,
+                       * problems if they are used, therefore attempt to
+                       * discourage their use, skip the 'have_md5' warning below,
+                       * which is made irrelevant by this error.
+-                      */
+                      png_chunk_report(png_ptr, "known incorrect sRGB profile",
+-                        PNG_CHUNK_ERROR);
++                        PNG_CHUNK_ERROR); */
+                   }
+ 
+                   /* Warn that this being done; this isn't even an error since
+-- 
+2.5.0
+

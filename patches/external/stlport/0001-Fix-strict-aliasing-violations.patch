@@ -1,0 +1,32 @@
+From 62bc005df0690045e85062dee90c19d27a190228 Mon Sep 17 00:00:00 2001
+From: Kyle Repinski <repinski23@gmail.com>
+Date: Wed, 10 Dec 2014 15:47:56 -0600
+Subject: [PATCH] Fix strict aliasing violations.
+
+Conflicts:
+	stlport/stl/_stdexcept_base.c
+---
+ stlport/stl/_stdexcept_base.c | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
+
+diff --git a/stlport/stl/_stdexcept_base.c b/stlport/stl/_stdexcept_base.c
+index b3a4bf9..14d297e 100644
+--- a/stlport/stl/_stdexcept_base.c
++++ b/stlport/stl/_stdexcept_base.c
+@@ -16,8 +16,11 @@
+  *
+  */
+ 
+-static inline size_t* local_cast(void* p){
+-  union{void* p; size_t* size_t_p;}u_cast;
++static inline size_t* local_cast(void* p) {
++  union {
++    void* p;
++    size_t* size_t_p;
++  } u_cast;
+   u_cast.p = p;
+   return u_cast.size_t_p;
+ }
+-- 
+2.5.0
+

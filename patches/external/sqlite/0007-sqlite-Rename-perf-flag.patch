@@ -1,0 +1,36 @@
+From d3082b88cdffdc16f9a0eb1a786bd5f068a9ecf7 Mon Sep 17 00:00:00 2001
+From: Steve Kondik <shade@chemlab.org>
+Date: Sun, 14 Sep 2014 19:21:44 -0700
+Subject: [PATCH 07/11] sqlite: Rename perf flag
+
+Change-Id: Id5bfb5901a56fb4ab5a077e4275ee3693db2f706
+Signed-off-by: Chet Kener <Cl3Kener@gmail.com>
+---
+ dist/Android.mk | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/dist/Android.mk b/dist/Android.mk
+index e5798c0..2246e62 100644
+--- a/dist/Android.mk
++++ b/dist/Android.mk
+@@ -31,7 +31,7 @@ common_sqlite_flags := \
+ 	-Dfdatasync=fdatasync
+ 
+ ifeq ($(call is-vendor-board-platform,QCOM),true)
+-ifeq ($(WITH_QC_PERF),true)
++ifeq ($(TARGET_HAVE_QC_PERF),true)
+ android_common_sqlite_flags += -DQC_PERF
+ endif
+ endif
+@@ -72,7 +72,7 @@ LOCAL_SHARED_LIBRARIES += liblog \
+ # include android specific methods
+ LOCAL_WHOLE_STATIC_LIBRARIES := libsqlite3_android
+ 
+-ifeq ($(WITH_QC_PERF),true)
++ifeq ($(TARGET_HAVE_QC_PERF),true)
+ LOCAL_WHOLE_STATIC_LIBRARIES += libqc-sqlite
+ LOCAL_SHARED_LIBRARIES += libcutils
+ endif
+-- 
+2.5.0
+

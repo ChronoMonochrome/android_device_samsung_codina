@@ -1,0 +1,31 @@
+From 94b66bfa3c9b16a8543357380f54164a2c7c5c58 Mon Sep 17 00:00:00 2001
+From: Nick Kralevich <nnk@google.com>
+Date: Fri, 30 Jan 2015 17:38:06 -0800
+Subject: [PATCH 35/52] ensure /data/tombstones exists on all Android devices
+
+/data/tombstones is referenced by core platform code, but is not
+guaranteed to exist on all Android devices. Move the directory
+creation out of device specific files and into the core
+init.rc file.
+
+Bug: https://code.google.com/p/android/issues/detail?id=93207
+Change-Id: I94ae5199a6a32c4fe555ca994fc4a8345e0c9690
+---
+ rootdir/init.rc | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/rootdir/init.rc b/rootdir/init.rc
+index 9f53216..29a2f3b 100644
+--- a/rootdir/init.rc
++++ b/rootdir/init.rc
+@@ -287,6 +287,7 @@ on post-fs-data
+     mkdir /data/app-lib 0771 system system
+     mkdir /data/app 0771 system system
+     mkdir /data/property 0700 root root
++    mkdir /data/tombstones 0771 system system
+ 
+     # create dalvik-cache, so as to enforce our permissions
+     mkdir /data/dalvik-cache 0771 root root
+-- 
+2.5.0
+
