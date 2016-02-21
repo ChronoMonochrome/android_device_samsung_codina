@@ -1,0 +1,38 @@
+From 25537644e937861128348d775773f8a827112a01 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Sat, 20 Feb 2016 06:16:26 +0700
+Subject: [PATCH] Fix compilation
+
+Change-Id: I795daee4603946b9e036b324ad7e7db4f596e015
+---
+ src/com/android/phone/PhoneInterfaceManager.java | 16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
+
+diff --git a/src/com/android/phone/PhoneInterfaceManager.java b/src/com/android/phone/PhoneInterfaceManager.java
+index 9eb0b0b..4037f6d 100644
+--- a/src/com/android/phone/PhoneInterfaceManager.java
++++ b/src/com/android/phone/PhoneInterfaceManager.java
+@@ -2259,4 +2259,20 @@ public class PhoneInterfaceManager extends ITelephony.Stub {
+     public boolean isImsRegistered() {
+         return mPhone.isImsRegistered();
+     }
++
++    /*
++     * {@hide}
++     * Returns the IMS Registration Status
++     */
++    public boolean isWifiCallingEnabled() {
++        return mPhone.isWifiCallingEnabled();
++    }
++
++    /*
++     * {@hide}
++     * Returns the IMS Registration Status
++     */
++    public boolean isVolteEnabled() {
++        return mPhone.isVolteEnabled();
++    }
+ }
+-- 
+2.5.0
+

@@ -1,0 +1,30 @@
+From a1e3cfee45addd9f22d45e7bf553f55daf6dd78b Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Sun, 21 Feb 2016 20:00:01 +0700
+Subject: [PATCH] libm: compat change for LTO
+
+compile libc/bionic/fpclassify.cpp as part of libm otherwise the compiler won't see a symbol is_nanf from libc when LTO optimizations are applied.
+
+Change-Id: I3b762ac454161ebe3d3ad3396aeb1b3f6b86e7dd
+---
+ libm/Android.mk | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/libm/Android.mk b/libm/Android.mk
+index 994caa0..b908d70 100644
+--- a/libm/Android.mk
++++ b/libm/Android.mk
+@@ -12,6 +12,10 @@ libm_common_src_files += \
+     significandl.c \
+     sincos.c \
+ 
++ifeq($(ENABLE_LTO),true)
++    libm_common_src_files += ../libc/bionic/fpclassify.cpp \
++endif
++
+ libm_common_src_files += \
+     upstream-freebsd/lib/msun/bsdsrc/b_exp.c \
+     upstream-freebsd/lib/msun/bsdsrc/b_log.c \
+-- 
+2.5.0
+

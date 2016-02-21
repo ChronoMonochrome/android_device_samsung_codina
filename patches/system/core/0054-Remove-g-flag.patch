@@ -1,0 +1,207 @@
+From 487615bef06f158c35a17240072977f9a430b874 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Sun, 21 Feb 2016 11:30:33 +0700
+Subject: [PATCH 54/54] Remove -g flag
+
+Change-Id: I04d9ca1bac43ac4b0d4e55e180f7544e8f3b6546
+---
+ adb/Android.mk           |  6 +++---
+ libbacktrace/Android.mk  | 10 +++++-----
+ libdiskconfig/Android.mk |  2 +-
+ libion/tests/Android.mk  |  2 +-
+ liblog/tests/Android.mk  |  2 +-
+ libsync/tests/Android.mk |  2 +-
+ libusbhost/Android.mk    |  2 +-
+ libutils/Android.mk      | 13 -------------
+ logcat/tests/Android.mk  |  2 +-
+ logd/tests/Android.mk    |  2 +-
+ 10 files changed, 15 insertions(+), 28 deletions(-)
+
+diff --git a/adb/Android.mk b/adb/Android.mk
+index 32de999..386fd71 100644
+--- a/adb/Android.mk
++++ b/adb/Android.mk
+@@ -71,7 +71,7 @@ else
+   LOCAL_SRC_FILES += fdevent.c
+ endif
+ 
+-LOCAL_CFLAGS += -O2 -g -DADB_HOST=1 -Wall -Wno-unused-parameter -Werror
++LOCAL_CFLAGS += -O2 -DADB_HOST=1 -Wall -Wno-unused-parameter -Werror
+ LOCAL_CFLAGS += -D_XOPEN_SOURCE -D_GNU_SOURCE
+ LOCAL_MODULE := adb
+ LOCAL_MODULE_TAGS := debug
+@@ -118,7 +118,7 @@ LOCAL_C_INCLUDES += $(TARGET_OUT_INTERMEDIATES)/KERNEL_OBJ/usr/include
+ LOCAL_ADDITIONAL_DEPENDENCIES := $(TARGET_OUT_INTERMEDIATES)/KERNEL_OBJ/usr
+ endif
+ 
+-LOCAL_CFLAGS := -O2 -g -DADB_HOST=0 -Wall -Wno-unused-parameter -Werror
++LOCAL_CFLAGS := -O2 -DADB_HOST=0 -Wall -Wno-unused-parameter -Werror
+ LOCAL_CFLAGS += -D_XOPEN_SOURCE -D_GNU_SOURCE
+ 
+ ifneq (,$(filter userdebug eng,$(TARGET_BUILD_VARIANT)))
+@@ -170,7 +170,7 @@ LOCAL_SRC_FILES := \
+ 
+ LOCAL_CFLAGS := \
+ 	-O2 \
+-	-g \
++	\
+ 	-DADB_HOST=1 \
+ 	-DADB_HOST_ON_TARGET=1 \
+ 	-Wall -Wno-unused-parameter -Werror \
+diff --git a/libbacktrace/Android.mk b/libbacktrace/Android.mk
+index 81d15dc..21ba0ce 100755
+--- a/libbacktrace/Android.mk
++++ b/libbacktrace/Android.mk
+@@ -130,13 +130,13 @@ endif
+ # The libbacktrace_test library needed by backtrace_test.
+ #-------------------------------------------------------------------------
+ libbacktrace_test_cflags := \
+-	-O0 \
++	-O2 \
+ 
+ libbacktrace_test_src_files := \
+ 	backtrace_testlib.c \
+ 
+ module := libbacktrace_test
+-module_tag := debug
++#module_tag := debug
+ build_type := target
+ build_target := SHARED_LIBRARY
+ include $(LOCAL_PATH)/Android.build.mk
+@@ -148,8 +148,8 @@ include $(LOCAL_PATH)/Android.build.mk
+ #-------------------------------------------------------------------------
+ backtrace_test_cflags := \
+ 	-fno-builtin \
+-	-O0 \
+-	-g \
++	-O2 \
++	\
+ 
+ backtrace_test_cflags_target := \
+ 	-DENABLE_PSS_TESTS \
+@@ -174,7 +174,7 @@ backtrace_test_static_libraries_host := \
+ 	libcutils \
+ 
+ module := backtrace_test
+-module_tag := debug
++#module_tag := debug
+ build_type := target
+ build_target := NATIVE_TEST
+ include $(LOCAL_PATH)/Android.build.mk
+diff --git a/libdiskconfig/Android.mk b/libdiskconfig/Android.mk
+index 5e7400e..9f33d85 100644
+--- a/libdiskconfig/Android.mk
++++ b/libdiskconfig/Android.mk
+@@ -27,6 +27,6 @@ include $(CLEAR_VARS)
+ LOCAL_SRC_FILES := $(commonSources)
+ LOCAL_MODULE := libdiskconfig_host
+ LOCAL_MODULE_TAGS := optional
+-LOCAL_CFLAGS := -O2 -g -W -Wall -Werror -D_LARGEFILE64_SOURCE
++LOCAL_CFLAGS := -O2 -W -Wall -Werror -D_LARGEFILE64_SOURCE
+ include $(BUILD_HOST_STATIC_LIBRARY)
+ endif # HOST_OS == linux
+diff --git a/libion/tests/Android.mk b/libion/tests/Android.mk
+index 8dc7f9d..affc683 100644
+--- a/libion/tests/Android.mk
++++ b/libion/tests/Android.mk
+@@ -19,7 +19,7 @@ LOCAL_PATH:= $(call my-dir)
+ include $(CLEAR_VARS)
+ LOCAL_MODULE := ion-unit-tests
+ LOCAL_ADDITIONAL_DEPENDENCIES := $(LOCAL_PATH)/Android.mk
+-LOCAL_CFLAGS += -g -Wall -Werror -std=gnu++11 -Wno-missing-field-initializers
++LOCAL_CFLAGS += -Wall -Werror -std=gnu++11 -Wno-missing-field-initializers
+ LOCAL_SHARED_LIBRARIES += libion
+ LOCAL_STATIC_LIBRARIES += libgtest_main
+ LOCAL_C_INCLUDES := $(LOCAL_PATH)/../kernel-headers
+diff --git a/liblog/tests/Android.mk b/liblog/tests/Android.mk
+index cd1bf33..38768d5 100644
+--- a/liblog/tests/Android.mk
++++ b/liblog/tests/Android.mk
+@@ -56,7 +56,7 @@ include $(BUILD_EXECUTABLE)
+ 
+ test_c_flags := \
+     -fstack-protector-all \
+-    -g \
++    \
+     -Wall -Wextra \
+     -Werror \
+     -fno-builtin \
+diff --git a/libsync/tests/Android.mk b/libsync/tests/Android.mk
+index ad20e50..7353794 100644
+--- a/libsync/tests/Android.mk
++++ b/libsync/tests/Android.mk
+@@ -21,7 +21,7 @@ include external/libcxx/libcxx.mk
+ LOCAL_CLANG := true
+ LOCAL_MODULE := sync-unit-tests
+ LOCAL_ADDITIONAL_DEPENDENCIES := $(LOCAL_PATH)/Android.mk
+-LOCAL_CFLAGS += -g -Wall -Werror -std=gnu++11 -Wno-missing-field-initializers -Wno-sign-compare
++LOCAL_CFLAGS += -Wall -Werror -std=gnu++11 -Wno-missing-field-initializers -Wno-sign-compare
+ LOCAL_SHARED_LIBRARIES += libsync
+ LOCAL_STATIC_LIBRARIES += libgtest_main
+ LOCAL_C_INCLUDES += $(LOCAL_PATH)/../include
+diff --git a/libusbhost/Android.mk b/libusbhost/Android.mk
+index 5c12f2c..b390c7e 100644
+--- a/libusbhost/Android.mk
++++ b/libusbhost/Android.mk
+@@ -39,7 +39,7 @@ include $(CLEAR_VARS)
+ LOCAL_MODULE := libusbhost
+ LOCAL_SRC_FILES := usbhost.c
+ 
+-LOCAL_CFLAGS := -g -DUSE_LIBLOG -Werror
++LOCAL_CFLAGS := -DUSE_LIBLOG -Werror
+ 
+ # needed for logcat
+ LOCAL_SHARED_LIBRARIES := libcutils
+diff --git a/libutils/Android.mk b/libutils/Android.mk
+index 6cdee0a..39d786d 100644
+--- a/libutils/Android.mk
++++ b/libutils/Android.mk
+@@ -134,19 +134,6 @@ include $(BUILD_SHARED_LIBRARY)
+ 
+ # Include subdirectory makefiles
+ # ============================================================
+-include $(CLEAR_VARS)
+-LOCAL_MODULE := SharedBufferTest
+-LOCAL_STATIC_LIBRARIES := libutils libcutils
+-LOCAL_SHARED_LIBRARIES := liblog
+-LOCAL_SRC_FILES := SharedBufferTest.cpp
+-include $(BUILD_NATIVE_TEST)
+-
+-include $(CLEAR_VARS)
+-LOCAL_MODULE := SharedBufferTest
+-LOCAL_STATIC_LIBRARIES := libutils libcutils
+-LOCAL_SHARED_LIBRARIES := liblog
+-LOCAL_SRC_FILES := SharedBufferTest.cpp
+-include $(BUILD_HOST_NATIVE_TEST)
+ 
+ # If we're building with ONE_SHOT_MAKEFILE (mm, mmm), then what the framework
+ # team really wants is to build the stuff defined by this makefile.
+diff --git a/logcat/tests/Android.mk b/logcat/tests/Android.mk
+index 015a23d..115e9f6 100644
+--- a/logcat/tests/Android.mk
++++ b/logcat/tests/Android.mk
+@@ -21,7 +21,7 @@ test_tags := tests
+ 
+ test_c_flags := \
+     -fstack-protector-all \
+-    -g \
++    \
+     -Wall -Wextra \
+     -Werror \
+     -fno-builtin \
+diff --git a/logd/tests/Android.mk b/logd/tests/Android.mk
+index f851288..c5c9b2f 100644
+--- a/logd/tests/Android.mk
++++ b/logd/tests/Android.mk
+@@ -29,7 +29,7 @@ test_tags := tests
+ 
+ test_c_flags := \
+     -fstack-protector-all \
+-    -g \
++    \
+     -Wall -Wextra \
+     -Werror \
+     -fno-builtin \
+-- 
+2.5.0
+

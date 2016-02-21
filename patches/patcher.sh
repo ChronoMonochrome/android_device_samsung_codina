@@ -15,7 +15,9 @@ if [ "$PATCHES" == "" ] ; then
         frameworks/opt/telephony/  $KERNEL_PATCH  libcore $(find packages/apps/ -type d) \
         packages/services/Telecomm  packages/services/Telephony \
 	packages/providers/DownloadProvider/ \
-	system/core system/extras system/vold system/security \
+	system/core \
+	#system/extras system/vold \
+	system/security \
 	vendor/omni"
 fi
 
