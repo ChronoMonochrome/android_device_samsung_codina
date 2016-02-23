@@ -1,0 +1,35 @@
+From 5026d110703468fea923845e8378781e41e1adea Mon Sep 17 00:00:00 2001
+From: daisuke jinno <daisuke.x.jinno@sonymobile.com>
+Date: Wed, 22 Apr 2015 15:28:12 +0900
+Subject: [PATCH 85/95] The preview frame data is broken when sending via
+ Binder
+
+[Cause]
+CallbackProcessor uses always same buffer to send preview data.
+A buffer is written before it is read by user process.
+
+[Solution]
+Increment buffer index correctly.
+
+Change-Id: I87a7e3dc6546448a419c96aa58ace3b7d086bf70
+Signed-off-by: Chet Kener <Cl3Kener@gmail.com>
+---
+ services/camera/libcameraservice/api1/client2/CallbackProcessor.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/services/camera/libcameraservice/api1/client2/CallbackProcessor.cpp b/services/camera/libcameraservice/api1/client2/CallbackProcessor.cpp
+index eadaa00..8afc90d 100644
+--- a/services/camera/libcameraservice/api1/client2/CallbackProcessor.cpp
++++ b/services/camera/libcameraservice/api1/client2/CallbackProcessor.cpp
+@@ -395,7 +395,7 @@ status_t CallbackProcessor::processNewCallback(sp<Camera2Client> &client) {
+ 
+         heapIdx = mCallbackHeapHead;
+ 
+-        mCallbackHeapHead = (mCallbackHeapHead + 1) & kCallbackHeapCount;
++        mCallbackHeapHead = (mCallbackHeapHead + 1) % kCallbackHeapCount;
+         mCallbackHeapFree--;
+ 
+         // TODO: Get rid of this copy by passing the gralloc queue all the way
+-- 
+2.5.0
+

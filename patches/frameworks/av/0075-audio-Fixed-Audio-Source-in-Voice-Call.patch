@@ -1,0 +1,44 @@
+From 62b656905e9716679eb21403a2c6853faa866c57 Mon Sep 17 00:00:00 2001
+From: Ramjee Singh <ramjee@codeaurora.org>
+Date: Wed, 25 Mar 2015 16:29:44 +0530
+Subject: [PATCH 75/95] audio: Fixed Audio Source in Voice Call
+
+setPhoneState calls getDeviceForInputSource to check if
+voice_tx device is available as part of Primary Audio
+Module. getDeviceForInputSource always returns
+DEVICE_IN_COMMUNICATION for SOURCE_VOICE_COMMUNICATION
+on A Family and this is not added to Available devices
+This is leading to creation of txPatch when it is not
+needed
+
+Fix is to use AUDIO_SOURCE_VOICE_CALL instead of
+AUDIO_SOURCE_VOICE_COMMUNICATION this fix is present
+in I9aa7dd2139b8374ec7f06676d06ef5addea4b2a9 and
+removed during MR1 upgrade
+
+commit c8fc8b8a5ca8b33eca146c3f40c07731b245324e
+
+Change-Id: I3098ed4e480a976853e6a5959ab37381ad4850f9
+---
+ services/audiopolicy/AudioPolicyManager.cpp | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/services/audiopolicy/AudioPolicyManager.cpp b/services/audiopolicy/AudioPolicyManager.cpp
+index 6ebd0ed..fba11cd 100644
+--- a/services/audiopolicy/AudioPolicyManager.cpp
++++ b/services/audiopolicy/AudioPolicyManager.cpp
+@@ -492,7 +492,11 @@ void AudioPolicyManager::updateCallRouting(audio_devices_t rxDevice, int delayMs
+     audio_patch_handle_t afPatchHandle;
+     DeviceVector deviceList;
+ 
++#ifndef QCOM_DIRECTTRACK
+     audio_devices_t txDevice = getDeviceAndMixForInputSource(AUDIO_SOURCE_VOICE_COMMUNICATION);
++#else
++    audio_devices_t txDevice = getDeviceAndMixForInputSource(AUDIO_SOURCE_VOICE_CALL);
++#endif
+     ALOGV("updateCallRouting device rxDevice %08x txDevice %08x", rxDevice, txDevice);
+ 
+     // release existing RX patch if any
+-- 
+2.5.0
+

@@ -1,0 +1,30 @@
+From dc47b6a1c041c1e4c0fedc964326c770d684814a Mon Sep 17 00:00:00 2001
+From: Per Persson <per.persson@intel.com>
+Date: Thu, 6 Nov 2014 13:26:51 +0100
+Subject: [PATCH 68/95] libstagefright: defer kWhatSetParameters in
+ OutputPortSettingsChangedState
+
+Change-Id: I9719f1698bf411914eb753d3c349a15b9fbf9df6
+Signed-off-by: Per Persson <per.persson@intel.com>
+Signed-off-by: Persson, Mikael <mikael.persson@intel.com>
+Signed-off-by: Fagerstedt, Axel <axel.fagerstedt@intel.com>
+Signed-off-by: Yong Yao <yong.yao@intel.com>
+---
+ media/libstagefright/ACodec.cpp | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/media/libstagefright/ACodec.cpp b/media/libstagefright/ACodec.cpp
+index abc56f0..fa019cd 100644
+--- a/media/libstagefright/ACodec.cpp
++++ b/media/libstagefright/ACodec.cpp
+@@ -5725,6 +5725,7 @@ bool ACodec::OutputPortSettingsChangedState::onMessageReceived(
+         case kWhatFlush:
+         case kWhatShutdown:
+         case kWhatResume:
++        case kWhatSetParameters:
+         {
+             if (msg->what() == kWhatResume) {
+                 ALOGV("[%s] Deferring resume", mCodec->mComponentName.c_str());
+-- 
+2.5.0
+

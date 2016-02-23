@@ -1,0 +1,41 @@
+From 341264ebb0bce37ac123d57ae45f89dad67ebcff Mon Sep 17 00:00:00 2001
+From: Robert Shih <robertshih@google.com>
+Date: Mon, 30 Mar 2015 14:31:03 -0700
+Subject: [PATCH 92/95] ESQueue:use 0x000001 instead of 0x00000001 as sync word
+ in H264/MPEG_VIDEO
+
+H264/MPEG_VIDEO sync words can be either 0x000001 (3 bytes) or
+0x00000001 (4 bytes); simply searching for 0x000001 in appendData
+suffices because:
+
+1. 0x000001 is a suffix of 0x00000001, as such we would continue to
+   identify all sync words that we used to identify originally.
+
+2. the parsing logic downstream of appendData in
+   dequeueAccessUnitMPEGVideo and dequeueAccessUnitH264
+   can both handle 0x000001.
+
+Bug: 19900317
+Change-Id: Iac42aad74563d056a443b4396eacbae0f7a4738b
+---
+ media/libstagefright/mpeg2ts/ESQueue.cpp | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/media/libstagefright/mpeg2ts/ESQueue.cpp b/media/libstagefright/mpeg2ts/ESQueue.cpp
+index 6e4f9d8..24ce994 100644
+--- a/media/libstagefright/mpeg2ts/ESQueue.cpp
++++ b/media/libstagefright/mpeg2ts/ESQueue.cpp
+@@ -266,8 +266,8 @@ status_t ElementaryStreamQueue::appendData(
+                 uint8_t *ptr = (uint8_t *)data;
+ 
+                 ssize_t startOffset = -1;
+-                for (size_t i = 0; i + 3 < size; ++i) {
+-                    if (!memcmp("\x00\x00\x00\x01", &ptr[i], 4)) {
++                for (size_t i = 0; i + 2 < size; ++i) {
++                    if (!memcmp("\x00\x00\x01", &ptr[i], 3)) {
+                         startOffset = i;
+                         break;
+                     }
+-- 
+2.5.0
+

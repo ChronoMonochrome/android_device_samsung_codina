@@ -1,0 +1,29 @@
+From effdefb3df50abf8942f75e0d7a8c2adf5093a90 Mon Sep 17 00:00:00 2001
+From: Andreas Lillvik <andreas.lillvik@sonyericsson.com>
+Date: Tue, 9 Nov 2010 13:28:30 +0100
+Subject: [PATCH 69/95] Added support for YEAR metadata key from VorbisComments
+
+The OggExtractor wasn't extracting the YEAR key when the metadata in
+the file was parsed. The YEAR key is now extracted when the file
+metadata is parsed.
+
+Change-Id: Idf0d1a37fb141491dce5de527703ca1b27f621e7
+---
+ media/libstagefright/OggExtractor.cpp | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/media/libstagefright/OggExtractor.cpp b/media/libstagefright/OggExtractor.cpp
+index 0a720ac..bca26b9 100644
+--- a/media/libstagefright/OggExtractor.cpp
++++ b/media/libstagefright/OggExtractor.cpp
+@@ -851,6 +851,7 @@ void parseVorbisComment(
+         { "TRACKNUMBER", kKeyCDTrackNumber },
+         { "DISCNUMBER", kKeyDiscNumber },
+         { "DATE", kKeyDate },
++        { "YEAR", kKeyYear },
+         { "LYRICIST", kKeyWriter },
+         { "METADATA_BLOCK_PICTURE", kKeyAlbumArt },
+         { "ANDROID_LOOP", kKeyAutoLoop },
+-- 
+2.5.0
+

@@ -1,0 +1,32 @@
+From 5de7cffa868e36c0bbeb937888c506244e78f1fd Mon Sep 17 00:00:00 2001
+From: Marco Nelissen <marcone@google.com>
+Date: Wed, 10 Dec 2014 11:05:32 -0800
+Subject: [PATCH 67/95] Truncate file before recording into it.
+
+Recording into an existing file of non-zero length could leave old
+data in the file after the recording ends. Best case that wastes
+space, worst case it results in a file that's considered corrupt
+on playback.
+
+Change-Id: I2c77a107603b2b36790958360ff0856c2b28d677
+---
+ media/libmediaplayerservice/StagefrightRecorder.cpp | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/media/libmediaplayerservice/StagefrightRecorder.cpp b/media/libmediaplayerservice/StagefrightRecorder.cpp
+index fcfc1bd..ad8f6fa 100644
+--- a/media/libmediaplayerservice/StagefrightRecorder.cpp
++++ b/media/libmediaplayerservice/StagefrightRecorder.cpp
+@@ -263,6 +263,9 @@ status_t StagefrightRecorder::setOutputFile(int fd, int64_t offset, int64_t leng
+         return -EBADF;
+     }
+ 
++    // start with a clean, empty file
++    ftruncate(fd, 0);
++
+     if (mOutputFd >= 0) {
+         ::close(mOutputFd);
+     }
+-- 
+2.5.0
+
