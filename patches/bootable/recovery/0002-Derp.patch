@@ -1,0 +1,38 @@
+From 7e4cc1675bede87363a7f08f201acb2db6a38672 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Thu, 25 Feb 2016 05:50:51 +0700
+Subject: [PATCH 2/2] Derp
+
+Change-Id: I4cbe397082b8e46f08f7e2c64bfc4d44f4041f8d
+---
+ Android.mk | 9 ---------
+ 1 file changed, 9 deletions(-)
+
+diff --git a/Android.mk b/Android.mk
+index 5bbd6cd..bcc470c 100644
+--- a/Android.mk
++++ b/Android.mk
+@@ -315,20 +315,11 @@ endif
+ 
+ LOCAL_PATH_ := $(call my-dir)
+ 
+-include $(TOP)/system/core/adf/libadf/Android.mk
+ include $(CLEAR_VARS)
+ 
+ include    $(LOCAL_PATH_)/minui/Android.mk \
+     $(LOCAL_PATH_)/minzip/Android.mk \
+-    #$(LOCAL_PATH_)/minadbd/Android.mk \
+-    $(LOCAL_PATH_)/mtdutils/Android.mk \
+-    $(LOCAL_PATH_)/tests/Android.mk \
+-    $(LOCAL_PATH_)/tools/Android.mk \
+     $(LOCAL_PATH_)/edify/Android.mk \
+-    $(LOCAL_PATH_)/uncrypt/Android.mk \
+-    $(LOCAL_PATH_)/updater/Android.mk \
+-    $(LOCAL_PATH_)/applypatch/Android.mk \
+-    $(LOCAL_PATH_)/voldclient/Android.mk
+ 
+ include $(LOCAL_PATH_)/mtdutils/Android.mk \
+ 	$(LOCAL_PATH_)/applypatch/Android.mk \
+-- 
+2.5.0
+

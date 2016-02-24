@@ -16,7 +16,8 @@ if [ "$PATCHES" == "" ] ; then
         packages/services/Telecomm  packages/services/Telephony \
 	packages/providers/DownloadProvider/ \
 	system/core \
-	#system/extras system/vold \
+	system/extras \
+        #system/vold \
 	system/security \
 	vendor/omni"
 fi

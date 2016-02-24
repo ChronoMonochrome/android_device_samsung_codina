@@ -1,0 +1,30 @@
+From 79c8a1bc3cd6925043aaa90b3e6805369a243451 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Thu, 25 Feb 2016 05:51:05 +0700
+Subject: [PATCH 2/2] Derp
+
+Change-Id: I457bd835f4291f36173c0378d04e66b319fdb03f
+---
+ libm/Android.mk | 5 +----
+ 1 file changed, 1 insertion(+), 4 deletions(-)
+
+diff --git a/libm/Android.mk b/libm/Android.mk
+index b908d70..35f6a50 100644
+--- a/libm/Android.mk
++++ b/libm/Android.mk
+@@ -12,11 +12,8 @@ libm_common_src_files += \
+     significandl.c \
+     sincos.c \
+ 
+-ifeq($(ENABLE_LTO),true)
+-    libm_common_src_files += ../libc/bionic/fpclassify.cpp \
+-endif
+-
+ libm_common_src_files += \
++    libm_common_src_files += ../libc/bionic/fpclassify.cpp \
+     upstream-freebsd/lib/msun/bsdsrc/b_exp.c \
+     upstream-freebsd/lib/msun/bsdsrc/b_log.c \
+     upstream-freebsd/lib/msun/bsdsrc/b_tgamma.c \
+-- 
+2.5.0
+
