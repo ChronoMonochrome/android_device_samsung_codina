@@ -229,14 +229,14 @@ TARGET_BOOTANIMATION_TEXTURE_CACHE := true
 TARGET_BOOTANIMATION_USE_RGB565 := true
 
 # Dex Pre-opt
-#WITH_DEXPREOPT := true
-#DONT_DEXPREOPT_PREBUILTS := true
+WITH_DEXPREOPT := true
+DONT_DEXPREOPT_PREBUILTS := true
 
 # Disable compression of precompiled odex with gzip
-#WITH_DEXPREOPT_COMP := false
+WITH_DEXPREOPT_COMP := false
  
 # Enable position-independent code for odex files
-#WITH_DEXPREOPT_PIC := true
+WITH_DEXPREOPT_PIC := true
 
 FFAST_MATH := true
 FORCE_GCC52 := true
