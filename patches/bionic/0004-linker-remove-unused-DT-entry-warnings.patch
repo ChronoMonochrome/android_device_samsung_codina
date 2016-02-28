@@ -1,0 +1,30 @@
+From 64a3bf023bd1d465d459f9fd4af37e5f0e4b4eff Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Fri, 26 Feb 2016 21:14:48 +0700
+Subject: [PATCH 4/4] linker: remove unused DT entry warnings
+
+Change-Id: Ia301d1f5db20c38dbc3b3dd926a013ecbec92253
+---
+ linker/linker.cpp | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/linker/linker.cpp b/linker/linker.cpp
+index a86e081..a4c4d3c 100644
+--- a/linker/linker.cpp
++++ b/linker/linker.cpp
+@@ -2186,10 +2186,12 @@ bool soinfo::PrelinkImage() {
+         break;
+ 
+       default:
++/*
+         if (!relocating_linker) {
+           DL_WARN("%s: unused DT entry: type %p arg %p", name,
+               reinterpret_cast<void*>(d->d_tag), reinterpret_cast<void*>(d->d_un.d_val));
+         }
++*/
+         break;
+     }
+   }
+-- 
+2.5.0
+
