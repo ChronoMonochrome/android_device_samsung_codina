@@ -1,0 +1,506 @@
+From 64ff734a02f5195f7d790b3ec7e7b230dbbb606d Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Sun, 28 Feb 2016 14:34:24 +0700
+Subject: [PATCH 5/5] bionic: build libc_hard and libm_hard with hard float ABI
+
+Change-Id: I65fb5cc335d205840908d93b82dc8d73f3022bc9
+---
+ libc/Android.mk | 405 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ libm/Android.mk |  32 +++++
+ 2 files changed, 437 insertions(+)
+
+diff --git a/libc/Android.mk b/libc/Android.mk
+index 44c92ed..7a5a27c 100644
+--- a/libc/Android.mk
++++ b/libc/Android.mk
+@@ -811,6 +811,240 @@ LOCAL_SYSTEM_SHARED_LIBRARIES :=
+ $(eval $(call patch-up-arch-specific-flags,LOCAL_CFLAGS,libc_common_cflags))
+ include $(BUILD_STATIC_LIBRARY)
+ 
++# ========================================================
++# libc_stack_protector.a - stack protector code
++# ========================================================
++#
++# The stack protector code needs to be compiled
++# with -fno-stack-protector, since it modifies the
++# stack canary.
++
++include $(CLEAR_VARS)
++
++LOCAL_SRC_FILES := bionic/__stack_chk_fail.cpp
++LOCAL_CFLAGS := $(libc_common_cflags) -fno-stack-protector
++LOCAL_CONLYFLAGS := $(libc_common_conlyflags)
++LOCAL_CPPFLAGS := $(libc_common_cppflags)
++LOCAL_C_INCLUDES := $(libc_common_c_includes)
++LOCAL_MODULE := libc_stack_protector_hard
++LOCAL_CLANG := $(use_clang)
++LOCAL_ADDITIONAL_DEPENDENCIES := $(libc_common_additional_dependencies)
++LOCAL_SYSTEM_SHARED_LIBRARIES :=
++
++$(eval $(call patch-up-arch-specific-flags,LOCAL_CFLAGS,libc_common_cflags))
++include $(BUILD_STATIC_LIBRARY)
++
++
++# ========================================================
++# libc_tzcode_hard.a - upstream 'tzcode' code
++# ========================================================
++
++include $(CLEAR_VARS)
++
++LOCAL_SRC_FILES := $(call all-c-files-under,tzcode)
++# tzcode doesn't include wcsftime, so we use the OpenBSD one.
++LOCAL_SRC_FILES += upstream-openbsd/lib/libc/time/wcsftime.c
++
++LOCAL_CFLAGS := $(libc_common_cflags) \
++    -fvisibility=hidden \
++
++# Don't use ridiculous amounts of stack.
++LOCAL_CFLAGS += -DALL_STATE
++# Include tzsetwall, timelocal, timegm, time2posix, and posix2time.
++LOCAL_CFLAGS += -DSTD_INSPIRED
++# The name of the tm_gmtoff field in our struct tm.
++LOCAL_CFLAGS += -DTM_GMTOFF=tm_gmtoff
++# Where we store our tzdata.
++LOCAL_CFLAGS += -DTZDIR=\"/system/usr/share/zoneinfo\"
++# Include timezone and daylight globals.
++LOCAL_CFLAGS += -DUSG_COMPAT=1
++LOCAL_CFLAGS += -DNO_RUN_TIME_WARNINGS_ABOUT_YEAR_2000_PROBLEMS_THANK_YOU
++LOCAL_CFLAGS += -Dlint
++
++LOCAL_CONLYFLAGS := $(libc_common_conlyflags)
++LOCAL_CPPFLAGS := $(libc_common_cppflags)
++LOCAL_C_INCLUDES := $(libc_common_c_includes) $(LOCAL_PATH)/tzcode/
++LOCAL_MODULE := libc_tzcode_hard
++LOCAL_CLANG := $(use_clang)
++LOCAL_ADDITIONAL_DEPENDENCIES := $(libc_common_additional_dependencies)
++LOCAL_SYSTEM_SHARED_LIBRARIES :=
++
++$(eval $(call patch-up-arch-specific-flags,LOCAL_CFLAGS,libc_common_cflags))
++include $(BUILD_STATIC_LIBRARY)
++
++
++# ========================================================
++# libc_dns_hard.a - modified NetBSD DNS code
++# ========================================================
++
++include $(CLEAR_VARS)
++
++LOCAL_SRC_FILES := \
++    $(call all-c-files-under,dns) \
++    upstream-netbsd/lib/libc/isc/ev_streams.c \
++    upstream-netbsd/lib/libc/isc/ev_timers.c \
++    upstream-netbsd/lib/libc/resolv/mtctxres.c \
++
++LOCAL_CFLAGS := \
++    $(libc_common_cflags) \
++    -DANDROID_CHANGES \
++    -DINET6 \
++    -fvisibility=hidden \
++    -Wno-unused-parameter \
++    -I$(LOCAL_PATH)/dns/include \
++    -I$(LOCAL_PATH)/private \
++    -I$(LOCAL_PATH)/upstream-netbsd/lib/libc/include \
++    -I$(LOCAL_PATH)/upstream-netbsd/android/include \
++    -include netbsd-compat.h \
++
++LOCAL_CONLYFLAGS := $(libc_common_conlyflags)
++LOCAL_CPPFLAGS := $(libc_common_cppflags)
++LOCAL_C_INCLUDES := $(libc_common_c_includes)
++LOCAL_MODULE := libc_dns_hard
++LOCAL_CLANG := $(use_clang)
++LOCAL_ADDITIONAL_DEPENDENCIES := $(libc_common_additional_dependencies)
++LOCAL_SYSTEM_SHARED_LIBRARIES :=
++
++$(eval $(call patch-up-arch-specific-flags,LOCAL_CFLAGS,libc_common_cflags))
++include $(BUILD_STATIC_LIBRARY)
++
++
++# ========================================================
++# libc_freebsd_hard.a - upstream FreeBSD C library code
++# ========================================================
++#
++# These files are built with the freebsd-compat.h header file
++# automatically included.
++
++include $(CLEAR_VARS)
++
++LOCAL_SRC_FILES := $(libc_upstream_freebsd_src_files)
++LOCAL_CFLAGS := \
++    $(libc_common_cflags) \
++    -Wno-sign-compare -Wno-uninitialized \
++    -I$(LOCAL_PATH)/upstream-freebsd/android/include \
++    -I$(LOCAL_PATH)/upstream-freebsd/lib/libc/include \
++    -include freebsd-compat.h \
++
++LOCAL_CONLYFLAGS := $(libc_common_conlyflags)
++LOCAL_CPPFLAGS := $(libc_common_cppflags)
++LOCAL_C_INCLUDES := $(libc_common_c_includes)
++LOCAL_MODULE := libc_freebsd_hard
++LOCAL_CLANG := $(use_clang)
++LOCAL_ADDITIONAL_DEPENDENCIES := $(libc_common_additional_dependencies)
++LOCAL_SYSTEM_SHARED_LIBRARIES :=
++
++$(eval $(call patch-up-arch-specific-flags,LOCAL_CFLAGS,libc_common_cflags))
++$(eval $(call patch-up-arch-specific-flags,LOCAL_SRC_FILES,libc_freebsd_src_files))
++include $(BUILD_STATIC_LIBRARY)
++
++
++# ========================================================
++# libc_netbsd_hard.a - upstream NetBSD C library code
++# ========================================================
++#
++# These files are built with the netbsd-compat.h header file
++# automatically included.
++
++include $(CLEAR_VARS)
++
++LOCAL_SRC_FILES := $(libc_upstream_netbsd_src_files)
++LOCAL_CFLAGS := \
++    $(libc_common_cflags) \
++    -Wno-sign-compare -Wno-uninitialized \
++    -DPOSIX_MISTAKE \
++    -I$(LOCAL_PATH)/upstream-netbsd/android/include \
++    -I$(LOCAL_PATH)/upstream-netbsd/lib/libc/include \
++    -include netbsd-compat.h \
++
++LOCAL_CONLYFLAGS := $(libc_common_conlyflags)
++LOCAL_CPPFLAGS := $(libc_common_cppflags)
++LOCAL_C_INCLUDES := $(libc_common_c_includes)
++LOCAL_MODULE := libc_netbsd_hard
++LOCAL_CLANG := $(use_clang)
++LOCAL_ADDITIONAL_DEPENDENCIES := $(libc_common_additional_dependencies)
++LOCAL_SYSTEM_SHARED_LIBRARIES :=
++
++$(eval $(call patch-up-arch-specific-flags,LOCAL_CFLAGS,libc_common_cflags))
++$(eval $(call patch-up-arch-specific-flags,LOCAL_SRC_FILES,libc_netbsd_src_files))
++include $(BUILD_STATIC_LIBRARY)
++
++
++# ========================================================
++# libc_openbsd_hard.a - upstream OpenBSD C library code
++# ========================================================
++#
++# These files are built with the openbsd-compat.h header file
++# automatically included.
++
++include $(CLEAR_VARS)
++
++LOCAL_SRC_FILES := $(libc_upstream_openbsd_src_files)
++ifneq (,$(filter $(TARGET_ARCH),x86 x86_64))
++  # Clang has wrong long double size or LDBL_MANT_DIG, http://b/17163651.
++  LOCAL_CLANG := false
++else
++  LOCAL_CLANG := $(use_clang)
++endif
++
++LOCAL_CFLAGS := \
++    $(libc_common_cflags) \
++    -Wno-sign-compare -Wno-uninitialized -Wno-unused-parameter \
++    -I$(LOCAL_PATH)/private \
++    -I$(LOCAL_PATH)/upstream-openbsd/android/include \
++    -I$(LOCAL_PATH)/upstream-openbsd/lib/libc/include \
++    -I$(LOCAL_PATH)/upstream-openbsd/lib/libc/gdtoa/ \
++    -include openbsd-compat.h \
++
++LOCAL_CONLYFLAGS := $(libc_common_conlyflags)
++LOCAL_CPPFLAGS := $(libc_common_cppflags)
++LOCAL_C_INCLUDES := $(libc_common_c_includes)
++LOCAL_MODULE := libc_openbsd_hard
++LOCAL_ADDITIONAL_DEPENDENCIES := $(libc_common_additional_dependencies)
++LOCAL_SYSTEM_SHARED_LIBRARIES :=
++
++$(eval $(call patch-up-arch-specific-flags,LOCAL_CFLAGS,libc_common_cflags))
++$(eval $(call patch-up-arch-specific-flags,LOCAL_SRC_FILES,libc_openbsd_src_files))
++include $(BUILD_STATIC_LIBRARY)
++
++
++# ========================================================
++# libc_gdtoa_hard.a - upstream OpenBSD C library gdtoa code
++# ========================================================
++#
++# These files are built with the openbsd-compat.h header file
++# automatically included.
++
++include $(CLEAR_VARS)
++
++LOCAL_SRC_FILES_32 := $(libc_upstream_openbsd_gdtoa_src_files_32)
++LOCAL_SRC_FILES_64 := $(libc_upstream_openbsd_gdtoa_src_files_64)
++ifneq (,$(filter $(TARGET_ARCH),x86 x86_64))
++  # Clang has wrong long double size or LDBL_MANT_DIG, http://b/17163651.
++  LOCAL_CLANG := false
++else
++  LOCAL_CLANG := $(use_clang)
++endif
++
++LOCAL_CFLAGS := \
++    $(libc_common_cflags) \
++    -Wno-sign-compare -Wno-uninitialized \
++    -fvisibility=hidden \
++    -I$(LOCAL_PATH)/private \
++    -I$(LOCAL_PATH)/upstream-openbsd/android/include \
++    -I$(LOCAL_PATH)/upstream-openbsd/lib/libc/include \
++    -include openbsd-compat.h \
++
++LOCAL_CONLYFLAGS := $(libc_common_conlyflags)
++LOCAL_CPPFLAGS := $(libc_common_cppflags)
++LOCAL_C_INCLUDES := $(libc_common_c_includes)
++LOCAL_MODULE := libc_gdtoa_hard
++LOCAL_ADDITIONAL_DEPENDENCIES := $(libc_common_additional_dependencies)
++LOCAL_SYSTEM_SHARED_LIBRARIES :=
++
++$(eval $(call patch-up-arch-specific-flags,LOCAL_CFLAGS,libc_common_cflags))
++include $(BUILD_STATIC_LIBRARY)
++
+ 
+ # ========================================================
+ # libc_bionic.a - home-grown C library code
+@@ -879,6 +1113,73 @@ LOCAL_SYSTEM_SHARED_LIBRARIES :=
+ 
+ include $(BUILD_STATIC_LIBRARY)
+ 
++# ========================================================
++# libc_bionic_hard.a - home-grown C library code
++# ========================================================
++
++include $(CLEAR_VARS)
++
++LOCAL_SRC_FILES := $(libc_bionic_src_files)
++LOCAL_CFLAGS := $(libc_common_cflags) \
++    -Wframe-larger-than=2048 \
++
++ifeq ($(TARGET_ARCH),x86_64)
++  # Clang assembler has problem with ssse3-strcmp-slm.S, http://b/17302991
++  LOCAL_CLANG_ASFLAGS += -no-integrated-as
++endif
++
++LOCAL_CONLYFLAGS := $(libc_common_conlyflags)
++LOCAL_CPPFLAGS := $(libc_common_cppflags)
++LOCAL_C_INCLUDES := $(libc_common_c_includes)
++LOCAL_MODULE := libc_bionic_hard
++LOCAL_CLANG := $(use_clang)
++LOCAL_ADDITIONAL_DEPENDENCIES := $(libc_common_additional_dependencies)
++LOCAL_SYSTEM_SHARED_LIBRARIES :=
++
++$(eval $(call patch-up-arch-specific-flags,LOCAL_CFLAGS,libc_common_cflags))
++$(eval $(call patch-up-arch-specific-flags,LOCAL_SRC_FILES,libc_bionic_src_files))
++include $(BUILD_STATIC_LIBRARY)
++
++
++# ========================================================
++# libc_cxa_hard.a - Things traditionally in libstdc++
++# ========================================================
++
++include $(CLEAR_VARS)
++
++LOCAL_SRC_FILES := $(libc_cxa_src_files)
++LOCAL_CFLAGS := $(libc_common_cflags) \
++    -fvisibility=hidden \
++
++LOCAL_CONLYFLAGS := $(libc_common_conlyflags)
++LOCAL_CPPFLAGS := $(libc_common_cppflags)
++LOCAL_C_INCLUDES := $(libc_common_c_includes)
++LOCAL_MODULE := libc_cxa_hard
++# GCC refuses to hide new/delete
++LOCAL_CLANG := true
++LOCAL_ADDITIONAL_DEPENDENCIES := $(libc_common_additional_dependencies)
++LOCAL_SYSTEM_SHARED_LIBRARIES :=
++
++include $(BUILD_STATIC_LIBRARY)
++
++
++# ========================================================
++# libc_syscalls_hard.a
++# ========================================================
++
++include $(CLEAR_VARS)
++
++LOCAL_SRC_FILES_$(TARGET_ARCH) := $(call all-S-files-under,arch-$(TARGET_ARCH)/syscalls)
++ifdef TARGET_2ND_ARCH
++LOCAL_SRC_FILES_$(TARGET_2ND_ARCH) := $(call all-S-files-under,arch-$(TARGET_2ND_ARCH)/syscalls)
++endif
++LOCAL_MODULE := libc_syscalls_hard
++LOCAL_CLANG := $(use_clang)
++LOCAL_ADDITIONAL_DEPENDENCIES := $(libc_common_additional_dependencies)
++LOCAL_SYSTEM_SHARED_LIBRARIES :=
++
++include $(BUILD_STATIC_LIBRARY)
++
+ 
+ # ========================================================
+ # libc_aeabi.a
+@@ -899,6 +1200,24 @@ LOCAL_SYSTEM_SHARED_LIBRARIES :=
+ include $(BUILD_STATIC_LIBRARY)
+ 
+ # ========================================================
++# libc_aeabi_hard.a
++# This is an LP32 ARM-only library that needs to be built with -fno-builtin
++# to avoid infinite recursion. For the other architectures we just build an
++# empty library to keep this makefile simple.
++# ========================================================
++
++include $(CLEAR_VARS)
++
++LOCAL_SRC_FILES_arm := arch-arm/bionic/__aeabi.c
++LOCAL_MODULE := libc_aeabi_hard
++LOCAL_CLANG := $(use_clang)
++LOCAL_CFLAGS := $(libc_common_cflags) -fno-builtin
++LOCAL_ADDITIONAL_DEPENDENCIES := $(libc_common_additional_dependencies)
++LOCAL_SYSTEM_SHARED_LIBRARIES :=
++
++include $(BUILD_STATIC_LIBRARY)
++
++# ========================================================
+ # libc_common.a
+ # ========================================================
+ 
+@@ -941,6 +1260,49 @@ $(eval $(call patch-up-arch-specific-flags,LOCAL_SRC_FILES,libc_common_src_files
+ $(eval $(call patch-up-arch-specific-flags,LOCAL_ASFLAGS,LOCAL_CFLAGS))
+ include $(BUILD_STATIC_LIBRARY)
+ 
++# ========================================================
++# libc_common_hard.a
++# ========================================================
++
++include $(CLEAR_VARS)
++
++LOCAL_SRC_FILES := $(libc_common_src_files)
++LOCAL_CFLAGS := $(libc_common_cflags)
++LOCAL_CONLYFLAGS := $(libc_common_conlyflags)
++LOCAL_CPPFLAGS := $(libc_common_cppflags)
++LOCAL_C_INCLUDES := $(libc_common_c_includes)
++LOCAL_MODULE := libc_common_hard
++LOCAL_CLANG := $(use_clang)
++LOCAL_ADDITIONAL_DEPENDENCIES := $(libc_common_additional_dependencies)
++LOCAL_WHOLE_STATIC_LIBRARIES := \
++    libc_bionic_hard \
++    libc_cxa_hard \
++    libc_dns_hard \
++    libc_freebsd_hard \
++    libc_gdtoa_hard \
++    libc_malloc_hard \
++    libc_netbsd_hard \
++    libc_openbsd_hard \
++    libc_stack_protector_hard \
++    libc_syscalls_hard \
++    libc_tzcode_hard \
++
++LOCAL_WHOLE_STATIC_LIBRARIES_arm := libc_aeabi_hard
++
++ifneq ($(MALLOC_IMPL),dlmalloc)
++LOCAL_WHOLE_STATIC_LIBRARIES += libjemalloc
++endif
++
++LOCAL_SYSTEM_SHARED_LIBRARIES :=
++
++# TODO: split out the asflags.
++LOCAL_ASFLAGS := $(LOCAL_CFLAGS)
++
++$(eval $(call patch-up-arch-specific-flags,LOCAL_CFLAGS,libc_common_cflags))
++$(eval $(call patch-up-arch-specific-flags,LOCAL_SRC_FILES,libc_common_src_files))
++$(eval $(call patch-up-arch-specific-flags,LOCAL_ASFLAGS,LOCAL_CFLAGS))
++include $(BUILD_STATIC_LIBRARY)
++
+ 
+ # ========================================================
+ # libc_nomalloc.a
+@@ -994,6 +1356,23 @@ LOCAL_CLANG := $(use_clang)
+ LOCAL_ADDITIONAL_DEPENDENCIES := $(libc_common_additional_dependencies)
+ include $(BUILD_STATIC_LIBRARY)
+ 
++# ========================================================
++# libc_malloc_hard.a: the _prefixed_ malloc functions (like dlcalloc).
++# ========================================================
++
++include $(CLEAR_VARS)
++LOCAL_SRC_FILES := $(libc_malloc_src)
++LOCAL_CFLAGS := $(libc_common_cflags) \
++    -fvisibility=hidden \
++
++LOCAL_CONLYFLAGS := $(libc_common_conlyflags)
++LOCAL_CPPFLAGS := $(libc_common_cppflags)
++LOCAL_C_INCLUDES := $(libc_common_c_includes)
++LOCAL_MODULE := libc_malloc_hard
++LOCAL_CLANG := $(use_clang)
++LOCAL_ADDITIONAL_DEPENDENCIES := $(libc_common_additional_dependencies)
++include $(BUILD_STATIC_LIBRARY)
++
+ 
+ # ========================================================
+ # libc.a
+@@ -1080,6 +1459,32 @@ LOCAL_SRC_FILES_arm += \
+ 
+ include $(BUILD_SHARED_LIBRARY)
+ 
++# ========================================================
++# libc_hard.a
++# ========================================================
++include $(CLEAR_VARS)
++
++LOCAL_SRC_FILES := \
++    $(libc_arch_static_src_files) \
++    $(libc_static_common_src_files) \
++    bionic/malloc_debug_common.cpp \
++    bionic/libc_init_static.cpp \
++
++LOCAL_CFLAGS := $(libc_common_cflags) \
++    -DLIBC_STATIC \
++
++LOCAL_CONLYFLAGS := $(libc_common_conlyflags)
++LOCAL_CPPFLAGS := $(libc_common_cppflags)
++LOCAL_C_INCLUDES := $(libc_common_c_includes)
++LOCAL_MODULE := libc_hard
++LOCAL_CLANG := $(use_clang)
++LOCAL_ADDITIONAL_DEPENDENCIES := $(libc_common_additional_dependencies)
++LOCAL_WHOLE_STATIC_LIBRARIES := libc_common_hard
++LOCAL_SYSTEM_SHARED_LIBRARIES :=
++
++$(eval $(call patch-up-arch-specific-flags,LOCAL_CFLAGS,libc_common_cflags))
++$(eval $(call patch-up-arch-specific-flags,LOCAL_SRC_FILES,libc_arch_static_src_files))
++include $(BUILD_STATIC_LIBRARY)
+ 
+ # For all builds, except for the -user build we will enable memory
+ # allocation checking (including memory leaks, buffer overwrites, etc.)
+diff --git a/libm/Android.mk b/libm/Android.mk
+index 35f6a50..96ec5c3 100644
+--- a/libm/Android.mk
++++ b/libm/Android.mk
+@@ -300,4 +300,36 @@ LOCAL_LDFLAGS_arm64 := -Wl,--exclude-libs,libgcc.a
+ LOCAL_LDFLAGS_mips64 := -Wl,--exclude-libs,libgcc.a
+ LOCAL_LDFLAGS_x86_64 := -Wl,--exclude-libs,libgcc.a
+ include $(BUILD_SHARED_LIBRARY)
++
++#
++# libm_hard.a for target.
++#
++include $(CLEAR_VARS)
++LOCAL_MODULE:= libm_hard
++LOCAL_ADDITIONAL_DEPENDENCIES := $(LOCAL_PATH)/Android.mk
++LOCAL_ARM_MODE := arm
++LOCAL_CFLAGS := $(libm_common_cflags)
++LOCAL_C_INCLUDES += $(libm_common_includes)
++LOCAL_SRC_FILES := $(libm_common_src_files)
++LOCAL_SYSTEM_SHARED_LIBRARIES := libc_hard
++
++# arch-specific settings
++LOCAL_C_INCLUDES_arm := $(LOCAL_PATH)/arm
++LOCAL_SRC_FILES_arm := arm/fenv.c
++
++LOCAL_C_INCLUDES_arm64 := $(libm_ld_includes)
++LOCAL_SRC_FILES_arm64 := arm64/fenv.c $(libm_ld_src_files)
++
++LOCAL_C_INCLUDES_x86 := $(LOCAL_PATH)/i387
++LOCAL_SRC_FILES_x86 := i387/fenv.c
++
++LOCAL_C_INCLUDES_x86_64 := $(libm_ld_includes)
++LOCAL_SRC_FILES_x86_64 := amd64/fenv.c $(libm_ld_src_files)
++
++LOCAL_SRC_FILES_mips := mips/fenv.c
++
++LOCAL_C_INCLUDES_mips64 := $(libm_ld_includes)
++LOCAL_SRC_FILES_mips64 := mips/fenv.c $(libm_ld_src_files)
++
++include $(BUILD_STATIC_LIBRARY)
+ endif
+-- 
+2.5.0
+
