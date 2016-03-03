@@ -1,0 +1,68 @@
+From 430f18d5ee7cc03527b5b8d01042e68e407d5330 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Fri, 4 Mar 2016 03:17:36 +0700
+Subject: [PATCH 2/2] Remove bloat
+
+Change-Id: I6ac8634b73ac2da40fdadd674ca0a61e769e0f8d
+---
+ config/common.mk               |  5 -----
+ prebuilt/etc/init.d/00banner   |  8 --------
+ prebuilt/etc/init.d/90userinit | 15 ---------------
+ 3 files changed, 28 deletions(-)
+ delete mode 100755 prebuilt/etc/init.d/00banner
+ delete mode 100755 prebuilt/etc/init.d/90userinit
+
+diff --git a/config/common.mk b/config/common.mk
+index 2bc6015..4f526fe 100644
+--- a/config/common.mk
++++ b/config/common.mk
+@@ -36,11 +36,6 @@ PRODUCT_COPY_FILES += \
+     vendor/omni/prebuilt/bin/50-hosts.sh:system/addon.d/50-hosts.sh \
+     vendor/omni/prebuilt/bin/blacklist:system/addon.d/blacklist
+ 
+-# init.d support
+-PRODUCT_COPY_FILES += \
+-    vendor/omni/prebuilt/etc/init.d/00banner:system/etc/init.d/00banner \
+-    vendor/omni/prebuilt/bin/sysinit:system/bin/sysinit
+-
+ # userinit support
+ PRODUCT_COPY_FILES += \
+     vendor/omni/prebuilt/etc/init.d/90userinit:system/etc/init.d/90userinit
+diff --git a/prebuilt/etc/init.d/00banner b/prebuilt/etc/init.d/00banner
+deleted file mode 100755
+index e87f899..0000000
+--- a/prebuilt/etc/init.d/00banner
++++ /dev/null
+@@ -1,8 +0,0 @@
+-#!/system/bin/sh
+-
+-echo "==================================="
+-echo " .----. .-.   .-..-. .-..-."
+-echo "/  {}  \|  \`.'  ||  \`| || |"
+-echo "\      /| |\ /| || |\  || |"
+-echo " \`----' \`-' \` \`-'\`-' \`-'\`-'"
+-echo "==================================="
+diff --git a/prebuilt/etc/init.d/90userinit b/prebuilt/etc/init.d/90userinit
+deleted file mode 100755
+index e2b1643..0000000
+--- a/prebuilt/etc/init.d/90userinit
++++ /dev/null
+@@ -1,15 +0,0 @@
+-#!/system/bin/sh
+-# call userinit.sh and/or userinit.d/* scripts if present in /data/local
+-
+-if [ -e /data/local/userinit.sh ];
+-then
+-   log -p i -t userinit "Executing /data/local/userinit.sh";
+-   logwrapper /system/bin/sh /data/local/userinit.sh;
+-   setprop omni.userinit.active 1;
+-fi;
+-
+-if [ -d /data/local/userinit.d ];
+-then
+-   logwrapper busybox run-parts /data/local/userinit.d;
+-   setprop omni.userinit.active 1;
+-fi;
+-- 
+2.5.0
+
