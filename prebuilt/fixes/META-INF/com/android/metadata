@@ -1,0 +1,3 @@
+post-build=samsung/omni_golden/golden:5.1.1/LMY47V/stefan05091923:userdebug/test-keys
+post-timestamp=1431192236
+pre-device=golden
