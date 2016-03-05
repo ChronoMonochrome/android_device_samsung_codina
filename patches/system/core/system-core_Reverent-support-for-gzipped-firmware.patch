@@ -2,7 +2,7 @@ diff --git a/init/Android.mk b/init/Android.mk
 index 1110102..1391772 100644
 --- a/init/Android.mk
 +++ b/init/Android.mk
-@@ -66,7 +66,6 @@ endif
+@@ -73,7 +73,6 @@ endif
  
  LOCAL_MODULE:= init
  LOCAL_C_INCLUDES += \

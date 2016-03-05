@@ -2,9 +2,9 @@ diff --git a/healthd/Android.mk b/healthd/Android.mk
 index b3a2901..a0397a0 100644
 --- a/healthd/Android.mk
 +++ b/healthd/Android.mk
-@@ -55,9 +55,9 @@ endif
- 
- LOCAL_HAL_STATIC_LIBRARIES := libhealthd
+@@ -65,9 +65,9 @@ endif
+ BOARD_HAL_STATIC_LIBRARIES ?= libhealthd.msm
+ endif
  
 -# Symlink /charger to /sbin/healthd
 +# Symlink /charger to /sbin/charger

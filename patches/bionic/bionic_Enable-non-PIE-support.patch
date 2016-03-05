@@ -91,7 +91,7 @@ index 54867dc..0bd97c4 100644
          /*
           * ET_EXEC is not supported so this should not happen.
           *
-@@ -2306,6 +2306,7 @@ int soinfo::Relocate(ElfW(Rel)* rel, unsigned count) {
+@@ -2251,6 +2306,7 @@ int soinfo::Relocate(ElfW(Rel)* rel, unsigned count) {
           */
          DL_ERR("%s R_ARM_COPY relocations are not supported", get_realpath());
          return false;
@@ -99,7 +99,7 @@ index 54867dc..0bd97c4 100644
  #elif defined(__i386__)
        case R_386_32:
          count_relocation(kRelocRelative);
-@@ -3339,11 +3339,13 @@ static ElfW(Addr) __linker_init_post_relocation(KernelArgumentBlock& args, ElfW(
+@@ -3283,11 +3339,13 @@ static ElfW(Addr) __linker_init_post_relocation(KernelArgumentBlock& args, ElfW(
    }
    si->dynamic = nullptr;
  
