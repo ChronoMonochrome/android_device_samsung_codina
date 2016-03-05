@@ -255,12 +255,6 @@ public class SamsungU8500RIL extends RIL implements CommandsInterface {
                 mSamsungu8500RILThread = null;
                 mSamsungu8500RILHandler = null;
             }
-
-            if (!setPreferredNetworkTypeSeen) {
-                riljLog("SamsungU8500RIL: need to reboot modem!");
-                setRadioPower(false, null);
-                setPreferredNetworkTypeSeen = true;
-            }
             sendPreferedNetworktype(networkType, response);
         }
 
@@ -700,10 +694,10 @@ public class SamsungU8500RIL extends RIL implements CommandsInterface {
 
                 // Initial conditions
                 setRadioPower(false, null);
-                if (needsOldRilFeature("setPrefNwTypeOnUnsolConnected")) {
-                    sendPreferedNetworktype(mPreferredNetworkType, null);
-                }
-                // sendPreferedNetworktype(mPreferredNetworkType, null);
+                //if (needsOldRilFeature("setPrefNwTypeOnUnsolConnected")) {
+                //    sendPreferedNetworktype(mPreferredNetworkType, null);
+                //}
+                sendPreferedNetworktype(mPreferredNetworkType, null);
                 setCdmaSubscriptionSource(mCdmaSubscription, null);
                 notifyRegistrantsRilConnectionChanged(((int[])ret)[0]);
                 break;
@@ -1012,24 +1006,21 @@ public class SamsungU8500RIL extends RIL implements CommandsInterface {
         }
     }
 
-    protected Object responseFailCause(Parcel p) {
+    protected Object
+    responseFailCause(Parcel p) {
         int numInts;
         int response[];
 
         numInts = p.readInt();
         response = new int[numInts];
-
         for (int i = 0 ; i < numInts ; i++) {
             response[i] = p.readInt();
         }
-
         LastCallFailCause failCause = new LastCallFailCause();
         failCause.causeCode = response[0];
-
         if (p.dataAvail() > 0) {
-             failCause.vendorCause = p.readString();
+          failCause.vendorCause = p.readString();
         }
-
         return failCause;
     }
 }
