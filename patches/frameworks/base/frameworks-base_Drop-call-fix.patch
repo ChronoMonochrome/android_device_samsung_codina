@@ -2,7 +2,7 @@ diff --git a/libs/hwui/LayerRenderer.cpp b/libs/hwui/LayerRenderer.cpp
 index 83f9c6a..d41baf2 100644
 --- a/libs/hwui/LayerRenderer.cpp
 +++ b/libs/hwui/LayerRenderer.cpp
-@@ -196,6 +196,12 @@ Layer* LayerRenderer::createRenderLayer(RenderState& renderState, uint32_t width
+@@ -194,6 +194,12 @@ Layer* LayerRenderer::createRenderLayer(RenderState& renderState, uint32_t width
          return nullptr;
      }
  

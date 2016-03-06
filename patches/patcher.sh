@@ -8,11 +8,12 @@ if [ "$PATCHES" == "" ] ; then
 	PATCHES="\
 		 bionic \
 		 bootable/recovery \
+		 build \
 		 frameworks/av \
-		 #frameworks/base \
+		 frameworks/base \
 		 frameworks/native  \
 		 frameworks/opt/net/wifi \
-		 #frameworks/opt/telephony \
+		 frameworks/opt/telephony \
 		 external/libpng \
 		 external/sepolicy \
 		 hardware/libhardware \
@@ -22,7 +23,8 @@ if [ "$PATCHES" == "" ] ; then
 		 system/bt \
 		 system/core \
 		 system/media \
-		 system/vold"
+		 system/vold \
+		 vendor/cm"
 
 fi
 

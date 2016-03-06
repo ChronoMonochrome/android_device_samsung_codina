@@ -1,0 +1,48 @@
+ onAccountsUpdated shouldn't be called back after listener unregistered
+
+There is a problem of AccountManager that onAccountsUpdated() is
+called back even after the OnAccountsUpdatedListener is unregistered.
+It may cause application crash.
+
+For example, when rotating a tablet 180 degree with Settings apk
+running, com.android.settings.Settings is re-launched 2 times
+successively. (Destroy->Create->Destroy->Create)
+It repeats adding&removing OnAccountUpdatedListener.
+
+When dialog was being opened in the following cases,
+NullPointerException at BackStackRecord.getBreadCrumbTitle()
+was happened on 10 inch tablet which has 2 panes on Settings.
+* Settings > Language&input > Language
+* Settings > Language & input > Text-to-speech output > Speech rate
+* Settings > Wi-Fi > Menu > Advanced > Keep Wi-Fi on during sleep
+* Settings > Wi-Fi > Menu > Wi-Fi Direct > Rename device
+
+This fix prevents the undesirable callback.
+
+diff --git a/core/java/android/accounts/AccountManager.java b/core/java/android/accounts/AccountManager.java
+index 0208a5a..004f6bb 100644
+--- a/core/java/android/accounts/AccountManager.java
++++ b/core/java/android/accounts/AccountManager.java
+@@ -1882,12 +1882,16 @@ private void postToHandler(Handler handler, final OnAccountsUpdateListener liste
+         handler = (handler == null) ? mMainHandler : handler;
+         handler.post(new Runnable() {
+             public void run() {
+-                try {
+-                    listener.onAccountsUpdated(accountsCopy);
+-                } catch (SQLException e) {
+-                    // Better luck next time.  If the problem was disk-full,
+-                    // the STORAGE_OK intent will re-trigger the update.
+-                    Log.e(TAG, "Can't update accounts", e);
++                synchronized (mAccountsUpdatedListeners) {
++                    try {
++                        if (mAccountsUpdatedListeners.containsKey(listener)) {
++                            listener.onAccountsUpdated(accountsCopy);
++                        }
++                    } catch (SQLException e) {
++                        // Better luck next time.  If the problem was disk-full,
++                        // the STORAGE_OK intent will re-trigger the update.
++                        Log.e(TAG, "Can't update accounts", e);
++                    }
+                 }
+             }
+         });

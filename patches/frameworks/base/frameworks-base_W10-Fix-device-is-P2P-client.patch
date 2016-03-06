@@ -1,0 +1,38 @@
+ Fix WFD source incoming persistent connection when device is P2P client
+
+In the case when we receive an incoming connection from the
+ sink and we are client, we cannot retrieve all device
+ informations from getOwner() method which only returns
+ deviceAddress set in updatePersistentNetworks(), causing
+ an uncatched exception later in isSessionAvailable().
+
+So in case of client, get devices informations
+ from mAvailableWifiDisplayPeers that contains all
+ the required data.
+
+diff --git a/services/core/java/com/android/server/display/WifiDisplayController.java b/services/core/java/com/android/server/display/WifiDisplayController.java
+index 0108a5a..001f6bb 100644
+--- a/services/core/java/com/android/server/display/WifiDisplayController.java
++++ b/services/core/java/com/android/server/display/WifiDisplayController.java
+@@ -872,8 +872,19 @@ public void onGroupInfoAvailable(WifiP2pGroup info) {
+                                 // this is the case when we received an incoming connection
+                                 // from the sink, update both mConnectingDevice and mDesiredDevice
+                                 // then proceed to updateConnection() below
+-                                mConnectingDevice = mDesiredDevice = owner ?
+-                                        info.getClientList().iterator().next() : info.getOwner();
++                                if (owner) {
++                                    mConnectingDevice = mDesiredDevice = info.getClientList().iterator().next();
++                                } else {
++                                    // as getOwner only returns deviceAddress, in case of client get
++                                    // GO device informations from mAvailableWifiDisplayPeers
++                                    if (mAvailableWifiDisplayPeers != null) {
++                                        for (WifiP2pDevice device : mAvailableWifiDisplayPeers) {
++                                            if (device.deviceAddress.equals(info.getOwner().deviceAddress)) {
++                                                mConnectingDevice = mDesiredDevice = device;
++                                            }
++                                        }
++                                    }
++                                }
+                             }
+                         }
+ 
