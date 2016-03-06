@@ -8,7 +8,6 @@ if [ "$PATCHES" == "" ] ; then
 	PATCHES="\
 		 bionic \
 		 bootable/recovery \
-		 build \
 		 frameworks/av \
 		 frameworks/base \
 		 frameworks/native  \
