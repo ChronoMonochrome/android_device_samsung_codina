@@ -1,0 +1,25 @@
+From d27bdd3bbbc2bd7e820e0e4a996a55a69dbc6ed8 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Mon, 7 Mar 2016 05:18:14 +0700
+Subject: [PATCH 37/54] 0047-Disable-Strict-Aliasing-on-libeffects.patch
+
+Change-Id: If95f1cf76003477b084066f2b8040501915a9a92
+---
+ media/libeffects/downmix/Android.mk | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/media/libeffects/downmix/Android.mk b/media/libeffects/downmix/Android.mk
+index e0ca8af..3da9ff5 100644
+--- a/media/libeffects/downmix/Android.mk
++++ b/media/libeffects/downmix/Android.mk
+@@ -19,6 +19,6 @@ LOCAL_C_INCLUDES := \
+ 	$(call include-path-for, audio-effects) \
+ 	$(call include-path-for, audio-utils)
+ 
+-LOCAL_CFLAGS += -fvisibility=hidden
++LOCAL_CFLAGS += -fvisibility=hidden -fno-strict-aliasing
+ 
+ include $(BUILD_SHARED_LIBRARY)
+-- 
+2.5.0
+

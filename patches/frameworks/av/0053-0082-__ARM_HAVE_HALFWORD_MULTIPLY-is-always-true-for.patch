@@ -1,0 +1,34 @@
+From 94cba7d1d1e262bf694c23c6a618b221666eb27a Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Mon, 7 Mar 2016 05:18:15 +0700
+Subject: [PATCH 53/54] 
+ 0082-__ARM_HAVE_HALFWORD_MULTIPLY-is-always-true-for-__ar.patch
+
+Change-Id: I7dad033967dc8dab00b9f5acda9cd9e164a3f02a
+---
+ services/audioflinger/AudioResampler.cpp | 5 +----
+ 1 file changed, 1 insertion(+), 4 deletions(-)
+
+diff --git a/services/audioflinger/AudioResampler.cpp b/services/audioflinger/AudioResampler.cpp
+index 0f4eaa5..5875e08 100644
+--- a/services/audioflinger/AudioResampler.cpp
++++ b/services/audioflinger/AudioResampler.cpp
+@@ -33,14 +33,11 @@
+ #endif
+ 
+ #ifdef __arm__
+-#include <machine/cpu-features.h>
++    #define ASM_ARM_RESAMP1 // enable asm optimisation for ResamplerOrder1
+ #endif
+ 
+ namespace android {
+ 
+-#ifdef __ARM_HAVE_HALFWORD_MULTIPLY // optimized asm option
+-    #define ASM_ARM_RESAMP1 // enable asm optimisation for ResamplerOrder1
+-#endif // __ARM_HAVE_HALFWORD_MULTIPLY
+ // ----------------------------------------------------------------------------
+ 
+ class AudioResamplerOrder1 : public AudioResampler {
+-- 
+2.5.0
+

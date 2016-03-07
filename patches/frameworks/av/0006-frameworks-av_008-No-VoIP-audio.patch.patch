@@ -1,0 +1,26 @@
+From 7c14104fbc29b26209150c2180c050ec3fa17e92 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Mon, 7 Mar 2016 05:54:51 +0700
+Subject: [PATCH 06/54] frameworks-av_008-No-VoIP-audio.patch
+
+Change-Id: I99995e925ee6913643d7c3b75fdb8200ff3a7b5e
+---
+ services/audiopolicy/AudioPolicyService.cpp | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/services/audiopolicy/AudioPolicyService.cpp b/services/audiopolicy/AudioPolicyService.cpp
+index 3079454..bee7937 100644
+--- a/services/audiopolicy/AudioPolicyService.cpp
++++ b/services/audiopolicy/AudioPolicyService.cpp
+@@ -958,6 +958,8 @@ void AudioPolicyService::setParameters(audio_io_handle_t ioHandle,
+                                        const char *keyValuePairs,
+                                        int delayMs)
+ {
++    ALOGI("Meticulus: params=%s",keyValuePairs);
++    if(strcmp("voip=on",keyValuePairs) == 0) return;
+     mAudioCommandThread->parametersCommand(ioHandle, keyValuePairs,
+                                            delayMs);
+ }
+-- 
+2.5.0
+

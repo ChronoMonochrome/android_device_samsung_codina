@@ -1,0 +1,26 @@
+From a64e140a9019b6e131aa6b15bb9388347bc0e9e0 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Mon, 7 Mar 2016 05:18:12 +0700
+Subject: [PATCH 20/54] 0030-stagefright-id3-Fix-crash.patch
+
+Change-Id: I6e21cab05ca08101ee05d586a015ccf49ba185b3
+---
+ media/libstagefright/id3/ID3.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/media/libstagefright/id3/ID3.cpp b/media/libstagefright/id3/ID3.cpp
+index d5c9704..757cae2 100644
+--- a/media/libstagefright/id3/ID3.cpp
++++ b/media/libstagefright/id3/ID3.cpp
+@@ -500,7 +500,7 @@ void ID3::Iterator::getString(String8 *id, String8 *comment) const {
+ // comment fields (COM/COMM) contain an initial short descriptor, followed by \0,
+ // followed by more data. The data following the \0 can be retrieved by setting
+ // "otherdata" to true.
+-void ID3::Iterator::getstring(String8 *id, bool otherdata) const {
++void __attribute__((optimize("no-tree-vectorize"))) ID3::Iterator::getstring(String8 *id, bool otherdata) const {
+     id->setTo("");
+ 
+     size_t size;
+-- 
+2.5.0
+

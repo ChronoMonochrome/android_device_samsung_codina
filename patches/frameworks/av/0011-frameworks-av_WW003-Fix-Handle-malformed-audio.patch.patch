@@ -1,0 +1,29 @@
+From 7cf47c2ecf40bd7206da1def9a281c0bf1efa384 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Mon, 7 Mar 2016 05:54:51 +0700
+Subject: [PATCH 11/54] frameworks-av_WW003-Fix-Handle-malformed-audio.patch
+
+Change-Id: I8a1caf995c5ee17987a890e6f514fffabb51610a
+---
+ media/libstagefright/rtsp/AMPEG4AudioAssembler.cpp | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/media/libstagefright/rtsp/AMPEG4AudioAssembler.cpp b/media/libstagefright/rtsp/AMPEG4AudioAssembler.cpp
+index bbe670e..2acfc75 100644
+--- a/media/libstagefright/rtsp/AMPEG4AudioAssembler.cpp
++++ b/media/libstagefright/rtsp/AMPEG4AudioAssembler.cpp
+@@ -379,7 +379,10 @@ sp<ABuffer> AMPEG4AudioAssembler::removeLATMFraming(const sp<ABuffer> &buffer) {
+                 unsigned muxSlotLengthBytes = 0;
+                 unsigned tmp;
+                 do {
+-                    CHECK_LT(offset, buffer->size());
++                    if (offset >= buffer->size()) {
++                        ALOGW("Malformed buffer received");
++                        return out;
++                    }
+                     tmp = ptr[offset++];
+                     muxSlotLengthBytes += tmp;
+                 } while (tmp == 0xff);
+-- 
+2.5.0
+

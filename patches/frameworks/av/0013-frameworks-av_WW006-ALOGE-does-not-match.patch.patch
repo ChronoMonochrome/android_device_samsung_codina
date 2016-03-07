@@ -1,0 +1,26 @@
+From b30b2a35fd9a21d5f86a60ee9bd289db1e8b0cc5 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Mon, 7 Mar 2016 05:54:51 +0700
+Subject: [PATCH 13/54] frameworks-av_WW006-ALOGE-does-not-match.patch
+
+Change-Id: I3fa3af84d4d6ae99f74f62bfd4606981025970f7
+---
+ services/camera/libcameraservice/api1/client2/Parameters.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/services/camera/libcameraservice/api1/client2/Parameters.cpp b/services/camera/libcameraservice/api1/client2/Parameters.cpp
+index 4f4cfb0..8f7fc42 100644
+--- a/services/camera/libcameraservice/api1/client2/Parameters.cpp
++++ b/services/camera/libcameraservice/api1/client2/Parameters.cpp
+@@ -1011,7 +1011,7 @@ status_t Parameters::buildFastInfo() {
+             ALOGE("%s: Camera %d: Scene mode override list is an "
+                     "unexpected size: %zu (expected %zu)", __FUNCTION__,
+                     cameraId, sceneModeOverrides.count,
+-                    availableSceneModes.count);
++                    availableSceneModes.count * kModesPerSceneMode);
+             return NO_INIT;
+         }
+         for (size_t i = 0; i < availableSceneModes.count; i++) {
+-- 
+2.5.0
+

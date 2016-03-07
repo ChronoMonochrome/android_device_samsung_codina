@@ -1,0 +1,62 @@
+From f1f4d94e095ebd3232ae51fa1b0c4129abade0c6 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Mon, 7 Mar 2016 05:54:51 +0700
+Subject: [PATCH 12/54] frameworks-av_WW004-fix-the-bug-of-wrong-value.patch
+
+Change-Id: I3cb11ac6806d0b45830efafd89d958b043473f01
+---
+ media/libmediaplayerservice/StagefrightRecorder.cpp     | 2 +-
+ media/libmediaplayerservice/nuplayer/NuPlayerDriver.cpp | 3 ++-
+ media/libstagefright/include/SampleIterator.h           | 5 +++++
+ 3 files changed, 8 insertions(+), 2 deletions(-)
+
+diff --git a/media/libmediaplayerservice/StagefrightRecorder.cpp b/media/libmediaplayerservice/StagefrightRecorder.cpp
+index 90d4a25..d46acc3 100644
+--- a/media/libmediaplayerservice/StagefrightRecorder.cpp
++++ b/media/libmediaplayerservice/StagefrightRecorder.cpp
+@@ -1681,7 +1681,7 @@ status_t StagefrightRecorder::setupVideoEncoder(
+         format->setInt32("width", mVideoWidth);
+         format->setInt32("height", mVideoHeight);
+         format->setInt32("stride", mVideoWidth);
+-        format->setInt32("slice-height", mVideoWidth);
++        format->setInt32("slice-height", mVideoHeight);
+         format->setInt32("color-format", OMX_COLOR_FormatAndroidOpaque);
+ 
+         // set up time lapse/slow motion for surface source
+diff --git a/media/libmediaplayerservice/nuplayer/NuPlayerDriver.cpp b/media/libmediaplayerservice/nuplayer/NuPlayerDriver.cpp
+index d77128d..d247e5c 100644
+--- a/media/libmediaplayerservice/nuplayer/NuPlayerDriver.cpp
++++ b/media/libmediaplayerservice/nuplayer/NuPlayerDriver.cpp
+@@ -673,7 +673,8 @@ void NuPlayerDriver::notifyListener_l(
+                     // The renderer has stopped the sink at the end in order to play out
+                     // the last little bit of audio. If we're looping, we need to restart it.
+                     mPlayer->startAudioSink();
+-                    break;
++                    // don't send completion event when looping
++                    return;
+                 }
+ 
+                 mPlayer->pause();
+diff --git a/media/libstagefright/include/SampleIterator.h b/media/libstagefright/include/SampleIterator.h
+index 60c9e7e..09961fb 100644
+--- a/media/libstagefright/include/SampleIterator.h
++++ b/media/libstagefright/include/SampleIterator.h
+@@ -14,6 +14,10 @@
+  * limitations under the License.
+  */
+ 
++#ifndef SAMPLE_ITERATOR_H_
++
++#define SAMPLE_ITERATOR_H_
++
+ #include <utils/Vector.h>
+ 
+ namespace android {
+@@ -75,3 +79,4 @@ private:
+ 
+ }  // namespace android
+ 
++#endif  // SAMPLE_ITERATOR_H_
+-- 
+2.5.0
+

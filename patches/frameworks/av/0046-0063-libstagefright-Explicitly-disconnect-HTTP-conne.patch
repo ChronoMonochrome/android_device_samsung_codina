@@ -1,0 +1,39 @@
+From a0fa54eb44ad38afe1fb4f88acc08ba61a7a1eb1 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Mon, 7 Mar 2016 05:18:14 +0700
+Subject: [PATCH 46/54] 
+ 0063-libstagefright-Explicitly-disconnect-HTTP-connection.patch
+
+Change-Id: I315133ca8dadad21305d9d6314a06db59d80ad83
+---
+ media/libstagefright/StagefrightMetadataRetriever.cpp | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/media/libstagefright/StagefrightMetadataRetriever.cpp b/media/libstagefright/StagefrightMetadataRetriever.cpp
+index f37b256..829fb34 100644
+--- a/media/libstagefright/StagefrightMetadataRetriever.cpp
++++ b/media/libstagefright/StagefrightMetadataRetriever.cpp
+@@ -22,6 +22,7 @@
+ #include <utils/Log.h>
+ 
+ #include "include/StagefrightMetadataRetriever.h"
++#include "include/HTTPBase.h"
+ 
+ #include <media/IMediaHTTPService.h>
+ #include <media/stagefright/foundation/ADebug.h>
+@@ -54,6 +55,12 @@ StagefrightMetadataRetriever::~StagefrightMetadataRetriever() {
+     mAlbumArt = NULL;
+ 
+     mClient.disconnect();
++
++    if (mSource != NULL &&
++        (mSource->flags() & DataSource::kIsHTTPBasedSource)) {
++        mExtractor.clear();
++        static_cast<HTTPBase *>(mSource.get())->disconnect();
++    }
+ }
+ 
+ status_t StagefrightMetadataRetriever::setDataSource(
+-- 
+2.5.0
+

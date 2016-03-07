@@ -1,0 +1,37 @@
+From e9c9534eae2ffac1fac1eb2803ad6936aa0e1562 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Mon, 7 Mar 2016 05:18:13 +0700
+Subject: [PATCH 23/54] 0033-downmix-Fix-aliasing-violation.patch
+
+Change-Id: If23a909403ef9d0742ef4d73cf35b338d93ce820
+---
+ media/libeffects/downmix/EffectDownmix.c | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/media/libeffects/downmix/EffectDownmix.c b/media/libeffects/downmix/EffectDownmix.c
+index 18059b2..da0089a 100644
+--- a/media/libeffects/downmix/EffectDownmix.c
++++ b/media/libeffects/downmix/EffectDownmix.c
+@@ -401,7 +401,8 @@ static int Downmix_Command(effect_handle_t self, uint32_t cmdCode, uint32_t cmdS
+         memcpy(pReplyData, pCmdData, sizeof(effect_param_t) + sizeof(int32_t));
+         ALOGV("Downmix_Command EFFECT_CMD_GET_PARAM param %" PRId32 ", replySize %" PRIu32,
+                 *(int32_t *)rep->data, rep->vsize);
+-        rep->status = Downmix_getParameter(pDownmixer, *(int32_t *)rep->data, &rep->vsize,
++        int32_t rep_data; memcpy(&rep_data, rep->data, sizeof(int32_t));
++        rep->status = Downmix_getParameter(pDownmixer, rep_data /* *(int32_t *)rep->data */, &rep->vsize,
+                 rep->data + sizeof(int32_t));
+         *replySize = sizeof(effect_param_t) + sizeof(int32_t) + rep->vsize;
+         break;
+@@ -414,7 +415,8 @@ static int Downmix_Command(effect_handle_t self, uint32_t cmdCode, uint32_t cmdS
+             return -EINVAL;
+         }
+         effect_param_t *cmd = (effect_param_t *) pCmdData;
+-        *(int *)pReplyData = Downmix_setParameter(pDownmixer, *(int32_t *)cmd->data,
++        int32_t cmd_data; memcpy(&cmd_data, cmd->data, sizeof(int32_t));
++        *(int *)pReplyData = Downmix_setParameter(pDownmixer, cmd_data /* *(int32_t *)cmd->data*/,
+                 cmd->vsize, cmd->data + sizeof(int32_t));
+         break;
+ 
+-- 
+2.5.0
+

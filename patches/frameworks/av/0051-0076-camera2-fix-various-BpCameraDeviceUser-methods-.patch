@@ -1,0 +1,54 @@
+From e58ce47eef98776e06a88e69112aac7e60a39f97 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Mon, 7 Mar 2016 05:18:15 +0700
+Subject: [PATCH 51/54] 
+ 0076-camera2-fix-various-BpCameraDeviceUser-methods-to-re.patch
+
+Change-Id: I95e6f578f00f79faaf547e1ff205505cb8ae64cc
+---
+ camera/camera2/ICameraDeviceUser.cpp | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/camera/camera2/ICameraDeviceUser.cpp b/camera/camera2/ICameraDeviceUser.cpp
+index ff4a0c2..7d3807a 100644
+--- a/camera/camera2/ICameraDeviceUser.cpp
++++ b/camera/camera2/ICameraDeviceUser.cpp
+@@ -107,7 +107,7 @@ public:
+             }
+         }
+ 
+-	if ((res != NO_ERROR) || (resFrameNumber != NO_ERROR)) {
++	if ((res < NO_ERROR) || (resFrameNumber != NO_ERROR)) {
+             res = FAILED_TRANSACTION;
+         }
+         return res;
+@@ -147,7 +147,7 @@ public:
+                 resFrameNumber = reply.readInt64(lastFrameNumber);
+             }
+         }
+-        if ((res != NO_ERROR) || (resFrameNumber != NO_ERROR)) {
++        if ((res < NO_ERROR) || (resFrameNumber != NO_ERROR)) {
+             res = FAILED_TRANSACTION;
+         }
+         return res;
+@@ -167,7 +167,7 @@ public:
+         status_t resFrameNumber = BAD_VALUE;
+         if (reply.readInt32() != 0) {
+             if (lastFrameNumber != NULL) {
+-                res = reply.readInt64(lastFrameNumber);
++                resFrameNumber = reply.readInt64(lastFrameNumber);
+             }
+         }
+         if ((res != NO_ERROR) || (resFrameNumber != NO_ERROR)) {
+@@ -296,7 +296,7 @@ public:
+         status_t resFrameNumber = BAD_VALUE;
+         if (reply.readInt32() != 0) {
+             if (lastFrameNumber != NULL) {
+-                res = reply.readInt64(lastFrameNumber);
++                resFrameNumber = reply.readInt64(lastFrameNumber);
+             }
+         }
+         if ((res != NO_ERROR) || (resFrameNumber != NO_ERROR)) {
+-- 
+2.5.0
+

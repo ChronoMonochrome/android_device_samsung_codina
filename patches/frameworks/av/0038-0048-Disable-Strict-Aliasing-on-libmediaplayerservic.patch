@@ -1,0 +1,27 @@
+From 900ae47be74d624a4121d22adff21ff2307c8077 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Mon, 7 Mar 2016 05:18:14 +0700
+Subject: [PATCH 38/54] 
+ 0048-Disable-Strict-Aliasing-on-libmediaplayerservice.patch
+
+Change-Id: Ieaf577016a8f6acd4db9cbcaee8ba556c3dc71bb
+---
+ media/libmediaplayerservice/Android.mk | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/media/libmediaplayerservice/Android.mk b/media/libmediaplayerservice/Android.mk
+index 8f06c55..e5c2734 100644
+--- a/media/libmediaplayerservice/Android.mk
++++ b/media/libmediaplayerservice/Android.mk
+@@ -6,6 +6,8 @@ LOCAL_PATH:= $(call my-dir)
+ 
+ include $(CLEAR_VARS)
+ 
++LOCAL_CPPFLAGS := -fno-strict-aliasing
++
+ LOCAL_SRC_FILES:=               \
+     ActivityManager.cpp         \
+     Crypto.cpp                  \
+-- 
+2.5.0
+

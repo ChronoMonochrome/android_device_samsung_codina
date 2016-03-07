@@ -1,0 +1,33 @@
+From d016e8369fab821bc935c9eaba402dab859c74a0 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Mon, 7 Mar 2016 05:18:13 +0700
+Subject: [PATCH 33/54] 
+ 0043-Use-uint16_t-instead-of-char16_t-C-11-compliance.patch
+
+Change-Id: I44c1a6c22e37531301d79002d68ca459e56af274
+---
+ media/libstagefright/id3/ID3.cpp | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/media/libstagefright/id3/ID3.cpp b/media/libstagefright/id3/ID3.cpp
+index 757cae2..f82c0b5 100644
+--- a/media/libstagefright/id3/ID3.cpp
++++ b/media/libstagefright/id3/ID3.cpp
+@@ -570,11 +570,11 @@ void __attribute__((optimize("no-tree-vectorize"))) ID3::Iterator::getstring(Str
+         // UCS-2
+         // API wants number of characters, not number of bytes...
+         int len = n / 2;
+-        const char16_t *framedata = (const char16_t *) (frameData + 1);
+-        char16_t *framedatacopy = NULL;
++        const uint16_t *framedata = (const uint16_t *) (frameData + 1);
++        uint16_t *framedatacopy = NULL;
+         if (*framedata == 0xfffe) {
+             // endianness marker doesn't match host endianness, convert
+-            framedatacopy = new char16_t[len];
++            framedatacopy = new uint16_t[len];
+             for (int i = 0; i < len; i++) {
+                 framedatacopy[i] = bswap_16(framedata[i]);
+             }
+-- 
+2.5.0
+

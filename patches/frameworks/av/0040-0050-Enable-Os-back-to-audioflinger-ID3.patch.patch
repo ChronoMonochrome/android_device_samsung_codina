@@ -1,0 +1,40 @@
+From c4e942c44374c9a5e842378047224eb656dd135f Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Mon, 7 Mar 2016 05:18:14 +0700
+Subject: [PATCH 40/54] 0050-Enable-Os-back-to-audioflinger-ID3.patch
+
+Change-Id: Ifc83f47091e14ac1212a37884f0d493c71bf481a
+---
+ media/libstagefright/id3/Android.mk | 2 +-
+ services/audioflinger/Android.mk    | 2 ++
+ 2 files changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/media/libstagefright/id3/Android.mk b/media/libstagefright/id3/Android.mk
+index 2194c38..b72a19e 100644
+--- a/media/libstagefright/id3/Android.mk
++++ b/media/libstagefright/id3/Android.mk
+@@ -4,7 +4,7 @@ include $(CLEAR_VARS)
+ LOCAL_SRC_FILES := \
+ 	ID3.cpp
+ 
+-LOCAL_CFLAGS += -Werror
++LOCAL_CFLAGS += -Werror -Os
+ 
+ LOCAL_MODULE := libstagefright_id3
+ 
+diff --git a/services/audioflinger/Android.mk b/services/audioflinger/Android.mk
+index d3ccbb2..05ce672 100644
+--- a/services/audioflinger/Android.mk
++++ b/services/audioflinger/Android.mk
+@@ -98,6 +98,8 @@ endif
+ endif
+ #QTI Resampler
+ 
++LOCAL_CFLAGS += -Os
++    
+ LOCAL_MODULE:= libaudioflinger
+ LOCAL_32_BIT_ONLY := true
+ 
+-- 
+2.5.0
+

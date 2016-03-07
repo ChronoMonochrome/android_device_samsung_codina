@@ -1,0 +1,25 @@
+From 14df2c7c8d376ad1d72c52b480452cf52226946d Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Mon, 7 Mar 2016 05:18:14 +0700
+Subject: [PATCH 36/54] 0046-Disable-Strict-Aliasing-on-LibMedia.patch
+
+Change-Id: Ib21b99aa51090f6322e31ce10e2606b278a6d5b2
+---
+ media/libmedia/Android.mk | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/media/libmedia/Android.mk b/media/libmedia/Android.mk
+index 139d6f8..f42cc85 100644
+--- a/media/libmedia/Android.mk
++++ b/media/libmedia/Android.mk
+@@ -22,6 +22,7 @@ endif
+ 
+ include $(CLEAR_VARS)
+ 
++LOCAL_CPPFLAGS := -fno-strict-aliasing
+ LOCAL_SRC_FILES:= \
+     AudioTrack.cpp \
+     AudioTrackShared.cpp \
+-- 
+2.5.0
+

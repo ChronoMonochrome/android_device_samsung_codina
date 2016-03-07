@@ -1,0 +1,343 @@
+From 8490f089e09ff25eac9e53f21d10642550778fea Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Mon, 7 Mar 2016 05:18:15 +0700
+Subject: [PATCH 54/54] 0088-C-11-compatibility.patch
+
+Change-Id: Ieb69da048e80c48c7c8fc25382a09367d5d15a1e
+---
+ cmds/stagefright/SineSource.h                      |  7 ++----
+ include/media/ToneGenerator.h                      | 25 ++++++++++------------
+ media/mediaserver/Android.mk                       |  1 +
+ services/audioflinger/Android.mk                   | 12 +++++++++--
+ services/audioflinger/AudioMixer.cpp               |  2 +-
+ services/audioflinger/AudioMixer.h                 |  7 +++++-
+ services/audioflinger/AudioResampler.h             | 14 ++++++------
+ services/audioflinger/AudioResamplerFirGen.h       | 12 ++++++-----
+ services/audioflinger/StateQueue.cpp               |  2 +-
+ services/camera/libcameraservice/Android.mk        |  1 +
+ .../libcameraservice/api1/client2/Parameters.h     |  6 ++++--
+ .../device1/CameraHardwareInterface.h              |  2 +-
+ 12 files changed, 51 insertions(+), 40 deletions(-)
+
+diff --git a/cmds/stagefright/SineSource.h b/cmds/stagefright/SineSource.h
+index 41d3bf3..234e880 100644
+--- a/cmds/stagefright/SineSource.h
++++ b/cmds/stagefright/SineSource.h
+@@ -3,10 +3,7 @@
+ #define SINE_SOURCE_H_
+ 
+ #include <media/stagefright/MediaSource.h>
+-
+-#if __cplusplus < 201103L && !defined(__GXX_EXPERIMENTAL_CXX0X__) && !defined(constexpr)
+-#define constexpr const
+-#endif
++#include <utils/Compat.h>
+ 
+ namespace android {
+ 
+@@ -28,7 +25,7 @@ protected:
+ 
+ private:
+     enum { kBufferSize = 8192 };
+-    static constexpr double kFrequency = 500.0;
++    static const CONSTEXPR double kFrequency = 500.0;
+ 
+     bool mStarted;
+     int32_t mSampleRate;
+diff --git a/include/media/ToneGenerator.h b/include/media/ToneGenerator.h
+index 04a71fc..10c8dfb 100644
+--- a/include/media/ToneGenerator.h
++++ b/include/media/ToneGenerator.h
+@@ -17,15 +17,12 @@
+ #ifndef ANDROID_TONEGENERATOR_H_
+ #define ANDROID_TONEGENERATOR_H_
+ 
+-#include <utils/RefBase.h>
+-#include <utils/KeyedVector.h>
+-#include <utils/threads.h>
+ #include <media/AudioSystem.h>
+ #include <media/AudioTrack.h>
+-
+-#if __cplusplus < 201103L && !defined(__GXX_EXPERIMENTAL_CXX0X__) && !defined(constexpr)
+-#define constexpr const
+-#endif
++#include <utils/Compat.h>
++#include <utils/KeyedVector.h>
++#include <utils/RefBase.h>
++#include <utils/threads.h>
+ 
+ namespace android {
+ 
+@@ -212,10 +209,10 @@ private:
+ 
+     static const unsigned char sToneMappingTable[NUM_REGIONS-1][NUM_SUP_TONES];
+ 
+-    static constexpr unsigned int TONEGEN_MAX_WAVES = 3;     // Maximun number of sine waves in a tone segment
+-    static constexpr unsigned int TONEGEN_MAX_SEGMENTS = 12;  // Maximun number of segments in a tone descriptor
+-    static constexpr unsigned int TONEGEN_INF = 0xFFFFFFFF;  // Represents infinite time duration
+-    static constexpr float TONEGEN_GAIN = 0.9;  // Default gain passed to  WaveGenerator().
++    static const unsigned int TONEGEN_MAX_WAVES = 3;     // Maximun number of sine waves in a tone segment
++    static const unsigned int TONEGEN_MAX_SEGMENTS = 12;  // Maximun number of segments in a tone descriptor
++    static const unsigned int TONEGEN_INF = 0xFFFFFFFF;  // Represents infinite time duration
++    static const float TONEGEN_GAIN = 0.9;  // Default gain passed to  WaveGenerator().
+ 
+     // ToneDescriptor class contains all parameters needed to generate a tone:
+     //    - The array waveFreq[]:
+@@ -305,9 +302,9 @@ private:
+                 unsigned int command);
+ 
+     private:
+-        static constexpr short GEN_AMP = 32000;  // amplitude of generator
+-        static constexpr short S_Q14 = 14;  // shift for Q14
+-        static constexpr short S_Q15 = 15;  // shift for Q15
++        static const short GEN_AMP = 32000;  // amplitude of generator
++        static const short S_Q14 = 14;  // shift for Q14
++        static const short S_Q15 = 15;  // shift for Q15
+ 
+         short mA1_Q14;  // Q14 coefficient
+         // delay line of full amplitude generator
+diff --git a/media/mediaserver/Android.mk b/media/mediaserver/Android.mk
+index 732e77f..cfe2fae 100644
+--- a/media/mediaserver/Android.mk
++++ b/media/mediaserver/Android.mk
+@@ -52,5 +52,6 @@ endif
+ 
+ LOCAL_MODULE:= mediaserver
+ LOCAL_32_BIT_ONLY := true
++#LOCAL_CFLAGS += -std=gnu++11
+ 
+ include $(BUILD_EXECUTABLE)
+diff --git a/services/audioflinger/Android.mk b/services/audioflinger/Android.mk
+index 05ce672..bfbbcc5 100644
+--- a/services/audioflinger/Android.mk
++++ b/services/audioflinger/Android.mk
+@@ -98,8 +98,15 @@ endif
+ endif
+ #QTI Resampler
+ 
+-LOCAL_CFLAGS += -Os
+-    
++#QTI Resampler
++ifeq ($(call is-vendor-board-platform,QCOM),true)
++ifeq ($(strip $(AUDIO_FEATURE_ENABLED_EXTN_RESAMPLER)),true)
++LOCAL_CFLAGS += -DQTI_RESAMPLER
++endif
++endif
++#QTI Resampler
++
++LOCAL_CFLAGS += -std=gnu++11
+ LOCAL_MODULE:= libaudioflinger
+ LOCAL_32_BIT_ONLY := true
+ 
+@@ -202,6 +209,7 @@ endif
+ #QTI Resampler
+ 
+ LOCAL_MODULE := libaudioresampler
++LOCAL_CFLAGS += -std=gnu++11
+ 
+ include $(BUILD_SHARED_LIBRARY)
+ 
+diff --git a/services/audioflinger/AudioMixer.cpp b/services/audioflinger/AudioMixer.cpp
+index db89698..a34c1e0 100644
+--- a/services/audioflinger/AudioMixer.cpp
++++ b/services/audioflinger/AudioMixer.cpp
+@@ -1910,7 +1910,7 @@ int64_t AudioMixer::calculateOutputPTS(const track_t& t, int64_t basePTS,
+  * Perhaps just stick with a single for loop.
+  */
+ 
+-// Needs to derive a compile time constant (constexpr).  Could be targeted to go
++// Needs to derive a compile time constant (CONSTEXPR).  Could be targeted to go
+ // to a MONOVOL mixtype based on MAX_NUM_VOLUMES, but that's an unnecessary complication.
+ #define MIXTYPE_MONOVOL(mixtype) (mixtype == MIXTYPE_MULTI ? MIXTYPE_MULTI_MONOVOL : \
+         mixtype == MIXTYPE_MULTI_SAVEONLY ? MIXTYPE_MULTI_SAVEONLY_MONOVOL : mixtype)
+diff --git a/services/audioflinger/AudioMixer.h b/services/audioflinger/AudioMixer.h
+index 1fa6846..fff9910 100644
+--- a/services/audioflinger/AudioMixer.h
++++ b/services/audioflinger/AudioMixer.h
+@@ -21,6 +21,11 @@
+ #include <stdint.h>
+ #include <sys/types.h>
+ 
++#include <hardware/audio_effect.h>
++#include <media/AudioBufferProvider.h>
++#include <media/nbaio/NBLog.h>
++#include <system/audio.h>
++#include <utils/Compat.h>
+ #include <utils/threads.h>
+ 
+ #include <media/AudioBufferProvider.h>
+@@ -61,7 +66,7 @@ public:
+     static const uint32_t MAX_NUM_CHANNELS_TO_DOWNMIX = AUDIO_CHANNEL_COUNT_MAX;
+ 
+     static const uint16_t UNITY_GAIN_INT = 0x1000;
+-    static const float    UNITY_GAIN_FLOAT = 1.0f;
++    static const CONSTEXPR float UNITY_GAIN_FLOAT = 1.0f;
+ 
+     enum { // names
+ 
+diff --git a/services/audioflinger/AudioResampler.h b/services/audioflinger/AudioResampler.h
+index b980f20..befaad7 100644
+--- a/services/audioflinger/AudioResampler.h
++++ b/services/audioflinger/AudioResampler.h
+@@ -19,15 +19,13 @@
+ 
+ #include <stdint.h>
+ #include <sys/types.h>
++
+ #include <cutils/compiler.h>
++#include <utils/Compat.h>
+ 
+ #include <media/AudioBufferProvider.h>
+ #include <system/audio.h>
+ 
+-#if __cplusplus < 201103L && !defined(__GXX_EXPERIMENTAL_CXX0X__) && !defined(constexpr)
+-#define constexpr const
+-#endif
+-
+ namespace android {
+ // ----------------------------------------------------------------------------
+ 
+@@ -54,7 +52,7 @@ public:
+ #endif
+     };
+ 
+-    static const float UNITY_GAIN_FLOAT = 1.0f;
++    static const CONSTEXPR float UNITY_GAIN_FLOAT = 1.0f;
+ 
+     static AudioResampler* create(audio_format_t format, int inChannelCount,
+             int32_t sampleRate, src_quality quality=DEFAULT_QUALITY);
+@@ -88,13 +86,13 @@ public:
+ 
+ protected:
+     // number of bits for phase fraction - 30 bits allows nearly 2x downsampling
+-    static constexpr int kNumPhaseBits = 30;
++    static const int kNumPhaseBits = 30;
+ 
+     // phase mask for fraction
+-    static constexpr uint32_t kPhaseMask = (1LU<<kNumPhaseBits)-1;
++    static const uint32_t kPhaseMask = (1LU<<kNumPhaseBits)-1;
+ 
+     // multiplier to calculate fixed point phase increment
+-    static constexpr double kPhaseMultiplier;
++    static const double kPhaseMultiplier;
+ 
+     AudioResampler(int inChannelCount, int32_t sampleRate, src_quality quality);
+ 
+diff --git a/services/audioflinger/AudioResamplerFirGen.h b/services/audioflinger/AudioResamplerFirGen.h
+index d024b2f..369536e 100644
+--- a/services/audioflinger/AudioResamplerFirGen.h
++++ b/services/audioflinger/AudioResamplerFirGen.h
+@@ -17,6 +17,8 @@
+ #ifndef ANDROID_AUDIO_RESAMPLER_FIR_GEN_H
+ #define ANDROID_AUDIO_RESAMPLER_FIR_GEN_H
+ 
++#include "utils/Compat.h"
++
+ namespace android {
+ 
+ /*
+@@ -178,7 +180,7 @@ static inline int64_t toint(double x, int64_t maxval) {
+  * I0ATerm<> to the precision of the compiler.  The series can be expanded
+  * to any precision needed, but currently set around 24b precision.
+  *
+- * We use a bit of template math here, constexpr would probably be
++ * We use a bit of template math here, CONSTEXPR would probably be
+  * more appropriate for a C++11 compiler.
+  *
+  * For the intermediate range 3.75 < x < 15, we use minimax polynomial fit.
+@@ -187,22 +189,22 @@ static inline int64_t toint(double x, int64_t maxval) {
+ 
+ template <int N>
+ struct I0Term {
+-    static const double value = I0Term<N-1>::value / (4. * N * N);
++    static const CONSTEXPR double value = I0Term<N-1>::value / (4. * N * N);
+ };
+ 
+ template <>
+ struct I0Term<0> {
+-    static const double value = 1.;
++    static const CONSTEXPR double value = 1.;
+ };
+ 
+ template <int N>
+ struct I0ATerm {
+-    static const double value = I0ATerm<N-1>::value * (2.*N-1.) * (2.*N-1.) / (8. * N);
++    static const CONSTEXPR double value = I0ATerm<N-1>::value * (2.*N-1.) * (2.*N-1.) / (8. * N);
+ };
+ 
+ template <>
+ struct I0ATerm<0> { // 1/sqrt(2*PI);
+-    static const double value = 0.398942280401432677939946059934381868475858631164934657665925;
++    static const CONSTEXPR double value = 0.398942280401432677939946059934381868475858631164934657665925;
+ };
+ 
+ #if USE_HORNERS_METHOD
+diff --git a/services/audioflinger/StateQueue.cpp b/services/audioflinger/StateQueue.cpp
+index 40d7bcd..9d4188f 100644
+--- a/services/audioflinger/StateQueue.cpp
++++ b/services/audioflinger/StateQueue.cpp
+@@ -48,7 +48,7 @@ template<typename T> StateQueue<T>::StateQueue() :
+     , mObserverDump(&mObserverDummyDump), mMutatorDump(&mMutatorDummyDump)
+ #endif
+ {
+-    atomic_init(&mNext, 0);
++    atomic_init(&mNext, static_cast<uintptr_t>(0));
+ }
+ 
+ template<typename T> StateQueue<T>::~StateQueue()
+diff --git a/services/camera/libcameraservice/Android.mk b/services/camera/libcameraservice/Android.mk
+index b17be82..9186410 100644
+--- a/services/camera/libcameraservice/Android.mk
++++ b/services/camera/libcameraservice/Android.mk
+@@ -74,6 +74,7 @@ LOCAL_C_INCLUDES += \
+ 
+ 
+ LOCAL_CFLAGS += -Wall -Wextra
++#LOCAL_CFLAGS += -std=gnu++11
+ 
+ ifeq ($(BOARD_NEEDS_MEMORYHEAPION),true)
+     LOCAL_CFLAGS += -DUSE_MEMORY_HEAP_ION
+diff --git a/services/camera/libcameraservice/api1/client2/Parameters.h b/services/camera/libcameraservice/api1/client2/Parameters.h
+index 7e5be84..e628a7e 100644
+--- a/services/camera/libcameraservice/api1/client2/Parameters.h
++++ b/services/camera/libcameraservice/api1/client2/Parameters.h
+@@ -19,11 +19,13 @@
+ 
+ #include <system/graphics.h>
+ 
++#include <utils/Compat.h>
+ #include <utils/Errors.h>
++#include <utils/KeyedVector.h>
+ #include <utils/Mutex.h>
+ #include <utils/String8.h>
+ #include <utils/Vector.h>
+-#include <utils/KeyedVector.h>
++
+ #include <camera/CameraParameters.h>
+ #include <camera/CameraParameters2.h>
+ #include <camera/CameraMetadata.h>
+@@ -187,7 +189,7 @@ struct Parameters {
+     static const int MAX_INITIAL_PREVIEW_WIDTH = 1920;
+     static const int MAX_INITIAL_PREVIEW_HEIGHT = 1080;
+     // Aspect ratio tolerance
+-    static const float ASPECT_RATIO_TOLERANCE = 0.001;
++    static const CONSTEXPR float ASPECT_RATIO_TOLERANCE = 0.001;
+ 
+     // Full static camera info, object owned by someone else, such as
+     // Camera2Device.
+diff --git a/services/camera/libcameraservice/device1/CameraHardwareInterface.h b/services/camera/libcameraservice/device1/CameraHardwareInterface.h
+index e5b3648..906976a 100644
+--- a/services/camera/libcameraservice/device1/CameraHardwareInterface.h
++++ b/services/camera/libcameraservice/device1/CameraHardwareInterface.h
+@@ -615,7 +615,7 @@ private:
+ 
+ #ifndef container_of
+ #define container_of(ptr, type, member) ({                      \
+-        const typeof(((type *) 0)->member) *__mptr = (ptr);     \
++        const __typeof__(((type *) 0)->member) *__mptr = (ptr);     \
+         (type *) ((char *) __mptr - (char *)(&((type *)0)->member)); })
+ #endif
+ 
+-- 
+2.5.0
+

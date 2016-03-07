@@ -1,0 +1,27 @@
+From c153af4e8bc89d00820e03626e85ed54b693e9be Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Mon, 7 Mar 2016 05:54:51 +0700
+Subject: [PATCH 14/54] 
+ frameworks-av_WW007-Play-timed-text-even-after-35-minutes.patch
+
+Change-Id: I592df62858ea5f76dffeb960acd1c55a3d30ca65
+---
+ media/libmediaplayerservice/nuplayer/NuPlayer.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/media/libmediaplayerservice/nuplayer/NuPlayer.cpp b/media/libmediaplayerservice/nuplayer/NuPlayer.cpp
+index 6559760..e9a6cf0 100644
+--- a/media/libmediaplayerservice/nuplayer/NuPlayer.cpp
++++ b/media/libmediaplayerservice/nuplayer/NuPlayer.cpp
+@@ -2013,7 +2013,7 @@ void NuPlayer::onSourceNotify(const sp<AMessage> &msg) {
+             int posMs;
+             int64_t timeUs, posUs;
+             driver->getCurrentPosition(&posMs);
+-            posUs = posMs * 1000;
++            posUs = (int64_t) posMs * 1000ll;
+             CHECK(buffer->meta()->findInt64("timeUs", &timeUs));
+ 
+             if (posUs < timeUs) {
+-- 
+2.5.0
+

@@ -1,0 +1,27 @@
+From 129384ed82f8ec2c30c9e788d7011dcbb23aafcd Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Mon, 7 Mar 2016 05:18:14 +0700
+Subject: [PATCH 45/54] 
+ 0062-Fix-bugs-don-t-remove-track-of-DirectOutputThread.patch
+
+Change-Id: I722fa752821410112840f33b80a6f02e0275c6ce
+---
+ services/audioflinger/Threads.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/services/audioflinger/Threads.cpp b/services/audioflinger/Threads.cpp
+index 0f3918f..498565a 100644
+--- a/services/audioflinger/Threads.cpp
++++ b/services/audioflinger/Threads.cpp
+@@ -4466,7 +4466,7 @@ AudioFlinger::PlaybackThread::mixer_state AudioFlinger::DirectOutputThread::prep
+         }
+ 
+         if ((track->framesReady() >= minFrames) && track->isReady() && !track->isPaused() &&
+-                !track->isStopping_2() && !track->isStopped())
++                !track->isStopping() && !track->isStopped())
+         {
+             ALOGVV("track %d s=%08x [OK]", track->name(), cblk->mServer);
+ 
+-- 
+2.5.0
+

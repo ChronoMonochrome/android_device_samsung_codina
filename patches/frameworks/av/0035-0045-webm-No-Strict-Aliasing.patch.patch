@@ -1,0 +1,27 @@
+From 849e255b6dcf676d6d2a1fe8a947126aa45ca76b Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Mon, 7 Mar 2016 05:18:14 +0700
+Subject: [PATCH 35/54] 0045-webm-No-Strict-Aliasing.patch
+
+Change-Id: Ifd22337fd3730944f3fe9b8b2d450cefc352a8eb
+---
+ media/libstagefright/webm/Android.mk | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/media/libstagefright/webm/Android.mk b/media/libstagefright/webm/Android.mk
+index 7081463..683b35c 100644
+--- a/media/libstagefright/webm/Android.mk
++++ b/media/libstagefright/webm/Android.mk
+@@ -2,7 +2,8 @@ LOCAL_PATH:= $(call my-dir)
+ include $(CLEAR_VARS)
+ 
+ LOCAL_CPPFLAGS += -D__STDINT_LIMITS \
+-                  -Werror
++                  -Werror \
++                  -fno-strict-aliasing
+ 
+ LOCAL_SRC_FILES:= EbmlUtil.cpp        \
+                   WebmElement.cpp     \
+-- 
+2.5.0
+

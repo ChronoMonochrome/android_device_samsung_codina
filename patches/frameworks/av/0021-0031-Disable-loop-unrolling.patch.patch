@@ -1,0 +1,23 @@
+From 7615941c972ced1c75774ec3cecbbfc07befd2bd Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Mon, 7 Mar 2016 05:18:12 +0700
+Subject: [PATCH 21/54] 0031-Disable-loop-unrolling.patch
+
+Change-Id: I68eea5632c877274cfcc469915fb0450a0614d4e
+---
+ media/libstagefright/codecs/Android.mk | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/media/libstagefright/codecs/Android.mk b/media/libstagefright/codecs/Android.mk
+index 2e43120..9348969 100644
+--- a/media/libstagefright/codecs/Android.mk
++++ b/media/libstagefright/codecs/Android.mk
+@@ -2,3 +2,5 @@ LOCAL_PATH:= $(call my-dir)
+ include $(CLEAR_VARS)
+ 
+ include $(call all-makefiles-under,$(LOCAL_PATH))
++
++LOCAL_CFLAGS := -fno-unroll-loops
+-- 
+2.5.0
+

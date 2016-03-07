@@ -1,0 +1,37 @@
+From cd74ccebb40b30b6251048071623bc82689a6e5c Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Mon, 7 Mar 2016 05:18:13 +0700
+Subject: [PATCH 28/54] 0038-av-More-ISO-C-11-fixes.patch
+
+Change-Id: I1250de38ca4e57c4c2cce90e8793dff7ecd6f633
+---
+ cmds/stagefright/SineSource.h | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/cmds/stagefright/SineSource.h b/cmds/stagefright/SineSource.h
+index 76ab669..41d3bf3 100644
+--- a/cmds/stagefright/SineSource.h
++++ b/cmds/stagefright/SineSource.h
+@@ -4,6 +4,10 @@
+ 
+ #include <media/stagefright/MediaSource.h>
+ 
++#if __cplusplus < 201103L && !defined(__GXX_EXPERIMENTAL_CXX0X__) && !defined(constexpr)
++#define constexpr const
++#endif
++
+ namespace android {
+ 
+ struct MediaBufferGroup;
+@@ -24,7 +28,7 @@ protected:
+ 
+ private:
+     enum { kBufferSize = 8192 };
+-    static const double kFrequency = 500.0;
++    static constexpr double kFrequency = 500.0;
+ 
+     bool mStarted;
+     int32_t mSampleRate;
+-- 
+2.5.0
+

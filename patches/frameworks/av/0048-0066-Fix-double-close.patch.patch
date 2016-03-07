@@ -1,0 +1,38 @@
+From 4b4dd6e631557528ec228071b7d0875236a1da48 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Mon, 7 Mar 2016 05:18:15 +0700
+Subject: [PATCH 48/54] 0066-Fix-double-close.patch
+
+Change-Id: Ie878b3eadb5de65db95a00081e0a483688b4db5e
+---
+ media/libmedia/IMediaPlayerService.cpp             | 1 +
+ media/libmediaplayerservice/MediaPlayerService.cpp | 1 -
+ 2 files changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/media/libmedia/IMediaPlayerService.cpp b/media/libmedia/IMediaPlayerService.cpp
+index 2e02d17..573c87f 100644
+--- a/media/libmedia/IMediaPlayerService.cpp
++++ b/media/libmedia/IMediaPlayerService.cpp
+@@ -261,6 +261,7 @@ status_t BnMediaPlayerService::onTransact(
+             size_t size;
+             status_t status = decode(fd, offset, length, &sampleRate, &numChannels, &format,
+                                      heap, &size);
++            ::close(fd);
+             reply->writeInt32(status);
+             if (status == NO_ERROR) {
+                 reply->writeInt32(sampleRate);
+diff --git a/media/libmediaplayerservice/MediaPlayerService.cpp b/media/libmediaplayerservice/MediaPlayerService.cpp
+index 1c3b539..1af78a3 100644
+--- a/media/libmediaplayerservice/MediaPlayerService.cpp
++++ b/media/libmediaplayerservice/MediaPlayerService.cpp
+@@ -1442,7 +1442,6 @@ status_t MediaPlayerService::decode(int fd, int64_t offset, int64_t length,
+ 
+ Exit:
+     if (player != 0) player->reset();
+-    ::close(fd);
+     return status;
+ }
+ 
+-- 
+2.5.0
+

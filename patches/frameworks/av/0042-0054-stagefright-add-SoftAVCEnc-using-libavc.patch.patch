@@ -1,0 +1,49 @@
+From f1f486d04a806ad484d95ca0ec7cfba49dc9abed Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Mon, 7 Mar 2016 05:18:14 +0700
+Subject: [PATCH 42/54] 0054-stagefright-add-SoftAVCEnc-using-libavc.patch
+
+Change-Id: Id6559a84925b2cf5cf832b0302d3f8cfe3168e93
+---
+ media/libstagefright/data/media_codecs_google_video.xml | 10 +++++-----
+ media/libstagefright/omx/SoftOMXPlugin.cpp              |  2 +-
+ 2 files changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/media/libstagefright/data/media_codecs_google_video.xml b/media/libstagefright/data/media_codecs_google_video.xml
+index cb2804d..07e26a2 100644
+--- a/media/libstagefright/data/media_codecs_google_video.xml
++++ b/media/libstagefright/data/media_codecs_google_video.xml
+@@ -85,12 +85,12 @@
+             <Limit name="bitrate" range="1-128000" />
+         </MediaCodec>
+         <MediaCodec name="OMX.google.h264.encoder" type="video/avc">
+-            <!-- profiles and levels:  ProfileBaseline : Level2 -->
+-            <Limit name="size" min="16x16" max="896x896" />
+-            <Limit name="alignment" value="16x16" />
++            <!-- profiles and levels:  ProfileBaseline : Level41 -->
++            <Limit name="size" min="16x16" max="1920x1088" />
++            <Limit name="alignment" value="2x2" />
+             <Limit name="block-size" value="16x16" />
+-            <Limit name="blocks-per-second" range="1-11880" />
+-            <Limit name="bitrate" range="1-2000000" />
++            <Limit name="blocks-per-second" range="1-244800" />
++            <Limit name="bitrate" range="1-12000000" />
+         </MediaCodec>
+         <MediaCodec name="OMX.google.mpeg4.encoder" type="video/mp4v-es">
+             <!-- profiles and levels:  ProfileCore : Level2 -->
+diff --git a/media/libstagefright/omx/SoftOMXPlugin.cpp b/media/libstagefright/omx/SoftOMXPlugin.cpp
+index 64482a8..d2e9100 100644
+--- a/media/libstagefright/omx/SoftOMXPlugin.cpp
++++ b/media/libstagefright/omx/SoftOMXPlugin.cpp
+@@ -78,7 +78,7 @@ static const struct {
+     { "OMX.google.amrwb.decoder", "amrdec", "audio_decoder.amrwb" },
+     { "OMX.google.amrwb.encoder", "amrwbenc", "audio_encoder.amrwb" },
+     { "OMX.google.h264.decoder", "avcdec", "video_decoder.avc" },
+-    { "OMX.google.h264.encoder", "h264enc", "video_encoder.avc" },
++    { "OMX.google.h264.encoder", "avcenc", "video_encoder.avc" },
+     { "OMX.google.hevc.decoder", "hevcdec", "video_decoder.hevc" },
+     { "OMX.google.g711.alaw.decoder", "g711dec", "audio_decoder.g711alaw" },
+     { "OMX.google.g711.mlaw.decoder", "g711dec", "audio_decoder.g711mlaw" },
+-- 
+2.5.0
+

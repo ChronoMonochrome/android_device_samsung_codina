@@ -1,0 +1,31 @@
+From 44c428be7f03ddead5d751dffe048ac806ba173e Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Mon, 7 Mar 2016 05:18:13 +0700
+Subject: [PATCH 34/54] 0044-Fix-aliasing-violations.patch
+
+Change-Id: Id7e8b9011622a2a6b3505c1e3b1d092a6ed1de2b
+---
+ media/libmedia/Visualizer.cpp | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
+
+diff --git a/media/libmedia/Visualizer.cpp b/media/libmedia/Visualizer.cpp
+index 1bcae74..d918e7a 100644
+--- a/media/libmedia/Visualizer.cpp
++++ b/media/libmedia/Visualizer.cpp
+@@ -220,8 +220,11 @@ status_t Visualizer::setMeasurementMode(uint32_t mode) {
+ 
+     p->psize = sizeof(uint32_t);
+     p->vsize = sizeof(uint32_t);
+-    *(int32_t *)p->data = VISUALIZER_PARAM_MEASUREMENT_MODE;
+-    *((int32_t *)p->data + 1)= mode;
++    int32_t const vpmm = VISUALIZER_PARAM_MEASUREMENT_MODE;
++    memcpy(&p->data, &vpmm, sizeof(vpmm));
++    memcpy(&p->data+sizeof(vpmm), &mode, sizeof(mode));
++    //*(int32_t *)p->data = VISUALIZER_PARAM_MEASUREMENT_MODE;
++    //*((int32_t *)p->data + 1)= mode;
+     status_t status = setParameter(p);
+ 
+     ALOGV("setMeasurementMode mode %d  status %d p->status %d", mode, status, p->status);
+-- 
+2.5.0
+

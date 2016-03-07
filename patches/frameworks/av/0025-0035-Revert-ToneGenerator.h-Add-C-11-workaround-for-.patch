@@ -1,0 +1,27 @@
+From 121e13d53318b668d895030541ec3a28338ecdc6 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Mon, 7 Mar 2016 05:18:13 +0700
+Subject: [PATCH 25/54] 
+ 0035-Revert-ToneGenerator.h-Add-C-11-workaround-for-stati.patch
+
+Change-Id: I6a4d6532e0806a67c2a7dd8023766a842b82e516
+---
+ include/media/ToneGenerator.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/include/media/ToneGenerator.h b/include/media/ToneGenerator.h
+index bf3a880..10c8dfb 100644
+--- a/include/media/ToneGenerator.h
++++ b/include/media/ToneGenerator.h
+@@ -212,7 +212,7 @@ private:
+     static const unsigned int TONEGEN_MAX_WAVES = 3;     // Maximun number of sine waves in a tone segment
+     static const unsigned int TONEGEN_MAX_SEGMENTS = 12;  // Maximun number of segments in a tone descriptor
+     static const unsigned int TONEGEN_INF = 0xFFFFFFFF;  // Represents infinite time duration
+-    #define TONEGEN_GAIN 0.9  // Default gain passed to  WaveGenerator().
++    static const float TONEGEN_GAIN = 0.9;  // Default gain passed to  WaveGenerator().
+ 
+     // ToneDescriptor class contains all parameters needed to generate a tone:
+     //    - The array waveFreq[]:
+-- 
+2.5.0
+

@@ -1,0 +1,94 @@
+From 4a92718b63dc89d80267adcfc8ee58e2affde4d7 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Mon, 7 Mar 2016 22:50:17 +0700
+Subject: [PATCH] Omni: big update from CyanogemMod
+
+Change-Id: Id4f4fcf64a41ddc27f1a5be22677dd1a24f903fe
+---
+ config/common.mk   |  4 ----
+ config/packages.mk | 50 ++++++++++++++++++++++++++++++++++++++++++++++----
+ 2 files changed, 46 insertions(+), 8 deletions(-)
+
+diff --git a/config/common.mk b/config/common.mk
+index 4f526fe..cce03fa 100644
+--- a/config/common.mk
++++ b/config/common.mk
+@@ -36,10 +36,6 @@ PRODUCT_COPY_FILES += \
+     vendor/omni/prebuilt/bin/50-hosts.sh:system/addon.d/50-hosts.sh \
+     vendor/omni/prebuilt/bin/blacklist:system/addon.d/blacklist
+ 
+-# userinit support
+-PRODUCT_COPY_FILES += \
+-    vendor/omni/prebuilt/etc/init.d/90userinit:system/etc/init.d/90userinit
+-
+ # Init script file with omni extras
+ PRODUCT_COPY_FILES += \
+     vendor/omni/prebuilt/etc/init.local.rc:root/init.omni.rc
+diff --git a/config/packages.mk b/config/packages.mk
+index 36f7ee2..b238f8d 100644
+--- a/config/packages.mk
++++ b/config/packages.mk
+@@ -10,10 +10,7 @@ PRODUCT_PACKAGES += \
+     Apollo \
+     audio_effects.conf \
+     DSPManager \
+-    libcyanogen-dsp \
+-    MonthCalendarWidget \
+-    OpenDelta \
+-    OmniSwitch
++    libcyanogen-dsp
+ 
+ PRODUCT_PACKAGES += \
+     CellBroadcastReceiver
+@@ -37,3 +34,48 @@ PRODUCT_PACKAGES += \
+     ntfs-3g \
+     mkntfs
+ 
++# Extra tools in CM
++PRODUCT_PACKAGES += \
++    mke2fs \
++    tune2fs \
++    mkfs.f2fs \
++    fsck.f2fs \
++    fibmap.f2fs \
++    gdbserver \
++    micro_bench \
++    oprofiled \
++    sqlite3 \
++    strace
++
++WITH_EXFAT ?= true
++ifeq ($(WITH_EXFAT),true)
++TARGET_USES_EXFAT := true
++PRODUCT_PACKAGES += \
++    mount.exfat \
++    fsck.exfat \
++    mkfs.exfat
++endif
++
++# Openssh
++PRODUCT_PACKAGES += \
++    scp \
++    sftp \
++    ssh \
++    sshd \
++    sshd_config \
++    ssh-keygen \
++    start-ssh
++
++# rsync
++PRODUCT_PACKAGES += \
++    rsync
++
++# Stagefright FFMPEG plugin
++PRODUCT_PACKAGES += \
++    libffmpeg_extractor \
++    libffmpeg_omx \
++    media_codecs_ffmpeg.xml
++
++PRODUCT_PROPERTY_OVERRIDES += \
++    media.sf.omx-plugin=libffmpeg_omx.so \
++    media.sf.extractor-plugin=libffmpeg_extractor.so
+-- 
+2.5.0
+

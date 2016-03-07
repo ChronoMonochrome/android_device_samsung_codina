@@ -1,0 +1,38 @@
+From 3184c3ab0563d617ca9a392afeea4bba3acc75d0 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Mon, 7 Mar 2016 05:18:12 +0700
+Subject: [PATCH 18/54] 
+ 0027-Correctly-handle-unsupported-OMX-color-format.patch
+
+Change-Id: Ice105241897e400d9ed16ae8c2bddc5d1f1a9fe9
+---
+ media/libstagefright/OMXCodec.cpp | 10 ++++++++--
+ 1 file changed, 8 insertions(+), 2 deletions(-)
+
+diff --git a/media/libstagefright/OMXCodec.cpp b/media/libstagefright/OMXCodec.cpp
+index cfdfb80..d54298b 100644
+--- a/media/libstagefright/OMXCodec.cpp
++++ b/media/libstagefright/OMXCodec.cpp
+@@ -1740,11 +1740,17 @@ status_t OMXCodec::setVideoOutputFormat(
+                 && colorFormat != OMX_COLOR_FormatUnused
+                 && colorFormat != format.eColorFormat) {
+ 
+-            while (OMX_ErrorNoMore != err) {
+-                format.nIndex++;
++            OMX_U32 index = 1; // Index 0 is retrieved above.
++            while (index < kMaxColorFormatSupported) {
++                format.nIndex = index++;
+                 err = mOMX->getParameter(
+                         mNode, OMX_IndexParamVideoPortFormat,
+                             &format, sizeof(format));
++                if (OK != err) {
++                    format.eColorFormat = OMX_COLOR_FormatUnused;
++                    break;
++                }
++
+                 if (format.eColorFormat == colorFormat) {
+                     break;
+                 }
+-- 
+2.5.0
+

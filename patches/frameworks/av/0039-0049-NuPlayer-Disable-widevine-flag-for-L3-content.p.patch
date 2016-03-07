@@ -1,0 +1,27 @@
+From ef52c54059ba18d3688887f2d0fc75adf0adcd3a Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Mon, 7 Mar 2016 05:18:14 +0700
+Subject: [PATCH 39/54] 
+ 0049-NuPlayer-Disable-widevine-flag-for-L3-content.patch
+
+Change-Id: Ic0eb921f1e98c859cc3ba01241ddc208df8c4f76
+---
+ media/libmediaplayerservice/nuplayer/GenericSource.cpp | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/media/libmediaplayerservice/nuplayer/GenericSource.cpp b/media/libmediaplayerservice/nuplayer/GenericSource.cpp
+index 5bd36e4..5bcf9a0 100644
+--- a/media/libmediaplayerservice/nuplayer/GenericSource.cpp
++++ b/media/libmediaplayerservice/nuplayer/GenericSource.cpp
+@@ -247,6 +247,8 @@ status_t NuPlayer::GenericSource::initFromDataSource() {
+                     if (mUIDValid) {
+                         extractor->setUID(mUID);
+                     }
++                } else {
++                     mIsWidevine = false;
+                 }
+             }
+         }
+-- 
+2.5.0
+
