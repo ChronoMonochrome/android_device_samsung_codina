@@ -25,20 +25,6 @@ import static android.telephony.TelephonyManager.NETWORK_TYPE_HSDPA;
 import static android.telephony.TelephonyManager.NETWORK_TYPE_HSUPA;
 import static android.telephony.TelephonyManager.NETWORK_TYPE_HSPA;
 
-import android.content.BroadcastReceiver;
-import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
-import android.net.ConnectivityManager;
-import android.os.Handler;
-import android.os.Message;
-import android.os.AsyncResult;
-import android.os.Parcel;
-import android.os.SystemProperties;
-import android.telephony.PhoneNumberUtils;
-import android.telephony.SignalStrength;
-import android.telephony.TelephonyManager;
-import static com.android.internal.telephony.RILConstants.*;
 
 import com.android.internal.telephony.CommandException;
 import com.android.internal.telephony.dataconnection.DataCallResponse;
@@ -70,9 +56,9 @@ import android.os.PowerManager.WakeLock;
 import android.telephony.NeighboringCellInfo;
 import android.telephony.PhoneNumberUtils;
 import android.telephony.SignalStrength;
+import android.telephony.TelephonyManager;
 import android.telephony.SmsManager;
 import android.telephony.SmsMessage;
-import android.telephony.TelephonyManager;
 import android.text.TextUtils;
 import android.telephony.Rlog;
 
@@ -180,16 +166,23 @@ public class SamsungU8500RIL extends RIL implements CommandsInterface {
 
     protected HandlerThread mSamsungu8500RILThread;
     protected ConnectivityHandler mSamsungu8500RILHandler;
-    
-    private Message mPendingGetSimStatus;
-    
     private TelephonyManager mTelephonyManager;
+    private Message mPendingGetSimStatus;
     private Context mContext;
     private boolean mSignalbarCount = SystemProperties.getInt("ro.telephony.sends_barcount", 0) == 1 ? true : false;
     private boolean mIsSamsungCdma = SystemProperties.getBoolean("ro.ril.samsung_cdma", false);
+    protected int mPreferredNetworkType;
+
+    public SamsungU8500RIL(Context context, int networkMode, int cdmaSubscription) {
+        super(context, networkMode, cdmaSubscription);
+        mPreferredNetworkType = networkMode;
+        mQANElements = 5;
+        mContext = context;
+    }
 
     public SamsungU8500RIL(Context context, int networkMode, int cdmaSubscription, Integer instanceId) {
-        super(context, networkMode, cdmaSubscription);
+        super(context, networkMode, cdmaSubscription, instanceId);
+        mPreferredNetworkType = networkMode;
         mQANElements = 5;
         mContext = context;
     }
@@ -204,24 +197,18 @@ public class SamsungU8500RIL extends RIL implements CommandsInterface {
 
     //@Override
     public void setCurrentPreferredNetworkType() {
-        if (RILJ_LOGD) riljLog("setCurrentPreferredNetworkType IGNORED");
-        /* Google added this as a fix for crespo loosing network type after
-         * taking an OTA. This messes up the data connection state for us
-         * due to the way we handle network type change (disable data
-         * then change then re-enable).
-         */
+        if (RILJ_LOGD) riljLog("setCurrentPreferredNetworkType: " + mPreferredNetworkType);
+        setPreferredNetworkType(mPreferredNetworkType, null);
     }
 
     private boolean NeedReconnect()
     {
         ConnectivityManager cm =
             (ConnectivityManager)mContext.getSystemService(Context.CONNECTIVITY_SERVICE);
-        TelephonyManager tm = TelephonyManager.from(mContext);
-        
         NetworkInfo ni_active = cm.getActiveNetworkInfo();
 
         return ni_active != null && ni_active.getTypeName().equalsIgnoreCase( "mobile" ) &&
-                ni_active.isConnected() && tm.getDataEnabled();
+                ni_active.isConnected() && cm.getMobileDataEnabled();
     }
 
     private boolean hasNetworkTypeChanged(int networkType)
@@ -280,6 +267,8 @@ public class SamsungU8500RIL extends RIL implements CommandsInterface {
 
         rr.mParcel.writeInt(1);
         rr.mParcel.writeInt(networkType);
+
+        mPreferredNetworkType = networkType;
 
         if (RILJ_LOGD) riljLog(rr.serialString() + "> " + requestToString(rr.mRequest)
                 + " : " + networkType);
@@ -590,9 +579,8 @@ public class SamsungU8500RIL extends RIL implements CommandsInterface {
             AsyncResult.forMessage(rr.mResult, ret, null);
             rr.mResult.sendToTarget();
         }
-
-	return rr;
-   }
+        return rr;
+    }
 
     @Override
     public void
@@ -967,5 +955,63 @@ public class SamsungU8500RIL extends RIL implements CommandsInterface {
             mPendingGetSimStatus = null;
         }
     }
-}
 
+    // Hack for Lollipop
+    // System expects addresses, not gateways
+    @Override
+    protected DataCallResponse getDataCallResponse(Parcel p, int version) {
+        DataCallResponse dataCall = new DataCallResponse();
+
+        dataCall.version = version;
+        if (version < 5) {
+            dataCall.cid = p.readInt();
+            dataCall.active = p.readInt();
+            dataCall.type = p.readString();
+            if (version < 4 || needsOldRilFeature("datacallapn")) {
+                p.readString(); // APN - not used
+            }
+            String addresses = p.readString();
+            if (!TextUtils.isEmpty(addresses)) {
+                dataCall.addresses = addresses.split(" ");
+            }
+            // DataCallState needs an ifname. Since we don't have one use the name from the ThrottleService resource (default=rmnet0).
+            dataCall.ifname = Resources.getSystem().getString(com.android.internal.R.string.config_datause_iface);
+        } else {
+            dataCall.status = p.readInt();
+            if (needsOldRilFeature("usehcradio"))
+                dataCall.suggestedRetryTime = -1;
+            else
+                dataCall.suggestedRetryTime = p.readInt();
+            dataCall.cid = p.readInt();
+            dataCall.active = p.readInt();
+            dataCall.type = p.readString();
+            dataCall.ifname = p.readString();
+            if ((dataCall.status == DcFailCause.NONE.getErrorCode()) &&
+                    TextUtils.isEmpty(dataCall.ifname)) {
+              throw new RuntimeException("getDataCallResponse, no ifname");
+            }
+            String addresses = p.readString();
+            if (!TextUtils.isEmpty(addresses)) {
+                dataCall.addresses = addresses.split(" ");
+            }
+            String dnses = p.readString();
+            if (!TextUtils.isEmpty(dnses)) {
+                dataCall.dnses = dnses.split(" ");
+            }
+            p.readString();
+            if (!TextUtils.isEmpty(addresses)) {
+                dataCall.gateways = dataCall.addresses;
+            }
+            if (version >= 10) {
+                String pcscf = p.readString();
+                if (!TextUtils.isEmpty(pcscf)) {
+                    dataCall.pcscf = pcscf.split(" ");
+                }
+            }
+            if (version >= 11) {
+                dataCall.mtu = p.readInt();
+            }
+        }
+        return dataCall;
+    }
+}
