@@ -98,7 +98,46 @@ PRODUCT_PACKAGES += \
     audio.usb.default \
     audio.a2dp.default \
     libaudioutils \
-    libtinyalsa
+    libtinyalsa 
+
+# Audio Effects
+PRODUCT_PACKAGES += \
+    ViPER4Android \
+    libv4a_fx_ics \
+
+# NFC
+#PRODUCT_PACKAGES += \
+#    libnfc \
+#    libnfc_jni \
+#    Nfc \
+#    Tag \
+#    com.android.nfc_extras
+
+PRODUCT_COPY_FILES += \
+    $(LOCAL_PATH)/configs/nfcee_access.xml:system/etc/nfcee_access.xml
+
+# Fm radio
+#PRODUCT_PACKAGES += \
+#    FMRadio
+
+# Superuser
+ifneq ($(TARGET_NO_SUPERUSER),true)
+
+PRODUCT_PACKAGES += \
+    su
+
+PRODUCT_PROPERTY_OVERRIDES += \
+    persist.sys.root_access=3
+
+endif
+
+# Terminal
+PRODUCT_PACKAGES += \
+    Terminal
+
+# Dalvik
+PRODUCT_PROPERTY_OVERRIDES += \
+    dalvik.vm.dex2oat-swap=false
 
 # U8500 Hardware
 $(call inherit-product, hardware/u8500/u8500.mk)
@@ -107,9 +146,6 @@ ADDITIONAL_DEFAULT_PROPERTIES += \
 	ro.secure=0 \
 	ro.adb.secure=0 \
 	persist.sys.force_highendgfx=true 
-
-PRODUCT_PROPERTY_OVERRIDES += \
-        persist.sys.root_access=1
 
 # USB
 PRODUCT_DEFAULT_PROPERTY_OVERRIDES += \
@@ -186,10 +222,6 @@ PRODUCT_PROPERTY_OVERRIDES += \
     ro.kernel.android.checkjni=0 \
     dalvik.vm.checkjni=false
 
-# SELinux
-PRODUCT_PROPERTY_OVERRIDES += \
-    ro.boot.selinux=permissive
-
 # Storage switch
  PRODUCT_PROPERTY_OVERRIDES += \
     persist.sys.vold.switchablepair=sdcard0,sdcard1
@@ -204,10 +236,6 @@ PRODUCT_PROPERTY_OVERRIDES += \
     dalvik.vm.heapminfree=512k \
     dalvik.vm.heapmaxfree=4m
 PRODUCT_TAGS += dalvik.gc.type-precise
-
-# KSM
-PRODUCT_PROPERTY_OVERRIDES += \
-    ro.ksm.default=1
 
 # Use the non-open-source parts, if they're present
 include vendor/samsung/u8500-common/vendor-common.mk
@@ -245,6 +273,6 @@ PRODUCT_COPY_FILES += \
 
 # Wi-Fi test
 PRODUCT_PACKAGES += \
-libwpa_client \
-hostapd \
-dhcpcd.conf
+   libwpa_client \
+   hostapd \
+   dhcpcd.conf
