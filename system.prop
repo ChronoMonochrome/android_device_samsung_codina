@@ -31,8 +31,17 @@ ro.config.ntp.clock_sync=1800000
 ro.config.ntp.sync_mode=3
 
 # Awesome Player
-media.stagefright.use-awesome=true
-persist.sys.media.use-awesome=true
+#media.stagefright.use-awesome=true
+#persist.sys.media.use-awesome=true
 
 # Camera
 camera2.portability.force_api=1
+
+# HWUI tweaks 
+
+ro.hwui.drop_shadow_cache_size=1
+ro.hwui.gradient_cache_size=0.2
+ro.hwui.layer_cache_size=6
+ro.hwui.path_cache_size=2
+ro.hwui.r_buffer_cache_size=1
+ro.hwui.texture_cache_size=8
