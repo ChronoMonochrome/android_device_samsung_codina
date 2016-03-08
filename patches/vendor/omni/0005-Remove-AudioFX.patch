@@ -1,0 +1,25 @@
+From b76b7231b23ca3a8df08aa235e2def5c14d46146 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Tue, 8 Mar 2016 12:34:47 +0700
+Subject: [PATCH 5/5] Remove AudioFX
+
+Change-Id: I67fe2b4fad7472f789120feccbb44b05a3bd32d5
+---
+ config/packages.mk | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/config/packages.mk b/config/packages.mk
+index 3302976..80886f3 100644
+--- a/config/packages.mk
++++ b/config/packages.mk
+@@ -9,7 +9,6 @@ endif
+ PRODUCT_PACKAGES += \
+     Eleven \
+     audio_effects.conf \
+-    AudioFX \
+     CMFileManager \
+ 
+ PRODUCT_PACKAGES += \
+-- 
+2.5.0
+

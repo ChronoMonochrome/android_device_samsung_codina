@@ -1,0 +1,38 @@
+From bfa1d4191f40de1b23a5efe3f5d0ae2a9a9d321c Mon Sep 17 00:00:00 2001
+From: mickybart <mickybart@pygoscelis.org>
+Date: Wed, 14 Jan 2015 14:24:10 -0500
+Subject: [PATCH 32/33] minfree: can be set by the end-user
+
+---
+ services/core/java/com/android/server/am/ProcessList.java | 8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/services/core/java/com/android/server/am/ProcessList.java b/services/core/java/com/android/server/am/ProcessList.java
+index 45e09f4..868cdf0 100644
+--- a/services/core/java/com/android/server/am/ProcessList.java
++++ b/services/core/java/com/android/server/am/ProcessList.java
+@@ -23,6 +23,7 @@ import java.nio.ByteBuffer;
+ import android.app.ActivityManager;
+ import android.os.Build;
+ import android.os.SystemClock;
++import android.os.SystemProperties;
+ import com.android.internal.util.MemInfoReader;
+ import com.android.server.wm.WindowManagerService;
+ 
+@@ -229,8 +230,11 @@ final class ProcessList {
+         else if (scale > 1) scale = 1;
+         int minfree_adj = Resources.getSystem().getInteger(
+                 com.android.internal.R.integer.config_lowMemoryKillerMinFreeKbytesAdjust);
+-        int minfree_abs = Resources.getSystem().getInteger(
+-                com.android.internal.R.integer.config_lowMemoryKillerMinFreeKbytesAbsolute);
++        int minfree_abs = SystemProperties.getInt("sys.ram.minfree", -1);
++        if (minfree_abs < 0) {
++            minfree_abs = Resources.getSystem().getInteger(
++                    com.android.internal.R.integer.config_lowMemoryKillerMinFreeKbytesAbsolute);
++        }
+         if (false) {
+             Slog.i("XXXXXX", "minfree_adj=" + minfree_adj + " minfree_abs=" + minfree_abs);
+         }
+-- 
+2.5.0
+

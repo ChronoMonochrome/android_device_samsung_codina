@@ -1,0 +1,296 @@
+From c3d19a66dcfe9cec9c0a86f5f4beef523435b12d Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Tue, 8 Mar 2016 11:19:21 +0700
+Subject: [PATCH 12/13] Delete useless features
+
+Change-Id: Idffe8e5acf89d74a1701d18b48afcecc2b58455c
+---
+ res/values/arrays.xml                              | 34 ----------------
+ res/values/strings.xml                             | 10 -----
+ res/xml/development_prefs.xml                      | 14 -------
+ src/com/android/settings/DevelopmentSettings.java  | 47 ----------------------
+ .../settings/fuelgauge/PowerUsageSummary.java      | 17 --------
+ 5 files changed, 122 deletions(-)
+
+diff --git a/res/values/arrays.xml b/res/values/arrays.xml
+index 8c34e86..ba70262 100644
+--- a/res/values/arrays.xml
++++ b/res/values/arrays.xml
+@@ -1314,29 +1314,6 @@
+         <item>-2</item>
+     </string-array>
+     
+-    <!-- Array for doze brightness -->
+-    <string-array name="doze_brightness_entries">
+-        <item>@string/urom_generic_default</item>
+-        <item>@string/urom_screen_adaptive</item>
+-        <item>10%</item>
+-        <item>15%</item>
+-        <item>20%</item>
+-        <item>25%</item>
+-        <item>30%</item>
+-        <item>@string/urom_generic_custom</item>
+-    </string-array>
+-
+-    <string-array name="doze_brightness_values" translatable="false" >
+-        <item>-1</item>
+-        <item>0</item>
+-        <item>25</item>
+-        <item>38</item>
+-        <item>51</item>
+-        <item>64</item>
+-        <item>77</item>
+-        <item>-2</item>
+-    </string-array>
+-    
+     <!-- Array for lightbar -->
+     <string-array name="lightbar_mode_entries">
+         <item>Always off</item>
+@@ -1350,17 +1327,6 @@
+         <item>2</item>
+     </string-array>
+ 
+-    <!-- Array for mainkeys layout -->
+-    <string-array name="mainkeys_layout_entries">
+-        <item>Deprecated (Android 2.3)</item>
+-        <item>Modern (Android 4.4+)</item>
+-    </string-array>
+-
+-    <string-array name="mainkeys_layout_values" translatable="false" >
+-        <item>0</item>
+-        <item>1</item>
+-    </string-array>
+-
+     <!-- Array of titles for sim color for multi-sim -->
+     <string-array name="color_picker">
+         <item>Teal</item>
+diff --git a/res/values/strings.xml b/res/values/strings.xml
+index 7c70608..c761835 100644
+--- a/res/values/strings.xml
++++ b/res/values/strings.xml
+@@ -6072,7 +6072,6 @@
+    <string name="urom_generic_default">Default</string>
+    <string name="urom_generic_reset">Reset</string>
+    <string name="urom_help_summary">(*) need a reboot, (**) need a reflash</string>
+-   <string name="urom_screen_adaptive">Adaptive</string>
+ 
+    <!-- Ram minfree -->
+    <string name="ram_minfree_title">Low memory killer (*)</string>
+@@ -6086,16 +6085,10 @@
+    <string name="lightbar_flash_title">Light bar notification (*)</string>
+    <string name="lightbar_flash_summary">Flash on incoming notification</string>
+    
+-   <!-- hw keys layout -->
+-   <string name="mainkeys_layout_title">Physical Keys Layout (*)</string>
+-   
+    <!-- hw keys music -->
+    <string name="mainkeys_music_title">Physical Keys Music (*)</string>
+    <string name="mainkeys_music_summary">Music controls when screen is off</string>
+    
+-   <!-- doze brightness -->
+-   <string name="doze_brightness_title">Ambient brightness level (*)</string>
+-   
+    <!-- color calibration -->
+    <string name="color_calibration_title">Color calibration</string>
+    <string name="color_calibration_summary">Calibrate on-screen colors</string>
+@@ -6103,9 +6096,6 @@
+    <string name="color_green_title">Green</string>
+    <string name="color_blue_title">Blue</string>
+ 
+-   <!-- fast charge -->
+-   <string name="fast_charge">USB Fast Charge</string>
+-
+    <!-- Title and summary for SIM Status -->
+    <string name="imei_information_title">IMEI information</string>
+    <string name="imei_information_summary">IMEI relative information</string>
+diff --git a/res/xml/development_prefs.xml b/res/xml/development_prefs.xml
+index df1ac61..f54b35b 100644
+--- a/res/xml/development_prefs.xml
++++ b/res/xml/development_prefs.xml
+@@ -367,13 +367,6 @@
+             android:entryValues="@array/zram_size_values" />
+ 
+         <ListPreference
+-            android:key="doze_brightness"
+-            android:title="@string/doze_brightness_title"
+-            android:persistent="false"
+-            android:entries="@array/doze_brightness_entries"
+-            android:entryValues="@array/doze_brightness_values" />
+-
+-        <ListPreference
+             android:key="lightbar_mode"
+             android:title="@string/lightbar_mode_title"
+             android:persistent="false"
+@@ -385,13 +378,6 @@
+             android:title="@string/lightbar_flash_title"
+             android:summary="@string/lightbar_flash_summary"/>
+ 
+-        <ListPreference
+-            android:key="mainkeys_layout"
+-            android:title="@string/mainkeys_layout_title"
+-            android:persistent="false"
+-            android:entries="@array/mainkeys_layout_entries"
+-            android:entryValues="@array/mainkeys_layout_values" />
+-
+         <SwitchPreference
+             android:key="mainkeys_music"
+             android:title="@string/mainkeys_music_title"
+diff --git a/src/com/android/settings/DevelopmentSettings.java b/src/com/android/settings/DevelopmentSettings.java
+index b569a62..e574585 100644
+--- a/src/com/android/settings/DevelopmentSettings.java
++++ b/src/com/android/settings/DevelopmentSettings.java
+@@ -187,16 +187,10 @@ public class DevelopmentSettings extends SettingsPreferenceFragment
+     private static final String ZRAM_SIZE_PROPERTY = "persist.sys.zram_size";
+     private static final String ZRAM_ENABLE_PROPERTY = "persist.sys.zram_enable";
+     
+-    private static final String DOZE_BRIGHTNESS_KEY = "doze_brightness";
+-    private static final String DOZE_BRIGHTNESS_PROPERTY = "persist.screen.doze_brightness";
+-    
+     private static final String LIGHTBAR_MODE_KEY = "lightbar_mode";
+     private static final String LIGHTBAR_MODE_PROPERTY = "persist.sys.lightbar_mode";
+     private static final String LIGHTBAR_FLASH_KEY = "lightbar_flash";
+     private static final String LIGHTBAR_FLASH_PROPERTY = "persist.sys.lightbar_flash";
+-
+-    private static final String MAINKEYS_LAYOUT_KEY = "mainkeys_layout";
+-    private static final String MAINKEYS_LAYOUT_PROPERTY = "persist.qemu.hw.mainkeys_layout";
+     
+     private static final String MAINKEYS_MUSIC_KEY = "mainkeys_music";
+     private static final String MAINKEYS_MUSIC_PROPERTY = "persist.qemu.hw.mainkeys_music";
+@@ -272,10 +266,8 @@ public class DevelopmentSettings extends SettingsPreferenceFragment
+     //urom
+     private ListPreference mRamMinfree;
+     private ListPreference mZramSize;
+-    private ListPreference mDozeBrightness;
+     private ListPreference mLightbarMode;
+     private SwitchPreference mLightbarFlash;
+-    private ListPreference mMainkeysLayout;
+     private SwitchPreference mMainkeysMusic;
+ 
+     private PreferenceScreen mProcessStats;
+@@ -435,10 +427,8 @@ public class DevelopmentSettings extends SettingsPreferenceFragment
+         //urom
+         mRamMinfree = addListPreference(RAM_MINFREE_KEY);
+         mZramSize = addListPreference(ZRAM_SIZE_KEY);
+-        mDozeBrightness = addListPreference(DOZE_BRIGHTNESS_KEY);
+         mLightbarMode = addListPreference(LIGHTBAR_MODE_KEY);
+         mLightbarFlash = (SwitchPreference) findPreference(LIGHTBAR_FLASH_KEY);
+-        mMainkeysLayout = addListPreference(MAINKEYS_LAYOUT_KEY);
+         mMainkeysMusic = (SwitchPreference) findPreference(MAINKEYS_MUSIC_KEY);
+     }
+ 
+@@ -627,10 +617,8 @@ public class DevelopmentSettings extends SettingsPreferenceFragment
+         //urom
+         updateRamMinfreeOptions();
+         updateZramSizeOptions();
+-        updateDozeBrightnessOptions();
+         updateLightbarModeOptions();
+         updateLightbarFlashOptions();
+-        updateMainkeysLayoutOptions();
+         updateMainkeysMusicOptions();
+     }
+ 
+@@ -1456,26 +1444,6 @@ public class DevelopmentSettings extends SettingsPreferenceFragment
+         updateZramSizeOptions();
+     }
+     
+-    private void updateDozeBrightnessOptions() {
+-        String value = SystemProperties.get(DOZE_BRIGHTNESS_PROPERTY, "-1");
+-        int index = mDozeBrightness.findIndexOfValue(value);
+-        if (index == -1) {
+-            index = mDozeBrightness.getEntryValues().length - 1;
+-        }
+-        mDozeBrightness.setValueIndex(index);
+-        mDozeBrightness.setSummary((mDozeBrightness.getEntries()[index]).toString().replace("%","%%"));
+-    }
+-
+-    private void writeDozeBrightnessOptions(Object newValue) {
+-        if (newValue.toString().contentEquals("-2")) {
+-            // custom
+-            return;
+-        }
+-        
+-        SystemProperties.set(DOZE_BRIGHTNESS_PROPERTY, newValue.toString());
+-        updateDozeBrightnessOptions();
+-    }
+-    
+     private void updateLightbarModeOptions() {
+         String value = SystemProperties.get(LIGHTBAR_MODE_PROPERTY, "1");
+         int index = mLightbarMode.findIndexOfValue(value);
+@@ -1502,21 +1470,6 @@ public class DevelopmentSettings extends SettingsPreferenceFragment
+         updateLightbarFlashOptions();
+     }
+     
+-    private void updateMainkeysLayoutOptions() {
+-        String value = SystemProperties.get(MAINKEYS_LAYOUT_PROPERTY, "1");
+-        int index = mMainkeysLayout.findIndexOfValue(value);
+-        if (index == -1) {
+-            index = 1;
+-        }
+-        mMainkeysLayout.setValueIndex(index);
+-        mMainkeysLayout.setSummary(mMainkeysLayout.getEntries()[index]);
+-    }
+-    
+-    private void writeMainkeysLayoutOptions(Object newValue) {
+-        SystemProperties.set(MAINKEYS_LAYOUT_PROPERTY, newValue.toString());
+-        updateMainkeysLayoutOptions();
+-    }
+-    
+     private void updateMainkeysMusicOptions() {
+         updateSwitchPreference(mMainkeysMusic, 
+                 !SystemProperties.get(MAINKEYS_MUSIC_PROPERTY, "1").contentEquals("0"));
+diff --git a/src/com/android/settings/fuelgauge/PowerUsageSummary.java b/src/com/android/settings/fuelgauge/PowerUsageSummary.java
+index 3d89998..4ddbd23 100644
+--- a/src/com/android/settings/fuelgauge/PowerUsageSummary.java
++++ b/src/com/android/settings/fuelgauge/PowerUsageSummary.java
+@@ -46,7 +46,6 @@ import com.android.settings.DevelopmentSettings;
+ import com.android.settings.HelpUtils;
+ import com.android.settings.R;
+ import com.android.settings.SettingsActivity;
+-import com.android.settings.util.FileUtils;
+ 
+ import java.util.List;
+ 
+@@ -64,13 +63,10 @@ public class PowerUsageSummary extends PreferenceFragment {
+ 
+     private static final String BATTERY_HISTORY_FILE = "tmp_bat_history.bin";
+ 
+-    private static final String FAST_CHARGE_FILE = "/sys/kernel/fast_charge/force_fast_charge";
+-
+     private static final int MENU_STATS_TYPE = Menu.FIRST;
+     private static final int MENU_STATS_REFRESH = Menu.FIRST + 1;
+     private static final int MENU_BATTERY_SAVER = Menu.FIRST + 2;
+     private static final int MENU_HELP = Menu.FIRST + 3;
+-    private static final int MENU_FAST_CHARGE = Menu.FIRST + 4;
+ 
+     private UserManager mUm;
+ 
+@@ -200,14 +196,6 @@ public class PowerUsageSummary extends PreferenceFragment {
+         MenuItem batterySaver = menu.add(0, MENU_BATTERY_SAVER, 0, R.string.battery_saver);
+         batterySaver.setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER);
+ 
+-        String fastChargeState = FileUtils.readOneLine(FAST_CHARGE_FILE);
+-        if (fastChargeState != null) {
+-            MenuItem fastCharge = menu.add(0, MENU_FAST_CHARGE, 0, R.string.fast_charge);
+-            fastCharge.setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER);
+-            fastCharge.setCheckable(true);
+-            fastCharge.setChecked(fastChargeState.contentEquals("1"));
+-        }
+-
+         String helpUrl;
+         if (!TextUtils.isEmpty(helpUrl = getResources().getString(R.string.help_url_battery))) {
+             final MenuItem help = menu.add(0, MENU_HELP, 0, R.string.help_label);
+@@ -236,11 +224,6 @@ public class PowerUsageSummary extends PreferenceFragment {
+                 sa.startPreferencePanel(BatterySaverSettings.class.getName(), null,
+                         R.string.battery_saver, null, null, 0);
+                 return true;
+-            case MENU_FAST_CHARGE:
+-                if (FileUtils.writeLine(FAST_CHARGE_FILE, item.isChecked() ? "0" : "1")) {
+-                    item.setChecked(!item.isChecked());
+-                }
+-                return true;
+             default:
+                 return false;
+         }
+-- 
+2.5.0
+

@@ -1,0 +1,31 @@
+From 4e97c2fc64370c6249c7e4964c19b9ed6b58958d Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Tue, 8 Mar 2016 10:12:34 +0700
+Subject: [PATCH 4/5] Use Eleven && AudioFX instead of Apollo && DSPManager
+
+Change-Id: I1ba0349138893d77e431b207da78fc396b9710f3
+---
+ config/packages.mk | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/config/packages.mk b/config/packages.mk
+index b238f8d..3302976 100644
+--- a/config/packages.mk
++++ b/config/packages.mk
+@@ -7,10 +7,10 @@ endif
+ 
+ # Additional apps
+ PRODUCT_PACKAGES += \
+-    Apollo \
++    Eleven \
+     audio_effects.conf \
+-    DSPManager \
+-    libcyanogen-dsp
++    AudioFX \
++    CMFileManager \
+ 
+ PRODUCT_PACKAGES += \
+     CellBroadcastReceiver
+-- 
+2.5.0
+

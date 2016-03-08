@@ -1,0 +1,26 @@
+From 34ae514e13d200d0b20045d04f2b410183bc19a1 Mon Sep 17 00:00:00 2001
+From: mickybart <mickybart@pygoscelis.org>
+Date: Mon, 9 Feb 2015 16:19:08 -0500
+Subject: [PATCH 33/33] prop: migration to persist
+
+Change-Id: I76a051e1688cceb827f17188ac089eb31ffeb7a2
+---
+ policy/src/com/android/internal/policy/impl/PhoneWindowManager.java | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/policy/src/com/android/internal/policy/impl/PhoneWindowManager.java b/policy/src/com/android/internal/policy/impl/PhoneWindowManager.java
+index 60a49a1..7b6145a 100644
+--- a/policy/src/com/android/internal/policy/impl/PhoneWindowManager.java
++++ b/policy/src/com/android/internal/policy/impl/PhoneWindowManager.java
+@@ -1550,7 +1550,7 @@ public class PhoneWindowManager implements WindowManagerPolicy {
+         mTriplePressOnPowerBehavior = mContext.getResources().getInteger(
+                 com.android.internal.R.integer.config_triplePressOnPowerBehavior);
+         // Qemu Hw Mainkeys
+-        mQemuHwMainkeysMusic = (SystemProperties.getInt("qemu.hw.mainkeys.music", QEMU_HW_MAINKEYS_MUSIC) == QEMU_HW_MAINKEYS_MUSIC);
++        mQemuHwMainkeysMusic = (SystemProperties.getInt("persist.qemu.hw.mainkeys_music", QEMU_HW_MAINKEYS_MUSIC) == QEMU_HW_MAINKEYS_MUSIC);
+ 
+         mAccessibilityManager = (AccessibilityManager) context.getSystemService(
+                 Context.ACCESSIBILITY_SERVICE);
+-- 
+2.5.0
+

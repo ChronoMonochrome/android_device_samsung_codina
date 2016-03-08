@@ -1,0 +1,36 @@
+From 51ffa667f516f6cf9dcbe911f7a82e163ef519aa Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Tue, 8 Mar 2016 11:01:22 +0700
+Subject: [PATCH 31/33] Fine OOM tuning :)
+
+Change-Id: Ie698583d0e4bab3a0ba226eb8257c07a1bb957e0
+---
+ services/core/java/com/android/server/am/ProcessList.java | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/services/core/java/com/android/server/am/ProcessList.java b/services/core/java/com/android/server/am/ProcessList.java
+index de24287..45e09f4 100644
+--- a/services/core/java/com/android/server/am/ProcessList.java
++++ b/services/core/java/com/android/server/am/ProcessList.java
+@@ -170,14 +170,14 @@ final class ProcessList {
+     // These are the low-end OOM level limits.  This is appropriate for an
+     // HVGA or smaller phone with less than 512MB.  Values are in KB.
+     private final int[] mOomMinFreeLow = new int[] {
+-            12288, 18432, 24576,
+-            36864, 43008, 49152
++            1024, 3048, 8120,
++            12280, 14244, 26152
+     };
+     // These are the high-end OOM level limits.  This is appropriate for a
+     // 1280x800 or larger screen with around 1GB RAM.  Values are in KB.
+     private final int[] mOomMinFreeHigh = new int[] {
+-            73728, 92160, 110592,
+-            129024, 147456, 184320
++            1024, 3048, 8120,
++            12280, 14244, 26152
+     };
+     // The actual OOM killer memory levels we are using.
+     private final int[] mOomMinFree = new int[mOomAdj.length];
+-- 
+2.5.0
+
