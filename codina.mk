@@ -104,6 +104,7 @@ PRODUCT_PACKAGES += \
 PRODUCT_PACKAGES += \
     ViPER4Android \
     libv4a_fx_ics \
+    android-visualizer 
 
 # NFC
 #PRODUCT_PACKAGES += \
