@@ -1,0 +1,64 @@
+From e0591e19f8b3bf92d46bf79a44a6fc27240dfd7d Mon Sep 17 00:00:00 2001
+From: Robert Rozic <rooobertinhooo@gmail.com>
+Date: Sun, 23 Feb 2014 16:13:38 +0100
+Subject: [PATCH] Allow storage swap
+
+Change-Id: Ic4f521a6998a29bb4c4663a803836ab6d32971ee
+---
+ DirectVolume.cpp | 34 +++++++++++++++++++++++++++++-----
+ 1 file changed, 29 insertions(+), 5 deletions(-)
+
+diff --git a/DirectVolume.cpp b/DirectVolume.cpp
+index 8d4a650..ac1046b 100644
+--- a/DirectVolume.cpp
++++ b/DirectVolume.cpp
+@@ -87,17 +87,41 @@ DirectVolume::DirectVolume(VolumeManager *vm, const fstab_rec* rec, int flags) :
+               rec->mount_point);
+     }
+ 
+-    char mount[PATH_MAX];
++    char mount_media[PATH_MAX];
++    char mount_fuse[PATH_MAX];
++    char switchable[PROPERTY_VALUE_MAX];
++
++    snprintf(mount_media, PATH_MAX, "%s/%s", Volume::MEDIA_DIR, rec->label);
++    snprintf(mount_fuse, PATH_MAX, "%s/%s", Volume::FUSE_DIR, rec->label);
++
++    property_get("persist.sys.vold.switchexternal", switchable, "0");
++    if (!strcmp(switchable,"1")) {
++        char *first, *second = NULL;
++        const char *delim = ",";
++
++        property_get("persist.sys.vold.switchablepair", switchable, "");
++        if (!(first = strtok(switchable, delim))) {
++            SLOGE("Mount switch requested, but no switchable mountpoints found");
++        } else if (!(second = strtok(NULL, delim))) {
++            SLOGE("Mount switch requested, but bad switchable mountpoints found");
++        } else {
++            if (!strcmp(rec->label,first)) {
++                snprintf(mount_media, PATH_MAX, "%s/%s", Volume::MEDIA_DIR, second);
++                snprintf(mount_fuse, PATH_MAX, "%s/%s", Volume::FUSE_DIR, second);
++            } else if (!strcmp(rec->label,second)) {
++                snprintf(mount_media, PATH_MAX, "%s/%s", Volume::MEDIA_DIR, first);
++                snprintf(mount_fuse, PATH_MAX, "%s/%s", Volume::FUSE_DIR, first);
++            }
++        }
++    }
+ 
+ #ifdef MINIVOLD
+     // In recovery, directly mount to /storage/* since we have no fuse daemon
+     snprintf(mount, PATH_MAX, "%s/%s", Volume::FUSE_DIR, rec->label);
+     mMountpoint = mFuseMountpoint = strdup(mount);
+ #else
+-    snprintf(mount, PATH_MAX, "%s/%s", Volume::MEDIA_DIR, rec->label);
+-    mMountpoint = strdup(mount);
+-    snprintf(mount, PATH_MAX, "%s/%s", Volume::FUSE_DIR, rec->label);
+-    mFuseMountpoint = strdup(mount);
++    mMountpoint = strdup(mount_media);
++    mFuseMountpoint = strdup(mount_fuse);
+ #endif
+ 
+     setState(Volume::State_NoMedia);
+-- 
+2.5.0
+
