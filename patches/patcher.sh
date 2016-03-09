@@ -8,7 +8,8 @@ if [ "$PATCHES" == "" ] ; then
         PATCHES="art bionic bootable/recovery build external/bluetooth/bluedroid external/dhcpcd \
         external/libpng/ external/skia/ external/sqlite/ external/stlport/ \
         external/chromium_org/ external/chromium_org/third_party/skia external/chromium_org/third_party/WebKit \
-        frameworks/av frameworks/base/ \
+        frameworks/av \
+        #frameworks/base/ \
         #frameworks/native/ \
         frameworks/opt/net/wifi/ \
         #hardware/libhardware \
