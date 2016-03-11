@@ -1,8 +1,18 @@
+From c9c1aa5479b003d685c18b65bd9b67d4a59aaa02 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Sat, 12 Mar 2016 02:48:52 +0700
+Subject: [PATCH 07/16] frameworks-av_007-Use-GraphicBuffer-Optimize.patch
+
+Change-Id: Ife7a68e28814f06fe190028c850f3cd7d49119ae
+---
+ media/libstagefright/omx/OMXNodeInstance.cpp | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
+
 diff --git a/media/libstagefright/omx/OMXNodeInstance.cpp b/media/libstagefright/omx/OMXNodeInstance.cpp
-index de08e18..7a8e094 100644
+index a1485f0..c36a214 100644
 --- a/media/libstagefright/omx/OMXNodeInstance.cpp
 +++ b/media/libstagefright/omx/OMXNodeInstance.cpp
-@@ -759,13 +759,20 @@ status_t OMXNodeInstance::useGraphicBuffer(
+@@ -755,13 +755,20 @@ status_t OMXNodeInstance::useGraphicBuffer(
  
      // See if the newer version of the extension is present.
      OMX_INDEXTYPE index;
@@ -24,3 +34,6 @@ index de08e18..7a8e094 100644
      OMX_STRING name = const_cast<OMX_STRING>(
          "OMX.google.android.index.useAndroidNativeBuffer");
      OMX_ERRORTYPE err = OMX_GetExtensionIndex(mHandle, name, &index);
+-- 
+2.5.0
+

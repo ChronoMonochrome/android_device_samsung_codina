@@ -1,19 +1,23 @@
-Subject: [PATCH] av: squashed support for pre-kitkat audio blobs
-   pre kitkat audio legacy policy fix for hotword (ok google)
-   pre-kitkat audio policy blobs re-activated.
+From 2d48bcde50cf4ffcd780d5e95e8cf9c882dc888d Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Sat, 12 Mar 2016 02:51:37 +0700
+Subject: [PATCH 12/16] frameworks-av_W2-support-pre-kitkat-audio-blobs.patch
 
-    libnbaio: Don't call get_presentation_position for pre KitKat blobs
-    This fixes a crash with the HTC Tegra3 audio blob where
-    mStream->get_presentation_position is not NULL but pointing to a unknown
-    position in memory.
-
+Change-Id: Ie315464fa8732c56567182959d67246b675c9f27
 ---
+ include/media/nbaio/AudioStreamOutSink.h                        | 2 ++
+ media/libnbaio/Android.mk                                       | 4 ++++
+ media/libnbaio/AudioStreamOutSink.cpp                           | 2 ++
+ services/audiopolicy/Android.mk                                 | 4 ++++
+ services/audiopolicy/service/AudioPolicyClientImplLegacy.cpp    | 5 +++++
+ services/audiopolicy/service/AudioPolicyInterfaceImplLegacy.cpp | 8 ++++++++
+ 6 files changed, 25 insertions(+)
 
 diff --git a/include/media/nbaio/AudioStreamOutSink.h b/include/media/nbaio/AudioStreamOutSink.h
 index 9949b88..b78c4e4 100644
 --- a/include/media/nbaio/AudioStreamOutSink.h
 +++ b/include/media/nbaio/AudioStreamOutSink.h
-@@ -52,7 +52,9 @@
+@@ -52,7 +52,9 @@ public:
      // implementation of GNWT (if any)
      virtual status_t getNextWriteTimestamp(int64_t *timestamp);
  
@@ -27,7 +31,7 @@ diff --git a/media/libnbaio/Android.mk b/media/libnbaio/Android.mk
 index 1353f28..43030d9 100644
 --- a/media/libnbaio/Android.mk
 +++ b/media/libnbaio/Android.mk
-@@ -35,4 +35,8 @@
+@@ -35,4 +35,8 @@ LOCAL_SHARED_LIBRARIES := \
  
  LOCAL_C_INCLUDES := $(call include-path-for, audio-utils)
  
@@ -40,7 +44,7 @@ diff --git a/media/libnbaio/AudioStreamOutSink.cpp b/media/libnbaio/AudioStreamO
 index 0d5f935..dc54887 100644
 --- a/media/libnbaio/AudioStreamOutSink.cpp
 +++ b/media/libnbaio/AudioStreamOutSink.cpp
-@@ -78,6 +78,7 @@
+@@ -78,6 +78,7 @@ status_t AudioStreamOutSink::getNextWriteTimestamp(int64_t *timestamp) {
      return mStream->get_next_write_timestamp(mStream, timestamp);
  }
  
@@ -48,7 +52,7 @@ index 0d5f935..dc54887 100644
  status_t AudioStreamOutSink::getTimestamp(AudioTimestamp& timestamp)
  {
      if (mStream->get_presentation_position == NULL) {
-@@ -92,5 +93,6 @@
+@@ -92,5 +93,6 @@ status_t AudioStreamOutSink::getTimestamp(AudioTimestamp& timestamp)
      timestamp.mPosition = position64;
      return OK;
  }
@@ -59,7 +63,7 @@ diff --git a/services/audiopolicy/Android.mk b/services/audiopolicy/Android.mk
 index 5b38e1c..69fc0e8 100644
 --- a/services/audiopolicy/Android.mk
 +++ b/services/audiopolicy/Android.mk
-@@ -40,6 +40,10 @@
+@@ -40,6 +40,10 @@ LOCAL_SHARED_LIBRARIES += \
      libaudiopolicymanager
  endif
  
@@ -74,7 +78,7 @@ diff --git a/services/audiopolicy/service/AudioPolicyClientImplLegacy.cpp b/serv
 index a79f8ae..36c85f1 100644
 --- a/services/audiopolicy/service/AudioPolicyClientImplLegacy.cpp
 +++ b/services/audiopolicy/service/AudioPolicyClientImplLegacy.cpp
-@@ -125,8 +125,13 @@
+@@ -125,8 +125,13 @@ audio_io_handle_t aps_open_output_on_module(void *service __unused,
                                                     audio_output_flags_t flags,
                                                     const audio_offload_info_t *offloadInfo)
  {
@@ -92,7 +96,7 @@ diff --git a/services/audiopolicy/service/AudioPolicyInterfaceImplLegacy.cpp b/s
 index 13af3ef..a06b980 100644
 --- a/services/audiopolicy/service/AudioPolicyInterfaceImplLegacy.cpp
 +++ b/services/audiopolicy/service/AudioPolicyInterfaceImplLegacy.cpp
-@@ -261,6 +261,11 @@
+@@ -261,6 +261,11 @@ status_t AudioPolicyService::getInputForAttr(const audio_attributes_t *attr,
          return BAD_VALUE;
      }
  
@@ -104,7 +108,7 @@ index 13af3ef..a06b980 100644
      sp<AudioPolicyEffects>audioPolicyEffects;
      {
          Mutex::Autolock _l(mLock);
-@@ -510,6 +515,9 @@
+@@ -510,6 +515,9 @@ status_t AudioPolicyService::queryDefaultPreProcessing(int audioSession,
  
  bool AudioPolicyService::isOffloadSupported(const audio_offload_info_t& info)
  {
@@ -114,3 +118,6 @@ index 13af3ef..a06b980 100644
      if (mpAudioPolicy == NULL) {
          ALOGV("mpAudioPolicy == NULL");
          return false;
+-- 
+2.5.0
+
