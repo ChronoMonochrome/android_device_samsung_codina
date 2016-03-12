@@ -1,7 +1,7 @@
 From 7033b39f2e70a0817834cf94fa1dc966d54458cd Mon Sep 17 00:00:00 2001
 From: Shilin Victor <chrono.monochrome@gmail.com>
 Date: Sat, 12 Mar 2016 02:52:15 +0700
-Subject: [PATCH 14/16] frameworks-av_WW002-Fix-WaveGenerator-memory-leak.patch
+Subject: [PATCH 14/19] frameworks-av_WW002-Fix-WaveGenerator-memory-leak.patch
 
 Change-Id: I83a549abc2d2ac9f024689844fc8615a96dd4bac
 ---

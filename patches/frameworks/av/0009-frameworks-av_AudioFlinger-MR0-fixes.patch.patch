@@ -1,7 +1,7 @@
 From 9826eb93e2f523e0755c32f3d24e87fa5c3a74e4 Mon Sep 17 00:00:00 2001
 From: Shilin Victor <chrono.monochrome@gmail.com>
 Date: Sat, 12 Mar 2016 02:49:36 +0700
-Subject: [PATCH 09/16] frameworks-av_AudioFlinger-MR0-fixes.patch
+Subject: [PATCH 09/19] frameworks-av_AudioFlinger-MR0-fixes.patch
 
 Change-Id: I6b3499087f537da73c7ec04f247cc1350d147a4a
 ---

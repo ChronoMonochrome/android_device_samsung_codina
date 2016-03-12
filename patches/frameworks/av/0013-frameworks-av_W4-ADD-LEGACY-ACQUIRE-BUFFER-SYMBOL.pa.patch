@@ -1,7 +1,7 @@
 From 88d3e509c8cd009bffec71b0cd2cb26fb022f596 Mon Sep 17 00:00:00 2001
 From: Shilin Victor <chrono.monochrome@gmail.com>
 Date: Sat, 12 Mar 2016 02:51:52 +0700
-Subject: [PATCH 13/16] frameworks-av_W4-ADD-LEGACY-ACQUIRE-BUFFER-SYMBOL.patch
+Subject: [PATCH 13/19] frameworks-av_W4-ADD-LEGACY-ACQUIRE-BUFFER-SYMBOL.patch
 
 Change-Id: Idb7ed779675b5c46000b152dc3fe94b3e70beead
 ---

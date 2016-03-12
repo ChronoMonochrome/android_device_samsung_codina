@@ -7,17 +7,14 @@ KERNEL_PATCH="kernel/codina/chrono"
 if [ "$PATCHES" == "" ] ; then
 	PATCHES="\
 		 bionic \
-		 bootable/recovery \
-		 #frameworks/av \
-		 #frameworks/base \
+		 frameworks/av \
+		 frameworks/base \
 		 frameworks/native  \
 		 frameworks/opt/net/wifi \
-		 #frameworks/opt/telephony \
+		 frameworks/opt/telephony \
 		 external/libpng \
-		 external/sepolicy \
 		 hardware/libhardware \
 		 hardware/ril \
-		 packages/inputmethods/LatinIME \
 		 packages/providers/MediaProvider \
 		 system/bt \
 		 system/core \

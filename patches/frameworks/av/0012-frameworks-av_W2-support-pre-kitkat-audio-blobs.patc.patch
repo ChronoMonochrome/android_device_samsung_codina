@@ -1,7 +1,7 @@
 From 2d48bcde50cf4ffcd780d5e95e8cf9c882dc888d Mon Sep 17 00:00:00 2001
 From: Shilin Victor <chrono.monochrome@gmail.com>
 Date: Sat, 12 Mar 2016 02:51:37 +0700
-Subject: [PATCH 12/16] frameworks-av_W2-support-pre-kitkat-audio-blobs.patch
+Subject: [PATCH 12/19] frameworks-av_W2-support-pre-kitkat-audio-blobs.patch
 
 Change-Id: Ie315464fa8732c56567182959d67246b675c9f27
 ---

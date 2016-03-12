@@ -1,7 +1,7 @@
 From 2dcaf05caa2f2acb990b73369677bed6671b2faf Mon Sep 17 00:00:00 2001
 From: Shilin Victor <chrono.monochrome@gmail.com>
 Date: Sat, 12 Mar 2016 01:11:05 +0700
-Subject: [PATCH 03/16] Revert "stagefright/rtsp: Remove dependence on
+Subject: [PATCH 03/19] Revert "stagefright/rtsp: Remove dependence on
  OMXSource"
 
 This reverts commit 5a1d255eb2b88d68a0b0b699793f14cca5ba4635.

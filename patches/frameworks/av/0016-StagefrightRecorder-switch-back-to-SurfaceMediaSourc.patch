@@ -1,7 +1,7 @@
 From db8404705fd4f9360bca079c8fcc2d9162bf9ae5 Mon Sep 17 00:00:00 2001
 From: Shilin Victor <chrono.monochrome@gmail.com>
 Date: Mon, 7 Mar 2016 21:45:48 +0700
-Subject: [PATCH 16/16] StagefrightRecorder: switch back to SurfaceMediaSource
+Subject: [PATCH 16/19] StagefrightRecorder: switch back to SurfaceMediaSource
 
 In order to fix video recording bug on STE hardware,
 use SurfaceMediaSource (like on KK) instead of MediaCodecSource.

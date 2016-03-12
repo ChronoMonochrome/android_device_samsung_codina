@@ -1,7 +1,7 @@
 From bb4e7cf617d4ccbb7ae5e39bd3413fa163a42f53 Mon Sep 17 00:00:00 2001
 From: Shilin Victor <chrono.monochrome@gmail.com>
 Date: Sat, 12 Mar 2016 01:10:54 +0700
-Subject: [PATCH 02/16] Revert "cmds/stagefright: use MediaCodec* instead of
+Subject: [PATCH 02/19] Revert "cmds/stagefright: use MediaCodec* instead of
  OMXCodec"
 
 This reverts commit 844aabc2bc7d9efda341e774853983bb1fefbc20.

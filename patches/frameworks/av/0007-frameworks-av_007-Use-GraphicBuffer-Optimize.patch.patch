@@ -1,7 +1,7 @@
 From c9c1aa5479b003d685c18b65bd9b67d4a59aaa02 Mon Sep 17 00:00:00 2001
 From: Shilin Victor <chrono.monochrome@gmail.com>
 Date: Sat, 12 Mar 2016 02:48:52 +0700
-Subject: [PATCH 07/16] frameworks-av_007-Use-GraphicBuffer-Optimize.patch
+Subject: [PATCH 07/19] frameworks-av_007-Use-GraphicBuffer-Optimize.patch
 
 Change-Id: Ife7a68e28814f06fe190028c850f3cd7d49119ae
 ---

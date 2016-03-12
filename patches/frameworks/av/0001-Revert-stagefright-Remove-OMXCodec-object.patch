@@ -1,7 +1,7 @@
 From 4ea72ff1674dd24bc309f4a17609a69183369803 Mon Sep 17 00:00:00 2001
 From: Shilin Victor <chrono.monochrome@gmail.com>
 Date: Sat, 12 Mar 2016 00:41:19 +0700
-Subject: [PATCH 01/16] Revert "stagefright: Remove OMXCodec object"
+Subject: [PATCH 01/19] Revert "stagefright: Remove OMXCodec object"
 
 This reverts commit 11d72e1d305a80643996b659eed8ba13dba39212.
 

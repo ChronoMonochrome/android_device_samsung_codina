@@ -1,7 +1,7 @@
 From a5c592ce228fa86a13cdce7657172e7400427102 Mon Sep 17 00:00:00 2001
 From: Shilin Victor <chrono.monochrome@gmail.com>
 Date: Sat, 12 Mar 2016 02:50:37 +0700
-Subject: [PATCH 10/16] Remove -Werror
+Subject: [PATCH 10/19] Remove -Werror
 
 Change-Id: Ic411fccf789c98fc7ff9ca2684782cf1dffc5bd4
 ---
