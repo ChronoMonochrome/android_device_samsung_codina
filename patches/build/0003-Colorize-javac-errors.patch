@@ -1,0 +1,53 @@
+From 92e10e0cb717d6458709d55b61981ab131ef9a57 Mon Sep 17 00:00:00 2001
+From: nuclearmistake <nuclearmistake@gmail.com>
+Date: Sun, 27 Apr 2014 21:59:42 -0400
+Subject: [PATCH 3/9] Colorize javac errors
+
+You know those multi-line ones that are frequently interspersed with other buld output?
+The ones that don't even have the word "error" in them to search for?
+
+This makes them red.
+
+ps2: fix jar_check failures cause by leaving empty stderr files in intermediates dirs
+     this is probably not the best place to store stderr before colorizing it if javac
+     exits non-zero, but it seems much lighter than mkdiring a bunch of temp directories
+     or using sed to mangle the paths to point to per-intermediates directory unique
+     temporary file names
+
+Change-Id: I3b9b7d8a0c76958588ac1603b6742987d6dde54c
+Signed-off-by: nuclearmistake <nuclearmistake@gmail.com>
+---
+ core/definitions.mk | 9 +++++++--
+ 1 file changed, 7 insertions(+), 2 deletions(-)
+
+diff --git a/core/definitions.mk b/core/definitions.mk
+index 25a18d9..6445c37 100644
+--- a/core/definitions.mk
++++ b/core/definitions.mk
+@@ -1913,7 +1913,11 @@ $(hide) if [ -s $(PRIVATE_CLASS_INTERMEDIATES_DIR)/java-source-list-uniq ] ; the
+     -extdirs "" -d $(PRIVATE_CLASS_INTERMEDIATES_DIR) \
+     $(PRIVATE_JAVACFLAGS) \
+     \@$(PRIVATE_CLASS_INTERMEDIATES_DIR)/java-source-list-uniq \
+-    || ( rm -rf $(PRIVATE_CLASS_INTERMEDIATES_DIR) ; exit 41 ) \
++    2>$(PRIVATE_CLASS_INTERMEDIATES_DIR)/stderr \
++    && rm -f $(PRIVATE_CLASS_INTERMEDIATES_DIR)/stderr \
++    || ( if [ -e $(PRIVATE_CLASS_INTERMEDIATES_DIR)/stderr ]; then \
++    echo -e ${CL_RED}"`cat $(PRIVATE_CLASS_INTERMEDIATES_DIR)/stderr`"${CL_RST} 1>&2; \
++    fi; rm -rf $(PRIVATE_CLASS_INTERMEDIATES_DIR); exit 41 ) \
+ fi
+ $(if $(PRIVATE_JAVA_LAYERS_FILE), $(hide) build/tools/java-layers.py \
+     $(PRIVATE_JAVA_LAYERS_FILE) \@$(PRIVATE_CLASS_INTERMEDIATES_DIR)/java-source-list-uniq,)
+@@ -2524,8 +2528,9 @@ endef
+ ###########################################################
+ ## Commands to call Proguard
+ ###########################################################
++@echo -e ${CL_CYN}"Copying:"${CL_RST}" $@"
++@echo -e ${CL_GRN}"Proguard:"${CL_RST}" $@"
+ define transform-jar-to-proguard
+-@echo Proguard: $@
+ $(hide) $(PROGUARD) -injars $< -outjars $@ $(PRIVATE_PROGUARD_FLAGS) \
+     $(addprefix -injars , $(PRIVATE_EXTRA_INPUT_JAR))
+ endef
+-- 
+2.5.0
+

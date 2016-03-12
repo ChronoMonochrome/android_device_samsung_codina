@@ -1,0 +1,41 @@
+From d859cbff79fa3394c29182a9a20fde4c2fb7c902 Mon Sep 17 00:00:00 2001
+From: Tom Marshall <tdm@cyngn.com>
+Date: Sat, 22 Nov 2014 08:43:59 -0800
+Subject: [PATCH 8/9] build: Add option to disable block-based ota
+
+While block-based is great when building on a local machine, it kills rsync
+performance when syncing rebuilds from remote machines.  Provide an option
+to disable it for those whose network bandwidth is less than their device's
+emmc bandwidth.
+
+Usage: export BLOCK_BASED_OTA=false
+
+Change-Id: I1dfaa5478a87dad286014dbe57cd5a03da4d1980
+---
+ core/Makefile | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/core/Makefile b/core/Makefile
+index ae12c6f..0007a6a 100644
+--- a/core/Makefile
++++ b/core/Makefile
+@@ -1795,11 +1795,15 @@ INTERNAL_OTA_PACKAGE_TARGET := $(PRODUCT_OUT)/$(name).zip
+ 
+ $(INTERNAL_OTA_PACKAGE_TARGET): KEY_CERT_PAIR := $(DEFAULT_KEY_CERT_PAIR)
+ 
++ifneq ($(BLOCK_BASED_OTA),false)
++    $(INTERNAL_OTA_PACKAGE_TARGET): block_based := --block
++endif
++
+ $(INTERNAL_OTA_PACKAGE_TARGET): $(BUILT_TARGET_FILES_PACKAGE)
+ 	@echo -e ${CL_YLW}"Package OTA:"${CL_RST}" $@"
+ 	$(hide) PATH=$(foreach p,$(INTERNAL_USERIMAGES_BINARY_PATHS),$(p):)$$PATH MKBOOTIMG=$(MKBOOTIMG) \
+ 	   ./build/tools/releasetools/ota_from_target_files -v \
+-	   --block \
++	   $(block_based) \
+ 	   -p $(HOST_OUT) \
+ 	   -k $(KEY_CERT_PAIR) \
+ 	   $(if $(OEM_OTA_CONFIG), -o $(OEM_OTA_CONFIG)) \
+-- 
+2.5.0
+

@@ -6,6 +6,7 @@ KERNEL_PATCH="kernel/codina/chrono"
 
 if [ "$PATCHES" == "" ] ; then
 	PATCHES="\
+		 build \
 		 bionic \
 		 frameworks/av \
 		 frameworks/base \

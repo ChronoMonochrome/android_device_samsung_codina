@@ -1,0 +1,84 @@
+From ac4f8704c41ec3eb0b09616da9a02951affa40c9 Mon Sep 17 00:00:00 2001
+From: Oliver Middleton <olliemail27@gmail.com>
+Date: Sun, 12 Oct 2014 22:11:26 +0100
+Subject: [PATCH 5/9] build: Fix some colored build issues
+
+ * Fix some broken lines in definitions.mk
+ * Finish adding colors to product-graph.mk
+
+Change-Id: I235a60c967b1f10ec6dd1cac25740badbd3b64c9
+---
+ core/definitions.mk   | 6 +++---
+ core/product-graph.mk | 8 ++++----
+ 2 files changed, 7 insertions(+), 7 deletions(-)
+
+diff --git a/core/definitions.mk b/core/definitions.mk
+index e483b93..d988d43 100644
+--- a/core/definitions.mk
++++ b/core/definitions.mk
+@@ -2499,19 +2499,19 @@ endef
+ 
+ # Copy a prebuilt file to a target location.
+ define transform-prebuilt-to-target
+-@echo -e "$(if $(PRIVATE_IS_HOST_MODULE),host,target) "${CL_CYN}"Prebuilt:"${CL_RST}" $(PRIVATE_MODULE) ($@)"
++@echo -e ${CL_CYN}"$(if $(PRIVATE_IS_HOST_MODULE),host,target) Prebuilt:"${CL_RST}" $(PRIVATE_MODULE) ($@)"
+ $(copy-file-to-target)
+ endef
+ 
+ # Copy a prebuilt file to a target location, using zipalign on it.
+ define transform-prebuilt-to-target-with-zipalign
+-@echo "$(if $(PRIVATE_IS_HOST_MODULE),host,target) "${CL_CYN}"Prebuilt APK:"${CL_RST}" $(PRIVATE_MODULE) ($@)"
++@echo -e ${CL_CYN}"$(if $(PRIVATE_IS_HOST_MODULE),host,target) Prebuilt APK:"${CL_RST}" $(PRIVATE_MODULE) ($@)"
+ $(copy-file-to-target-with-zipalign)
+ endef
+ 
+ # Copy a prebuilt file to a target location, stripping "# comment" comments.
+ define transform-prebuilt-to-target-strip-comments
+-@echo "$(if $(PRIVATE_IS_HOST_MODULE),host,target) "${CL_CYN}"Prebuilt:"${CL_RST}" $(PRIVATE_MODULE) ($@)"
++@echo -e ${CL_CYN}"$(if $(PRIVATE_IS_HOST_MODULE),host,target) Prebuilt:"${CL_RST}" $(PRIVATE_MODULE) ($@)"
+ $(copy-file-to-target-strip-comments)
+ endef
+ 
+diff --git a/core/product-graph.mk b/core/product-graph.mk
+index 27502b2..8e5dc48 100644
+--- a/core/product-graph.mk
++++ b/core/product-graph.mk
+@@ -70,7 +70,7 @@ $(products_graph): PRIVATE_PRODUCTS := $(really_all_products)
+ $(products_graph): PRIVATE_PRODUCTS_FILTER := $(products_list)
+ 
+ $(products_graph): $(this_makefile)
+-	@echo Product graph DOT: $@ for $(PRIVATE_PRODUCTS_FILTER)
++	@echo -e ${CL_GRN}"Product graph DOT:"${CL_RST}" $@ for $(PRIVATE_PRODUCTS_FILTER)"
+ 	$(hide) echo 'digraph {' > $@.in
+ 	$(hide) echo 'graph [ ratio=.5 ];' >> $@.in
+ 	$(hide) $(foreach p,$(PRIVATE_PRODUCTS), \
+@@ -89,7 +89,7 @@ endef
+ # $(1) product file
+ define transform-product-debug
+ $(OUT_DIR)/products/$(strip $(1)).txt: $(this_makefile)
+-	@echo Product debug info file: $$@
++	@echo -e ${CL_GRN}"Product debug info file:"${CL_RST}" $$@"
+ 	$(hide) rm -f $$@
+ 	$(hide) mkdir -p $$(dir $$@)
+ 	$(hide) echo 'FILE=$(strip $(1))' >> $$@
+@@ -122,7 +122,7 @@ $(call product-debug-filename, $(p)): \
+ 			$(OUT_DIR)/products/$(strip $(1)).txt \
+ 			build/tools/product_debug.py \
+ 			$(this_makefile)
+-	@echo Product debug html file: $$@
++	@echo -e ${CL_GRN}"Product debug html file:"${CL_RST}" $$@"
+ 	$(hide) mkdir -p $$(dir $$@)
+ 	$(hide) cat $$< | build/tools/product_debug.py > $$@
+ endef
+@@ -138,7 +138,7 @@ $(products_pdf): $(products_graph)
+ 	dot -Tpdf -Nshape=box -o $@ $<
+ 
+ $(products_svg): $(products_graph) $(product_debug_files)
+-	@echo Product graph SVG: $@
++	@echo -e ${CL_GRN}"Product graph SVG:"${CL_RST}" $@"
+ 	dot -Tsvg -Nshape=box -o $@ $<
+ 
+ product-graph: $(products_pdf) $(products_svg)
+-- 
+2.5.0
+

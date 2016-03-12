@@ -1,0 +1,37 @@
+From beed29572090e5c9c259889248972cf4a54a7646 Mon Sep 17 00:00:00 2001
+From: nuclearmistake <nuclearmistake@gmail.com>
+Date: Thu, 15 May 2014 10:30:26 -0400
+Subject: [PATCH 4/9] colorize non-fatal javac stderr yellow (and actually
+ display it... at all)
+
+woops!
+
+Signed-off-by: nuclearmistake <nuclearmistake@gmail.com>
+Change-Id: I984f428022a68a825aa041866e8d459bd6611f71
+---
+ core/definitions.mk | 8 +++++---
+ 1 file changed, 5 insertions(+), 3 deletions(-)
+
+diff --git a/core/definitions.mk b/core/definitions.mk
+index 6445c37..e483b93 100644
+--- a/core/definitions.mk
++++ b/core/definitions.mk
+@@ -1914,10 +1914,12 @@ $(hide) if [ -s $(PRIVATE_CLASS_INTERMEDIATES_DIR)/java-source-list-uniq ] ; the
+     $(PRIVATE_JAVACFLAGS) \
+     \@$(PRIVATE_CLASS_INTERMEDIATES_DIR)/java-source-list-uniq \
+     2>$(PRIVATE_CLASS_INTERMEDIATES_DIR)/stderr \
+-    && rm -f $(PRIVATE_CLASS_INTERMEDIATES_DIR)/stderr \
+-    || ( if [ -e $(PRIVATE_CLASS_INTERMEDIATES_DIR)/stderr ]; then \
++    && ( [ -s $(PRIVATE_CLASS_INTERMEDIATES_DIR)/stderr ] && \
++    echo -e ${CL_YLW}"`cat $(PRIVATE_CLASS_INTERMEDIATES_DIR)/stderr`"${CL_RST} 1>&2; \
++    rm -f $(PRIVATE_CLASS_INTERMEDIATES_DIR)/stderr ) \
++    || ( [ -s $(PRIVATE_CLASS_INTERMEDIATES_DIR)/stderr ] && \
+     echo -e ${CL_RED}"`cat $(PRIVATE_CLASS_INTERMEDIATES_DIR)/stderr`"${CL_RST} 1>&2; \
+-    fi; rm -rf $(PRIVATE_CLASS_INTERMEDIATES_DIR); exit 41 ) \
++    rm -rf $(PRIVATE_CLASS_INTERMEDIATES_DIR); exit 41 ) \
+ fi
+ $(if $(PRIVATE_JAVA_LAYERS_FILE), $(hide) build/tools/java-layers.py \
+     $(PRIVATE_JAVA_LAYERS_FILE) \@$(PRIVATE_CLASS_INTERMEDIATES_DIR)/java-source-list-uniq,)
+-- 
+2.5.0
+

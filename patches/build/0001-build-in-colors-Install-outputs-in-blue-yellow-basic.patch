@@ -1,0 +1,233 @@
+From 5082930090d908b13c2fad0627fc2df416cc1fcb Mon Sep 17 00:00:00 2001
+From: Tanguy Pruvot <tanguy.pruvot@gmail.com>
+Date: Mon, 9 Jan 2012 15:42:26 +0100
+Subject: [PATCH 1/9] build in colors: Install outputs in blue/yellow [basic
+ ics version]
+
+"target prefix:" in yellow
+"Install: file" in cyan
+
+should be in a single command line else there are sync problems
+in multithread (-j X)
+
+These colors can be tuned in core/Makefile if you use a white terminal.
+can be disabled with "export BUILD_WITH_COLORS=0"
+
+Only the most important output is colored to reduce ics merge problems
+
+Change-Id: I0e585079fde6900799ef209367a523d94a51cda5
+
+Colors: add more colors to final build steps
+
+also fix releasetool echo and visible recovery echos
+
+Change-Id: Icf5d88468572f935610c544bf1d5d356ec9870d3
+
+build in colors: host C/C++
+
+Change-Id: Ic415cab53a2efa104c9d4b31ddbe8c8eb74e493d
+---
+ core/Makefile       | 28 +++++++++++++++++++++-------
+ core/base_rules.mk  |  2 +-
+ core/definitions.mk | 16 ++++++++--------
+ 3 files changed, 30 insertions(+), 16 deletions(-)
+
+diff --git a/core/Makefile b/core/Makefile
+index 5c302f6..d025fc4 100644
+--- a/core/Makefile
++++ b/core/Makefile
+@@ -1,5 +1,16 @@
+ # Put some miscellaneous rules here
+ 
++# Build system colors
++#
++# PFX: Prefix "target C++:" in yellow
++# INS: Module "Install:" output color (cyan for ics)
++
++ifneq ($(BUILD_WITH_COLORS),0)
++  CL_PFX="\033[33m"
++  CL_INS="\033[36m"
++  CL_RST="\033[0m"
++endif
++
+ # HACK: clear LOCAL_PATH from including last build target before calling
+ # intermedites-dir-for
+ LOCAL_PATH := $(BUILD_SYSTEM)
+@@ -548,6 +559,7 @@ $(INSTALLED_BOOTIMAGE_TARGET): $(MKBOOTIMG) $(INTERNAL_BOOTIMAGE_FILES) $(BOOT_S
+ 	$(hide) $(MKBOOTIMG) $(INTERNAL_BOOTIMAGE_ARGS) $(BOARD_MKBOOTIMG_ARGS) --output $@
+ 	$(BOOT_SIGNER) /boot $@ $(PRODUCTS.$(INTERNAL_PRODUCT).PRODUCT_VERITY_SIGNING_KEY).pk8 $(PRODUCTS.$(INTERNAL_PRODUCT).PRODUCT_VERITY_SIGNING_KEY).x509.pem $@
+ 	$(hide) $(call assert-max-image-size,$@,$(BOARD_BOOTIMAGE_PARTITION_SIZE))
++	@echo -e ${CL_INS}"Made boot image: $@"${CL_RST}
+ 
+ .PHONY: bootimage-nodeps
+ bootimage-nodeps: $(MKBOOTIMG) $(BOOT_SIGNER)
+@@ -577,12 +589,14 @@ $(INSTALLED_BOOTIMAGE_TARGET): $(MKBOOTIMG) $(INTERNAL_BOOTIMAGE_FILES)
+ 	$(call pretty,"Target boot image: $@")
+ 	$(hide) $(MKBOOTIMG) $(INTERNAL_BOOTIMAGE_ARGS) $(BOARD_MKBOOTIMG_ARGS) --output $@
+ 	$(hide) $(call assert-max-image-size,$@,$(BOARD_BOOTIMAGE_PARTITION_SIZE))
++	@echo -e ${CL_INS}"Made boot image: $@"${CL_RST}
+ 
+ .PHONY: bootimage-nodeps
+ bootimage-nodeps: $(MKBOOTIMG)
+ 	@echo "make $@: ignoring dependencies"
+ 	$(hide) $(MKBOOTIMG) $(INTERNAL_BOOTIMAGE_ARGS) $(BOARD_MKBOOTIMG_ARGS) --output $(INSTALLED_BOOTIMAGE_TARGET)
+ 	$(hide) $(call assert-max-image-size,$(INSTALLED_BOOTIMAGE_TARGET),$(BOARD_BOOTIMAGE_PARTITION_SIZE))
++	@echo -e ${CL_INS}"Made boot image: $@"${CL_RST}
+ 
+ endif # TARGET_BOOTIMAGE_USE_EXT2
+ endif # BOARD_USES_RECOVERY_AS_BOOT
+@@ -981,7 +995,7 @@ define build-recoveryimage-target
+   $(if $(filter true,BOARD_USES_RECOVERY_AS_BOOT), \
+     $(hide) $(call assert-max-image-size,$(1),$(BOARD_BOOTIMAGE_PARTITION_SIZE)), \
+     $(hide) $(call assert-max-image-size,$(1),$(BOARD_RECOVERYIMAGE_PARTITION_SIZE)))
+-  @echo ----- Made recovery image: $(1) --------
++  @echo -e ${CL_INS}"----- Made recovery image: $(1) --------"${CL_RST}
+ endef
+ 
+ ifeq ($(BOARD_USES_RECOVERY_AS_BOOT),true)
+@@ -1143,7 +1157,7 @@ endif
+ 
+ 
+ $(INSTALLED_SYSTEMIMAGE): $(BUILT_SYSTEMIMAGE) $(RECOVERY_FROM_BOOT_PATCH)
+-	@echo "Install system fs image: $@"
++	@echo -e ${CL_INS}"Install system fs image: $@"${CL_RST}
+ 	$(copy-file-to-target)
+ 	$(hide) $(call assert-max-image-size,$@ $(RECOVERY_FROM_BOOT_PATCH),$(BOARD_SYSTEMIMAGE_PARTITION_SIZE))
+ 
+@@ -1582,7 +1596,7 @@ $(BUILT_TARGET_FILES_PACKAGE): \
+ 		$(APKCERTS_FILE) \
+ 		$(HOST_OUT_EXECUTABLES)/fs_config \
+ 		| $(ACP)
+-	@echo "Package target files: $@"
++	@echo -e ${CL_PFX}"Package target files:"${CL_RST}" $@"
+ 	$(hide) rm -rf $@ $(zip_root)
+ 	$(hide) mkdir -p $(dir $@) $(zip_root)
+ ifneq (,$(INSTALLED_RECOVERYIMAGE_TARGET)$(filter true,$(BOARD_USES_RECOVERY_AS_BOOT)))
+@@ -1781,7 +1795,7 @@ INTERNAL_OTA_PACKAGE_TARGET := $(PRODUCT_OUT)/$(name).zip
+ $(INTERNAL_OTA_PACKAGE_TARGET): KEY_CERT_PAIR := $(DEFAULT_KEY_CERT_PAIR)
+ 
+ $(INTERNAL_OTA_PACKAGE_TARGET): $(BUILT_TARGET_FILES_PACKAGE)
+-	@echo "Package OTA: $@"
++	@echo -e ${CL_PFX}"Package OTA:"${CL_RST}" $@"
+ 	$(hide) PATH=$(foreach p,$(INTERNAL_USERIMAGES_BINARY_PATHS),$(p):)$$PATH MKBOOTIMG=$(MKBOOTIMG) \
+ 	   ./build/tools/releasetools/ota_from_target_files -v \
+ 	   --block \
+@@ -1807,7 +1821,7 @@ name := $(name)-img-$(FILE_NAME_TAG)
+ INTERNAL_UPDATE_PACKAGE_TARGET := $(PRODUCT_OUT)/$(name).zip
+ 
+ $(INTERNAL_UPDATE_PACKAGE_TARGET): $(BUILT_TARGET_FILES_PACKAGE)
+-	@echo "Package: $@"
++	@echo -e ${CL_PFX}"Package:"${CL_RST}" $@"
+ 	$(hide) PATH=$(foreach p,$(INTERNAL_USERIMAGES_BINARY_PATHS),$(p):)$$PATH MKBOOTIMG=$(MKBOOTIMG) \
+ 	   ./build/tools/releasetools/img_from_target_files -v \
+ 	   -p $(HOST_OUT) \
+@@ -1849,7 +1863,7 @@ name := $(name)-apps-$(FILE_NAME_TAG)
+ 
+ APPS_ZIP := $(PRODUCT_OUT)/$(name).zip
+ $(APPS_ZIP): $(INSTALLED_SYSTEMIMAGE)
+-	@echo "Package apps: $@"
++	@echo -e ${CL_PFX}"Package apps:"${CL_RST}" $@"
+ 	$(hide) rm -rf $@
+ 	$(hide) mkdir -p $(dir $@)
+ 	$(hide) apps_to_zip=`find $(TARGET_OUT_APPS) $(TARGET_OUT_APPS_PRIVILEGED) -mindepth 2 -maxdepth 3 -name "*.apk"`; \
+@@ -1916,7 +1930,7 @@ name := $(TARGET_PRODUCT)-emulator-$(FILE_NAME_TAG)
+ INTERNAL_EMULATOR_PACKAGE_TARGET := $(PRODUCT_OUT)/$(name).zip
+ 
+ $(INTERNAL_EMULATOR_PACKAGE_TARGET): $(INTERNAL_EMULATOR_PACKAGE_FILES)
+-	@echo "Package: $@"
++	@echo -e ${CL_PFX}"Package:"${CL_RST}" $@"
+ 	$(hide) zip -qjX $@ $(INTERNAL_EMULATOR_PACKAGE_FILES)
+ 
+ endif
+diff --git a/core/base_rules.mk b/core/base_rules.mk
+index 5afec2f..1688593 100644
+--- a/core/base_rules.mk
++++ b/core/base_rules.mk
+@@ -302,7 +302,7 @@ $(foreach c, $(my_path_components),\
+ ifndef LOCAL_UNINSTALLABLE_MODULE
+ $(LOCAL_INSTALLED_MODULE): PRIVATE_POST_INSTALL_CMD := $(LOCAL_POST_INSTALL_CMD)
+ $(LOCAL_INSTALLED_MODULE): $(LOCAL_BUILT_MODULE)
+-	@echo "Install: $@"
++	@echo -e ${CL_INS}"Install: $@"${CL_RST}
+ 	$(copy-file-to-new-target)
+ 	$(PRIVATE_POST_INSTALL_CMD)
+ 
+diff --git a/core/definitions.mk b/core/definitions.mk
+index 66859cd..7bad98c 100644
+--- a/core/definitions.mk
++++ b/core/definitions.mk
+@@ -1147,7 +1147,7 @@ endef
+ ###########################################################
+ 
+ define transform-cpp-to-o
+-@echo "target $(PRIVATE_ARM_MODE) C++: $(PRIVATE_MODULE) <= $<"
++@echo -e ${CL_PFX}"target $(PRIVATE_ARM_MODE) C++:"${CL_RST}" $(PRIVATE_MODULE) <= $<"
+ @mkdir -p $(dir $@)
+ $(hide) $(RELATIVE_PWD) $(PRIVATE_CXX) \
+ 	$(addprefix -I , $(PRIVATE_C_INCLUDES)) \
+@@ -1200,7 +1200,7 @@ $(hide) $(RELATIVE_PWD) $(PRIVATE_CC) \
+ endef
+ 
+ define transform-c-to-o-no-deps
+-@echo "target $(PRIVATE_ARM_MODE) C: $(PRIVATE_MODULE) <= $<"
++@echo ${CL_PFX}"target $(PRIVATE_ARM_MODE) C:"${CL_RST}" $(PRIVATE_MODULE) <= $<"
+ $(call transform-c-or-s-to-o-no-deps, \
+     $(PRIVATE_CFLAGS) \
+     $(PRIVATE_CONLYFLAGS) \
+@@ -1209,7 +1209,7 @@ $(call transform-c-or-s-to-o-no-deps, \
+ endef
+ 
+ define transform-s-to-o-no-deps
+-@echo "target asm: $(PRIVATE_MODULE) <= $<"
++@echo -e ${CL_PFX}"target asm:"${CL_RST}" $(PRIVATE_MODULE) <= $<"
+ $(call transform-c-or-s-to-o-no-deps, $(PRIVATE_ASFLAGS))
+ endef
+ 
+@@ -1240,7 +1240,7 @@ endef
+ ###########################################################
+ 
+ define transform-m-to-o-no-deps
+-@echo "target ObjC: $(PRIVATE_MODULE) <= $<"
++@echo ${CL_PFX}"target ObjC:"${CL_RST}" $(PRIVATE_MODULE) <= $<"
+ $(call transform-c-or-s-to-o-no-deps, $(PRIVATE_CFLAGS) $(PRIVATE_DEBUG_CFLAGS))
+ endef
+ 
+@@ -1254,7 +1254,7 @@ endef
+ ###########################################################
+ 
+ define transform-host-cpp-to-o
+-@echo "$($(PRIVATE_PREFIX)DISPLAY) C++: $(PRIVATE_MODULE) <= $<"
++@echo -e ${CL_PFX}"$($(PRIVATE_PREFIX)DISPLAY) C++:"${CL_RST}"$(PRIVATE_MODULE) <= $<"
+ @mkdir -p $(dir $@)
+ $(hide) $(RELATIVE_PWD) $(PRIVATE_CXX) \
+ 	$(addprefix -I , $(PRIVATE_C_INCLUDES)) \
+@@ -1304,7 +1304,7 @@ $(hide) $(RELATIVE_PWD) $(PRIVATE_CC) \
+ endef
+ 
+ define transform-host-c-to-o-no-deps
+-@echo "$($(PRIVATE_PREFIX)DISPLAY) C: $(PRIVATE_MODULE) <= $<"
++@echo -e ${CL_PFX}"$($(PRIVATE_PREFIX)DISPLAY) C:"${CL_RST}"$(PRIVATE_MODULE) <= $<"
+ $(call transform-host-c-or-s-to-o-no-deps, $(PRIVATE_CFLAGS) $(PRIVATE_CONLYFLAGS) $(PRIVATE_DEBUG_CFLAGS) $(PRIVATE_CFLAGS_NO_OVERRIDE))
+ endef
+ 
+@@ -1936,7 +1936,7 @@ $(if $(PRIVATE_EXTRA_JAR_ARGS),$(call add-java-resources-to,$@))
+ endef
+ 
+ define transform-java-to-classes.jar
+-@echo "target Java: $(PRIVATE_MODULE) ($(PRIVATE_CLASS_INTERMEDIATES_DIR))"
++@echo -e ${CL_PFX}"target Java:"${CL_RST}" $(PRIVATE_MODULE) ($(PRIVATE_CLASS_INTERMEDIATES_DIR))"
+ $(call compile-java,$(TARGET_JAVAC),$(PRIVATE_BOOTCLASSPATH))
+ endef
+ 
+@@ -2529,7 +2529,7 @@ endef
+ ###########################################################
+ 
+ define transform-generated-source
+-@echo "target Generated: $(PRIVATE_MODULE) <= $<"
++@echo -e ${CL_PFX}"target Generated:"${CL_RST}" $(PRIVATE_MODULE) <= $<"
+ @mkdir -p $(dir $@)
+ $(hide) $(PRIVATE_CUSTOM_TOOL)
+ endef
+-- 
+2.5.0
+
