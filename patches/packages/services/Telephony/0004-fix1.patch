@@ -1,0 +1,50 @@
+From 8f6032a5e9f7e718dce25fcf88d814fcf57baf83 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Sun, 30 Apr 2017 17:20:08 +0300
+Subject: [PATCH 4/4] fix1
+
+Change-Id: Ib016882ae8e82687bb651fa7ebec4f7d20c8a221
+---
+ src/com/android/phone/PhoneInterfaceManager.java | 18 ++++++++++++++++++
+ 1 file changed, 18 insertions(+)
+ mode change 100644 => 100755 src/com/android/phone/PhoneInterfaceManager.java
+
+diff --git a/src/com/android/phone/PhoneInterfaceManager.java b/src/com/android/phone/PhoneInterfaceManager.java
+old mode 100644
+new mode 100755
+index 50f90c1..da8980b
+--- a/src/com/android/phone/PhoneInterfaceManager.java
++++ b/src/com/android/phone/PhoneInterfaceManager.java
+@@ -2928,6 +2928,19 @@ public class PhoneInterfaceManager extends ITelephony.Stub {
+         return mPhone.isImsRegistered();
+     }
+ 
++    /*
++     * {@hide}
++     * Returns the IMS Registration Status based on subId
++     */
++    public boolean isImsRegisteredForSubscriber(int subId) {
++        final Phone phone = getPhone(subId);
++
++        if (phone != null) {
++            return phone.isImsRegistered();
++        }
++        return false;
++    }
++
+     @Override
+     public int getSubIdForPhoneAccount(PhoneAccount phoneAccount) {
+         return PhoneUtils.getSubIdForPhoneAccount(phoneAccount);
+@@ -3397,4 +3410,9 @@ public class PhoneInterfaceManager extends ITelephony.Stub {
+             phone.setPolicyDataEnabled(enabled);
+         }
+     }
++
++
++    public int getLteOnGsmMode() {
++        return 0;
++    }
+ }
+-- 
+2.5.0
+

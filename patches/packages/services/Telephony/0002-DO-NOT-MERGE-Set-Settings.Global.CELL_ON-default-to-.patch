@@ -1,0 +1,33 @@
+From 89dd33541f2b1bd4129a66fa77a10dfa3a13b21b Mon Sep 17 00:00:00 2001
+From: Wei Liu <luciferleo@google.com>
+Date: Thu, 9 Feb 2017 11:17:10 -0800
+Subject: [PATCH 2/4] DO NOT MERGE Set Settings.Global.CELL_ON default to
+ CELL_ON_FLAG if not defined.
+
+Similar to ag/1802399
+
+Fixes: b/35031152
+TEST: Factory reset the watch then pair. Dial outgoing call from watch
+should succeed even the radio power is turned off by cell mediator.
+
+Change-Id: I0020054d8b6c830e48f9899df7fefa0483322966
+---
+ src/com/android/services/telephony/TelephonyConnectionService.java | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/com/android/services/telephony/TelephonyConnectionService.java b/src/com/android/services/telephony/TelephonyConnectionService.java
+index d27054a..612600e 100644
+--- a/src/com/android/services/telephony/TelephonyConnectionService.java
++++ b/src/com/android/services/telephony/TelephonyConnectionService.java
+@@ -284,7 +284,7 @@ public class TelephonyConnectionService extends ConnectionService {
+                 R.bool.config_allowRadioPowerDownOnBluetooth);
+         final int cellOn = Settings.Global.getInt(context.getContentResolver(),
+                 Settings.Global.CELL_ON,
+-                PhoneConstants.CELL_OFF_FLAG);
++                PhoneConstants.CELL_ON_FLAG);
+         return (allowed && cellOn == PhoneConstants.CELL_ON_FLAG && !isRadioOn());
+     }
+ 
+-- 
+2.5.0
+

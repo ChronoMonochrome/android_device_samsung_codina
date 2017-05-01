@@ -1,0 +1,80 @@
+From 993a920d3d1eb858aff1309e832372a846aa5386 Mon Sep 17 00:00:00 2001
+From: Meng Wang <mewan@google.com>
+Date: Tue, 14 Feb 2017 17:51:18 -0800
+Subject: [PATCH 3/4] Fix VoWiFi prompt when dialing in airplane mode
+
+1. Handle dial exception ERROR_POWER_OFF
+2. Don't prompt VoWiFi if not provisioned
+
+Bug: 28709116
+Change-Id: I4ec88d25b352e573fde845c4948185f6c6092bcb
+(cherry picked from commit e57bf0279d564eaf086da03db0dd139907b81f69)
+---
+ src/com/android/phone/ImsUtil.java                 | 23 ++++++++++++++++++++--
+ .../telephony/TelephonyConnectionService.java      |  2 ++
+ 2 files changed, 23 insertions(+), 2 deletions(-)
+
+diff --git a/src/com/android/phone/ImsUtil.java b/src/com/android/phone/ImsUtil.java
+index 4c9089f..8ee7773 100644
+--- a/src/com/android/phone/ImsUtil.java
++++ b/src/com/android/phone/ImsUtil.java
+@@ -60,6 +60,21 @@ public class ImsUtil {
+     }
+ 
+     /**
++     * @return {@code true} if WFC is provisioned on the device.
++     */
++    public static boolean isWfcProvisioned(Context context) {
++        CarrierConfigManager cfgManager = (CarrierConfigManager) context
++                .getSystemService(Context.CARRIER_CONFIG_SERVICE);
++            if (cfgManager != null
++                    && cfgManager.getConfig().getBoolean(
++                            CarrierConfigManager.KEY_CARRIER_VOLTE_OVERRIDE_WFC_PROVISIONING_BOOL)
++                    && !ImsManager.isVolteProvisionedOnDevice(context)) {
++                return false;
++            }
++            return ImsManager.isWfcProvisionedOnDevice(context);
++    }
++
++    /**
+      * @return {@code true} if the device is configured to use "Wi-Fi only" mode. If WFC is not
+      * enabled, this will return {@code false}.
+      */
+@@ -73,8 +88,8 @@ public class ImsUtil {
+     /**
+      * When a call cannot be placed, determines if the use of WFC should be promoted, per the
+      * carrier config.  Use of WFC is promoted to the user if the device is connected to a WIFI
+-     * network, WFC is disabled, and the carrier config indicates that the features should be
+-     * promoted.
++     * network, WFC is disabled but provisioned, and the carrier config indicates that the
++     * features should be promoted.
+      *
+      * @return {@code true} if use of WFC should be promoted, {@code false} otherwise.
+      */
+@@ -86,6 +101,10 @@ public class ImsUtil {
+             return false;
+         }
+ 
++        if (!isWfcProvisioned(context)) {
++            return false;
++        }
++
+         ConnectivityManager cm =
+                 (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+         if (cm != null) {
+diff --git a/src/com/android/services/telephony/TelephonyConnectionService.java b/src/com/android/services/telephony/TelephonyConnectionService.java
+index b33769a..409d720 100644
+--- a/src/com/android/services/telephony/TelephonyConnectionService.java
++++ b/src/com/android/services/telephony/TelephonyConnectionService.java
+@@ -806,6 +806,8 @@ public class TelephonyConnectionService extends ConnectionService {
+             int cause = android.telephony.DisconnectCause.OUTGOING_FAILURE;
+             if (e.getError() == CallStateException.ERROR_DISCONNECTED) {
+                 cause = android.telephony.DisconnectCause.OUT_OF_SERVICE;
++            } else if (e.getError() == CallStateException.ERROR_POWER_OFF) {
++                cause = android.telephony.DisconnectCause.POWER_OFF;
+             }
+             connection.setDisconnected(DisconnectCauseUtil.toTelecomDisconnectCause(
+                     cause, e.getMessage()));
+-- 
+2.5.0
+

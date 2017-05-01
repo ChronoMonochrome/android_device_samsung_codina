@@ -17,7 +17,8 @@ if [ "$PATCHES" == "" ] ; then
 	frameworks/av \
 	#frameworks/base \
 	frameworks/opt/net/wifi \
-	frameworks/opt/telephony \
+	#frameworks/opt/net/ims \
+	#frameworks/opt/telephony \
 	frameworks/native \
 	hardware/ril \
 	hardware/libhardware \
@@ -30,9 +31,9 @@ if [ "$PATCHES" == "" ] ; then
 	packages/apps/Dialer \
 	packages/apps/Settings \
 	packages/apps/LockClock \
-	packages/apps/CMParts \
+	#packages/apps/CMParts \
 	packages/apps/AudioFX \
-	packages/services/Telephony \
+	#packages/services/Telephony \
 	packages/inputmethods/LatinIME \
 	packages/providers/MediaProvider \
 	bootable/recovery"

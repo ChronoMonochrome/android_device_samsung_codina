@@ -1,0 +1,29 @@
+From 45d29d32e01995b7a2f51e3e7377b985af55cbad Mon Sep 17 00:00:00 2001
+From: emancebo <emancebo@cyngn.com>
+Date: Tue, 10 Feb 2015 10:26:39 -0800
+Subject: [PATCH] Expose call creation time to link call recordings with recent
+ call log (2/2)
+
+Change-Id: I1fa0afa11f57b84cb53ada4de89dd5e84df60224
+(cherry picked from commit 725d76f5fdb98a6cee40d8fe84016bbafc931485)
+
+Signed-off-by: xyyx <xyyx@mail.ru>
+---
+ src/com/android/server/telecom/ParcelableCallUtils.java | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/src/com/android/server/telecom/ParcelableCallUtils.java b/src/com/android/server/telecom/ParcelableCallUtils.java
+index c4ea9cf..bb14ebc 100644
+--- a/src/com/android/server/telecom/ParcelableCallUtils.java
++++ b/src/com/android/server/telecom/ParcelableCallUtils.java
+@@ -161,6 +161,7 @@ public class ParcelableCallUtils {
+                 properties,
+                 supportedAudioRoutes,
+                 connectTimeMillis,
++                call.getCreationTimeMillis(),
+                 handle,
+                 call.getHandlePresentation(),
+                 callerDisplayName,
+-- 
+2.5.0
+
