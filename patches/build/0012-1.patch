@@ -1,0 +1,129 @@
+From 1dcccfbec3082dc4ae31382a17b22e7874e51821 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Fri, 5 May 2017 11:02:55 +0300
+Subject: [PATCH 12/13] 1
+
+Change-Id: Ia15e412ab0d85a15279c02a82974444c3ee52127
+---
+ core/Makefile                  |  9 ---------
+ core/config.mk                 |  3 +--
+ core/package_internal.mk       | 26 --------------------------
+ target/product/core_minimal.mk |  7 ++-----
+ 4 files changed, 3 insertions(+), 42 deletions(-)
+
+diff --git a/core/Makefile b/core/Makefile
+index 4a1c447..f49ba13 100644
+--- a/core/Makefile
++++ b/core/Makefile
+@@ -1322,15 +1322,6 @@ endef
+ $(BUILT_SYSTEMIMAGE): $(FULL_SYSTEMIMAGE_DEPS) $(INSTALLED_FILES_FILE)
+ 	$(call build-systemimage-target,$@)
+ 
+-ifndef I_WANT_A_QUAIL_STAR
+-ifneq ($(WITHOUT_CHECK_API),true)
+-$(BUILT_SYSTEMIMAGE): checkapi
+-ifneq ($(TARGET_DISABLE_CMSDK),true)
+-$(BUILT_SYSTEMIMAGE): checkapi-cm
+-endif
+-endif
+-endif
+-
+ INSTALLED_SYSTEMIMAGE := $(PRODUCT_OUT)/system.img
+ SYSTEMIMAGE_SOURCE_DIR := $(TARGET_OUT)
+ 
+diff --git a/core/config.mk b/core/config.mk
+index 5794244..3db97fb 100644
+--- a/core/config.mk
++++ b/core/config.mk
+@@ -919,13 +919,12 @@ endif
+ ifneq ($(CM_BUILD),)
+ ## We need to be sure the global selinux policies are included
+ ## last, to avoid accidental resetting by device configs
+-#$(eval include vendor/cm/sepolicy/sepolicy.mk)
+ 
+ # Include any vendor specific config.mk file
+ -include $(TOPDIR)vendor/*/build/core/config.mk
+ 
+ # Include any vendor specific apicheck.mk file
+--include $(TOPDIR)vendor/*/build/core/apicheck.mk
++#-include $(TOPDIR)vendor/*/build/core/apicheck.mk
+ 
+ endif
+ 
+diff --git a/core/package_internal.mk b/core/package_internal.mk
+index 5940d63..ffb7de8 100644
+--- a/core/package_internal.mk
++++ b/core/package_internal.mk
+@@ -436,28 +436,11 @@ framework_res_package_export_deps := $(framework_res_package_export)
+ else # LOCAL_SDK_RES_VERSION
+ framework_res_package_export := \
+     $(call intermediates-dir-for,APPS,framework-res,,COMMON)/package-export.apk
+-
+-ifneq ($(TARGET_DISABLE_CMSDK), true)
+-# Avoid possible circular dependency with our platform-res
+-ifneq ($(LOCAL_IGNORE_SUBDIR), true)
+-cm_plat_res_package_export := \
+-    $(call intermediates-dir-for,APPS,org.cyanogenmod.platform-res,,COMMON)/package-export.apk
+-endif # LOCAL_IGNORE_SUBDIR
+-endif
+-
+ # We can't depend directly on the export.apk file; it won't get its
+ # PRIVATE_ vars set up correctly if we do.  Instead, depend on the
+ # corresponding R.stamp file, which lists the export.apk as a dependency.
+ framework_res_package_export_deps := \
+     $(dir $(framework_res_package_export))src/R.stamp
+-
+-ifneq ($(TARGET_DISABLE_CMSDK), true)
+-ifneq ($(LOCAL_IGNORE_SUBDIR), true)
+-cm_plat_res_package_export_deps := \
+-    $(dir $(cm_plat_res_package_export))src/R.stamp
+-endif # LOCAL_IGNORE_SUBDIR
+-endif
+-
+ endif # LOCAL_SDK_RES_VERSION
+ all_library_res_package_exports := \
+     $(framework_res_package_export) \
+@@ -469,15 +452,6 @@ all_library_res_package_export_deps := \
+     $(foreach lib,$(LOCAL_RES_LIBRARIES),\
+         $(call intermediates-dir-for,APPS,$(lib),,COMMON)/src/R.stamp)
+ 
+-ifneq ($(TARGET_DISABLE_CMSDK), true)
+-ifneq ($(LOCAL_IGNORE_SUBDIR), true)
+-all_library_res_package_exports += \
+-    $(cm_plat_res_package_export)
+-all_library_res_package_export_deps += \
+-    $(cm_plat_res_package_export_deps)
+-endif # LOCAL_IGNORE_SUBDIR
+-endif
+-
+ $(resource_export_package) $(R_file_stamp) $(LOCAL_BUILT_MODULE): $(all_library_res_package_export_deps)
+ $(LOCAL_INTERMEDIATE_TARGETS): \
+     PRIVATE_AAPT_INCLUDES := $(all_library_res_package_exports)
+diff --git a/target/product/core_minimal.mk b/target/product/core_minimal.mk
+index 0e60013..4d38ce2 100644
+--- a/target/product/core_minimal.mk
++++ b/target/product/core_minimal.mk
+@@ -104,18 +104,15 @@ PRODUCT_BOOT_JARS := \
+ # The order of PRODUCT_SYSTEM_SERVER_JARS matters.
+ ifneq ($(TARGET_DISABLE_CMSDK), true)
+ PRODUCT_SYSTEM_SERVER_JARS := \
+-    org.cyanogenmod.platform \
+-    org.cyanogenmod.hardware
+-endif
+-PRODUCT_SYSTEM_SERVER_JARS += \
+     services \
+     ethernet-service \
+     wifi-service
++endif
+ 
+ # Adoptable external storage f2fs support
+ PRODUCT_PACKAGES += \
+     fsck.f2fs \
+-    mkfs.f2fs \
++    make_f2fs \
+ 
+ PRODUCT_DEFAULT_PROPERTY_OVERRIDES += \
+     ro.zygote=zygote32
+-- 
+2.5.0
+

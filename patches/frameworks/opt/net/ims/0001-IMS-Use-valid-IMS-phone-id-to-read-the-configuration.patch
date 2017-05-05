@@ -1,0 +1,72 @@
+From b7a5f3183c4629c763507b616b5b04d00fef772a Mon Sep 17 00:00:00 2001
+From: Suresh Koleti <skolet@codeaurora.org>
+Date: Tue, 19 Jul 2016 20:42:13 +0530
+Subject: [PATCH] IMS: Use valid IMS phone id to read the configurations
+
+Use valid IMS phone id to read the config resource.
+
+Change-Id: I4662ed9e441e59f0b6d88dde85e659ad3b0a7f3a
+CRs-Fixed: 1045115
+---
+ src/java/com/android/ims/ImsManager.java | 15 ++++++++++-----
+ 1 file changed, 10 insertions(+), 5 deletions(-)
+
+diff --git a/src/java/com/android/ims/ImsManager.java b/src/java/com/android/ims/ImsManager.java
+index 8706f9b..b8b9477 100644
+--- a/src/java/com/android/ims/ImsManager.java
++++ b/src/java/com/android/ims/ImsManager.java
+@@ -165,6 +165,7 @@ public class ImsManager {
+ 
+     private Context mContext;
+     private int mPhoneId;
++    private static int mImsPhoneId;
+     private IImsService mImsService = null;
+     private ImsServiceDeathRecipient mDeathRecipient = new ImsServiceDeathRecipient();
+     // Ut interface for the supplementary service configuration
+@@ -906,7 +907,7 @@ public class ImsManager {
+      * @see #getServiceId
+      */
+     public int open(int serviceClass, PendingIntent incomingCallPendingIntent,
+-            ImsConnectionStateListener listener) throws ImsException {
++            ImsConnectionStateListener listener, int imsPhoneId) throws ImsException {
+         checkAndThrowExceptionIfServiceUnavailable();
+ 
+         if (incomingCallPendingIntent == null) {
+@@ -918,9 +919,10 @@ public class ImsManager {
+         }
+ 
+         int result = 0;
++        mImsPhoneId = imsPhoneId;
+ 
+         try {
+-            result = mImsService.open(mPhoneId, serviceClass, incomingCallPendingIntent,
++            result = mImsService.open(mImsPhoneId, serviceClass, incomingCallPendingIntent,
+                     createRegistrationListenerProxy(serviceClass, listener));
+         } catch (RemoteException e) {
+             throw new ImsException("open()", e,
+@@ -1243,8 +1245,11 @@ public class ImsManager {
+         CarrierConfigManager configManager = (CarrierConfigManager) context.getSystemService(
+                 Context.CARRIER_CONFIG_SERVICE);
+         PersistableBundle b = null;
+-        if (configManager != null) {
+-            b = configManager.getConfig();
++        int[] subId = SubscriptionManager.getSubId(mImsPhoneId);
++        SubscriptionManager subscriptionManager = SubscriptionManager.from(context);
++        if (configManager != null && subId != null && subscriptionManager != null &&
++                subscriptionManager.isActiveSubId(subId[0])) {
++            b = configManager.getConfigForSubId(subId[0]);
+         }
+         if (b != null) {
+             return b.getBoolean(key);
+@@ -1474,7 +1479,7 @@ public class ImsManager {
+ 
+             if (mContext != null) {
+                 Intent intent = new Intent(ACTION_IMS_SERVICE_DOWN);
+-                intent.putExtra(EXTRA_PHONE_ID, mPhoneId);
++                intent.putExtra(EXTRA_PHONE_ID, mImsPhoneId);
+                 mContext.sendBroadcast(new Intent(intent));
+             }
+         }
+-- 
+2.5.0
+

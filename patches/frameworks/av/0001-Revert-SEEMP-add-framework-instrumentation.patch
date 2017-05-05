@@ -1,0 +1,35 @@
+From 9deb7aa68533ea805b2c2806607a38a218c2fe08 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Fri, 5 May 2017 10:59:02 +0300
+Subject: [PATCH] Revert "SEEMP: add framework instrumentation"
+
+This reverts commit a50186bc892c6b5126ab8e5500558ff3ba60b943.
+
+Change-Id: I6ccdbe0b9be23f2158122e85cbee7b772d78218e
+---
+ media/libmedia/AudioRecord.cpp | 2 --
+ 1 file changed, 2 deletions(-)
+
+diff --git a/media/libmedia/AudioRecord.cpp b/media/libmedia/AudioRecord.cpp
+index 1494495..2d72dc4 100644
+--- a/media/libmedia/AudioRecord.cpp
++++ b/media/libmedia/AudioRecord.cpp
+@@ -26,7 +26,6 @@
+ #include <utils/Log.h>
+ #include <private/media/AudioTrackShared.h>
+ #include <media/IAudioFlinger.h>
+-#include "SeempLog.h"
+ 
+ #define WAIT_PERIOD_MS          10
+ 
+@@ -297,7 +296,6 @@ status_t AudioRecord::set(
+ status_t AudioRecord::start(AudioSystem::sync_event_t event, audio_session_t triggerSession)
+ {
+     ALOGV("start, sync event %d trigger session %d", event, triggerSession);
+-    SEEMPLOG_RECORD(71,"");
+ 
+     AutoMutex lock(mLock);
+     if (mActive) {
+-- 
+2.5.0
+

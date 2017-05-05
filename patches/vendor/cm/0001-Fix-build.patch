@@ -1,0 +1,179 @@
+From a8bd658727e022af606d7b285daeea130c29c186 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Fri, 5 May 2017 15:12:07 +0300
+Subject: [PATCH] Fix build
+
+Change-Id: Ia78405989df14bcbea90e75323352e2a63e0752e
+---
+ config/cmsdk_common.mk                             | 54 ----------------------
+ .../frameworks/base/core/res/res/values/config.xml |  2 -
+ .../res/values-mcc310-mnc260/config.xml            | 23 ---------
+ .../res/values-mcc310-mnc410/config.xml            | 23 ---------
+ .../res/values-mcc450-mnc08/config.xml             | 23 ---------
+ 5 files changed, 125 deletions(-)
+ delete mode 100644 overlay/common/packages/providers/TelephonyProvider/res/values-mcc310-mnc260/config.xml
+ delete mode 100644 overlay/common/packages/providers/TelephonyProvider/res/values-mcc310-mnc410/config.xml
+ delete mode 100644 overlay/common/packages/providers/TelephonyProvider/res/values-mcc450-mnc08/config.xml
+
+diff --git a/config/cmsdk_common.mk b/config/cmsdk_common.mk
+index 5c9a836..e69de29 100644
+--- a/config/cmsdk_common.mk
++++ b/config/cmsdk_common.mk
+@@ -1,54 +0,0 @@
+-# Permissions for cmsdk services
+-PRODUCT_COPY_FILES += \
+-    vendor/cm/config/permissions/org.cyanogenmod.appsuggest.xml:system/etc/permissions/org.cyanogenmod.appsuggest.xml \
+-    vendor/cm/config/permissions/org.cyanogenmod.audio.xml:system/etc/permissions/org.cyanogenmod.audio.xml \
+-    vendor/cm/config/permissions/org.cyanogenmod.livedisplay.xml:system/etc/permissions/org.cyanogenmod.livedisplay.xml \
+-    vendor/cm/config/permissions/org.cyanogenmod.livelockscreen.xml:system/etc/permissions/org.cyanogenmod.livelockscreen.xml \
+-    vendor/cm/config/permissions/org.cyanogenmod.partner.xml:system/etc/permissions/org.cyanogenmod.partner.xml \
+-    vendor/cm/config/permissions/org.cyanogenmod.performance.xml:system/etc/permissions/org.cyanogenmod.performance.xml \
+-    vendor/cm/config/permissions/org.cyanogenmod.profiles.xml:system/etc/permissions/org.cyanogenmod.profiles.xml \
+-    vendor/cm/config/permissions/org.cyanogenmod.statusbar.xml:system/etc/permissions/org.cyanogenmod.statusbar.xml \
+-    vendor/cm/config/permissions/org.cyanogenmod.telephony.xml:system/etc/permissions/org.cyanogenmod.telephony.xml \
+-    vendor/cm/config/permissions/org.cyanogenmod.theme.xml:system/etc/permissions/org.cyanogenmod.theme.xml \
+-    vendor/cm/config/permissions/org.cyanogenmod.weather.xml:system/etc/permissions/org.cyanogenmod.weather.xml
+-
+-# CM Platform Library
+-PRODUCT_PACKAGES += \
+-    org.cyanogenmod.platform-res \
+-    org.cyanogenmod.platform \
+-    org.cyanogenmod.platform.xml
+-
+-# CM Hardware Abstraction Framework
+-PRODUCT_PACKAGES += \
+-    org.cyanogenmod.hardware \
+-    org.cyanogenmod.hardware.xml
+-
+-# JNI Libraries
+-PRODUCT_PACKAGES += \
+-    libcmsdk_platform_jni
+-
+-ifndef CM_PLATFORM_SDK_VERSION
+-  # This is the canonical definition of the SDK version, which defines
+-  # the set of APIs and functionality available in the platform.  It
+-  # is a single integer that increases monotonically as updates to
+-  # the SDK are released.  It should only be incremented when the APIs for
+-  # the new release are frozen (so that developers don't write apps against
+-  # intermediate builds).
+-  CM_PLATFORM_SDK_VERSION := 7
+-endif
+-
+-ifndef CM_PLATFORM_REV
+-  # For internal SDK revisions that are hotfixed/patched
+-  # Reset after each CM_PLATFORM_SDK_VERSION release
+-  # If you are doing a release and this is NOT 0, you are almost certainly doing it wrong
+-  CM_PLATFORM_REV := 0
+-endif
+-
+-# CyanogenMod Platform SDK Version
+-PRODUCT_PROPERTY_OVERRIDES += \
+-  ro.cm.build.version.plat.sdk=$(CM_PLATFORM_SDK_VERSION)
+-
+-# CyanogenMod Platform Internal
+-PRODUCT_PROPERTY_OVERRIDES += \
+-  ro.cm.build.version.plat.rev=$(CM_PLATFORM_REV)
+-
+diff --git a/overlay/common/frameworks/base/core/res/res/values/config.xml b/overlay/common/frameworks/base/core/res/res/values/config.xml
+index 1e29fdf..1f7f2d5 100644
+--- a/overlay/common/frameworks/base/core/res/res/values/config.xml
++++ b/overlay/common/frameworks/base/core/res/res/values/config.xml
+@@ -60,8 +60,6 @@
+     <!-- Enable lockscreen rotation by default -->
+     <bool name="config_enableLockScreenRotation">true</bool>
+ 
+-    <!-- Whether to persist the notification for when a usb drive device is plugged in -->
+-    <bool name="config_persistUsbDriveNotification">true</bool>
+ 
+     <!-- Set this to true to enable the platform's auto-power-save modes like doze and
+          app standby.  These are not enabled by default because they require a standard
+diff --git a/overlay/common/packages/providers/TelephonyProvider/res/values-mcc310-mnc260/config.xml b/overlay/common/packages/providers/TelephonyProvider/res/values-mcc310-mnc260/config.xml
+deleted file mode 100644
+index 1e4d855..0000000
+--- a/overlay/common/packages/providers/TelephonyProvider/res/values-mcc310-mnc260/config.xml
++++ /dev/null
+@@ -1,23 +0,0 @@
+-<?xml version="1.0" encoding="utf-8"?>
+-<!-- Copyright (C) 2012 The CyanogenMod Project
+-
+-     Licensed under the Apache License, Version 2.0 (the "License");
+-     you may not use this file except in compliance with the License.
+-     You may obtain a copy of the License at
+-
+-          http://www.apache.org/licenses/LICENSE-2.0
+-
+-     Unless required by applicable law or agreed to in writing, software
+-     distributed under the License is distributed on an "AS IS" BASIS,
+-     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-     See the License for the specific language governing permissions and
+-     limitations under the License.
+--->
+-
+-<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+-
+-    <!-- The preferred APN to use, in the format name,mcc,mnc
+-         Leave empty to choose automatically. -->
+-    <string name="config_preferred_apn">fast.t-mobile.com,310,260</string>
+-</resources>
+-
+diff --git a/overlay/common/packages/providers/TelephonyProvider/res/values-mcc310-mnc410/config.xml b/overlay/common/packages/providers/TelephonyProvider/res/values-mcc310-mnc410/config.xml
+deleted file mode 100644
+index 9f82f18..0000000
+--- a/overlay/common/packages/providers/TelephonyProvider/res/values-mcc310-mnc410/config.xml
++++ /dev/null
+@@ -1,23 +0,0 @@
+-<?xml version="1.0" encoding="utf-8"?>
+-<!-- Copyright (C) 2012 The CyanogenMod Project
+-
+-     Licensed under the Apache License, Version 2.0 (the "License");
+-     you may not use this file except in compliance with the License.
+-     You may obtain a copy of the License at
+-
+-          http://www.apache.org/licenses/LICENSE-2.0
+-
+-     Unless required by applicable law or agreed to in writing, software
+-     distributed under the License is distributed on an "AS IS" BASIS,
+-     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-     See the License for the specific language governing permissions and
+-     limitations under the License.
+--->
+-
+-<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+-
+-    <!-- The preferred APN to use, in the format name,mcc,mnc
+-         Leave empty to choose automatically. -->
+-    <string name="config_preferred_apn">pta,310,410</string>
+-</resources>
+-
+diff --git a/overlay/common/packages/providers/TelephonyProvider/res/values-mcc450-mnc08/config.xml b/overlay/common/packages/providers/TelephonyProvider/res/values-mcc450-mnc08/config.xml
+deleted file mode 100644
+index afa0363..0000000
+--- a/overlay/common/packages/providers/TelephonyProvider/res/values-mcc450-mnc08/config.xml
++++ /dev/null
+@@ -1,23 +0,0 @@
+-<?xml version="1.0" encoding="utf-8"?>
+-<!-- Copyright (C) 2012 The CyanogenMod Project
+-
+-     Licensed under the Apache License, Version 2.0 (the "License");
+-     you may not use this file except in compliance with the License.
+-     You may obtain a copy of the License at
+-
+-          http://www.apache.org/licenses/LICENSE-2.0
+-
+-     Unless required by applicable law or agreed to in writing, software
+-     distributed under the License is distributed on an "AS IS" BASIS,
+-     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-     See the License for the specific language governing permissions and
+-     limitations under the License.
+--->
+-
+-<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+-
+-    <!-- The preferred APN to use, in the format name,mcc,mnc
+-         Leave empty to choose automatically. -->
+-    <string name="config_preferred_apn">lte.ktfwing.com,450,08</string>
+-</resources>
+-
+-- 
+2.5.0
+

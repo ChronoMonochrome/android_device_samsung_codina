@@ -1,0 +1,46 @@
+From a8080b3866071558912c86e110c44bff0602a7a1 Mon Sep 17 00:00:00 2001
+From: Valeriy <mexanicteam@gmail.com>
+Date: Sun, 23 Oct 2016 18:43:23 +0400
+Subject: [PATCH] Revert "Show a startup page in incognito mode"
+
+This reverts commit 7462f4ee60fea3f68ec388b3a86de5a8e688b89a.
+
+Change-Id: I9ec8a268666ef567adb0b3e3d5074241c57cb572
+---
+ src/com/android/browser/homepages/HomeProvider.java | 13 -------------
+ 1 file changed, 13 deletions(-)
+
+diff --git a/src/com/android/browser/homepages/HomeProvider.java b/src/com/android/browser/homepages/HomeProvider.java
+index a1c1d85..60b73e9 100644
+--- a/src/com/android/browser/homepages/HomeProvider.java
++++ b/src/com/android/browser/homepages/HomeProvider.java
+@@ -20,8 +20,6 @@ import android.content.ContentProvider;
+ import android.content.ContentValues;
+ import android.content.Context;
+ import android.content.res.AssetFileDescriptor;
+-import android.content.res.Resources;
+-import android.content.res.Resources.NotFoundException;
+ import android.database.Cursor;
+ import android.net.Uri;
+ import android.os.ParcelFileDescriptor;
+@@ -116,17 +114,6 @@ public class HomeProvider extends ContentProvider {
+                 return new WebResourceResponse("text/html", "utf-8", ins);
+             }
+         } catch (Exception e) {}
+-        if ("browser:incognito".equals(url)) {
+-            try {
+-                Resources res = context.getResources();
+-                InputStream ins = res.openRawResource(
+-                        com.android.internal.R.raw.incognito_mode_start_page);
+-                return new WebResourceResponse("text/html", "utf8", ins);
+-            } catch (NotFoundException ex) {
+-                // This shouldn't happen, but try and gracefully handle it jic
+-                Log.w(TAG, "Failed opening raw.incognito_mode_start_page", ex);
+-            }
+-        }
+         return null;
+     }
+ 
+-- 
+2.5.0
+

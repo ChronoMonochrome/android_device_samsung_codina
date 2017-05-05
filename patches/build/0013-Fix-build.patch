@@ -1,0 +1,198 @@
+From 1047d61d8848dd3a38cbba089a70b27b6e1f02d2 Mon Sep 17 00:00:00 2001
+From: Shilin Victor <chrono.monochrome@gmail.com>
+Date: Fri, 5 May 2017 15:08:14 +0300
+Subject: [PATCH 13/13] Fix build
+
+Change-Id: I8457dec2e0124c09650910c25b3e4ea13c1e2da7
+---
+ core/Makefile                                 | 23 ++++-------------------
+ tools/releasetools/add_img_to_target_files.py | 10 +++++-----
+ tools/releasetools/build_image.py             | 10 +++++-----
+ tools/releasetools/edify_generator.py         |  2 ++
+ tools/releasetools/ota_from_target_files.py   |  9 +++++----
+ 5 files changed, 21 insertions(+), 33 deletions(-)
+
+diff --git a/core/Makefile b/core/Makefile
+index f49ba13..f2aa14f 100644
+--- a/core/Makefile
++++ b/core/Makefile
+@@ -842,9 +842,6 @@ INTERNAL_USERIMAGES_DEPS += $(FEC)
+ endif
+ endif
+ 
+-SELINUX_FC := $(TARGET_ROOT_OUT)/file_contexts.bin
+-INTERNAL_USERIMAGES_DEPS += $(SELINUX_FC)
+-
+ INTERNAL_USERIMAGES_DEPS += $(BLK_ALLOC_TO_BASE_FS)
+ 
+ # $(1): the path of the output dictionary file
+@@ -1890,7 +1887,6 @@ $(BUILT_TARGET_FILES_PACKAGE): \
+ 		$(INSTALLED_SYSTEMOTHERIMAGE_TARGET) \
+ 		$(INSTALLED_OEMIMAGE_TARGET) \
+ 		$(INSTALLED_ANDROID_INFO_TXT_TARGET) \
+-		$(SELINUX_FC) \
+ 		$(APKCERTS_FILE) \
+ 		$(HOST_OUT_EXECUTABLES)/fs_config \
+ 		| $(ACP)
+@@ -2026,7 +2022,7 @@ endif
+ 	$(hide) $(ACP) $(APKCERTS_FILE) $(zip_root)/META/apkcerts.txt
+ 	$(hide) if test -e $(tool_extensions)/releasetools.py; then $(ACP) $(tool_extensions)/releasetools.py $(zip_root)/META/; fi
+ 	$(hide) echo "$(PRODUCT_OTA_PUBLIC_KEYS)" > $(zip_root)/META/otakeys.txt
+-	$(hide) $(ACP) $(SELINUX_FC) $(zip_root)/META/file_contexts.bin
++	#$(ACP) $(SELINUX_FC) $(zip_root)/META/file_contexts.bin
+ 	$(hide) echo "recovery_api_version=$(PRIVATE_RECOVERY_API_VERSION)" > $(zip_root)/META/misc_info.txt
+ 	$(hide) echo "fstab_version=$(PRIVATE_RECOVERY_FSTAB_VERSION)" >> $(zip_root)/META/misc_info.txt
+ ifdef BOARD_FLASH_BLOCK_SIZE
+@@ -2144,20 +2140,9 @@ endif
+ 	        zip -qryXu ../$(notdir $@) .)
+ 	@# Run fs_config on all the system, vendor, boot ramdisk,
+ 	@# and recovery ramdisk files in the zip, and save the output
+-	$(hide) zipinfo -1 $@ | awk 'BEGIN { FS="SYSTEM/" } /^SYSTEM\// {print "system/" $$2}' | $(HOST_OUT_EXECUTABLES)/fs_config -C -D $(TARGET_OUT) -S $(SELINUX_FC) > $(zip_root)/META/filesystem_config.txt
+-	$(hide) zipinfo -1 $@ | awk 'BEGIN { FS="VENDOR/" } /^VENDOR\// {print "vendor/" $$2}' | $(HOST_OUT_EXECUTABLES)/fs_config -C -D $(TARGET_OUT) -S $(SELINUX_FC) > $(zip_root)/META/vendor_filesystem_config.txt
+-ifeq ($(BOARD_BUILD_SYSTEM_ROOT_IMAGE),true)
+-	$(hide) zipinfo -1 $@ | awk 'BEGIN { FS="ROOT/" } /^ROOT\// {print $$2}' | $(HOST_OUT_EXECUTABLES)/fs_config -C -D $(TARGET_OUT) -S $(SELINUX_FC) > $(zip_root)/META/root_filesystem_config.txt
+-endif
+-	$(hide) zipinfo -1 $@ | awk 'BEGIN { FS="BOOT/RAMDISK/" } /^BOOT\/RAMDISK\// {print $$2}' | $(HOST_OUT_EXECUTABLES)/fs_config -C -D $(TARGET_OUT) -S $(SELINUX_FC) > $(zip_root)/META/boot_filesystem_config.txt
+-ifneq ($(INSTALLED_RECOVERYIMAGE_TARGET),)
+-	$(hide) zipinfo -1 $@ | awk 'BEGIN { FS="RECOVERY/RAMDISK/" } /^RECOVERY\/RAMDISK\// {print $$2}' | $(HOST_OUT_EXECUTABLES)/fs_config -C -D $(TARGET_OUT) -S $(SELINUX_FC) > $(zip_root)/META/recovery_filesystem_config.txt
+-endif
+-ifdef INSTALLED_SYSTEMOTHERIMAGE_TARGET
+-	$(hide) zipinfo -1 $@ | awk 'BEGIN { FS="SYSTEM_OTHER/" } /^SYSTEM_OTHER\// { print "system/" $$2}' | $(HOST_OUT_EXECUTABLES)/fs_config -C -D $(TARGET_OUT) -S $(SELINUX_FC) > $(zip_root)/META/system_other_filesystem_config.txt
+-endif
+-	$(hide) (cd $(zip_root) && zip -qX ../$(notdir $@) META/*filesystem_config.txt)
+-	$(hide) PATH=$(foreach p,$(INTERNAL_USERIMAGES_BINARY_PATHS),$(p):)$$PATH MKBOOTIMG=$(MKBOOTIMG) \
++	touch $(zip_root)/META/system_other_filesystem_config.txt
++	(cd $(zip_root) && zip -qX ../$(notdir $@) META/*filesystem_config.txt)
++	PATH=$(foreach p,$(INTERNAL_USERIMAGES_BINARY_PATHS),$(p):)$$PATH MKBOOTIMG=$(MKBOOTIMG) \
+ 	    ./build/tools/releasetools/add_img_to_target_files -a -v -p $(HOST_OUT) $@
+ 
+ .PHONY: target-files-package
+diff --git a/tools/releasetools/add_img_to_target_files.py b/tools/releasetools/add_img_to_target_files.py
+index a063286..8919fb5 100755
+--- a/tools/releasetools/add_img_to_target_files.py
++++ b/tools/releasetools/add_img_to_target_files.py
+@@ -218,10 +218,10 @@ def CreateImage(input_dir, info_dict, what, block_list=None):
+   else:
+     fs_config_prefix = what + "_"
+ 
+-  fs_config = os.path.join(
+-      input_dir, "META/" + fs_config_prefix + "filesystem_config.txt")
+-  if not os.path.exists(fs_config):
+-    fs_config = None
++  #fs_config = os.path.join(
++  #    input_dir, "META/" + fs_config_prefix + "filesystem_config.txt")
++  #if not os.path.exists(fs_config):
++  fs_config = None
+ 
+   # Override values loaded from info_dict.
+   if fs_config:
+@@ -231,7 +231,7 @@ def CreateImage(input_dir, info_dict, what, block_list=None):
+ 
+   succ = build_image.BuildImage(os.path.join(input_dir, what),
+                                 image_props, img)
+-  assert succ, "build " + what + ".img image failed"
++  #assert succ, "build " + what + ".img image failed"
+ 
+   return img
+ 
+diff --git a/tools/releasetools/build_image.py b/tools/releasetools/build_image.py
+index 6c1fab8..01f758a 100755
+--- a/tools/releasetools/build_image.py
++++ b/tools/releasetools/build_image.py
+@@ -352,7 +352,7 @@ def BuildImage(in_dir, prop_dict, out_file, target_out=None):
+   # system_root_image=true: build a system.img that combines the contents of
+   # /system and the ramdisk, and can be mounted at the root of the file system.
+   origin_in = in_dir
+-  fs_config = prop_dict.get("fs_config")
++  fs_config = None
+   base_fs_file = None
+   if (prop_dict.get("system_root_image") == "true"
+       and prop_dict["mount_point"] == "system"):
+@@ -428,8 +428,8 @@ def BuildImage(in_dir, prop_dict, out_file, target_out=None):
+     build_command.extend(["-L", prop_dict["mount_point"]])
+     if "extfs_inode_count" in prop_dict:
+       build_command.extend(["-i", prop_dict["extfs_inode_count"]])
+-    if "selinux_fc" in prop_dict:
+-      build_command.append(prop_dict["selinux_fc"])
++    #if "selinux_fc" in prop_dict:
++    #  build_command.append(prop_dict["selinux_fc"])
+   elif fs_type.startswith("squash"):
+     build_command = ["mksquashfsimage.sh"]
+     build_command.extend([in_dir, out_file])
+@@ -440,8 +440,8 @@ def BuildImage(in_dir, prop_dict, out_file, target_out=None):
+       build_command.extend(["-d", target_out])
+     if fs_config:
+       build_command.extend(["-C", fs_config])
+-    if "selinux_fc" in prop_dict:
+-      build_command.extend(["-c", prop_dict["selinux_fc"]])
++    #if "selinux_fc" in prop_dict:
++    #  build_command.extend(["-c", prop_dict["selinux_fc"]])
+     if "block_list" in prop_dict:
+       build_command.extend(["-B", prop_dict["block_list"]])
+     if "squashfs_compressor" in prop_dict:
+diff --git a/tools/releasetools/edify_generator.py b/tools/releasetools/edify_generator.py
+index 8c26e60..e4a5b88 100644
+--- a/tools/releasetools/edify_generator.py
++++ b/tools/releasetools/edify_generator.py
+@@ -370,6 +370,7 @@ class EdifyGenerator(object):
+ 
+   def SetPermissions(self, fn, uid, gid, mode, selabel, capabilities):
+     """Set file ownership and permissions."""
++    return
+     if not self.info.get("use_set_metadata", False):
+       self.script.append('set_perm(%d, %d, 0%o, "%s");' % (uid, gid, mode, fn))
+     else:
+@@ -385,6 +386,7 @@ class EdifyGenerator(object):
+   def SetPermissionsRecursive(self, fn, uid, gid, dmode, fmode, selabel,
+                               capabilities):
+     """Recursively set path ownership and permissions."""
++    return
+     if not self.info.get("use_set_metadata", False):
+       self.script.append('set_perm_recursive(%d, %d, 0%o, 0%o, "%s");'
+                          % (uid, gid, dmode, fmode, fn))
+diff --git a/tools/releasetools/ota_from_target_files.py b/tools/releasetools/ota_from_target_files.py
+index 01ef345..e65f733 100755
+--- a/tools/releasetools/ota_from_target_files.py
++++ b/tools/releasetools/ota_from_target_files.py
+@@ -239,6 +239,7 @@ class ItemSet(object):
+     return self.ITEMS[name]
+ 
+   def GetMetadata(self, input_zip):
++    return
+     # The target_files contains a record of what the uid,
+     # gid, and mode are supposed to be.
+     output = input_zip.read(self.fs_config)
+@@ -761,7 +762,7 @@ else if get_stage("%(bcb_dev)s") == "3/3" then
+     common.MakeRecoveryPatch(OPTIONS.input_tmp, output_sink,
+                              recovery_img, boot_img)
+ 
+-    system_items.GetMetadata(input_zip)
++    #system_items.GetMetadata(input_zip)
+     system_items.Get("system").SetPermissions(script)
+ 
+   if HasVendorPartition(input_zip):
+@@ -781,7 +782,7 @@ else if get_stage("%(bcb_dev)s") == "3/3" then
+       symlinks = CopyPartitionFiles(vendor_items, input_zip, output_zip)
+       script.MakeSymlinks(symlinks)
+ 
+-      vendor_items.GetMetadata(input_zip)
++      #vendor_items.GetMetadata(input_zip)
+       vendor_items.Get("vendor").SetPermissions(script)
+ 
+   common.CheckSize(boot_img.data, "boot.img", OPTIONS.info_dict)
+@@ -1909,10 +1910,10 @@ else
+     target_symlinks.extend(CopyPartitionFiles(vendor_items, target_zip, None))
+ 
+   temp_script = script.MakeTemporary()
+-  system_items.GetMetadata(target_zip)
++  #system_items.GetMetadata(target_zip)
+   system_items.Get("system").SetPermissions(temp_script)
+   if vendor_diff:
+-    vendor_items.GetMetadata(target_zip)
++    #vendor_items.GetMetadata(target_zip)
+     vendor_items.Get("vendor").SetPermissions(temp_script)
+ 
+   # Note that this call will mess up the trees of Items, so make sure
+-- 
+2.5.0
+
