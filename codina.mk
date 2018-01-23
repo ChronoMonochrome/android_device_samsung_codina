@@ -165,18 +165,13 @@ android.hardware.usb@1.0-service
 PRODUCT_PACKAGES += \
 android.hardware.power@1.0-impl
 
-# vibrator
+# vibrato
 PRODUCT_PACKAGES += \
 android.hardware.vibrator@1.0-impl
 
 # Sensors
-
-PRODUCT_COPY_FILES += \
-$(LOCAL_PATH)/configs/hals.conf:system/vendor/etc/sensors/hals.conf
-
-PRODUCT_PACKAGES += \
-sensors.montblanc \
-android.hardware.sensors@1.0-impl
+#PRODUCT_PACKAGES += \
+#android.hardware.sensors@1.0-impl
 
 # Lights
 PRODUCT_PACKAGES += \

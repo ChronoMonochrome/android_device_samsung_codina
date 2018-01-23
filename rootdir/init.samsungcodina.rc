@@ -423,7 +423,6 @@ service gpsd /system/bin/gpsd -c /system/etc/gps.xml
     user gps
     group system wakelock net_raw
     ioprio be 0
-    seclabel u:r:gpsd:s0
 
 # AT daemon
 service atd /system/bin/at_core -mode normal -serial ttyAMA2
