@@ -28,6 +28,8 @@ ro.device.screen_res=3,8' 800x480 pixels ( ~246 ppi)
 # test
 persist.external_drive_world_rw=1
 persist.sys.usb.config=mtp,adb
+ro.vold.primary_emulated=0
+ro.vold.primary_physical=1
 # media.stagefright.use-awesome=false
 # persist.sys.media.use-awesome=true
 # net.tethering.noprovisioning=true
@@ -49,10 +51,10 @@ persist.sys.dalvik.multithread=true
 persist.sys.strictmode.disable=true
 
 # art optimization
-dalvik.vm.image-dex2oat-filter=everything
-dalvik.vm.dex2oat-filter=everything
-#dalvik.vm.image-dex2oat-filter=speed
-#dalvik.vm.dex2oat-filter=interpret-only
+#dalvik.vm.image-dex2oat-filter=everything
+#dalvik.vm.dex2oat-filter=everything
+dalvik.vm.image-dex2oat-filter=speed
+dalvik.vm.dex2oat-filter=speed
 
 # hwui
 ro.hwui.drop_shadow_cache_size=1

@@ -96,6 +96,11 @@ PRODUCT_PROPERTY_OVERRIDES += \
     ro.telephony.sends_barcount=1 \
     mobiledata.interfaces=pdp0,wlan0,gprs,ppp0
 
+PRODUCT_PACKAGES += \
+    at_core \
+    libcn \
+    libcops
+
 # Audio
 PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/configs/audio_policy.conf:system/etc/audio_policy.conf \
@@ -209,6 +214,10 @@ PRODUCT_PACKAGES += \
     power.montblanc \
     profile
 
+PRODUCT_PACKAGES += \
+    sensors.montblanc \
+    sensors.default
+
 # Snap Camera
 PRODUCT_PACKAGES += \
     Snap \
@@ -249,6 +258,7 @@ include vendor/samsung/u8500-common/vendor-common.mk
 
 # For better compatibility with ROMs (like Slim, PAC)
 $(call inherit-product, vendor/samsung/u8500-common/codina/codina-vendor-blobs.mk)
+$(call inherit-product, vendor/samsung/u8500-common/janice/janice-vendor-blobs.mk)
 
 # STE Modem
 PRODUCT_COPY_FILES += \
